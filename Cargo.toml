@@ -38,7 +38,6 @@ build-binary = [
     "zune-image/default",
     "dep:indicatif",
     "dep:indicatif-log-bridge",
-    "dep:regex",
     "dep:little_exif",
     "icc",
 ]
@@ -129,7 +128,6 @@ zune-imageprocs = { version = "0.5.1", features = ["exif"], optional = true }
 little_exif = { version = "0.6.23", optional = true }
 indicatif = { version = "0.18", features = ["rayon"], optional = true }
 indicatif-log-bridge = { version = "0.2.3", optional = true }
-regex = { version = "1.13", optional = true }
 glob = { version = "0.3", optional = true }
 filetime = { version = "0.2.29", optional = true }
 
