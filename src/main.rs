@@ -8,7 +8,7 @@ use std::{
         Arc, Condvar, Mutex,
         atomic::{AtomicU64, Ordering},
     },
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::Duration,
 };
 
 use cli::{
@@ -25,7 +25,6 @@ use indicatif::{DecimalBytes, MultiProgress, ProgressBar, ProgressDrawTarget, Pr
 use indicatif_log_bridge::LogWrapper;
 use little_exif::metadata::Metadata as ExifMetadata;
 use rimage::operations::icc::ApplySRGB;
-use serde::{Deserialize, Serialize};
 use zune_core::{bit_depth::BitDepth, colorspace::ColorSpace};
 use zune_image::{
     core_filters::{colorspace::ColorspaceConv, depth::Depth},
@@ -92,7 +91,6 @@ struct Result {
 
 struct ProcessingState {
     results: Vec<Result>,
-    metadata: Option<Metadata>,
     /// The verdict for the run, accumulated as each file finishes.
     ///
     /// Kept here rather than counted from `results.len()` at the end, because
@@ -107,7 +105,6 @@ impl ProcessingState {
     fn new() -> Self {
         Self {
             results: vec![],
-            metadata: None,
             run: rimage::exit::RunState::start(),
             failures: vec![],
         }
@@ -384,136 +381,6 @@ fn check_output_limits(
         .map_err(|violation| rimage::error::output_size_limit(output, format, violation))
 }
 
-fn space_saved(input_size: u64, output_size: u64) -> i64 {
-    let difference = i128::from(input_size) - i128::from(output_size);
-    difference.clamp(i128::from(i64::MIN), i128::from(i64::MAX)) as i64
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-struct Metadata {
-    #[serde(rename = "inputSize")]
-    input_size: u64,
-    #[serde(rename = "outputSize")]
-    output_size: u64,
-    #[serde(rename = "totalImages")]
-    total_images: usize,
-    #[serde(rename = "compressionRatio")]
-    compression_ratio: f64,
-    #[serde(rename = "spaceSaved")]
-    space_saved: i64,
-    timestamp: u64,
-    images: Vec<ImageMetadata>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-struct ImageMetadata {
-    // File paths
-    input: PathBuf,
-    output: PathBuf,
-
-    // File information
-    #[serde(rename = "inputSize")]
-    input_size: u64,
-    #[serde(rename = "outputSize")]
-    output_size: u64,
-    #[serde(rename = "compressionRatio")]
-    compression_ratio: f64,
-    #[serde(rename = "spaceSaved")]
-    space_saved: i64,
-
-    // Image properties
-    width: u32,
-    height: u32,
-    #[serde(rename = "pixelCount")]
-    pixel_count: u64,
-    #[serde(rename = "aspectRatio")]
-    aspect_ratio: f64,
-
-    // zune-image specific properties
-    #[serde(rename = "bitDepth")]
-    bit_depth: String,
-    #[serde(rename = "colorSpace")]
-    color_space: String,
-    #[serde(rename = "hasAlpha")]
-    has_alpha: bool,
-    #[serde(rename = "isAnimated")]
-    is_animated: bool,
-    #[serde(rename = "frameCount")]
-    frame_count: usize,
-    channels: usize,
-
-    // Format information
-    #[serde(rename = "inputFormat")]
-    input_format: Option<String>,
-    #[serde(rename = "outputFormat")]
-    output_format: String,
-
-    // Processing information
-    #[serde(rename = "processedAt")]
-    processed_at: u64,
-    #[serde(rename = "processingTimeMs")]
-    processing_time_ms: u128,
-
-    // File timestamps
-    #[serde(rename = "inputModified")]
-    input_modified: Option<u64>,
-    #[serde(rename = "outputCreated")]
-    output_created: u64,
-}
-
-fn get_file_extension(path: &Path) -> Option<String> {
-    path.extension()
-        .and_then(|ext| ext.to_str())
-        .map(|s| s.to_lowercase())
-}
-
-fn get_file_modified_time(path: &Path) -> Option<u64> {
-    fs::metadata(path)
-        .ok()
-        .and_then(|metadata| metadata.modified().ok())
-        .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
-        .map(|duration| duration.as_secs())
-}
-
-fn get_current_timestamp() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs()
-}
-
-fn bit_depth_to_string(depth: &BitDepth) -> String {
-    match depth {
-        BitDepth::Eight => "8-bit".to_string(),
-        BitDepth::Sixteen => "16-bit".to_string(),
-        BitDepth::Float32 => "32-bit float".to_string(),
-        _ => "Unknown".to_string(),
-    }
-}
-
-fn colorspace_to_string(colorspace: &ColorSpace) -> String {
-    match colorspace {
-        ColorSpace::RGB => "RGB".to_string(),
-        ColorSpace::RGBA => "RGBA".to_string(),
-        ColorSpace::Luma => "Grayscale".to_string(),
-        ColorSpace::LumaA => "Grayscale with Alpha".to_string(),
-        ColorSpace::YCbCr => "YCbCr".to_string(),
-        ColorSpace::YCCK => "YCCK".to_string(),
-        ColorSpace::CMYK => "CMYK".to_string(),
-        ColorSpace::BGR => "BGR".to_string(),
-        ColorSpace::BGRA => "BGRA".to_string(),
-        ColorSpace::HSL => "HSL".to_string(),
-        ColorSpace::HSV => "HSV".to_string(),
-        _ => "Unknown".to_string(),
-    }
-}
-
-/// Print the runtime-derived size limits and exit.
-///
-/// A hidden diagnostic that shows the probed system memory, the per-format
-/// dimension and pixel ceilings, and which source is the binding constraint.
-/// Used to understand why an image was rejected and to calibrate the pipeline
-/// cost estimates.
 #[cfg(feature = "limits")]
 fn print_limits(subcommand: &str, threads: usize) -> std::process::ExitCode {
     use rimage::error::human_bytes;
@@ -621,7 +488,7 @@ fn binding_str(binding: rimage::limits::Binding) -> &'static str {
 ///   `./` and `../` literals in the joined result
 /// - Canonicalizing existing paths (resolves symlinks, case, remaining `..`)
 ///
-/// This is used for output directories and metadata paths. Input files are
+/// This is used for output directories. Input files are
 /// normalized separately without canonicalization so symlinked directory
 /// layouts and the user-visible path are preserved.
 fn normalize_path(path: &Path, current_dir: &Path) -> PathBuf {
@@ -889,12 +756,6 @@ fn main() -> std::process::ExitCode {
             let preserve_timestamps = matches.get_flag("preserve-timestamps");
             let quiet = matches.get_flag("quiet");
             let no_progress = matches.get_flag("no-progress");
-            let output_metadata = matches.contains_id("metadata");
-            let metadata_path = matches
-                .get_one::<PathBuf>("metadata")
-                .map(|p| normalize_path(p, &current_dir))
-                .unwrap_or(PathBuf::from("metadata.json"));
-
             let suffix = matches.get_one::<String>("suffix").cloned();
 
             if quiet || no_progress {
@@ -957,17 +818,6 @@ fn main() -> std::process::ExitCode {
                     return std::process::ExitCode::from(rimage::exit::ExitCode::Usage.as_u8());
                 }
             }
-            if output_metadata {
-                let metadata_key = output_path_key(&metadata_path);
-                if input_paths.contains(&metadata_key) || output_paths.contains(&metadata_key) {
-                    log::error!(
-                        "Metadata path conflicts with an input or output image: {}",
-                        metadata_path.display()
-                    );
-                    return std::process::ExitCode::from(rimage::exit::ExitCode::Usage.as_u8());
-                }
-            }
-
             let limiter = ConcurrencyLimiter::new(threads);
             thread_pool.install(|| {
                 rayon::scope(|s| {
@@ -979,7 +829,6 @@ fn main() -> std::process::ExitCode {
                     let sty_aux_operations = sty_aux_operations.clone();
                     let sty_aux_encode = sty_aux_encode.clone();
                     let state = Arc::clone(&state);
-                    let current_dir = current_dir.clone();
                     let output_root = output_root.clone();
                     s.spawn(move |_| {
                         // Acquire the permit on the worker itself: rayon schedules the
@@ -988,7 +837,6 @@ fn main() -> std::process::ExitCode {
                         // (deadlock). Acquiring before adding the progress bar also keeps
                         // the number of on-screen spinners bounded by `threads`.
                         let _permit = limiter.acquire();
-                        let image_start_time = std::time::Instant::now();
 
                         let pb = multi.add(ProgressBar::new_spinner());
                         pb.set_style(sty_aux_decode.clone());
@@ -1059,11 +907,6 @@ fn main() -> std::process::ExitCode {
                             .metadata()
                             .map_err(|e| rimage::error::input_open_error(&input, &e)));
                         let input_size = input_metadata.len();
-                        let input_format = get_file_extension(&input);
-                        let input_modified = get_file_modified_time(&input);
-                        // Read from the stat above rather than from `input_modified`,
-                        // which is truncated to whole seconds for the JSON report and
-                        // would stamp the output a fraction of a second early.
                         let preserved_mtime = preserve_timestamps
                             .then(|| FileTime::from_last_modification_time(&input_metadata));
 
@@ -1130,18 +973,6 @@ fn main() -> std::process::ExitCode {
                         };
 
                         pb.set_style(sty_aux_operations.clone());
-
-                        // Extract zune-image properties
-                        let (w, h) = img.dimensions();
-                        let pixel_count = (w as u64) * (h as u64);
-                        let aspect_ratio = if h == 0 { 0.0 } else { w as f64 / h as f64 };
-                        let colorspace = img.colorspace();
-                        let is_animated = img.is_animated();
-                        let frame_count = img.frames_len();
-                        let has_alpha = colorspace.has_alpha();
-                        let channels = colorspace.num_components();
-
-                        let original_bit_depth = img.depth();
 
                         let mut available_encoder =
                             fail_pipeline!(state, encoder(subcommand, matches)
@@ -1265,78 +1096,20 @@ fn main() -> std::process::ExitCode {
                         let output_size = fail_pipeline!(state, output
                             .metadata()
                             .map_err(|e| rimage::error::output_io_error(&output, &e))).len();
-                        let processing_time = image_start_time.elapsed().as_millis();
-                        let compression_ratio = size_ratio(output_size, input_size);
-                        let space_saved = space_saved(input_size, output_size);
-                        let processed_at = get_current_timestamp();
-                        let output_created = get_current_timestamp();
-
                         let mut state = state.lock().unwrap_or_else(|e| e.into_inner());
-
-                        let absolute_input_path = normalize_path(&input, &current_dir);
-                        let absolute_output_path =
-                            normalize_path(&output, &current_dir);
 
                         state.record_success(Result {
                             output: output.to_path_buf(),
                             input_size,
                             output_size,
                         });
-
-                        let metadata = state.metadata.get_or_insert(Metadata {
-                            input_size: 0,
-                            output_size: 0,
-                            total_images: 0,
-                            compression_ratio: 0.0,
-                            space_saved: 0,
-                            timestamp: get_current_timestamp(),
-                            images: vec![],
-                        });
-
-                        metadata.input_size = metadata.input_size.saturating_add(input_size);
-                        metadata.output_size = metadata.output_size.saturating_add(output_size);
-                        metadata.total_images = metadata.total_images.saturating_add(1);
-                        metadata.space_saved = metadata.space_saved.saturating_add(space_saved);
-
-                        metadata.images.push(ImageMetadata {
-                            input: absolute_input_path,
-                            output: absolute_output_path,
-                            input_size,
-                            output_size,
-                            compression_ratio,
-                            space_saved,
-                            width: w as u32,
-                            height: h as u32,
-                            pixel_count,
-                            aspect_ratio,
-                            bit_depth: bit_depth_to_string(&original_bit_depth),
-                            color_space: colorspace_to_string(&colorspace),
-                            has_alpha,
-                            is_animated,
-                            frame_count,
-                            channels,
-                            input_format,
-                            output_format,
-                            processed_at,
-                            processing_time_ms: processing_time,
-                            input_modified,
-                            output_created,
-                        });
                     });
+
                 }
             });
             });
 
             let mut state = state.lock().unwrap_or_else(|e| e.into_inner());
-
-            // Update final metadata calculations
-            if let Some(ref mut meta) = state.metadata.as_mut() {
-                meta.compression_ratio = if meta.input_size > 0 {
-                    meta.output_size as f64 / meta.input_size as f64
-                } else {
-                    0.0
-                };
-            }
 
             state
                 .results
@@ -1410,76 +1183,16 @@ fn main() -> std::process::ExitCode {
                 );
             }
 
-            // Snapshot the verdict before consuming `state.metadata` below.
-            let run = state.run;
-
-            if output_metadata && let Some(metadata) = state.metadata.as_ref() {
-                match serde_json::to_string_pretty(metadata) {
-                    Ok(json) => {
-                        if let Some(parent) = metadata_path
-                            .parent()
-                            .filter(|parent| !parent.as_os_str().is_empty())
-                            && let Err(error) = fs::create_dir_all(parent)
-                        {
-                            log::error!(
-                                "Failed to create metadata directory {}: {error}",
-                                parent.display()
-                            );
-                            return report_metadata_failure(run);
-                        }
-                        match TemporaryOutput::new(&metadata_path) {
-                            Ok((temporary, mut file)) => {
-                                if let Err(error) = file
-                                    .write_all(json.as_bytes())
-                                    .and_then(|_| file.flush())
-                                    .and_then(|_| temporary.publish(&metadata_path))
-                                {
-                                    log::error!(
-                                        "Failed to write metadata {}: {error}",
-                                        metadata_path.display()
-                                    );
-                                    return report_metadata_failure(run);
-                                }
-                            }
-                            Err(error) => {
-                                log::error!(
-                                    "Failed to create metadata output {}: {error}",
-                                    metadata_path.display()
-                                );
-                                return report_metadata_failure(run);
-                            }
-                        }
-                    }
-                    Err(error) => {
-                        log::error!("Failed to serialize metadata: {error}");
-                        return report_metadata_failure(run);
-                    }
-                }
-            }
-
-            std::process::ExitCode::from(run.exit_code().as_u8())
+            std::process::ExitCode::from(state.run.exit_code().as_u8())
         }
         None => unreachable!("clap ensures a subcommand is always provided"),
     }
 }
 
-/// Exit after a failure to write the `--metadata` summary.
-///
-/// The images themselves were already written, so this must not report a clean
-/// failure: the run produced everything the user asked for except the summary,
-/// which is a partial result. It is folded in as an output failure so the
-/// reported code reflects that most of the work succeeded.
-fn report_metadata_failure(run: rimage::exit::RunState) -> std::process::ExitCode {
-    std::process::ExitCode::from(
-        run.record(rimage::exit::ExitCode::Output)
-            .exit_code()
-            .as_u8(),
-    )
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     fn test_base() -> PathBuf {
         // Use the crate root (CARGO_MANIFEST_DIR) instead of a hardcoded

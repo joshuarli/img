@@ -73,12 +73,6 @@ impl CommonArgs for Command {
                 .long_help(indoc! {r#"Disables all output.
 
                 By default, all output is enabled."#}),
-            #[cfg(feature = "metadata")]
-            arg!(--metadata [FILE] "Outputs metadata of the processed image(s).")
-                .long_help(indoc! {r#"Outputs metadata of the processed image(s).
-
-                This will output the metadata of the processed image(s) in JSON format."#})
-                .value_parser(value_parser!(PathBuf)),
             arg!(--"print-limits" "Print the runtime-derived size limits and exit.")
                 .long_help(indoc! {r#"Print the runtime-derived size limits and exit.
 
