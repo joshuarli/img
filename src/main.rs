@@ -20,7 +20,6 @@ use cli::{
         threads,
     },
 };
-use console::{Term, style};
 use filetime::FileTime;
 use indicatif::{DecimalBytes, MultiProgress, ProgressBar, ProgressDrawTarget, ProgressStyle};
 use indicatif_log_bridge::LogWrapper;
@@ -273,55 +272,10 @@ impl TemporaryOutput {
         ))
     }
 
-    #[cfg(not(windows))]
     fn publish(mut self, target: &Path) -> std::io::Result<()> {
         fs::rename(&self.path, target)?;
         self.published = true;
         Ok(())
-    }
-
-    #[cfg(windows)]
-    fn publish(mut self, target: &Path) -> std::io::Result<()> {
-        if !target.exists() {
-            fs::rename(&self.path, target)?;
-            self.published = true;
-            return Ok(());
-        }
-
-        let (mut previous, previous_file) = Self::new(target)?;
-        drop(previous_file);
-        fs::remove_file(&previous.path)?;
-        fs::rename(target, &previous.path)?;
-
-        match fs::rename(&self.path, target) {
-            Ok(()) => {
-                self.published = true;
-                previous.published = true;
-                if let Err(error) = fs::remove_file(&previous.path) {
-                    log::warn!(
-                        "Failed to remove replaced output {}: {error}",
-                        previous.path.display()
-                    );
-                }
-                Ok(())
-            }
-            Err(publish_error) => match fs::rename(&previous.path, target) {
-                Ok(()) => {
-                    previous.published = true;
-                    Err(publish_error)
-                }
-                Err(restore_error) => {
-                    previous.published = true;
-                    Err(std::io::Error::new(
-                        publish_error.kind(),
-                        format!(
-                            "publish failed: {publish_error}; restoring the previous output also failed: {restore_error}; previous output remains at {}",
-                            previous.path.display()
-                        ),
-                    ))
-                }
-            },
-        }
     }
 }
 
@@ -666,7 +620,6 @@ fn binding_str(binding: rimage::limits::Binding) -> &'static str {
 ///   using component-level joining — avoids `Path::join` which leaves
 ///   `./` and `../` literals in the joined result
 /// - Canonicalizing existing paths (resolves symlinks, case, remaining `..`)
-/// - Preserving UNC/verbatim prefixes on Windows
 ///
 /// This is used for output directories and metadata paths. Input files are
 /// normalized separately without canonicalization so symlinked directory
@@ -679,12 +632,7 @@ fn normalize_path(path: &Path, current_dir: &Path) -> PathBuf {
     // Expand ~ in the path string
     let path = expand_tilde_in_path(path);
 
-    // Detect absolute paths (including Windows UNC/verbatim prefixes)
-    let is_absolute = path.is_absolute()
-        || path
-            .components()
-            .next()
-            .is_some_and(|c| matches!(c, std::path::Component::Prefix(_)));
+    let is_absolute = path.is_absolute();
 
     let path = if is_absolute {
         path
@@ -717,8 +665,6 @@ fn join_normalized(base: &Path, relative: &Path) -> PathBuf {
 
 /// Expand a leading `~` in a path to the user's home directory.
 ///
-/// On Unix: uses `HOME` env var.
-/// On Windows: uses `USERPROFILE` env var.
 /// Falls back to the original path if the env var is unset.
 fn expand_tilde_in_path(path: &Path) -> PathBuf {
     let s = match path.to_str() {
@@ -730,12 +676,7 @@ fn expand_tilde_in_path(path: &Path) -> PathBuf {
         return path.to_path_buf();
     }
 
-    #[cfg(windows)]
-    let home_var = "USERPROFILE";
-    #[cfg(not(windows))]
-    let home_var = "HOME";
-
-    let home_dir = match std::env::var(home_var) {
+    let home_dir = match std::env::var("HOME") {
         Ok(h) => PathBuf::from(h),
         Err(_) => return path.to_path_buf(),
     };
@@ -746,7 +687,7 @@ fn expand_tilde_in_path(path: &Path) -> PathBuf {
 
     // "~/..." → home_dir/...
     let after_tilde = &s[1..]; // skip '~'
-    let trimmed = after_tilde.trim_start_matches(['/', '\\']);
+    let trimmed = after_tilde.trim_start_matches('/');
     if trimmed.len() < after_tilde.len() {
         join_normalized(&home_dir, Path::new(trimmed))
     } else {
@@ -805,8 +746,6 @@ impl Drop for BackupFileGuard {
         if self.committed {
             return;
         }
-        // Close the handle before removing the file so cleanup also works on
-        // Windows, where an open handle blocks deletion.
         if let Some(file) = self.file.take() {
             drop(file);
         }
@@ -846,28 +785,7 @@ fn create_backup(input: &Path, backup_path: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
-/// Strips the Windows verbatim (`\\?\`) prefix from a canonicalized path for
-/// display and metadata purposes. `\\?\UNC\server\share` is restored to the
-/// regular UNC form. Non-Windows paths are returned unchanged.
-fn pretty_path(path: &Path) -> PathBuf {
-    #[cfg(windows)]
-    {
-        if let Some(s) = path.to_str() {
-            if let Some(rest) = s.strip_prefix(r"\\?\UNC\") {
-                return PathBuf::from(format!(r"\\{rest}"));
-            }
-            if let Some(rest) = s.strip_prefix(r"\\?\") {
-                return PathBuf::from(rest);
-            }
-        }
-    }
-    path.to_path_buf()
-}
-
 fn main() -> std::process::ExitCode {
-    // env_logger (maintained) replaces pretty_env_logger, which is
-    // unmaintained. The timestamp is dropped to match the old compact style;
-    // colored levels stay on when stderr is a terminal.
     let logger = env_logger::Builder::new()
         .filter_level(log::LevelFilter::Warn)
         .parse_default_env()
@@ -877,12 +795,12 @@ fn main() -> std::process::ExitCode {
     let level = logger.filter();
 
     let multi = MultiProgress::new();
-    let sty_main = ProgressStyle::with_template("{bar:40.green/yellow} {pos:>4}/{len:4}")
+    let sty_main = ProgressStyle::with_template("{bar:40} {pos:>4}/{len:4}")
         .unwrap()
         .progress_chars("▬▬▬");
-    let sty_aux_decode = ProgressStyle::with_template("{spinner:.blue} {msg}").unwrap();
-    let sty_aux_operations = ProgressStyle::with_template("{spinner:.yellow} {msg}").unwrap();
-    let sty_aux_encode = ProgressStyle::with_template("{spinner:.green} {msg}").unwrap();
+    let sty_aux_decode = ProgressStyle::with_template("{spinner} {msg}").unwrap();
+    let sty_aux_operations = ProgressStyle::with_template("{spinner} {msg}").unwrap();
+    let sty_aux_encode = ProgressStyle::with_template("{spinner} {msg}").unwrap();
 
     // try_init may fail if a logger is already installed (e.g. in test
     // harnesses). Discard the error rather than panicking: the worst case
@@ -1355,9 +1273,9 @@ fn main() -> std::process::ExitCode {
 
                         let mut state = state.lock().unwrap_or_else(|e| e.into_inner());
 
-                        let absolute_input_path = pretty_path(&normalize_path(&input, &current_dir));
+                        let absolute_input_path = normalize_path(&input, &current_dir);
                         let absolute_output_path =
-                            pretty_path(&normalize_path(&output, &current_dir));
+                            normalize_path(&output, &current_dir);
 
                         state.record_success(Result {
                             output: output.to_path_buf(),
@@ -1432,29 +1350,25 @@ fn main() -> std::process::ExitCode {
                 .unwrap_or(0);
 
             if !quiet {
-                let term = Term::stdout();
+                let mut stdout = std::io::stdout().lock();
 
                 if state.results.len() > 1 {
-                    let _ = term.write_line(&format!(
+                    let _ = writeln!(stdout,
                         "{:<path_width$} {}",
-                        style("File").bold(),
-                        style("Size").bold(),
-                    ));
+                        "File",
+                        "Size",
+                    );
 
                     for result in state.results.iter() {
                         let difference = size_ratio(result.output_size, result.input_size) * 100.0;
 
-                        let _ = term.write_line(&format!(
+                        let _ = writeln!(stdout,
                             "{:<path_width$} {} > {} {}",
                             result.output.display(),
-                            style(DecimalBytes(result.input_size)).blue(),
-                            style(DecimalBytes(result.output_size)).blue(),
-                            if difference > 100.0 {
-                                style(format!("{:.2}%", difference - 100.0)).red()
-                            } else {
-                                style(format!("{:.2}%", difference - 100.0)).green()
-                            },
-                        ));
+                            DecimalBytes(result.input_size),
+                            DecimalBytes(result.output_size),
+                            format_args!("{:.2}%", difference - 100.0),
+                        );
                     }
                 }
 
@@ -1468,26 +1382,17 @@ fn main() -> std::process::ExitCode {
                 if !state.results.is_empty() {
                     let difference = size_ratio(total_output_size, total_input_size) * 100.0;
 
-                    if let Err(error) = term.write_line(&format!(
+                    if let Err(error) = writeln!(stdout,
                         "Total: {} > {} {}",
-                        style(DecimalBytes(total_input_size)).blue(),
-                        style(DecimalBytes(total_output_size)).blue(),
-                        if difference > 100.0 {
-                            style(format!("{:.2}%", difference - 100.0)).red()
-                        } else {
-                            style(format!("{:.2}%", difference - 100.0)).green()
-                        },
-                    )) {
+                        DecimalBytes(total_input_size),
+                        DecimalBytes(total_output_size),
+                        format_args!("{:.2}%", difference - 100.0),
+                    ) {
                         log::error!("Failed to write output summary: {error}");
                     }
                 }
             }
 
-            let rust_log_hint = if cfg!(windows) {
-                r#"$env:RUST_LOG="debug""#
-            } else {
-                "RUST_LOG=debug"
-            };
             let failed = state.failures.len() as u64;
             if failed > 0 {
                 // Split the count by side so the summary says which half of the
@@ -1501,7 +1406,7 @@ fn main() -> std::process::ExitCode {
 
                 log::error!(
                     "{failed}/{file_count} file(s) failed ({input_failures} reading, \
-                     {output_failures} writing). Run with `{rust_log_hint}` for details."
+                     {output_failures} writing). Run with `RUST_LOG=debug` for details."
                 );
             }
 

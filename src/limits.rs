@@ -222,7 +222,7 @@ impl ImageFormatId {
 /// It is not a promise: other processes compete for it, the page cache is
 /// reclaimable but not instant, and rimage's own peak is a short spike that
 /// arrives after several allocations have already succeeded. Spending all of it
-/// invites the OOM killer (or, on Windows, a swap storm) instead of a clean
+/// invites the OOM killer instead of a clean
 /// error, so claim at most half by default.
 const MEMORY_SAFETY_NUM: u64 = 1;
 const MEMORY_SAFETY_DEN: u64 = 2;
@@ -440,42 +440,16 @@ pub fn free_space_at(path: &Path) -> Option<u64> {
 }
 
 /// Canonicalize the nearest ancestor of `path` that exists.
-///
-/// The verbatim (`\\?\`) prefix `canonicalize` produces on Windows is stripped
-/// because sysinfo reports mount points in the ordinary `C:\` form; comparing
-/// the verbatim form against them would never match and silently disable the
-/// free-space check on all of Windows.
 #[cfg(feature = "limits")]
 fn canonicalize_existing_ancestor(path: &Path) -> Option<PathBuf> {
     let mut candidate = Some(path);
     while let Some(current) = candidate {
         if let Ok(canonical) = current.canonicalize() {
-            return Some(strip_verbatim_prefix(&canonical));
+            return Some(canonical);
         }
         candidate = current.parent();
     }
     None
-}
-
-/// Strip the Windows verbatim (`\\?\`) prefix from a canonicalized path.
-///
-/// `\\?\UNC\server\share` is restored to the regular UNC form. Paths without
-/// the prefix — and every path on non-Windows platforms — are returned
-/// unchanged.
-#[cfg(feature = "limits")]
-fn strip_verbatim_prefix(path: &Path) -> PathBuf {
-    #[cfg(windows)]
-    {
-        if let Some(s) = path.to_str() {
-            if let Some(rest) = s.strip_prefix(r"\\?\UNC\") {
-                return PathBuf::from(format!(r"\\{rest}"));
-            }
-            if let Some(rest) = s.strip_prefix(r"\\?\") {
-                return PathBuf::from(rest);
-            }
-        }
-    }
-    path.to_path_buf()
 }
 
 /// Free bytes on the volume holding `path`, if it can be determined.

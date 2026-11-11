@@ -66,7 +66,6 @@ pub fn get_paths(
             Some(suffix) => file_name_with_suffix(file_stem, suffix),
             None => file_stem.to_os_string(),
         };
-        validate_output_file_name(&file_name)?;
 
         let mut out_path = match &out_dir {
             Some(dir) => match &common_path {
@@ -133,65 +132,6 @@ fn file_name_with_suffix(file_name: &OsStr, suffix: &str) -> OsString {
     name
 }
 
-fn validate_output_file_name(name: &OsStr) -> Result<(), String> {
-    #[cfg(not(windows))]
-    let _ = name;
-
-    #[cfg(windows)]
-    {
-        let text = name
-            .to_str()
-            .ok_or_else(|| "Output file name is not valid Unicode on Windows".to_string())?;
-        if text.is_empty()
-            || text.chars().any(|c| {
-                c <= '\u{1f}' || matches!(c, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*')
-            })
-        {
-            return Err(format!("Output file name {text:?} is not valid on Windows"));
-        }
-        // Win32 silently strips trailing dots and spaces from file names,
-        // so "out." and "out " would be written as "out" — a different file
-        // than the one reported, and possibly one that aliases a reserved
-        // device name ("CON .png" normalises to the reserved "CON").
-        let stripped = text.trim_end_matches([' ', '.']);
-        if stripped.len() != text.len() {
-            return Err(format!(
-                "Output file name {text:?} ends with a dot or space, which Windows silently strips"
-            ));
-        }
-        let base = stripped.split('.').next().unwrap_or_default().trim_end();
-        let reserved = matches!(
-            base.to_ascii_uppercase().as_str(),
-            "CON"
-                | "PRN"
-                | "AUX"
-                | "NUL"
-                | "COM1"
-                | "COM2"
-                | "COM3"
-                | "COM4"
-                | "COM5"
-                | "COM6"
-                | "COM7"
-                | "COM8"
-                | "COM9"
-                | "LPT1"
-                | "LPT2"
-                | "LPT3"
-                | "LPT4"
-                | "LPT5"
-                | "LPT6"
-                | "LPT7"
-                | "LPT8"
-                | "LPT9"
-        );
-        if reserved {
-            return Err(format!("Output file name {text:?} is reserved on Windows"));
-        }
-    }
-    Ok(())
-}
-
 fn get_common_path(paths: &[PathBuf]) -> Option<PathBuf> {
     let mut common = paths.first()?.clone();
     for path in paths.iter().skip(1) {
@@ -224,7 +164,7 @@ fn strip_prefix_components(path: &Path, base: &Path) -> Option<PathBuf> {
 /// platform.
 ///
 /// This is a deliberate fail-safe default. Case-insensitive filesystems
-/// (Windows, macOS, and case-insensitive Linux mounts such as SMB/NAS) can
+/// (macOS and case-insensitive Linux mounts such as SMB/NAS) can
 /// hold `img@Backup.png` and `img@backup.png` as the same file. Treating them
 /// as equivalent even on genuinely case-sensitive filesystems only makes
 /// collision checks stricter; missing the equivalence could let a publish
@@ -244,7 +184,7 @@ fn component_eq(a: &OsStr, b: &OsStr) -> bool {
 ///
 /// Paths that already exist are canonicalized first: that resolves symlink
 /// aliasing, `..` components, on-disk case, Unicode normalization, and
-/// Windows verbatim prefixes. Planned outputs usually do not exist yet, so
+/// on-disk path spelling. Planned outputs usually do not exist yet, so
 /// the fallback is a component-wise comparison that treats names as
 /// case-insensitive by default (see [`component_eq`]).
 pub(crate) fn paths_equivalent(a: &Path, b: &Path) -> bool {
@@ -410,9 +350,6 @@ fn read_file_list_entries(path: &Path) -> Result<Vec<PathBuf>, String> {
         .lines()
         .map(|line| {
             let line = line.trim();
-            // Strip one matched pair of surrounding quotes: Windows tools
-            // export paths quoted, but a file whose name genuinely starts
-            // or ends with a lone quote must keep it.
             let line = match line.as_bytes() {
                 [b'"', .., b'"'] | [b'\'', .., b'\''] => &line[1..line.len() - 1],
                 _ => line,

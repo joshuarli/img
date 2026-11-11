@@ -17,7 +17,7 @@ use skrifa::MetadataProvider;
 /// Seed families for the serif default, tried in order until one exists on
 /// the system.
 const SERIF_SEED_FAMILIES: &[&str] = &[
-    "Times New Roman",  // Windows and macOS
+    "Times New Roman",  // macOS
     "Liberation Serif", // Linux, metric-compatible with Times New Roman
     "DejaVu Serif",     // Linux
     "Tinos",            // metric-compatible with Times New Roman
@@ -26,8 +26,6 @@ const SERIF_SEED_FAMILIES: &[&str] = &[
 
 /// Seed families for the CJK fallback, tried in order while resolving.
 const CJK_SEED_FAMILIES: &[&str] = &[
-    "Microsoft YaHei UI", // Windows
-    "Microsoft YaHei",    // Windows
     "PingFang SC",        // macOS
     "Hiragino Sans GB",   // macOS
     "Noto Sans SC",       // Linux
