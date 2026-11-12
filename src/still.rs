@@ -5,6 +5,7 @@ use zencodec::{decode::{DecodeJob, Decode, DecoderConfig}, encode::{EncodeJob, E
 use zenpixels::{PixelBuffer, PixelDescriptor};
 
 mod png;
+mod jpeg;
 mod avif;
 pub(crate) mod color;
 pub use color::{PreparedImage, SamplePreservation};
@@ -249,8 +250,14 @@ impl StillImage {
                 Ok(image)
             },
             Format::Jpeg => {
+                let structure=jpeg::structure(bytes)?;
+                if structure.auxiliary || structure.hdr {return Err(Error::new(ErrorKind::Unsupported,"JPEG auxiliary images and HDR gain maps are unsupported"));}
+                if structure.end!=bytes.len() {return Err(Error::new(ErrorKind::Unsupported,"JPEG trailing payloads are unsupported"));}
+                if structure.late_metadata {return Err(Error::new(ErrorKind::Unsupported,"JPEG application metadata after scan start is unsupported"));}
                 let mut config = zenjpeg::JpegDecoderConfig::new();
                 let header = config.inner().read_info(bytes).map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+                if header.precision!=8 {return Err(Error::new(ErrorKind::Unsupported,"JPEG decoding requires eight-bit precision"));}
+                if structure.icc && header.icc_profile.is_none() {return Err(Error::new(ErrorKind::Unsupported,"JPEG ICC profile could not be preserved"));}
                 if !matches!(header.num_components,1|3) {return Err(Error::new(ErrorKind::Unsupported,"JPEG requires one or three components; CMYK/YCCK conversion is unsupported"));}
                 if header.num_components == 1 { config.inner_mut().output_format = Some(zenjpeg::decoder::PixelFormat::Gray); }
                 decode(config, bytes, format, stop)
@@ -440,5 +447,13 @@ pub fn describe(bytes: &[u8]) -> Result<Description, Error> {
             return Ok(Description {format,width,height,bit_depth:parser.av1_config().map(|c|c.bit_depth),alpha:parser.alpha_metadata().is_some(),grayscale:parser.av1_config().map(|c|c.monochrome),icc:matches!(parser.color_info(),Some(zenavif_parse::ColorInformation::IccProfile(_))),cicp,orientation:exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation).map(|o|o as u8).unwrap_or(1),animation:parser.animation_info().is_some(),grid:parser.grid_config().is_some(),rotation_ccw_degrees:parser.rotation().map(|r|r.angle),mirror_axis:parser.mirror().map(|m|m.axis),pixel_aspect_ratio:parser.pixel_aspect_ratio().map(|p|[p.h_spacing,p.v_spacing]),hdr_metadata:parser.content_light_level().is_some()||parser.mastering_display().is_some()||parser.gain_map_metadata().is_some()||cicp.is_some_and(|c|matches!(c[1],16|18)),exif:exif.is_some(),xmp:parser.xmp().is_some()});
         },
     }?;
-    Ok(describe_info(info,format))
+    let mut description=describe_info(info,format);
+    if format==Format::Jpeg {
+        let structure=jpeg::structure(bytes)?;
+        description.animation|=structure.auxiliary;
+        description.hdr_metadata|=structure.hdr;
+        description.icc|=structure.icc;description.exif|=structure.exif;description.xmp|=structure.xmp;
+        description.orientation=structure.orientation.unwrap_or(description.orientation);
+    }
+    Ok(description)
 }

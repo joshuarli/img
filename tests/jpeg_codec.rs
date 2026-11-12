@@ -88,3 +88,35 @@ fn four_component_jpeg_is_refused_before_implicit_cmyk_conversion() {
     assert_eq!(zenjpeg::decoder::DecodeConfig::new().read_info(&bytes).unwrap().num_components,4);
     let error=StillImage::decode(&bytes).err().unwrap();assert_eq!(error.kind(),ErrorKind::Unsupported);assert!(error.to_string().contains("components"));
 }
+
+#[test]
+fn jpeg_auxiliary_images_cannot_be_silently_extracted_as_a_single_frame() {
+    let pixels=common::pixels(24,16);
+    let config=zenjpeg::encoder::EncoderConfig::ycbcr(80.0,zenjpeg::encoder::ChromaSubsampling::Quarter);
+    let secondary=config.encode_bytes(&pixels,24,16,zenjpeg::encoder::PixelLayout::Rgb8Srgb).unwrap();
+    let mut concatenated=secondary.clone();concatenated.extend_from_slice(&secondary);
+    assert_eq!(StillImage::decode(&concatenated).err().unwrap().kind(),ErrorKind::Unsupported);
+    let config=config.add_segment(0xFE,b"fixture".to_vec());
+    let segments=config.get_segments().unwrap().clone().add_gainmap(secondary);
+    let jpeg=config.with_segments(segments)
+        .encode_bytes(&pixels,24,16,zenjpeg::encoder::PixelLayout::Rgb8Srgb).unwrap();
+    assert!(jpeg.windows(4).any(|value|value==b"MPF\0"));
+    let header=rimage::still::describe(&jpeg).unwrap();assert_eq!((header.width,header.height),(24,16));assert!(header.animation);
+    assert!(StillImage::decode(&jpeg).is_err(),"MPF auxiliary payloads must not disappear through base-image decoding");
+}
+
+#[test]
+fn jpeg_hdr_and_late_application_metadata_are_refused_before_pixel_changes() {
+    let jpeg=StillImage::from_rgb8(24,16,common::pixels(24,16)).unwrap().encode(Format::Jpeg,mode(80.0),Effort::Fast).unwrap();
+    let hdr=b"urn:iso:std:iso:ts:21496:-1\0\0\0\0\0";
+    let mut tagged=jpeg[..2].to_vec();tagged.extend_from_slice(&[255,226]);tagged.extend_from_slice(&((hdr.len()+2) as u16).to_be_bytes());tagged.extend_from_slice(hdr);tagged.extend_from_slice(&jpeg[2..]);
+    assert!(rimage::still::describe(&tagged).unwrap().hdr_metadata);
+    assert_eq!(StillImage::decode(&tagged).err().unwrap().kind(),ErrorKind::Unsupported);
+    let payload=b"Exif\0\0II\x2a\0\x08\0\0\0\x01\0\x12\x01\x03\0\x01\0\0\0\x06\0\0\0\0\0\0\0";
+    let mut late=jpeg[..jpeg.len()-2].to_vec();late.extend_from_slice(&[255,225]);late.extend_from_slice(&((payload.len()+2) as u16).to_be_bytes());late.extend_from_slice(payload);late.extend_from_slice(&[255,217]);
+    let header=rimage::still::describe(&late).unwrap();assert!(header.exif);assert_eq!(header.orientation,6);
+    assert_eq!(StillImage::decode(&late).err().unwrap().kind(),ErrorKind::Unsupported);
+    let mut deep=jpeg.clone();let at=deep.windows(2).position(|pair|pair==[255,194]).unwrap();deep[at+4]=12;
+    assert_eq!(rimage::still::describe(&deep).unwrap().bit_depth,Some(12));
+    assert_eq!(StillImage::decode(&deep).err().unwrap().kind(),ErrorKind::Unsupported);
+}
