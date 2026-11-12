@@ -2,7 +2,7 @@
 
 ## Status
 
-- S0–S11 are complete locally. Final product repairs are at `7f1b45b`; performance captures use `0e4a4a2`, with corrected comparison commands/verification at `6535c42`. All commits remain local. [CLI](docs/CLI.md), [codec boundary](docs/CODEC-BOUNDARY.md), [licenses](docs/PROVENANCE.md) and [measurements](BENCHMARKS.md) describe the final contracts.
+- S0–S11 are complete; campaign closeout is `2dfffd3`. Final product repairs are at `7f1b45b`; performance captures use `0e4a4a2`, with corrected comparison commands/verification at `6535c42`. [CLI](docs/CLI.md), [codec boundary](docs/CODEC-BOUNDARY.md), [licenses](docs/PROVENANCE.md) and [measurements](BENCHMARKS.md) describe the final contracts.
 - Four bounded pure-Rust codec paths, float color management, actual-byte SSIMULACRA2 scoring, capped search, operation-first CLI, native-path preflight, atomic file transactions and joined cancellation are implemented. PNG precision/profile reductions, JPEG strip fallback/auxiliary images/unsafe layouts, AVIF temporal frames/display signals and APFS destination aliases have regression guards.
 - Final functional suites pass: macOS ARM64 163 tests, Linux ARM64 161, and Linux x86-64 under Docker emulation 161. The ordinary suite ignores one external-oracle test; it passes separately on macOS with JPEG XL 0.12.0. Minimal library/binary feature checks, Clippy all features/targets, independent decoder checks and benchmark verification pass.
 - The production graph has 137 resolved normal/build packages across supported targets, no selected native codec/color runtime or codec threading feature, and audited license choices. Fresh masked-tool macOS builds pass. Linux ARM64 builds normally after native tools/packages are removed; static ARM64 and clean x86-64 static PIE artifacts run exact smoke checks. x86-64 execution is emulated, not a native-hardware timing claim.
@@ -12,6 +12,15 @@
 - Ultrareview and docs refresh are complete. Demonstrated P1/P2 issues were repaired in separate commits; none remain open. Review excludes dependency internals and deployment. No retained behavior is open. The unsupported AVIF alpha experiment remains at `campaign/s5-alpha-probe` (`a4d2fb5`), with its unchanged failing assertion and retry condition in [AVIF](docs/AVIF.md).
 - Completed oracle/cleanup checkouts and superseded build/candidate caches were retired. The original-codec fixture remains with its recorded build patch. An empty cleanup checkout remains because the Pi SDK host failed before task execution and retained an unresolved lease; no source changes exist there. Final artifacts, raw proof logs and benchmark fixtures remain available.
 - Remaining proofs are listed under Needs environment. No owner decision is required for the completed local implementation.
+
+After campaign closeout, the owner separately authorized CI, a GitHub prerelease
+and integration with `~/usr sync`. Those changes are pushed. Prerelease
+`release-3e9aacfa5091a6e77ac1365b02511fb1752c5b71` is published with verified
+binaries and corresponding source; fresh/repeated authenticated scratch-home
+sync installations pass. Hosted Actions fail before any step starts because of
+GitHub's account payment/spending-limit block. See [release delivery](docs/RELEASE.md)
+for evidence and retry. This follow-up does not change the campaign's original
+execution boundary or its remaining environment proofs.
 
 ## Charter
 

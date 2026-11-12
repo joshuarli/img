@@ -67,4 +67,4 @@ with `gh` authenticated for this private repository. See [release verification](
 The combined distribution selects **AGPL-3.0-only** for Imazen components.
 Original Rimage code retains its MIT and Apache-2.0 notices.
 See [license provenance](docs/PROVENANCE.md) and the license files.
-No commercial license or publication is implied by this local branch.
+No commercial license is assumed; prereleases retain these license obligations.
