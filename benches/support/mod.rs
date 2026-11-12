@@ -67,13 +67,22 @@ pub fn validate_record(value:&Value)->Result<(),String> {
 }
 pub fn verify_saved(directory:&Path)->usize {
     let mut count=0;if !directory.exists() {return 0;}
-    for file in fs::read_dir(directory).unwrap() {let file=file.unwrap().path();if file.extension().is_some_and(|e|e=="json") {let document:Value=serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();let expected=summarize(document["records"].as_array().unwrap());assert_eq!(document["summary"].as_object().unwrap().len(),expected.as_object().unwrap().len());for (key,value) in expected.as_object().unwrap() {assert_eq!(&document["summary"][key],value,"summary {key}");}for record in document["records"].as_array().unwrap() {validate_record(record).unwrap();if record["completed"]==true {let input=root().join(record["sourcePath"].as_str().unwrap());let output=root().join(record["outputPath"].as_str().unwrap());let source_bytes=fs::read(input).unwrap();assert_eq!(source_bytes.len() as u64,record["inputBytes"].as_u64().unwrap());let a=StillImage::decode(&source_bytes).unwrap();let bytes=fs::read(output).unwrap();let b=StillImage::decode(&bytes).unwrap();assert_eq!(a.dimensions(),b.dimensions());assert_eq!(a.dimensions(),(record["width"].as_u64().unwrap() as u32,record["height"].as_u64().unwrap() as u32));assert_eq!(bytes.len() as u64,record["outputBytes"].as_u64().unwrap());if record["lossless"]==true {assert!(rimage::optimizer::samples_equal(&a,&b));}else {let actual=rimage::perceptual::PerceptualReference::new(&a).unwrap().score_encoded(&bytes).unwrap();assert!(actual>=record["target"].as_f64().unwrap());assert!((actual-record["score"].as_f64().unwrap()).abs()<0.0001,"{} {}: actual={actual} saved={}",record["fixture"],record["tool"],record["score"]);}}count+=1;}}}count
+    let mut records=Vec::new();
+    for file in fs::read_dir(directory).unwrap() {let file=file.unwrap().path();if file.extension().is_some_and(|e|e=="json") {let document:Value=serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();let expected=summarize(document["records"].as_array().unwrap());assert_eq!(document["summary"].as_object().unwrap().len(),expected.as_object().unwrap().len());for (key,value) in expected.as_object().unwrap() {assert_eq!(&document["summary"][key],value,"summary {key}");}records.extend(document["records"].as_array().unwrap().iter().cloned());count+=1;}}
+    let next=std::sync::atomic::AtomicUsize::new(0);
+    let workers=std::thread::available_parallelism().map(|n|n.get()).unwrap_or(1).min(records.len().max(1));
+    std::thread::scope(|scope| {for _ in 0..workers {scope.spawn(|| loop {let index=next.fetch_add(1,std::sync::atomic::Ordering::Relaxed);let Some(record)=records.get(index) else {break;};verify_record(record);});}});
+    count
+}
+fn verify_record(record:&Value) {
+    validate_record(record).unwrap();
+    if record["completed"]==true {let input=root().join(record["sourcePath"].as_str().unwrap());let output=root().join(record["outputPath"].as_str().unwrap());let source_bytes=fs::read(input).unwrap();assert_eq!(source_bytes.len() as u64,record["inputBytes"].as_u64().unwrap());let a=StillImage::decode(&source_bytes).unwrap();let bytes=fs::read(output).unwrap();let b=StillImage::decode(&bytes).unwrap();assert_eq!(a.dimensions(),b.dimensions());assert_eq!(a.dimensions(),(record["width"].as_u64().unwrap() as u32,record["height"].as_u64().unwrap() as u32));assert_eq!(bytes.len() as u64,record["outputBytes"].as_u64().unwrap());if record["lossless"]==true {assert!(rimage::optimizer::samples_equal(&a,&b));}else {let actual=rimage::perceptual::PerceptualReference::new(&a).unwrap().score_encoded(&bytes).unwrap();assert!(actual>=record["target"].as_f64().unwrap());assert!((actual-record["score"].as_f64().unwrap()).abs()<0.0001,"{} {}: actual={actual} saved={}",record["fixture"],record["tool"],record["score"]);}}
 }
 pub fn record_base(tool:&str,name:&str,revision:&str)->Value {json!({"schemaVersion":1,"tool":tool,"fixture":name,"revision":revision,"threads":1,"architecture":std::env::consts::ARCH,"timingAccepted":false,"elapsedMs":null,"completed":false})}
 pub fn summarize(records:&[Value])->Value {
     let mut groups=std::collections::BTreeMap::<String,Vec<&Value>>::new();
     for record in records {groups.entry(format!("{}:{}:{}",record["tool"].as_str().unwrap(),record["fixture"].as_str().unwrap(),record["target"])).or_default().push(record);}
-    let median=|values:&mut Vec<f64>| {values.sort_by(f64::total_cmp);let len=values.len();if len==0 {None} else if len%2==0 {Some((values[len/2-1]+values[len/2])*0.5)} else {Some(values[len/2])}};
+    let median=|values:&mut Vec<f64>| {values.sort_by(f64::total_cmp);let len=values.len();if len==0 {None} else if len.is_multiple_of(2) {Some((values[len/2-1]+values[len/2])*0.5)} else {Some(values[len/2])}};
     let mut result=serde_json::Map::new();
     for (tool,rows) in groups {
         let completed=rows.iter().filter(|r|r["completed"]==true).copied().collect::<Vec<_>>();
