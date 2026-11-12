@@ -118,16 +118,14 @@ const DECODER_SIDE_LIMIT: u64 = 16384;
 /// encoder dispatch types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImageFormatId {
-    /// JPEG, via `mozjpeg`.
+    /// Eight-bit JPEG.
     Jpeg,
-    /// PNG, via `oxipng` / `imagequant`.
+    /// PNG, including sixteen-bit samples.
     Png,
-    /// WebP, via `libwebp`.
+    /// Eight-bit WebP.
     WebP,
-    /// AVIF, via `ravif`.
+    /// Eight-bit still AVIF.
     Avif,
-    /// TIFF, via the `tiff` crate.
-    Tiff,
     /// A format with no specific handling; treated as unconstrained.
     Other,
 }
@@ -140,7 +138,6 @@ impl ImageFormatId {
             ImageFormatId::Png => "png",
             ImageFormatId::WebP => "webp",
             ImageFormatId::Avif => "avif",
-            ImageFormatId::Tiff => "tiff",
             ImageFormatId::Other => "image",
         }
     }
@@ -155,8 +152,7 @@ impl ImageFormatId {
             ImageFormatId::WebP
         } else if ext.eq_ignore_ascii_case("avif") {
             ImageFormatId::Avif
-        } else if ext.eq_ignore_ascii_case("tif") || ext.eq_ignore_ascii_case("tiff") {
-            ImageFormatId::Tiff
+
         } else {
             ImageFormatId::Other
         }
@@ -164,17 +160,13 @@ impl ImageFormatId {
 
     /// Map a CLI encoder name to a format identity.
     ///
-    /// These are the subcommand names, which do not always match the file
-    /// extension: `mozjpeg` writes a `.jpg`, and `oxipng` writes a `.png`.
-    /// Output limits must be looked up by what will actually be written, so
-    /// the encoder name is the right key here rather than the path suffix.
+    /// Maps the supported format names used by encoding operations.
     pub fn from_encoder_name(name: &str) -> Self {
         match name {
-            "mozjpeg" | "jpeg" => ImageFormatId::Jpeg,
-            "oxipng" | "png" => ImageFormatId::Png,
+            "jpeg" => ImageFormatId::Jpeg,
+            "png" => ImageFormatId::Png,
             "webp" => ImageFormatId::WebP,
             "avif" => ImageFormatId::Avif,
-            "tiff" => ImageFormatId::Tiff,
             _ => ImageFormatId::Other,
         }
     }
@@ -198,10 +190,8 @@ impl ImageFormatId {
             // 16-bit samples and an alpha channel are both legal.
             ImageFormatId::Png => (BitDepth::Sixteen, ColorSpace::RGBA),
             ImageFormatId::WebP => (BitDepth::Eight, ColorSpace::RGBA),
-            // High-bit-depth sources are converted to 8-bit on decode and
-            // alpha is always carried, so the ceiling is 8-bit RGBA.
+            // Pixel processing accepts eight-bit SDR; alpha is refused separately.
             ImageFormatId::Avif => (BitDepth::Eight, ColorSpace::RGBA),
-            ImageFormatId::Tiff => (BitDepth::Sixteen, ColorSpace::RGBA),
             // Nothing is known about the file, so assume the widest layout
             // anything this program decodes can produce.
             ImageFormatId::Other => (BitDepth::Sixteen, ColorSpace::RGBA),

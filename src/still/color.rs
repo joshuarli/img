@@ -1,4 +1,6 @@
-use super::{Error, ErrorKind, SampleLayout, StillImage, MAX_METADATA_BYTES};
+use super::{Error, ErrorKind, StillImage, MAX_METADATA_BYTES};
+#[cfg(feature="resize")]
+use super::SampleLayout;
 use moxcms::{ColorProfile, DataColorSpace, Layout, TransformOptions};
 
 /// Whether a metadata change must keep sample order exactly.
@@ -42,6 +44,7 @@ pub(crate) fn srgb_to_linear(value: f32) -> f32 {
     if value <= 0.04045 { value / 12.92 } else { ((value + 0.055) / 1.055).powf(2.4) }
 }
 
+#[cfg(feature="resize")]
 fn linear_to_srgb(value: f32) -> f32 {
     if value <= 0.0031308 { value * 12.92 } else { 1.055 * value.powf(1.0 / 2.4) - 0.055 }
 }

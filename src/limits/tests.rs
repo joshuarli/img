@@ -67,7 +67,6 @@ fn avif_cap_matches_spec() {
 #[test]
 fn formats_without_published_limits_are_unbounded() {
     for format in [
-        ImageFormatId::Tiff,
         ImageFormatId::Other,
     ] {
         let caps = format_caps(format);
@@ -285,7 +284,6 @@ fn assumed_layouts_are_never_narrower_than_rgb8() {
         ImageFormatId::Png,
         ImageFormatId::WebP,
         ImageFormatId::Avif,
-        ImageFormatId::Tiff,
         ImageFormatId::Other,
     ] {
         let (depth, colorspace) = format.max_pixel_layout();
@@ -316,7 +314,7 @@ fn format_extension_lookup_is_case_insensitive() {
     assert_eq!(ImageFormatId::from_extension("JPG"), ImageFormatId::Jpeg);
     assert_eq!(ImageFormatId::from_extension("jpeg"), ImageFormatId::Jpeg);
     assert_eq!(ImageFormatId::from_extension("WebP"), ImageFormatId::WebP);
-    assert_eq!(ImageFormatId::from_extension("tif"), ImageFormatId::Tiff);
+    assert_eq!(ImageFormatId::from_extension("tif"), ImageFormatId::Other);
     assert_eq!(ImageFormatId::from_extension("qoi"), ImageFormatId::Other);
 }
 
@@ -458,7 +456,7 @@ fn encoder_names_map_to_the_format_they_write() {
     // and `oxipng` writes a `.png`. Looking output limits up by subcommand is
     // what makes them describe the file that actually lands on disk.
     assert_eq!(
-        ImageFormatId::from_encoder_name("mozjpeg"),
+        ImageFormatId::from_encoder_name("jpeg"),
         ImageFormatId::Jpeg
     );
     assert_eq!(
@@ -466,7 +464,7 @@ fn encoder_names_map_to_the_format_they_write() {
         ImageFormatId::Jpeg
     );
     assert_eq!(
-        ImageFormatId::from_encoder_name("oxipng"),
+        ImageFormatId::from_encoder_name("png"),
         ImageFormatId::Png
     );
     assert_eq!(ImageFormatId::from_encoder_name("png"), ImageFormatId::Png);
@@ -480,7 +478,7 @@ fn encoder_names_map_to_the_format_they_write() {
     );
     assert_eq!(
         ImageFormatId::from_encoder_name("tiff"),
-        ImageFormatId::Tiff
+        ImageFormatId::Other
     );
     assert_eq!(
         ImageFormatId::from_encoder_name("qoi"),

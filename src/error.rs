@@ -282,7 +282,7 @@ impl RimageError {
                         format.name()
                     ),
                     UnsupportedReason::NotImplemented => {
-                        "convert the file to a supported format (jpeg, png, webp, avif or tiff) before optimizing it"
+                        "convert the file to a supported format (jpeg, png, webp or avif) before optimizing it"
                             .to_string()
                     }
                 })
@@ -332,7 +332,7 @@ impl RimageError {
             }
             RimageError::Input(InputError::Configuration { cause, .. }) => {
                 // The cause text already names the invalid value and the
-                // constraint (e.g. "Unsupported mozjpeg colorspace: foo"),
+                // constraint (e.g. "Unsupported JPEG colorspace: foo"),
                 // so there is nothing actionable to add beyond restating it.
                 // Returning None avoids a generic "check the docs" hint that
                 // is less useful than the error text itself.
@@ -788,7 +788,7 @@ pub fn classify_output(path: &Path, error: &ImageErrors) -> Option<RimageError> 
 /// Used at call sites where the encoder name is known (the CLI subcommand),
 /// so the format tag is authoritative rather than inferred from the path
 /// extension. The path extension and the encoder name usually agree, but
-/// `mozjpeg` writes `.jpg` and `oxipng` writes `.png`, so the encoder name
+/// Supported encoder names identify the format independently of the path and
 /// is the more direct source.
 pub fn output_encode_error(path: &Path, encoder_name: &str, error: &ImageErrors) -> RimageError {
     RimageError::Output(OutputError::Encode {

@@ -1,4 +1,5 @@
 mod common;
+#[path="support/native_avif.rs"] mod native_avif;
 
 use rimage::still::{Effort, EncodingMode, Format, Quality, SampleLayout, StillImage};
 
@@ -20,12 +21,8 @@ fn check_native(bytes: &[u8]) {
     let decoded = StillImage::decode(bytes).unwrap();
     assert_eq!(decoded.dimensions(), (48, 32));
     assert_eq!(decoded.bit_depth(), 8);
-    let native = rimage::codecs::avif::AvifDecoder::try_new(std::io::Cursor::new(bytes)).unwrap();
-    let independent = zune_image::image::Image::from_decoder(native).unwrap();
-    assert_eq!(independent.dimensions(), (48, 32));
-    let reference = independent.flatten_frames::<u8>().remove(0);
+    let reference=native_avif::decode(bytes);
     let pixels = decoded.samples();
-    let reference: Vec<_> = reference.chunks_exact(4).flat_map(|p| p[..3].iter().copied()).collect();
     assert_eq!(reference.len(), pixels.len());
     assert!(reference.iter().zip(pixels).all(|(&a, b)| a.abs_diff(b) <= 3));
 }

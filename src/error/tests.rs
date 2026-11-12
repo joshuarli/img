@@ -137,7 +137,7 @@ fn output_encode_error_uses_the_encoder_name_for_the_format_tag() {
 
     // `mozjpeg` writes `.jpg`, so the format tag is `jpeg` even though the
     // encoder name does not contain "jpeg" literally.
-    let classified = output_encode_error(&jpeg_path(), "mozjpeg", &error);
+    let classified = output_encode_error(&jpeg_path(), "jpeg", &error);
 
     assert_eq!(classified.kind(), "output.encode");
     let message = classified.to_string();
@@ -474,7 +474,7 @@ fn input_open_error_classifies_io_failures_on_the_input_side() {
 fn input_config_error_tags_the_format_from_the_encoder_name() {
     let cause = ImageErrors::GenericString("Unsupported mozjpeg colorspace: neon".to_string());
 
-    let error = input_config_error(&jpeg_path(), "mozjpeg", &cause);
+    let error = input_config_error(&jpeg_path(), "jpeg", &cause);
 
     assert_eq!(error.direction(), Direction::Input);
     assert_eq!(error.kind(), "input.configuration");
@@ -502,7 +502,7 @@ fn input_operation_error_routes_resize_failures_to_invalid_resize() {
 fn a_configuration_error_preserves_its_cause_as_source() {
     let cause = ImageErrors::GenericString("bad value".to_string());
 
-    let error = input_config_error(&jpeg_path(), "mozjpeg", &cause);
+    let error = input_config_error(&jpeg_path(), "jpeg", &cause);
 
     assert!(std::error::Error::source(&error).is_some());
 }

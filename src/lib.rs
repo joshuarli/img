@@ -13,12 +13,11 @@ representation matrix and independent validation evidence.
 */
 
 #![warn(missing_docs)]
+#[cfg(not(any(all(target_os="macos",target_arch="aarch64"),all(target_os="linux",any(target_arch="x86_64",target_arch="aarch64")))))]
+compile_error!("rimage supports macOS ARM64 and Linux x86-64/ARM64");
 
 /// All additional operations for the zune_image
 pub mod operations;
-
-/// All additional codecs for the zune_image
-pub mod codecs;
 
 /// Runtime-derived image size limits.
 ///
