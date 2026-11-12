@@ -12,16 +12,6 @@ Priorities are assumed from impact and likelihood. Evidence was reproduced again
 - **Effort:** M
 
 
-### RIMG-6 · P2 · Compare admits the candidate without accounting for its pixels
-
-- **Area:** Comparison memory admission
-- **Where:** src/runtime.rs:192-198; src/perceptual.rs:71-80
-- **Problem:** Comparison reserves the reference pixel area plus compressed byte lengths, then fully decodes and prepares the candidate before checking dimensions. A highly compressed larger candidate can exceed the worker budget before returning an ordinary mismatch. Proven by invoking the unchanged runtime compare function with a 262,144-byte injected budget, an 8x8 reference of 72 bytes and a 256x256 candidate of 564 bytes. Admission computes 17,020 bytes and the call reaches input.score "score dimensions differ", rather than input.limit. Applying the same 256-bytes-per-pixel model to the candidate would require 16,777,852 bytes. No OOM claim or stress run is needed for the demonstrated missing admission check.
-- **Recommendation:** Inspect both inputs and their orientation-correct dimensions before pixel preparation. Reject incompatible dimensions early and reserve all simultaneously live reference/candidate buffers through one accounting path. Test a small reference and larger compressed candidate under an injected tight budget, and preserve valid comparisons whose stored dimensions differ only because of orientation.
-- **Fix with:** single-source-of-truth
-- **Effort:** M
-
-
 ### RIMG-8 · P2 · In-place rename can erase a source changed after verification
 
 - **Area:** Filesystem publication concurrency

@@ -203,11 +203,35 @@ fn compare(jobs:&[Job],budget:u64)->Result<Completed,Failure> {
     let start=Instant::now();let reference=&jobs[0];let candidate=&jobs[1];
     if let Some(failure)=jobs.iter().find_map(|j|j.failure.clone()) {return Err(failure);}
     let (original,_)=read(reference)?;let (encoded,_)=read(candidate)?;
-    let header=still::describe(&original).map_err(|e|Failure::new(&reference.input,None,"input.decode",e,3))?;
-    if u64::from(header.width).saturating_mul(u64::from(header.height)).saturating_mul(256).saturating_add(original.len() as u64+encoded.len() as u64)>budget {return Err(Failure::new(&candidate.input,None,"input.limit","comparison exceeds memory budget",3));}
+    let reference_header=still::describe(&original).map_err(|e|Failure::new(&reference.input,None,"input.decode",e,3))?;
+    let candidate_header=still::describe(&encoded).map_err(|e|Failure::new(&candidate.input,None,"input.decode",e,3))?;
+    let area=|header:&still::Description|u64::from(header.width).saturating_mul(u64::from(header.height));
+    let reservation=area(&reference_header).saturating_add(area(&candidate_header)).saturating_mul(256).saturating_add(original.len() as u64).saturating_add(encoded.len() as u64);
+    if reservation>budget {return Err(Failure::new(&candidate.input,None,"input.limit","comparison exceeds memory budget",3));}
+    let dimensions=|header:&still::Description|if header.orientation>=5 {(header.height,header.width)} else {(header.width,header.height)};
+    if dimensions(&reference_header)!=dimensions(&candidate_header) {return Err(Failure::new(&candidate.input,None,"input.score","score dimensions differ",3));}
     let score=rimage::perceptual::compare(&original,&encoded).map_err(|e|Failure::new(&candidate.input,None,"input.score",e,3))?;
     let format=Format::sniff(&encoded).map_err(|e|Failure::new(&candidate.input,None,"input.format",e,3))?;
     Ok(Completed {input:candidate.input.clone(),output:None,status:"compared",value:json!({"input":candidate.input.to_str(),"output":null,"format":format.extension(),"inputBytes":encoded.len(),"outputBytes":null,"score":score,"elapsedMs":start.elapsed().as_secs_f64()*1000.0,"status":"compared","warnings":[],"reference":reference.input.to_str()})})
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn compare_reserves_both_images_before_decoding() {
+        let root=Path::new(env!("CARGO_MANIFEST_DIR")).join(".work/tmp").join(format!("compare-budget-{}",std::process::id()));
+        fs::create_dir_all(&root).unwrap();
+        let make=|name:&str,size:u32| {
+            let path=root.join(name);let mut encoder=png::Encoder::new(fs::File::create(&path).unwrap(),size,size);
+            encoder.set_color(png::ColorType::Rgb);encoder.write_header().unwrap().write_image_data(&vec![128;size as usize*size as usize*3]).unwrap();
+            Job {input:path.clone(),relative:path,format:Some(Format::Png),id:None,failure:None,destinations:vec![]}
+        };
+        let jobs=[make("reference.png",8),make("candidate.png",256)];
+        let error=match compare(&jobs,262_144) {Err(error)=>error,Ok(_)=>panic!("oversized candidate was admitted")};
+        assert_eq!(error.kind,"input.limit");fs::remove_dir_all(root).unwrap();
+    }
 }
 fn report(args:&Arguments,completed:Vec<Result<Completed,Failure>>)->u8 {
     let mut results=vec![];let mut failures=vec![];let mut categories=BTreeSet::new();let mut successes=0;

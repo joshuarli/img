@@ -47,6 +47,15 @@ fn explicit_resize_matches_new_reference_and_never_enlarges() {
     assert_eq!(rimage::still::StillImage::decode(&fs::read(output).unwrap()).unwrap().dimensions(),(24,16));
 }
 #[test]
+fn compare_accepts_matching_display_dimensions_after_orientation() {
+    let scratch=common::Scratch::new("compare-orientation");let reference=scratch.0.join("reference.png");let candidate=scratch.0.join("candidate.png");
+    let mut info=png::Info::with_size(8,16);info.color_type=png::ColorType::Rgb;
+    let mut exif=b"II\x2a\0\x08\0\0\0\x01\0\x12\x01\x03\0\x01\0\0\0\x01\0\0\0\0\0\0\0".to_vec();exif[18]=6;info.exif_metadata=Some(exif.into());
+    png::Encoder::with_info(fs::File::create(&reference).unwrap(),info).unwrap().write_header().unwrap().write_image_data(&[128;8*16*3]).unwrap();
+    let mut encoder=png::Encoder::new(fs::File::create(&candidate).unwrap(),16,8);encoder.set_color(png::ColorType::Rgb);encoder.write_header().unwrap().write_image_data(&[128;8*16*3]).unwrap();
+    let report=json(run(&["compare".as_ref(),reference.as_os_str(),candidate.as_os_str(),"--json".as_ref()]));assert_eq!(report["results"][0]["score"],100.0);
+}
+#[test]
 fn file_list_and_existing_positional_paths_are_literal() {
     let scratch=common::Scratch::new("literal-inputs");
     for (listed,other) in [("photo[1].png","photo1.png"),("photo*.png","photoX.png"),("photo?.png","photoY.png")] {
