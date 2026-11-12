@@ -116,3 +116,26 @@ fn header_inspection_exposes_transforms_and_unvalidated_hdr_is_refused() {
         match kind {0=>assert!(header.hdr_metadata),1=>assert_eq!(header.pixel_aspect_ratio,Some([2,1])),_=>{assert_eq!(header.rotation_ccw_degrees,Some(90));assert_eq!(header.mirror_axis,Some(1));}}
     }
 }
+
+#[test]
+fn bitstream_and_container_hdr_metadata_are_reported_and_refused() {
+    let image=StillImage::from_rgb8(16,16,common::pixels(16,16)).unwrap();let original=image.encode(Format::Avif,mode(),Effort::Fast).unwrap();
+    StillImage::decode(&original).unwrap();let parser=zenavif_parse::AvifParser::from_bytes(&original).unwrap();let data=parser.primary_data().unwrap();let config=parser.av1_config().unwrap();
+    let mut at=0;let insert=loop {
+        let header=data[at];at+=1;if header&4!=0 {at+=1;}assert_ne!(header&2,0);
+        let mut size=0usize;let mut shift=0;loop {let byte=data[at];at+=1;size|=((byte&127) as usize)<<shift;if byte&128==0 {break;}shift+=7;}
+        at+=size;if (header>>3)&15==1 {break at;}
+    };
+    for kind in 0..4 {
+        let mut stream=data.to_vec();
+        if kind<2 {
+            let obu=if kind==0 {vec![0x2a,6,1,3,0xe8,1,0x90,0x80]} else {let mut obu=vec![0x2a,26,2];obu.extend_from_slice(&[0;24]);obu.push(0x80);obu};
+            stream.splice(insert..insert,obu);
+        }
+        let mut serializer=zenavif_serialize::Aviffy::new();serializer.set_chroma_subsampling((config.chroma_subsampling_x!=0,config.chroma_subsampling_y!=0)).set_seq_profile(config.profile);
+        if kind==2 {serializer.set_content_light_level(1000,400);} else if kind==3 {serializer.set_mastering_display([(100,200);3],(100,200),10000,1);}
+        let bytes=serializer.to_vec(&stream,None,16,16,8);
+        assert!(rimage::still::describe(&bytes).unwrap().hdr_metadata,"kind {kind}");
+        assert!(StillImage::decode(&bytes).is_err(),"kind {kind}");
+    }
+}

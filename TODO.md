@@ -23,12 +23,3 @@ Priorities are assumed from impact and likelihood. Evidence was reproduced again
 - **Effort:** M
 
 
-### RIMG-10 · P2 · AV1 bitstream HDR metadata escapes AVIF validation and inspection
-
-- **Area:** AVIF metadata boundary
-- **Where:** src/still/avif.rs:8-9, src/still/avif.rs:27; src/still.rs:438-447
-- **Problem:** Processing rejects container HDR properties but never checks decoded Frame::content_light or Frame::mastering_display. Inspection also reports only container properties and transfer signaling. Proven with a valid 430-byte eight-bit BT.709/sRGB AVIF containing an AV1 HDR_CLL metadata OBU but no container content-light property. Insert bytes `2a 06 01 03 e8 01 90 80` immediately after the sequence-header OBU in the 422-byte RIMG-2 fixture, and add 8 to the enclosing mdat size and primary iloc extent length. The bytes encode maxCLL 1000 and maxFALL 400. Native FFprobe and the decoded frame report those values, while Rimage describe returns hdr_metadata=false and decode accepts the image. This proves a missed refusal/reporting boundary, not an HDR pixel-conversion error. Enabling film grain does not repair it.
-- **Recommendation:** Apply the unsupported light/mastering metadata policy to the decoded AV1 frame as well as container properties. Inspect bitstream metadata through a bounded OBU header path so inspect can report it without decoding pixel planes. Require a grain-free bitstream-only fixture so an independent grain refusal cannot mask the missing HDR check. Add container-only content-light and equivalent mastering metadata cases, keeping the processing refusal and inspection result consistent.
-- **Fix with:** os-boundaries
-- **Effort:** M
-

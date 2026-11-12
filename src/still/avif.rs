@@ -25,6 +25,9 @@ pub(super) fn decode(bytes: &[u8],stop: &crate::cancellation::Cancellation) -> R
     if !header.still_picture { return Err(Error::new(ErrorKind::Unsupported, "AVIF requires a still AV1 bitstream")); }
     let data = parser.primary_data().map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
     let primary = frame(&data)?;
+    if primary.content_light().is_some() || primary.mastering_display().is_some() {
+        return Err(Error::new(ErrorKind::Unsupported,"AVIF HDR metadata requires independently validated processing"));
+    }
     if primary.pixel_layout() == PixelLayout::I400 { return Err(Error::new(ErrorKind::Unsupported, "monochrome AVIF decoding is not independently verified")); }
     let (width, height) = (primary.width(), primary.height());
     super::check_dimensions(width, height)?;
@@ -82,6 +85,28 @@ pub(super) fn decode(bytes: &[u8],stop: &crate::cancellation::Cancellation) -> R
     image.info.source_color.cicp = image.metadata.cicp;
     if matches!(parser.color_info(),Some(zenavif_parse::ColorInformation::Nclx {..})) {image.info.source_color.color_authority=zencodec::ColorAuthority::Cicp;}
     Ok(image)
+}
+
+fn leb(data:&mut &[u8])->Result<usize,Error> {
+    let mut value=0u64;
+    for shift in (0..56).step_by(7) {
+        let (&byte,rest)=data.split_first().ok_or_else(||Error::new(ErrorKind::Invalid,"truncated AV1 OBU length"))?;*data=rest;
+        value|=u64::from(byte&127)<<shift;
+        if byte&128==0 {return usize::try_from(value).map_err(|_|Error::new(ErrorKind::Limit,"AV1 OBU length overflow"));}
+    }
+    Err(Error::new(ErrorKind::Invalid,"invalid AV1 OBU length"))
+}
+
+pub(super) fn bitstream_hdr(mut data:&[u8])->Result<bool,Error> {
+    while !data.is_empty() {
+        let header=data[0];data=&data[1..];
+        if header&0x81!=0 {return Err(Error::new(ErrorKind::Invalid,"invalid AV1 OBU header"));}
+        if header&4!=0 {data=data.get(1..).ok_or_else(||Error::new(ErrorKind::Invalid,"truncated AV1 OBU extension"))?;}
+        let size=if header&2!=0 {leb(&mut data)?} else {data.len()};
+        let payload=data.get(..size).ok_or_else(||Error::new(ErrorKind::Invalid,"truncated AV1 OBU"))?;data=&data[size..];
+        if (header>>3)&15==5 {let mut metadata=payload;if matches!(leb(&mut metadata)?,1|2) {return Ok(true);}}
+    }
+    Ok(false)
 }
 
 fn frame(data: &[u8]) -> Result<Frame, Error> {
