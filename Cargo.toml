@@ -76,6 +76,7 @@ codegen-units = 1
 strip = true
 
 [dev-dependencies]
+serde_json = { version = "1.0", features = ["float_roundtrip"] }
 dav1d = "0.11"
 webp = { version = "0.3", default-features = false }
 yuvutils-rs = { version = "0.8", default-features = false }
