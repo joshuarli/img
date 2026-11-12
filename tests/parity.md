@@ -12,5 +12,7 @@ Generated fixture samples are defined by `tests/common/mod.rs::pixels`. Tests ma
 | SVG | intentionally removed before campaign | `cli::unsupported_vector_input_does_not_publish_output` |
 | Traversal, globs, file lists, timestamps | open | existing `deadlock`, `timestamps`, path unit tests |
 | Metadata, color, alpha, precision | open | codec and operation suites; expand S2–S6 |
+| JPEG progressive, gray, ICC/EXIF, corruption | retained | `jpeg_codec`; independent zune-jpeg decode, stored EXIF orientation |
+| JPEG alpha flattening and high-precision reduction | intentionally refused | `jpeg_codec::invalid_quality_alpha_precision_and_corruption_are_named_errors` |
 | Exit aggregation and resource limits | open | `exit`, `limits` suites; mandatory limits at S1 |
 | Streams, signals, concurrent publication | open | S1 and S9 |

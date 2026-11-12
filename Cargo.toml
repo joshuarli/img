@@ -81,6 +81,7 @@ limits = ["dep:sysinfo"]
 [dependencies]
 libc = "0.2"
 zenpng = { version = "=0.1.4", default-features = false }
+zenjpeg = { version = "=0.8.4", default-features = false, features = ["decoder", "zencodec", "yuv"] }
 zencodec = "=0.1.26"
 zenpixels = { version = "=0.2.16", default-features = false }
 rgb = { version = "0.8" }

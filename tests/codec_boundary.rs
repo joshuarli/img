@@ -1,7 +1,7 @@
 mod common;
 
 use std::{fs, io::{self, Read}, os::unix::{ffi::OsStringExt, fs::symlink}, path::Path, sync::{Arc, Barrier}};
-use rimage::{publication::{publish, Destination, Source}, still::{StillImage, ErrorKind, MAX_DIMENSION, MAX_INPUT_BYTES}};
+use rimage::{publication::{publish, Destination, Source}, still::{StillImage, ErrorKind, MAX_DIMENSION, MAX_INPUT_BYTES, Format, EncodingMode, Effort}};
 
 #[test]
 fn bounded_still_adapter_checks_actual_samples() {
@@ -12,7 +12,7 @@ fn bounded_still_adapter_checks_actual_samples() {
     assert_eq!(image.dimensions(), (32, 24));
     assert_eq!(image.samples(), samples);
     let output = scratch.0.join("result.png");
-    publish(&image.encode_png().unwrap(), Destination::New(&output), None).unwrap();
+    publish(&image.encode(Format::Png, EncodingMode::Lossless, Effort::Fast).unwrap(), Destination::New(&output), None).unwrap();
     common::check_png(&output, 32, 24, &samples);
     let rgb: Vec<_> = samples.chunks_exact(3).map(|p| rgb::RGB8::new(p[0], p[1], p[2])).collect();
     let direct = zenpng::encode_rgb8(imgref::Img::new(rgb, 32, 24).as_ref(), None,

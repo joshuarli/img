@@ -1,4 +1,4 @@
-.PHONY: test baseline-check
+.PHONY: test baseline-check decoder-reference-check
 
 export RUSTC_WRAPPER := kache
 export TMPDIR := $(CURDIR)/.work/tmp
@@ -8,3 +8,6 @@ test:
 
 baseline-check:
 	cargo test --locked --all-features --test baseline
+
+decoder-reference-check:
+	cargo test --locked --all-features --test jpeg_codec --test codec_boundary

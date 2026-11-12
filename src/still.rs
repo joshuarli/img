@@ -15,6 +15,76 @@ pub const IMAGE_MEMORY_BYTES: u64 = MAX_PIXELS * 32;
 /// Maximum combined decoded private metadata.
 pub const MAX_METADATA_BYTES: usize = 8 * 1024 * 1024;
 
+/// Packed sample representation. Sixteen-bit samples use native byte order.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SampleLayout {
+    /// Eight-bit grayscale.
+    Gray8,
+    /// Eight-bit grayscale with alpha.
+    GrayAlpha8,
+    /// Eight-bit RGB.
+    Rgb8,
+    /// Eight-bit RGBA.
+    Rgba8,
+    /// Sixteen-bit grayscale.
+    Gray16,
+    /// Sixteen-bit grayscale with alpha.
+    GrayAlpha16,
+    /// Sixteen-bit RGB.
+    Rgb16,
+    /// Sixteen-bit RGBA.
+    Rgba16,
+}
+
+impl SampleLayout {
+    pub(crate) fn descriptor(self) -> PixelDescriptor {
+        match self {
+            Self::Gray8 => PixelDescriptor::GRAY8_SRGB, Self::GrayAlpha8 => PixelDescriptor::GRAYA8_SRGB,
+            Self::Rgb8 => PixelDescriptor::RGB8_SRGB, Self::Rgba8 => PixelDescriptor::RGBA8_SRGB,
+            Self::Gray16 => PixelDescriptor::GRAY16_SRGB, Self::GrayAlpha16 => PixelDescriptor::GRAYA16_SRGB,
+            Self::Rgb16 => PixelDescriptor::RGB16_SRGB, Self::Rgba16 => PixelDescriptor::RGBA16_SRGB,
+        }
+    }
+}
+
+/// Validated direct encoder control, independent of a perceptual score.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Quality(f32);
+impl Quality {
+    /// Accept a finite value from zero through one hundred, inclusive.
+    pub fn new(value: f32) -> Result<Self, Error> {
+        if value.is_finite() && (0.0..=100.0).contains(&value) { Ok(Self(value)) }
+        else { Err(Error::new(ErrorKind::Invalid, "quality must be finite and in [0, 100]")) }
+    }
+    /// Direct control value.
+    pub fn value(self) -> f32 { self.0 }
+}
+
+/// Encoding work level and global candidate budget.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Effort {
+    /// At most eight encodes.
+    Fast,
+    /// At most twenty-four encodes.
+    Balanced,
+    /// At most sixty-four encodes.
+    Best,
+}
+impl Effort {
+    /// Total candidate cap across all eligible formats.
+    pub fn candidate_cap(self) -> usize { match self { Self::Fast => 8, Self::Balanced => 24, Self::Best => 64 } }
+    pub(crate) fn level(self) -> i32 { match self { Self::Fast => 0, Self::Balanced => 1, Self::Best => 2 } }
+}
+
+/// Exact-sample encoding or direct lossy encoder control.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum EncodingMode {
+    /// Require exact decoded samples.
+    Lossless,
+    /// Use direct quality without a metric guarantee.
+    Quality(Quality),
+}
+
 /// Supported still-image containers, in deterministic tie order.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Format {
@@ -117,23 +187,33 @@ pub struct StillImage {
     pub(crate) pixels: PixelBuffer,
     pub(crate) metadata: zencodec::Metadata,
     pub(crate) format: Format,
+    pub(crate) info: zencodec::ImageInfo,
 }
 
 impl Clone for StillImage {
     fn clone(&self) -> Self {
-        Self { pixels: self.pixels.crop_copy(0, 0, self.pixels.width(), self.pixels.height()), metadata: self.metadata.clone(), format: self.format }
+        Self { pixels: self.pixels.crop_copy(0, 0, self.pixels.width(), self.pixels.height()), metadata: self.metadata.clone(), format: self.format, info: self.info.clone() }
     }
 }
 
 impl StillImage {
     /// Construct an untagged SDR sRGB image from packed RGB8 samples.
     pub fn from_rgb8(width: u32, height: u32, pixels: Vec<u8>) -> Result<Self, Error> {
+        Self::from_samples(width, height, SampleLayout::Rgb8, pixels)
+    }
+
+    /// Construct packed, untagged SDR sRGB samples without implicit conversion.
+    pub fn from_samples(width: u32, height: u32, layout: SampleLayout, pixels: Vec<u8>) -> Result<Self, Error> {
         check_dimensions(width, height)?;
-        let len = u64::from(width).checked_mul(u64::from(height)).and_then(|n| n.checked_mul(3));
-        if len != Some(pixels.len() as u64) { return Err(Error::new(ErrorKind::Invalid, "RGB sample count differs from dimensions")); }
-        let pixels = PixelBuffer::from_vec(pixels, width, height, PixelDescriptor::RGB8_SRGB)
+        let descriptor = layout.descriptor();
+        let len = u64::from(width).checked_mul(u64::from(height)).and_then(|n| n.checked_mul(descriptor.bytes_per_pixel() as u64));
+        if len != Some(pixels.len() as u64) { return Err(Error::new(ErrorKind::Invalid, "sample count differs from dimensions")); }
+        let pixels = PixelBuffer::from_vec(pixels, width, height, descriptor)
             .map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
-        Ok(Self { pixels, metadata: zencodec::Metadata::none(), format: Format::Png })
+        let mut info = zencodec::ImageInfo::new(width, height, zencodec::ImageFormat::Png);
+        info.has_alpha = descriptor.has_alpha();
+        info.source_color.bit_depth = Some(if descriptor.bytes_per_pixel() == descriptor.channels() { 8 } else { 16 });
+        Ok(Self { pixels, metadata: zencodec::Metadata::none(), format: Format::Png, info })
     }
 
     /// Decode actual encoded bytes. Animation and unsupported precision fail.
@@ -142,6 +222,12 @@ impl StillImage {
         let format = Format::sniff(bytes)?;
         match format {
             Format::Png => decode(zenpng::PngDecoderConfig::new(), bytes, format),
+            Format::Jpeg => {
+                let mut config = zenjpeg::JpegDecoderConfig::new();
+                let header = config.inner().read_info(bytes).map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+                if header.num_components == 1 { config.inner_mut().output_format = Some(zenjpeg::decoder::PixelFormat::Gray); }
+                decode(config, bytes, format)
+            },
             _ => Err(Error::new(ErrorKind::Unsupported, "codec adapter not available")),
         }
     }
@@ -152,8 +238,65 @@ impl StillImage {
     pub fn format(&self) -> Format { self.format }
     /// Packed decoded samples, including hidden RGB and alpha.
     pub fn samples(&self) -> Vec<u8> { self.pixels.copy_to_contiguous_bytes() }
-    /// Encode an exact PNG candidate. Validation remains the caller's responsibility.
-    pub fn encode_png(&self) -> Result<Vec<u8>, Error> {
+    /// Whether decoded samples contain an alpha channel.
+    pub fn has_alpha(&self) -> bool { self.pixels.has_alpha() }
+    /// Whether decoded samples are grayscale.
+    pub fn is_grayscale(&self) -> bool { self.pixels.is_grayscale() }
+    /// Precision of the decoded samples.
+    pub fn bit_depth(&self) -> u8 {
+        if self.pixels.descriptor().bytes_per_pixel() == self.pixels.descriptor().channels() { 8 } else { 16 }
+    }
+
+    /// Encode a candidate without silently discarding alpha or reducing precision.
+    pub fn encode(&self, format: Format, mode: EncodingMode, effort: Effort) -> Result<Vec<u8>, Error> {
+        match format {
+            Format::Png => match mode {
+                EncodingMode::Lossless => self.encode_png(),
+                _ => Err(Error::new(ErrorKind::Unsupported, "direct quality is unsupported for exact PNG encoding")),
+            },
+            Format::Jpeg => {
+                let EncodingMode::Quality(quality) = mode else { return Err(Error::new(ErrorKind::Unsupported, "JPEG lossless requires original-byte preservation")); };
+                if self.bit_depth() != 8 { return Err(Error::new(ErrorKind::Unsupported, "JPEG encoding requires eight-bit samples")); }
+                let opaque = self.without_opaque_alpha()?;
+                let config = if opaque.is_grayscale() { zenjpeg::encoder::EncoderConfig::grayscale(quality.value()) }
+                    else { zenjpeg::encoder::EncoderConfig::ycbcr(quality.value(), zenjpeg::encoder::ChromaSubsampling::Quarter) };
+                let preset = match effort {
+                    Effort::Fast => zenjpeg::encoder::OptimizationPreset::JpegliBaseline,
+                    _ => zenjpeg::encoder::OptimizationPreset::JpegliProgressive,
+                };
+                let config = config.optimization(preset).progressive(true);
+                let mut request = config.request();
+                if let Some(icc) = &opaque.metadata.icc_profile { request = request.icc_profile(icc); }
+                if let Some(exif) = &opaque.metadata.exif { request = request.exif(zenjpeg::encoder::Exif::raw(exif.to_vec())); }
+                if let Some(xmp) = &opaque.metadata.xmp { request = request.xmp(xmp); }
+                let layout = if opaque.is_grayscale() { zenjpeg::encoder::PixelLayout::Gray8Srgb }
+                    else { zenjpeg::encoder::PixelLayout::Rgb8Srgb };
+                let bytes = opaque.pixels.as_slice();
+                let output = request.encode_bytes(&bytes.contiguous_bytes(), bytes.width(), bytes.rows(), layout)
+                    .map_err(|e| Error::caused(ErrorKind::Encode, e))?;
+                limits().check_output_size(output.len() as u64).map_err(|e| Error::caused(ErrorKind::Limit, e))?;
+                Ok(output)
+            },
+            _ => Err(Error::new(ErrorKind::Unsupported, "codec adapter not available")),
+        }
+    }
+
+    fn without_opaque_alpha(&self) -> Result<Cow<'_ , Self>, Error> {
+        if !self.has_alpha() { return Ok(Cow::Borrowed(self)); }
+        let channels = self.pixels.descriptor().channels();
+        let samples = self.samples();
+        if samples.chunks_exact(channels).any(|p| p[channels - 1] != 255) {
+            return Err(Error::new(ErrorKind::Unsupported, "JPEG cannot represent nonopaque alpha"));
+        }
+        let samples = samples.chunks_exact(channels).flat_map(|p| p[..channels - 1].iter().copied()).collect();
+        let layout = if self.is_grayscale() { SampleLayout::Gray8 } else { SampleLayout::Rgb8 };
+        let (width, height) = self.dimensions();
+        let mut image = Self::from_samples(width, height, layout, samples)?;
+        image.metadata = self.metadata.clone();
+        image.info = self.info.clone();
+        Ok(Cow::Owned(image))
+    }
+    fn encode_png(&self) -> Result<Vec<u8>, Error> {
         encode(zenpng::PngEncoderConfig::new(), self)
     }
 }
@@ -162,17 +305,24 @@ pub(crate) fn decode<C: DecoderConfig>(config: C, bytes: &[u8], format: Format) 
     let mut policy = zencodec::decode::DecodePolicy::none();
     policy.strict = Some(true);
     policy.allow_truncated = Some(false);
-    let job = config.job().with_limits(limits()).with_policy(policy);
+    let job = config.job().with_limits(limits()).with_policy(policy).with_orientation(zencodec::OrientationHint::Preserve);
     let info = job.probe(bytes).map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
     check_dimensions(info.width, info.height)?;
     if info.sequence != zencodec::ImageSequence::Single { return Err(Error::new(ErrorKind::Unsupported, "animation is unsupported")); }
+    if format == Format::Jpeg && info.source_color.bit_depth.is_some_and(|depth| depth != 8) {
+        return Err(Error::new(ErrorKind::Unsupported, "JPEG decoding requires eight-bit precision"));
+    }
     let result = job.decoder(Cow::Borrowed(bytes), &[]).map_err(|e| Error::caused(ErrorKind::Invalid, e))?
         .decode().map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
     let metadata = result.metadata();
     let metadata_bytes = [&metadata.icc_profile, &metadata.exif, &metadata.xmp].into_iter()
         .flatten().try_fold(0usize, |n, b| n.checked_add(b.len()));
     if metadata_bytes.is_none_or(|n| n > MAX_METADATA_BYTES) { return Err(Error::new(ErrorKind::Limit, "decoded metadata exceeds 8 MiB")); }
-    Ok(StillImage { pixels: result.into_buffer(), metadata, format })
+    let mut decoded_info = result.info().clone();
+    if decoded_info.source_color.bit_depth.is_none() { decoded_info.source_color.bit_depth = info.source_color.bit_depth; }
+    if decoded_info.source_color.channel_count.is_none() { decoded_info.source_color.channel_count = info.source_color.channel_count; }
+    let info = decoded_info;
+    Ok(StillImage { pixels: result.into_buffer(), metadata, format, info })
 }
 
 pub(crate) fn encode<C: EncoderConfig>(config: C, image: &StillImage) -> Result<Vec<u8>, Error>
