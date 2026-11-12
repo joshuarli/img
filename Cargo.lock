@@ -1290,6 +1290,7 @@ dependencies = [
  "enough",
  "fast-ssim2",
  "fast_image_resize",
+ "fdeflate",
  "filetime",
  "glob",
  "imagequant",

@@ -23,6 +23,7 @@ limits = ["dep:sysinfo"]
 
 [dependencies]
 png = "=0.18.1"
+fdeflate = "=0.3.7"
 libc = "0.2"
 libm = "=0.2.16"
 zenpng = { version = "=0.1.4", default-features = false, features = ["quantize"] }

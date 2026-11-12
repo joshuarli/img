@@ -231,7 +231,7 @@ impl StillImage {
         let format = Format::sniff(bytes)?;
         match format {
             Format::Png => {
-                let chunks = png::metadata_chunks(bytes)?;
+                let chunks = png::metadata_chunks(bytes,true)?;
                 let mut image = decode(zenpng::PngDecoderConfig::new(), bytes, format, stop)?;
                 if chunks.iter().any(|chunk| &chunk[4..8] == b"iCCP") && image.metadata.icc_profile.is_none() {
                     return Err(Error::new(ErrorKind::Unsupported, "PNG ICC profile could not be preserved"));
@@ -432,7 +432,7 @@ pub fn describe(bytes: &[u8]) -> Result<Description, Error> {
     if bytes.len() as u64 > MAX_INPUT_BYTES { return Err(Error::new(ErrorKind::Limit,"compressed input exceeds 128 MiB")); }
     let format=Format::sniff(bytes)?;
     let info=match format {
-        Format::Png => zenpng::PngDecoderConfig::new().job().with_limits(limits()).probe(bytes).map_err(|e|Error::caused(ErrorKind::Invalid,e)),
+        Format::Png => {png::metadata_chunks(bytes,false)?;zenpng::PngDecoderConfig::new().job().with_limits(limits()).probe(bytes).map_err(|e|Error::caused(ErrorKind::Invalid,e))},
         Format::Jpeg => zenjpeg::JpegDecoderConfig::new().job().with_limits(limits()).probe(bytes).map_err(|e|Error::caused(ErrorKind::Invalid,e)),
         Format::Webp => zenwebp::zencodec::WebpDecoderConfig::new().job().with_limits(limits()).probe(bytes).map_err(|e|Error::caused(ErrorKind::Invalid,e)),
         Format::Avif => {

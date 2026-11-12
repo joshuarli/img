@@ -4,7 +4,7 @@ pub(crate) fn is_color_chunk(kind:&[u8])->bool {
     matches!(kind,b"iCCP"|b"cICP"|b"sRGB"|b"gAMA"|b"cHRM"|b"cLLI"|b"mDCV")
 }
 
-pub(super) fn metadata_chunks(bytes: &[u8]) -> Result<Vec<Vec<u8>>, Error> {
+pub(super) fn metadata_chunks(bytes: &[u8], reject_animation:bool) -> Result<Vec<Vec<u8>>, Error> {
     let mut chunks = Vec::new();
     let mut at = 8usize;
     let mut total = 0usize;
@@ -18,10 +18,19 @@ pub(super) fn metadata_chunks(bytes: &[u8]) -> Result<Vec<Vec<u8>>, Error> {
         let expected = u32::from_be_bytes(chunk[chunk.len() - 4..].try_into().unwrap());
         if crc32fast::hash(&chunk[4..chunk.len() - 4]) != expected { return Err(Error::new(ErrorKind::Invalid, "PNG chunk checksum mismatch")); }
         let kind = &header[4..8];
-        if matches!(kind, b"acTL" | b"fcTL" | b"fdAT") { return Err(Error::new(ErrorKind::Unsupported, "PNG animation is unsupported")); }
-        if kind[0].is_ascii_lowercase() && kind != b"tRNS" {
+        if reject_animation && matches!(kind, b"acTL" | b"fcTL" | b"fdAT") { return Err(Error::new(ErrorKind::Unsupported, "PNG animation is unsupported")); }
+        if kind[0].is_ascii_lowercase() && !matches!(kind,b"tRNS"|b"fdAT") {
             total = total.checked_add(chunk.len()).ok_or_else(|| Error::new(ErrorKind::Limit, "PNG metadata length overflow"))?;
             if total > MAX_METADATA_BYTES { return Err(Error::new(ErrorKind::Limit, "PNG metadata exceeds 8 MiB")); }
+            if let Some(compressed)=compressed_metadata(kind,&chunk[8..chunk.len()-4])? {
+                let remaining=MAX_METADATA_BYTES-total;
+                if remaining==0 {return Err(Error::new(ErrorKind::Limit,"decoded PNG metadata exceeds 8 MiB"));}
+                let decoded=fdeflate::decompress_to_vec_bounded(compressed,remaining).map_err(|error|match error {
+                    fdeflate::BoundedDecompressionError::OutputTooLarge {..}=>Error::new(ErrorKind::Limit,"decoded PNG metadata exceeds 8 MiB"),
+                    fdeflate::BoundedDecompressionError::DecompressionError {inner}=>Error::new(ErrorKind::Invalid,format!("invalid compressed PNG metadata: {inner:?}")),
+                })?;
+                total+=decoded.len();
+            }
             chunks.push(chunk.to_vec());
         }
         at = end;
@@ -29,6 +38,21 @@ pub(super) fn metadata_chunks(bytes: &[u8]) -> Result<Vec<Vec<u8>>, Error> {
     }
     if !ended || at != bytes.len() { return Err(Error::new(ErrorKind::Invalid, "missing PNG end or trailing data")); }
     Ok(chunks)
+}
+
+fn compressed_metadata<'a>(kind:&[u8],data:&'a [u8])->Result<Option<&'a [u8]>,Error> {
+    if !matches!(kind,b"iCCP"|b"zTXt"|b"iTXt") {return Ok(None);}
+    let end=data.iter().position(|&b|b==0).ok_or_else(||Error::new(ErrorKind::Invalid,"invalid PNG metadata keyword"))?;
+    let rest=&data[end+1..];
+    if kind==b"iTXt" {
+        if rest.len()<2 || rest[0]>1 || rest[1]!=0 {return Err(Error::new(ErrorKind::Invalid,"invalid PNG text compression"));}
+        let mut text=&rest[2..];
+        for _ in 0..2 {let end=text.iter().position(|&b|b==0).ok_or_else(||Error::new(ErrorKind::Invalid,"invalid PNG international text"))?;text=&text[end+1..];}
+        Ok((rest[0]==1).then_some(text))
+    } else {
+        if rest.first()!=Some(&0) {return Err(Error::new(ErrorKind::Invalid,"invalid PNG metadata compression"));}
+        Ok(Some(&rest[1..]))
+    }
 }
 
 pub(super) fn restore_metadata(bytes: &[u8], metadata: &[Vec<u8>]) -> Result<Vec<u8>, Error> {

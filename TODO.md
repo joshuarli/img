@@ -2,16 +2,6 @@ Prefix: RIMG
 Next: 11
 
 Priorities are assumed from impact and likelihood. Evidence was reproduced against `ba5f682175a746e80f351a6908b555fa7d0ce09c`; CI failures are outside this review.
-### RIMG-4 · P2 · Compressed PNG text bypasses the decoded-metadata budget
-
-- **Area:** Untrusted-input resource bounds
-- **Where:** src/still/png.rs:18-21; src/still.rs:349, src/still.rs:362-364, src/still.rs:435; pinned zenpng 0.1.4 probe and ancillary text inflation
-- **Problem:** The raw PNG walker counts compressed chunk bytes. The generic probe then expands and retains text before the post-decode check, which counts only ICC, EXIF and XMP. Inspection uses the same expanding probe. Proven with a valid 1x1 RGB8 PNG containing 16 zTXt chunks: keywords Comment0 through Comment15, compression method 0, and each text equal to zlib.compress(b"A" * 1048576, 9). The complete file is 17,067 bytes but contains 16,777,350 expanded keyword/text bytes. Both describe and decode accept it despite MAX_METADATA_BYTES=8,388,608. A 64-chunk, 68,091-byte version expands to 67,109,430 bytes and CLI inspect also succeeds. The pinned decoder caps individual text chunks, not their cumulative allocation. No deliberate OOM test was run; the accepted quota bypass is directly proved.
-- **Recommendation:** Enforce the cumulative expanded ancillary budget before metadata-expanding probe or decode allocation, including describe/inspect. Bound inflation as bytes are produced, or skip unused text expansion while preserving bounded raw chunks where required. Include compressed text alongside ICC, EXIF and XMP. A post-probe rejection is too late. Use the small 16-chunk fixture as a regression without stressing host memory.
-- **Fix with:** security
-- **Effort:** M
-
-
 ### RIMG-8 · P2 · In-place rename can erase a source changed after verification
 
 - **Area:** Filesystem publication concurrency

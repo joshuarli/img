@@ -110,6 +110,25 @@ fn lossless_png_strip_preserves_final_content_light_metadata() {
 }
 
 #[test]
+fn compressed_text_counts_toward_the_cumulative_metadata_limit() {
+    let fixture=|count:usize,international:bool| {
+        let mut bytes=Vec::new();let mut info=png::Info::with_size(1,1);info.color_type=png::ColorType::Rgb;
+        for index in 0..count {
+            if international {let mut chunk=png::text_metadata::ITXtChunk::new(format!("Comment{index}"),"A".repeat(1024*1024));chunk.compressed=true;info.utf8_text.push(chunk);}
+            else {info.compressed_latin1_text.push(png::text_metadata::ZTXtChunk::new(format!("Comment{index}"),"A".repeat(1024*1024)));}
+        }
+        let encoder=png::Encoder::with_info(&mut bytes,info).unwrap();
+        encoder.write_header().unwrap().write_image_data(&[128,128,128]).unwrap();bytes
+    };
+    for international in [false,true] {
+        let allowed=fixture(2,international);rimage::still::describe(&allowed).unwrap();StillImage::decode(&allowed).unwrap();
+        let oversized=fixture(16,international);assert!(oversized.len()<100_000);
+        assert_eq!(rimage::still::describe(&oversized).unwrap_err().kind(),rimage::still::ErrorKind::Limit);
+        assert_eq!(StillImage::decode(&oversized).err().unwrap().kind(),rimage::still::ErrorKind::Limit);
+    }
+}
+
+#[test]
 fn layout_sensitive_png_metadata_is_never_silently_discarded() {
     let image = StillImage::from_rgb8(8, 8, [80, 90, 100].repeat(64)).unwrap();
     let mut original = Vec::new();
