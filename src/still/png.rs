@@ -63,34 +63,13 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, sto
             zenpng::encode_indexed(pixels.as_ref(), &config, &quantizer, Some(&image.metadata), stop, stop)
                 .map_err(|e| Error::caused(ErrorKind::Encode, e))?
         },
-        EncodingMode::Lossless if image.is_grayscale() && image.has_alpha() => {
-            use zune_image::traits::EncoderTrait;
-            let (width, height) = image.dimensions();
-            let samples = image.samples();
-            let image = if image.bit_depth() == 8 {
-                zune_image::image::Image::from_u8(&samples, width as usize, height as usize, zune_core::colorspace::ColorSpace::LumaA)
-            } else {
-                let samples: Vec<_> = samples.chunks_exact(2).map(|p| u16::from_ne_bytes([p[0], p[1]])).collect();
-                zune_image::image::Image::from_u16(&samples, width as usize, height as usize, zune_core::colorspace::ColorSpace::LumaA)
-            };
-            let mut encoder = zune_image::codecs::png::PngEncoder::new();
-            let mut output = std::io::Cursor::new(Vec::new());
-            encoder.encode(&image, &mut output).map_err(|e| Error::new(ErrorKind::Encode, e.to_string()))?;
-            output.into_inner()
-        },
+        EncodingMode::Lossless if image.bit_depth()==16 || image.metadata.icc_profile.is_some() || (image.is_grayscale() && image.has_alpha()) => encode_preserving_layout(image,effort)?,
         EncodingMode::Lossless => super::encode(zenpng::PngEncoderConfig::new().with_compression(compression), image,stop)?,
     };
     let mut metadata = image.png_metadata.clone();
-    if image.is_grayscale() && image.has_alpha() {
-        for (kind, value) in [(b"eXIf", image.metadata.exif.as_deref()), (b"iTXt", image.metadata.xmp.as_deref())] {
-            if let Some(value) = value && !metadata.iter().any(|chunk| &chunk[4..8] == kind) {
-                if kind == b"iTXt" { continue; }
-                metadata.push(chunk(kind, value));
-            }
-        }
-        if image.metadata.icc_profile.is_some() && !metadata.iter().any(|chunk| &chunk[4..8] == b"iCCP") {
-            return Err(Error::new(ErrorKind::Unsupported, "gray-alpha PNG conversion cannot emit an ICC profile"));
-        }
+    if let Some(xmp)=image.metadata.xmp.as_deref() && !metadata.iter().any(|chunk|&chunk[4..8]==b"iTXt") {
+        if std::str::from_utf8(xmp).is_err()||xmp.contains(&0) {return Err(Error::new(ErrorKind::Unsupported,"XMP cannot be represented as PNG UTF-8 text"));}
+        let mut data=b"XML:com.adobe.xmp\0\0\0\0\0".to_vec();data.extend_from_slice(xmp);metadata.push(chunk(b"iTXt",&data));
     }
     let bytes = restore_metadata(&bytes, &metadata)?;
     super::limits().check_output_size(bytes.len() as u64).map_err(|e| Error::caused(ErrorKind::Encode, e))?;
@@ -101,4 +80,20 @@ fn chunk(kind: &[u8; 4], data: &[u8]) -> Vec<u8> {
     let mut chunk = (data.len() as u32).to_be_bytes().to_vec();
     chunk.extend_from_slice(kind); chunk.extend_from_slice(data);
     let crc = crc32fast::hash(&chunk[4..]); chunk.extend_from_slice(&crc.to_be_bytes()); chunk
+}
+
+fn encode_preserving_layout(image:&StillImage,effort:Effort)->Result<Vec<u8>,Error> {
+    let (width,height)=image.dimensions();let mut info=::png::Info::with_size(width,height);
+    info.color_type=match (image.is_grayscale(),image.has_alpha()) {(true,false)=>::png::ColorType::Grayscale,(true,true)=>::png::ColorType::GrayscaleAlpha,(false,false)=>::png::ColorType::Rgb,(false,true)=>::png::ColorType::Rgba};
+    info.bit_depth=if image.bit_depth()==16 {::png::BitDepth::Sixteen} else {::png::BitDepth::Eight};
+    info.icc_profile=image.metadata.icc_profile.as_deref().map(std::borrow::Cow::Borrowed);
+    info.exif_metadata=image.metadata.exif.as_deref().map(std::borrow::Cow::Borrowed);
+    let samples=image.samples();let samples=if image.bit_depth()==16 {samples.chunks_exact(2).flat_map(|p|u16::from_ne_bytes([p[0],p[1]]).to_be_bytes()).collect()} else {samples};
+    let mut bytes=Vec::new();
+    {
+        let mut encoder=::png::Encoder::with_info(&mut bytes,info).map_err(|e|Error::caused(ErrorKind::Encode,e))?;
+        encoder.set_compression(match effort {Effort::Fast=>::png::Compression::Fast,Effort::Balanced=>::png::Compression::Balanced,Effort::Best=>::png::Compression::High});
+        let mut writer=encoder.write_header().map_err(|e|Error::caused(ErrorKind::Encode,e))?;writer.write_image_data(&samples).map_err(|e|Error::caused(ErrorKind::Encode,e))?;writer.finish().map_err(|e|Error::caused(ErrorKind::Encode,e))?;
+    }
+    Ok(bytes)
 }

@@ -105,3 +105,20 @@ fn layout_sensitive_png_metadata_is_never_silently_discarded() {
         assert_eq!(StillImage::decode(&stripped.encode(Format::Png, EncodingMode::Lossless, Effort::Fast).unwrap()).unwrap().samples(), source.samples());
     }
 }
+
+#[test]
+fn rgb_icc_profile_keeps_a_compatible_png_color_type_for_gray_valued_pixels() {
+    let mut info=png::Info::with_size(16,16);info.color_type=png::ColorType::Rgb;info.bit_depth=png::BitDepth::Eight;info.icc_profile=Some(std::borrow::Cow::Owned(moxcms::ColorProfile::new_srgb().encode().unwrap()));
+    let mut bytes=Vec::new();png::Encoder::with_info(&mut bytes,info).unwrap().write_header().unwrap().write_image_data(&[128;16*16*3]).unwrap();
+    let image=StillImage::decode(&bytes).unwrap();let encoded=image.encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
+    let reader=png::Decoder::new(Cursor::new(&encoded)).read_info().unwrap();assert!(matches!(reader.info().color_type,png::ColorType::Rgb|png::ColorType::Rgba|png::ColorType::Indexed),"RGB profile requires an RGB-compatible PNG representation");
+    assert_eq!(reader.info().icc_profile.as_deref(),png::Decoder::new(Cursor::new(&bytes)).read_info().unwrap().info().icc_profile.as_deref());
+}
+
+#[test]
+fn reducible_sixteen_bit_samples_still_keep_sixteen_bit_precision() {
+    for (layout,channels) in [(SampleLayout::Gray16,1),(SampleLayout::Rgb16,3),(SampleLayout::Rgba16,4)] {
+        let values=[0u16,256,32768,65280];let samples=(0..16*16*channels).flat_map(|i|values[i%4].to_ne_bytes()).collect();let image=StillImage::from_samples(16,16,layout,samples).unwrap();
+        let encoded=image.encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();let decoded=StillImage::decode(&encoded).unwrap();assert_eq!(decoded.bit_depth(),16,"{layout:?}");assert_eq!(decoded.samples(),image.samples());
+    }
+}

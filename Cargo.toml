@@ -22,6 +22,7 @@ icc = ["metadata"]
 limits = ["dep:sysinfo"]
 
 [dependencies]
+png = "=0.18.1"
 libc = "0.2"
 zenpng = { version = "=0.1.4", default-features = false, features = ["quantize"] }
 crc32fast = "1.5"
@@ -42,7 +43,7 @@ log = "0.4"
 # zune-core 0.5.3 would cause build error.
 # REF: https://github.com/etemesi254/zune-image/issues/439
 zune-core = { version = "=0.5.1", features = ["std"] }
-zune-image = { version = "0.5.0", default-features = false, features = ["png", "simd"] }
+zune-image = { version = "0.5.0", default-features = false, features = ["simd"] }
 fast_image_resize = { version = "6.1", optional = true }
 imagequant = { version = "4.4", default-features = false, optional = true }
 # System resource probing for dynamic image size limits
@@ -83,7 +84,6 @@ filetime = "0.2.29"
 lcms2 = "6.2"
 zenavif-serialize = "=0.1.4"
 enough = "0.4"
-png = "0.18"
 rustybench = "=0.5.0"
 
 [[bench]]
