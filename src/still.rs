@@ -6,15 +6,17 @@ use zenpixels::{PixelBuffer, PixelDescriptor};
 
 mod png;
 mod avif;
+pub(crate) mod color;
+pub use color::{PreparedImage, SamplePreservation};
 
 /// Maximum compressed input, including stdin.
 pub const MAX_INPUT_BYTES: u64 = 128 * 1024 * 1024;
 /// Maximum side length, matching the retained decoder ceiling.
 pub const MAX_DIMENSION: u32 = 16_384;
-/// Maximum image area at a conservative 32-byte-per-pixel working reservation.
+/// Maximum image area retained from the 512 MiB decoded-image arena.
 pub const MAX_PIXELS: u64 = 16 * 1024 * 1024;
-/// Working memory reservation for one active image.
-pub const IMAGE_MEMORY_BYTES: u64 = MAX_PIXELS * 32;
+/// Conservative working reservation including floating-point color and metric buffers.
+pub const IMAGE_MEMORY_BYTES: u64 = MAX_PIXELS * 256;
 /// Maximum combined decoded private metadata.
 pub const MAX_METADATA_BYTES: usize = 8 * 1024 * 1024;
 
@@ -338,11 +340,16 @@ pub(crate) fn decode<C: DecoderConfig>(config: C, bytes: &[u8], format: Format) 
     }
     let result = job.decoder(Cow::Borrowed(bytes), &[]).map_err(|e| Error::caused(ErrorKind::Invalid, e))?
         .decode().map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
-    let metadata = result.metadata();
+    let mut metadata = result.metadata();
+    if let Some(exif) = &metadata.exif
+        && let Some(orientation) = zencodec::helpers::parse_exif_orientation(exif) {
+        metadata.orientation = orientation;
+    }
     let metadata_bytes = [&metadata.icc_profile, &metadata.exif, &metadata.xmp].into_iter()
         .flatten().try_fold(0usize, |n, b| n.checked_add(b.len()));
     if metadata_bytes.is_none_or(|n| n > MAX_METADATA_BYTES) { return Err(Error::new(ErrorKind::Limit, "decoded metadata exceeds 8 MiB")); }
     let mut decoded_info = result.info().clone();
+    decoded_info.orientation = metadata.orientation;
     if decoded_info.source_color.bit_depth.is_none() { decoded_info.source_color.bit_depth = info.source_color.bit_depth; }
     if decoded_info.source_color.channel_count.is_none() { decoded_info.source_color.channel_count = info.source_color.channel_count; }
     let info = decoded_info;

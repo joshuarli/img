@@ -1969,6 +1969,7 @@ dependencies = [
  "libc",
  "little_exif",
  "log",
+ "moxcms",
  "mozjpeg",
  "oxipng",
  "png",
