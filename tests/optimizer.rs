@@ -55,6 +55,15 @@ fn original_fallback_is_explicit_and_cannot_bypass_stripping() {
     assert_eq!(std::fs::read(path).unwrap(),b"owner bytes");
 }
 #[test]
+fn no_op_resize_keeps_the_original_eligible() {
+    let mut bytes=Vec::new();let mut encoder=png::Encoder::new(&mut bytes,1,1);
+    encoder.set_color(png::ColorType::Grayscale);encoder.write_header().unwrap().write_image_data(&[128]).unwrap();
+    let request=Request {fidelity:Fidelity::Score(ScoreTarget::new(100.0).unwrap()),effort:Effort::Fast,max_dimension:std::num::NonZeroU32::new(10),..Request::default()};
+    let result=optimizer::process(&bytes,request).unwrap();assert!(result.unchanged);assert_eq!(result.bytes,bytes);
+    let large=source();let resized=optimizer::process(&large,Request {fidelity:Fidelity::Score(ScoreTarget::new(0.0).unwrap()),max_dimension:std::num::NonZeroU32::new(8),..request}).unwrap();
+    assert!(!resized.unchanged);assert_eq!(StillImage::decode(&resized.bytes).unwrap().dimensions(),(8,5));
+}
+#[test]
 fn direct_quality_converts_even_when_larger_and_cancellation_prevents_work() {
     let bytes=source();
     let result=optimizer::process(&bytes,Request {operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Quality(Quality::new(100.0).unwrap()),..Request::default()}).unwrap();

@@ -179,7 +179,9 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
     if matches!(request.fidelity, Fidelity::Lossless) && request.max_dimension.is_some() { return Err(Error::new(ErrorKind::Invalid, "lossless conflicts with resizing")); }
     let mut image = StillImage::decode_cancellable(bytes,cancelled)?;
     let source_format = image.format();
-    let source_eligible = request.max_dimension.is_none() && (request.metadata == MetadataPolicy::Keep || strip_compliant(bytes, source_format));
+    let (width,height)=image.dimensions();
+    let source_eligible = request.max_dimension.is_none_or(|maximum|width.max(height)<=maximum.get())
+        && (request.metadata == MetadataPolicy::Keep || strip_compliant(bytes, source_format));
     if request.metadata == MetadataPolicy::Strip {
         image = image.strip_metadata(if matches!(request.fidelity,Fidelity::Lossless) { SamplePreservation::Exact } else { SamplePreservation::AllowReorientation })?;
     }

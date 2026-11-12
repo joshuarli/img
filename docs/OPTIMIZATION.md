@@ -34,6 +34,4 @@ Source fallback is reported unchanged, never as an encoded candidate or an
 unmeasured successful search. A source representation that cannot satisfy a
 requested transformation cannot be selected. If no qualifying output exists,
 processing fails before publication. The caller uses the shared atomic publisher.
-Currently, merely specifying `--max-dimension` disables source fallback even
-when the image already fits. A request that would otherwise report unchanged
-can therefore fail; see [RIMG-7](../TODO.md#rimg-7--p2--a-no-op-resize-disables-valid-unchanged-output).
+An image that already fits `--max-dimension` remains eligible for source fallback.

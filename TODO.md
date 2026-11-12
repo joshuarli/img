@@ -42,16 +42,6 @@ Priorities are assumed from impact and likelihood. Evidence was reproduced again
 - **Effort:** M
 
 
-### RIMG-7 · P2 · A no-op resize disables valid unchanged output
-
-- **Area:** Optimizer source eligibility
-- **Where:** src/optimizer.rs:182, src/optimizer.rs:198-200, src/optimizer.rs:261; src/still/color.rs:170-172
-- **Problem:** Source fallback requires max_dimension to be absent even when resize_to_fit returns the image unchanged. Proven in the library and CLI using a 67-byte 1x1 grayscale PNG with score 100 and fast effort. Ordinary optimize exits 0 and reports unchanged at 67 bytes. Adding only `--max-dimension 10` exits 3 with input.score "no qualifying output: no compatible candidates" because no smaller candidate qualifies and the valid original was excluded. Batch resizing can therefore fail on images already below its ceiling.
-- **Recommendation:** Base source eligibility on whether the requested resize actually changes dimensions, while retaining metadata-strip compliance and format requirements. Keep the existing lossless/resize argument conflict unless that contract is separately changed. Assert unchanged output for a no-op ceiling and continued exclusion of original bytes when a real resize is needed.
-- **Fix with:** correct
-- **Effort:** S
-
-
 ### RIMG-8 · P2 · In-place rename can erase a source changed after verification
 
 - **Area:** Filesystem publication concurrency
