@@ -5,6 +5,7 @@ use zencodec::{decode::{DecodeJob, Decode, DecoderConfig}, encode::{EncodeJob, E
 use zenpixels::{PixelBuffer, PixelDescriptor};
 
 mod png;
+mod avif;
 
 /// Maximum compressed input, including stdin.
 pub const MAX_INPUT_BYTES: u64 = 128 * 1024 * 1024;
@@ -249,7 +250,7 @@ impl StillImage {
                 decode(config, bytes, format)
             },
             Format::Webp => decode(zenwebp::zencodec::WebpDecoderConfig::new(), bytes, format),
-            _ => Err(Error::new(ErrorKind::Unsupported, "codec adapter not available")),
+            Format::Avif => avif::decode(bytes),
         }
     }
 
@@ -303,7 +304,7 @@ impl StillImage {
                 }.with_alpha_quality_value(100.0).with_effort_u32(match effort { Effort::Fast => 0, Effort::Balanced => 6, Effort::Best => 10 });
                 encode(config, self)
             },
-            _ => Err(Error::new(ErrorKind::Unsupported, "codec adapter not available")),
+            Format::Avif => avif::encode(self, mode, effort),
         }
     }
 

@@ -17,5 +17,7 @@ Generated fixture samples are defined by `tests/common/mod.rs::pixels`. Tests ma
 | WebP exact samples and hidden RGB, both alpha modes | retained | `webp_codec`, independent libwebp decode |
 | PNG 8/16-bit gray/RGB/alpha and expanded palette samples | retained | `png_codec`, independent png 0.18 decode |
 | Palette quantization | explicitly lossy | `png_codec::direct_palette_mode_is_explicit_and_keeps_dimensions` |
+| AVIF opaque eight-bit SDR | retained with corrected color handling | `avif_codec`, independent dav1d decode at direct quality 0, 80, 100 |
+| AVIF alpha, monochrome, HDR/high depth, grid, animation, container transforms | intentionally refused until validated | `avif_codec`; failing alpha experiment preserved at `a4d2fb5`, details in `docs/AVIF.md` |
 | Exit aggregation and resource limits | open | `exit`, `limits` suites; mandatory limits at S1 |
 | Streams, signals, concurrent publication | open | S1 and S9 |

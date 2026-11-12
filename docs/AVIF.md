@@ -1,0 +1,13 @@
+# AVIF representation support
+
+The bounded still-image path uses zenavif 0.1.6 and zenravif 0.1.3 with zenrav1e 0.1.4 for opaque eight-bit encoding. Direct quality [0,100] maps to native quality [1,99]. The highest direct control avoids implying a strict lossless mode. Effort fast, balanced, best maps to native speed 10, 8, 6. Codec threads are disabled.
+
+Decoding uses rav1d-safe 0.5.7 plane access with explicit RGB identity and YUV matrix handling. Independent dav1d tests cover actual candidate bytes. Container color signaling is checked when present. Otherwise color is taken from the decoded AV1 sequence header, never an assumed container default. Only validated eight-bit SDR sRGB signaling is eligible. Both full and limited YUV ranges have explicit conversion paths.
+
+Alpha, monochrome, grids, animation, high precision, container rotation or mirroring, clean aperture, and premultiplied alpha are explicitly refused in this path. Header inspection remains independent of pixel decode. PNG and WebP provide verified alpha paths.
+
+The unaccepted alpha experiment is preserved at local branch `campaign/s5-alpha-probe`, commit `a4d2fb5`. Its exact alpha test fails with the selected published stack: alpha 0 becomes 1 through independent dav1d, including the explicit lossless flag. The managed Rust decoder also disagrees with the independent alpha plane. Those failures are implementation limitations, not unavailable-environment proofs. Retry only after a dependency correction or a newly established cause passes the original sample assertions without tolerance changes. Do not enable AVIF alpha merely because an encoder accepts RGBA.
+
+The direct managed plane adapter also avoids the published high-level decoder's fallback of the RGB identity matrix to BT.601. The private adapter remains necessary until the published implementation passes the independent matrix cases.
+
+zenavif and rav1d-safe select AGPL-3.0-only. zenravif and zenrav1e preserve their resolved BSD and patent notices. Assembly and unsafe C FFI features of rav1d-safe are disabled. Its build script emits Rust cfg values in this configuration. Third-party assembler code is not selected.
