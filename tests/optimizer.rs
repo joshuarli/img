@@ -61,3 +61,19 @@ fn direct_quality_converts_even_when_larger_and_cancellation_prevents_work() {
     assert_eq!(result.format,Format::Webp); assert_eq!(result.evaluations.len(),1); assert!(!result.unchanged);
     assert!(optimizer::process_cancellable(&bytes,Request::default(),&{ let c=rimage::cancellation::Cancellation::default(); c.cancel(); c }).is_err());
 }
+
+#[test]
+fn jpeg_identity_cannot_bypass_stripping_private_app_zero_data() {
+    let image=StillImage::from_rgb8(24,16,common::pixels(24,16)).unwrap();let jpeg=image.encode(Format::Jpeg,EncodingMode::Quality(Quality::new(80.0).unwrap()),Effort::Fast).unwrap();
+    for payload in [b"PRIVATE\0owner secret".to_vec(),[b"JFIF\0\x01\x02\0\0\x01\0\x01\0\0".as_slice(),b"owner secret"].concat()] {
+        let mut tagged=jpeg[..2].to_vec();tagged.extend_from_slice(&[255,224]);tagged.extend_from_slice(&((payload.len()+2) as u16).to_be_bytes());tagged.extend_from_slice(&payload);tagged.extend_from_slice(&jpeg[2..]);
+        let result=optimizer::process(&tagged,Request {fidelity:Fidelity::Lossless,metadata:MetadataPolicy::Strip,..Request::default()});
+        assert!(result.is_err(),"original JPEG bytes contain private APP0 data and cannot satisfy strip");
+    }
+}
+
+#[test]
+fn direct_quality_is_refused_for_a_lossless_only_png_representation() {
+    let gray=StillImage::from_samples(16,16,SampleLayout::Gray8,vec![80;256]).unwrap().encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
+    assert!(optimizer::process(&gray,Request {fidelity:Fidelity::Quality(Quality::new(80.0).unwrap()),..Request::default()}).is_err());
+}

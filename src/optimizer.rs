@@ -109,7 +109,7 @@ fn compatible(image: &StillImage, format: Format, fidelity: Fidelity) -> bool {
     if image.bit_depth() > 8 { return format == Format::Png && matches!(fidelity, Fidelity::Lossless); }
     match format {
         Format::Jpeg => !matches!(fidelity, Fidelity::Lossless) && expanded(image).iter().all(|p| p[3] == 255),
-        Format::Png => true,
+        Format::Png => !(matches!(fidelity,Fidelity::Quality(_)) && image.is_grayscale()),
         Format::Webp => true,
         Format::Avif => !image.has_alpha() && !image.is_grayscale() && !matches!(fidelity, Fidelity::Lossless),
     }
@@ -139,8 +139,14 @@ fn strip_compliant(bytes: &[u8], format: Format) -> bool {
                 let Some(len) = bytes.get(at..at+2) else { return false; };
                 let len = u16::from_be_bytes(len.try_into().unwrap()) as usize;
                 let Some(segment) = bytes.get(at+2..at+len) else { return false; };
-                if marker == 0xFE || ((0xE0..=0xEF).contains(&marker)
-                    && marker != 0xE0 && marker != 0xEE && !(marker == 0xE2 && segment.starts_with(b"ICC_PROFILE\0"))) { return false; }
+                let private=match marker {
+                    0xE0=>segment.len()!=14||!segment.starts_with(b"JFIF\0")||segment[12..14]!=[0,0],
+                    0xEE=>segment.len()!=12||!segment.starts_with(b"Adobe"),
+                    0xE2=>!segment.starts_with(b"ICC_PROFILE\0"),
+                    0xFE|0xE1..=0xEF=>true,
+                    _=>false,
+                };
+                if private {return false;}
                 at += len;
             }
             false
@@ -196,6 +202,9 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
         Operation::Optimize(FormatSelection::Auto) => vec![Format::Jpeg,Format::Png,Format::Webp,Format::Avif],
         Operation::Optimize(FormatSelection::Exact(f)) | Operation::Convert(f) => vec![f],
     };
+    if matches!(request.fidelity,Fidelity::Quality(_)) && formats==[Format::Png] && image.is_grayscale() {
+        return Err(Error::new(ErrorKind::Unsupported,"direct palette quality requires an eight-bit RGB or RGBA representation"));
+    }
     let mut best = if optimize && source_eligible && formats.contains(&source_format) {
         Some(Outcome { bytes:bytes.to_vec(), format:source_format, unchanged:true, score:identity_score, evaluations:vec![], warnings:vec![] })
     } else { None };
