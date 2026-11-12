@@ -20,7 +20,6 @@ default = [
     "webp",
     "avif",
     "tiff",
-    "svg",
     "threads",
     "metadata",
 ]
@@ -75,8 +74,6 @@ avif = [
 ]
 # Enables tiff codec
 tiff = ["dep:tiff"]
-# Enables SVG input support (rendered via resvg)
-svg = ["dep:resvg", "dep:skrifa"]
 icc = ["dep:lcms2"]
 # Enables runtime system-resource probing, used to derive image size limits
 limits = ["dep:sysinfo"]
@@ -104,14 +101,6 @@ yuvutils-rs = { version = "0.8", optional = true }
 lcms2 = { version = "6.2", optional = true }
 tiff = { version = "0.11.3", default-features = false, features = [
     "lzw",
-], optional = true }
-resvg = { version = "0.48.1", default-features = false, features = [
-    "text",
-    "system-fonts",
-    "raster-images",
-], optional = true }
-skrifa = { version = "0.47.0", default-features = false, features = [
-    "std",
 ], optional = true }
 
 # System resource probing for dynamic image size limits

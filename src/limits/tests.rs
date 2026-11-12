@@ -68,7 +68,6 @@ fn avif_cap_matches_spec() {
 fn formats_without_published_limits_are_unbounded() {
     for format in [
         ImageFormatId::Tiff,
-        ImageFormatId::Svg,
         ImageFormatId::Other,
     ] {
         let caps = format_caps(format);
@@ -287,7 +286,6 @@ fn assumed_layouts_are_never_narrower_than_rgb8() {
         ImageFormatId::WebP,
         ImageFormatId::Avif,
         ImageFormatId::Tiff,
-        ImageFormatId::Svg,
         ImageFormatId::Other,
     ] {
         let (depth, colorspace) = format.max_pixel_layout();
@@ -319,7 +317,6 @@ fn format_extension_lookup_is_case_insensitive() {
     assert_eq!(ImageFormatId::from_extension("jpeg"), ImageFormatId::Jpeg);
     assert_eq!(ImageFormatId::from_extension("WebP"), ImageFormatId::WebP);
     assert_eq!(ImageFormatId::from_extension("tif"), ImageFormatId::Tiff);
-    assert_eq!(ImageFormatId::from_extension("svgz"), ImageFormatId::Svg);
     assert_eq!(ImageFormatId::from_extension("qoi"), ImageFormatId::Other);
 }
 

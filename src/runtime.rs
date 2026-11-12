@@ -906,12 +906,6 @@ pub(crate) fn run(arguments: Arguments) -> std::process::ExitCode {
                         let preserved_mtime = preserve_timestamps
                             .then(|| FileTime::from_last_modification_time(&input_metadata));
 
-                        let input_is_svg = input
-                            .extension()
-                            .is_some_and(|ext| {
-                                ext.eq_ignore_ascii_case("svg") || ext.eq_ignore_ascii_case("svgz")
-                            });
-
                         let mut img = fail_pipeline!(state, decode(&input, matches, target_format, in_flight));
 
                         // Preserve JPEG metadata directly from the source file.
@@ -985,7 +979,7 @@ pub(crate) fn run(arguments: Arguments) -> std::process::ExitCode {
                             ops.push(Box::new(AutoOrient));
                         }
 
-                        operations(matches, &img, input_is_svg)
+                        operations(matches, &img)
                             .into_iter()
                             .for_each(|(_, operations)| match operations.name() {
                                 "quantize" => {

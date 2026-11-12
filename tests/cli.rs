@@ -48,3 +48,27 @@ fn help_subcommand_accepts_aliases() {
     assert!(output.status.success());
     assert!(String::from_utf8_lossy(&output.stdout).contains("rimage jpeg"));
 }
+
+#[test]
+fn unsupported_vector_input_does_not_publish_output() {
+    struct Scratch(std::path::PathBuf);
+    impl Drop for Scratch {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let scratch = Scratch(std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join(".work/tmp").join(format!("unsupported-input-{}", std::process::id())));
+    std::fs::create_dir(&scratch.0).unwrap();
+    let input = scratch.0.join("image.svg");
+    let output_dir = scratch.0.join("out");
+    std::fs::create_dir(&output_dir).unwrap();
+    let bytes = br#"<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="red"/></svg>"#;
+    std::fs::write(&input, bytes).unwrap();
+    let output = Command::new(env!("CARGO_BIN_EXE_rimage"))
+        .arg("png").arg(&input).arg("-d").arg(&output_dir).arg("--quiet")
+        .output().unwrap();
+    assert_eq!(output.status.code(), Some(3), "{}", String::from_utf8_lossy(&output.stderr));
+    assert_eq!(std::fs::read(&input).unwrap(), bytes);
+    assert_eq!(std::fs::read_dir(&output_dir).unwrap().count(), 0);
+}

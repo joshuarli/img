@@ -29,7 +29,7 @@ pub struct WebPDecoder<R: Read> {
 /// libwebp has no file-size ceiling, and the static decoder path reads the
 /// whole file before it can tell whether the bitstream is valid, so a hostile
 /// multi-gigabyte "webp" would exhaust memory before any format check ran.
-/// 256 MiB is far beyond any real WebP and matches the SVG decoder's cap.
+/// The input is capped at 256 MiB before decoding.
 const MAX_WEBP_BYTES: u64 = 256 * 1024 * 1024;
 
 impl<R: Read> WebPDecoder<R> {

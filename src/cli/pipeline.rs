@@ -1,7 +1,7 @@
-#[cfg(any(feature = "avif", feature = "webp", feature = "svg", feature = "tiff"))]
+#[cfg(any(feature = "avif", feature = "webp", feature = "tiff"))]
 use std::io::{Seek, SeekFrom};
 use std::{collections::BTreeMap, path::Path};
-#[cfg(any(feature = "limits", feature = "avif", feature = "webp", feature = "svg", feature = "tiff", test))]
+#[cfg(any(feature = "limits", feature = "avif", feature = "webp", feature = "tiff", test))]
 use std::fs::File;
 
 #[cfg(feature = "avif")]
@@ -17,10 +17,6 @@ use rimage::codecs::avif::AvifEncoder;
 use rimage::codecs::mozjpeg::MozJpegEncoder;
 #[cfg(feature = "oxipng")]
 use rimage::codecs::oxipng::OxiPngEncoder;
-#[cfg(feature = "svg")]
-use rimage::codecs::svg::SvgDecoder;
-#[cfg(all(feature = "svg", not(feature = "resize")))]
-use rimage::codecs::svg::SvgOptions;
 #[cfg(feature = "webp")]
 use rimage::codecs::webp::WebPEncoder;
 use zune_core::{bytestream::ZByteWriterTrait, options::DecoderOptions, options::EncoderOptions};
@@ -74,11 +70,6 @@ fn decode_options() -> DecoderOptions {
 /// from the widest the input format allows rather than assumed, because the
 /// screen cannot see the real one yet.
 ///
-/// Returns `Ok(())` when the format has no readable dimensions for us (an SVG
-/// render target, for instance, which is bounded separately) or when they fit.
-/// The failure is a [`RimageError`] rather than an [`ImageErrors`] because the
-/// violation is resolved here and would otherwise have to be re-parsed out of a
-/// string to be reported.
 #[cfg(feature = "limits")]
 #[allow(unused_variables)]
 fn check_input_limits(
@@ -96,7 +87,7 @@ fn check_input_limits(
     let format = ImageFormatId::from_extension(extension);
 
     // Only worth probing for formats we can size up front. Anything else is
-    // rejected later by the decoder or by the SVG point budget. A file that
+    // rejected later by the decoder. A file that
     // cannot even be opened is left for the decode step to report, so the
     // missing-file message keeps coming from one place.
     let Ok(reader) = File::open(path) else {
@@ -547,48 +538,8 @@ pub fn decode<P: AsRef<Path>>(
     check_input_limits(f.as_ref(), matches, output, concurrency)?;
 
     Image::open_with_options(f.as_ref(), decode_options())
-        .or_else(|e| decode_with_fallback(f.as_ref(), matches, output, concurrency, e))
-        .map_err(|e| classify_decode_failure(f.as_ref(), matches, &e))
-}
-
-/// Pixel budget an SVG rasterisation may cover, derived from the machine.
-///
-/// The SVG decoder has its own conservative constant for standalone use, but
-/// this program can probe the machine, so the render target is bounded by the
-/// same memory model every other format uses rather than by a fixed 512 MiB.
-/// Returns `None` when the `limits` feature is off, which makes the decoder
-/// fall back to its own constant.
-#[cfg(feature = "svg")]
-#[allow(unused_variables)]
-fn svg_pixel_budget(
-    matches: &Arguments,
-    output: rimage::limits::ImageFormatId,
-    concurrency: usize,
-) -> Option<u64> {
-    #[cfg(feature = "limits")]
-    {
-        use rimage::limits::{ImageFormatId, LimitSet, PipelineCost, SystemBudget};
-
-        let (depth, colorspace) = ImageFormatId::Svg.max_pixel_layout();
-        let budget = SystemBudget::probe(concurrency);
-        let limits = LimitSet::for_input(
-            ImageFormatId::Svg,
-            depth,
-            colorspace,
-            &budget,
-            // The render target has to survive the encoder as well, so the
-            // same conversion cost applies here as to any other input.
-            PipelineCost::for_conversion(ImageFormatId::Svg, output),
-        );
-
-        Some(limits.max_pixels)
-    }
-
-    #[cfg(not(feature = "limits"))]
-    {
-        let _ = (matches, output, concurrency);
-        None
-    }
+        .or_else(|e| decode_with_fallback(f.as_ref(), e))
+        .map_err(|e| rimage::error::classify_input(f.as_ref(), &e, None))
 }
 
 /// Retry the decode with the decoders `zune_image` does not own.
@@ -598,48 +549,12 @@ fn svg_pixel_budget(
 #[allow(unused_variables)]
 fn decode_with_fallback(
     path: &Path,
-    matches: &Arguments,
-    output: rimage::limits::ImageFormatId,
-    concurrency: usize,
     e: ImageErrors,
 ) -> Result<Image, ImageErrors> {
     {
         if matches!(e, ImageErrors::ImageDecoderNotImplemented(_)) {
-            #[cfg(any(feature = "avif", feature = "webp", feature = "svg", feature = "tiff"))]
+            #[cfg(any(feature = "avif", feature = "webp", feature = "tiff"))]
             let mut file = File::open(path)?;
-
-            #[cfg(feature = "svg")]
-            {
-                if path
-                    .extension()
-                    .is_some_and(|f| f.eq_ignore_ascii_case("svg") | f.eq_ignore_ascii_case("svgz"))
-                {
-                    let resources_dir = path.parent().map(Path::to_path_buf);
-                    let pixel_budget = svg_pixel_budget(matches, output, concurrency);
-
-                    #[cfg(feature = "resize")]
-                    let decoder = SvgDecoder::try_new_with_resize_and_budget(
-                        file,
-                        resources_dir,
-                        pixel_budget,
-                        |size| svg_target_size(matches, size),
-                    )?;
-
-                    #[cfg(not(feature = "resize"))]
-                    let decoder = SvgDecoder::try_new_with_options(
-                        file,
-                        SvgOptions {
-                            resources_dir,
-                            target_size: None,
-                            pixel_budget,
-                        },
-                    )?;
-
-                    return Image::from_decoder(decoder);
-                }
-
-                file.seek(SeekFrom::Start(0))?;
-            }
 
             #[cfg(feature = "avif")]
             {
@@ -699,82 +614,6 @@ fn decode_with_fallback(
     }
 }
 
-/// Turn a decode failure into the structured, side-tagged form the CLI reports.
-///
-/// The resize context is deliberately not reconstructed here. `classify_input`
-/// uses it only to name the requested dimensions in an
-/// `ImageOperationNotImplemented("resize")` failure, and the only resize
-/// failures reachable at decode time are the SVG render-target ones, whose
-/// message already names the offending size. Passing `None` keeps this
-/// function honest instead of inventing a reason it did not observe; the
-/// classification still reports it as an input failure on the right format.
-fn classify_decode_failure(
-    path: &Path,
-    _matches: &Arguments,
-    error: &ImageErrors,
-) -> rimage::error::RimageError {
-    rimage::error::classify_input(path, error, None)
-}
-
-#[cfg(all(feature = "svg", feature = "resize"))]
-fn svg_target_size(
-    matches: &Arguments,
-    size: (usize, usize),
-) -> Result<Option<(u32, u32)>, ImageErrors> {
-    let first_other = first_other_index(matches);
-    let plan = resize_plan(
-        matches.steps.iter().filter_map(|(idx, step)| match step {
-            Step::Resize(value) if *idx < first_other => Some((*idx, value)),
-            _ => None,
-        }),
-        size,
-        matches.downscale,
-        matches.upscale,
-    );
-
-    if plan.is_empty() {
-        return Ok(None);
-    }
-
-    let final_size = plan.last().map(|(_, size)| *size).unwrap_or(size);
-    let width = u32::try_from(final_size.0).map_err(|_| {
-        ImageErrors::ImageDecodeErrors(format!(
-            "SVG target width {} exceeds the maximum supported dimension of {}",
-            final_size.0,
-            u32::MAX
-        ))
-    })?;
-    let height = u32::try_from(final_size.1).map_err(|_| {
-        ImageErrors::ImageDecodeErrors(format!(
-            "SVG target height {} exceeds the maximum supported dimension of {}",
-            final_size.1,
-            u32::MAX
-        ))
-    })?;
-
-    Ok(Some((width, height)))
-}
-
-/// Returns the index of the first non-resize preprocessing element.
-///
-/// SVG vector resizing can only be folded into the decode render target for
-/// the resize steps that come before every quantization operation and before
-/// every true `--premultiply` flag. Steps at or after this index must run as
-/// ordinary raster resize operations so command-line order is preserved.
-#[cfg(feature = "resize")]
-fn first_other_index(matches: &Arguments) -> usize {
-    matches.steps.iter().find_map(|(index, step)| match step {
-        Step::Resize(_) => None,
-        _ => Some(*index),
-    }).unwrap_or(usize::MAX)
-}
-
-/// Plans a chain of resize operations, returning only the steps that are not
-/// skipped by the direction flags or by already matching the current size.
-///
-/// The same logic is used for raster images (which get a physical [`Resize`]
-/// operation for every planned step) and for SVG inputs (which use the final
-/// planned size as the vector render target).
 #[cfg(feature = "resize")]
 fn resize_plan<'a>(
     values: impl Iterator<Item = (usize, &'a ResizeValue)>,
@@ -817,7 +656,6 @@ fn resize_plan<'a>(
 pub fn operations(
     matches: &Arguments,
     img: &Image,
-    skip_resize: bool,
 ) -> BTreeMap<usize, Box<dyn OperationsTrait>> {
     let mut map: BTreeMap<usize, Box<dyn OperationsTrait>> = BTreeMap::new();
 
@@ -826,10 +664,9 @@ pub fn operations(
         use fast_image_resize::ResizeAlg;
         use rimage::operations::resize::Resize;
 
-        let first_other = first_other_index(matches);
         let plan = resize_plan(
             matches.steps.iter().filter_map(|(idx, step)| match step {
-                Step::Resize(value) if !skip_resize || *idx >= first_other => Some((*idx, value)),
+                Step::Resize(value) => Some((*idx, value)),
                 _ => None,
             }),
             img.dimensions(), matches.downscale, matches.upscale,
@@ -1154,7 +991,7 @@ pub fn encoder(name: &str, matches: &Arguments) -> Result<AvailableEncoders, Ima
 mod tests {
     use zune_core::colorspace::ColorSpace;
 
-    use super::{operations, Arguments, Image, Step};
+    use super::{operations, Arguments, Image};
     use crate::cli::command::{parse, Outcome};
 
     /// Builds the codec subcommand matches the way `main` passes them to [`operations`].
@@ -1187,7 +1024,7 @@ mod tests {
         let matches = matches_from(&args);
         let mut img = test_image(width, height);
 
-        let ops = operations(&matches, &img, false);
+        let ops = operations(&matches, &img);
         let queued = ops.values().filter(|op| op.name() == "fast resize").count();
 
         for op in ops.values() {
@@ -1440,117 +1277,7 @@ mod tests {
         );
     }
 
-    #[test]
-    fn skip_resize_skips_only_leading_svg_steps() {
-        let matches = matches_from(&[
-            "rimage",
-            "farbfeld",
-            "--resize",
-            "@2",
-            "--quantization",
-            "80",
-            "--resize",
-            "50%",
-            "image.ff",
-        ]);
 
-        let img = test_image(200, 100);
-        let ops = operations(&matches, &img, true);
-
-        let resize_indices: Vec<usize> = ops
-            .iter()
-            .filter(|(_, op)| op.name() == "fast resize")
-            .map(|(idx, _)| *idx)
-            .collect();
-
-        let expected: Vec<usize> = matches.steps.iter().filter_map(|(index, step)| {
-            matches!(step, Step::Resize(_)).then_some(*index)
-        }).skip(1).collect();
-        assert_eq!(resize_indices, expected);
-    }
-
-    #[cfg(feature = "svg")]
-    mod svg_target_size_tests {
-        use zune_image::errors::ImageErrors;
-
-        use super::super::svg_target_size;
-        use super::matches_from;
-
-        fn target_size(args: &[&str]) -> Result<Option<(u32, u32)>, ImageErrors> {
-            let mut file_args = vec!["rimage", "farbfeld"];
-            file_args.extend_from_slice(args);
-            file_args.push("tests/files/svg/rect.svg");
-
-            let matches = matches_from(&file_args);
-            svg_target_size(&matches, (100, 50))
-        }
-
-        #[test]
-        fn multiplier_uses_vector_render_target() {
-            assert_eq!(target_size(&["--resize", "@2"]).unwrap(), Some((200, 100)));
-        }
-
-        #[test]
-        fn chained_resize_composes_for_svg() {
-            assert_eq!(
-                target_size(&["--resize", "@2", "--resize", "50%"]).unwrap(),
-                Some((100, 50))
-            );
-        }
-
-        #[test]
-        fn intrinsic_size_returns_no_target() {
-            assert_eq!(target_size(&["--resize", "100x50"]).unwrap(), None);
-        }
-
-        #[test]
-        fn no_upscale_skips_growth_for_svg() {
-            assert_eq!(
-                target_size(&["--resize", "200l", "--no-upscale"]).unwrap(),
-                None
-            );
-        }
-
-        #[test]
-        fn resize_after_quantization_is_not_preapplied() {
-            assert_eq!(
-                target_size(&["--quantization", "80", "--resize", "64x64"]).unwrap(),
-                None
-            );
-        }
-
-        #[test]
-        fn premultiply_before_resize_is_not_preapplied() {
-            assert_eq!(
-                target_size(&["--premultiply", "--resize", "64x64"]).unwrap(),
-                None
-            );
-        }
-
-        #[test]
-        fn longest_side_upscales_svg_vectorly() {
-            assert_eq!(
-                target_size(&["--resize", "200l"]).unwrap(),
-                Some((200, 100))
-            );
-        }
-
-        #[test]
-        fn filter_is_accepted_but_ignored_for_svg_vector_resize() {
-            assert_eq!(
-                target_size(&["--resize", "@2", "--filter", "nearest"]).unwrap(),
-                Some((200, 100))
-            );
-        }
-
-        // `usize` cannot exceed `u32::MAX` on 32-bit targets, so the
-        // overflow path this test guards only exists on 64-bit platforms.
-        #[cfg(target_pointer_width = "64")]
-        #[test]
-        fn oversized_dimensions_are_rejected() {
-            assert!(target_size(&["--resize", "4294967396x4294967396"]).is_err());
-        }
-    }
 }
 
 #[cfg(all(test, feature = "limits"))]

@@ -178,65 +178,6 @@ fn output_io_error_storage_full_has_a_hint() {
     assert!(hint.contains("free up space"), "{hint}");
 }
 
-#[cfg(feature = "svg")]
-#[test]
-fn an_svg_size_limit_marker_becomes_a_structured_size_limit() {
-    use crate::codecs::svg::SIZE_LIMIT_MARKER;
-
-    let path = PathBuf::from("poster.svg");
-    // Mirrors `codecs::svg::decoder::size_limit_error` shape exactly.
-    let error = ImageErrors::ImageDecodeErrors(format!(
-        "{SIZE_LIMIT_MARKER}132778x5000:663890000:268435456: SVG target size 132778x5000 \
-         (663890000 pixels) exceeds the limit of 268435456 pixels, reduce the --resize target \
-         or the intrinsic size",
-    ));
-
-    let classified = classify_input(&path, &error, None);
-
-    match classified {
-        RimageError::Input(InputError::SizeLimit {
-            format,
-            dimensions,
-            violation,
-            ..
-        }) => {
-            assert_eq!(format, ImageFormatId::Svg);
-            assert_eq!(dimensions, Some((132_778, 5_000)));
-            assert_eq!(violation.kind, ViolationKind::Pixels);
-            assert_eq!(violation.actual, 663_890_000);
-            assert_eq!(violation.allowed, 268_435_456);
-            // The SVG render target is always bounded by the memory budget the
-            // pipeline derived, so the violation is honestly labelled `Memory`
-            // — never `Format` (SVG has no fixed dimension cap) and never
-            // `Disk` (free space is the output volume's job).
-            assert_eq!(violation.binding, Binding::Memory);
-        }
-        other => panic!("expected Input::SizeLimit, got {other:?}"),
-    }
-
-    // The marker prefix must not leak into the human-readable text.
-    let rendered = classified.to_string();
-    assert!(!rendered.contains(SIZE_LIMIT_MARKER), "{rendered}");
-    assert!(classified.kind() == "input.size-limit");
-}
-
-#[cfg(feature = "svg")]
-#[test]
-fn an_svg_decode_error_without_the_marker_still_routes_to_decode() {
-    // Without the marker the classifier cannot know the failure is a size
-    // limit, so the safer default is to surface the upstream message under
-    // `input.decode` rather than guess.
-    let path = PathBuf::from("poster.svg");
-    let error = ImageErrors::ImageDecodeErrors("Unable to parse SVG - oops".to_string());
-
-    let classified = classify_input(&path, &error, None);
-    assert!(matches!(
-        classified,
-        RimageError::Input(InputError::Decode { .. })
-    ));
-    assert_eq!(classified.kind(), "input.decode");
-}
-
 #[test]
 fn a_size_limit_violation_explains_which_ceiling_bound() {
     let error = RimageError::Input(InputError::SizeLimit {

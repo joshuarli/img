@@ -128,8 +128,6 @@ pub enum ImageFormatId {
     Avif,
     /// TIFF, via the `tiff` crate.
     Tiff,
-    /// SVG, rasterised via `resvg` / `tiny-skia`.
-    Svg,
     /// A format with no specific handling; treated as unconstrained.
     Other,
 }
@@ -143,7 +141,6 @@ impl ImageFormatId {
             ImageFormatId::WebP => "webp",
             ImageFormatId::Avif => "avif",
             ImageFormatId::Tiff => "tiff",
-            ImageFormatId::Svg => "svg",
             ImageFormatId::Other => "image",
         }
     }
@@ -160,8 +157,6 @@ impl ImageFormatId {
             ImageFormatId::Avif
         } else if ext.eq_ignore_ascii_case("tif") || ext.eq_ignore_ascii_case("tiff") {
             ImageFormatId::Tiff
-        } else if ext.eq_ignore_ascii_case("svg") || ext.eq_ignore_ascii_case("svgz") {
-            ImageFormatId::Svg
         } else {
             ImageFormatId::Other
         }
@@ -207,8 +202,6 @@ impl ImageFormatId {
             // alpha is always carried, so the ceiling is 8-bit RGBA.
             ImageFormatId::Avif => (BitDepth::Eight, ColorSpace::RGBA),
             ImageFormatId::Tiff => (BitDepth::Sixteen, ColorSpace::RGBA),
-            // Rasterised at 8 bits with alpha.
-            ImageFormatId::Svg => (BitDepth::Eight, ColorSpace::RGBA),
             // Nothing is known about the file, so assume the widest layout
             // anything this program decodes can produce.
             ImageFormatId::Other => (BitDepth::Sixteen, ColorSpace::RGBA),
@@ -273,15 +266,6 @@ pub struct PipelineCost {
 
 impl PipelineCost {
     /// Cost of decoding plus encoding with no preprocessing.
-    ///
-    /// `decode` is 3: for the SVG path this is verified directly from the code
-    /// (premultiplied pixmap, straight-alpha interleaved copy, and the
-    /// deinterleaved channel buffers). Other decoders are assumed to be no
-    /// worse, so 3 is a floor rather than a measurement.
-    ///
-    /// `encode` differs per codec. Entero-coding and blocking encoders
-    /// (`oxipng`, `ravif`) build substantially more scratch state than
-    /// DCT-based ones (`mozjpeg`).
     pub const fn new(decode: u64, resize: u64, quantize: u64, encode: u64) -> Self {
         Self {
             decode,
