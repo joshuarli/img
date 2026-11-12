@@ -12,16 +12,6 @@ Priorities are assumed from impact and likelihood. Evidence was reproduced again
 - **Effort:** M
 
 
-### RIMG-5 · P2 · AVIF-to-PNG conversion retains a YUV matrix for RGB samples
-
-- **Area:** Cross-format color metadata
-- **Where:** src/still/avif.rs:49-74; src/still.rs:374-384; src/still/color.rs:69; src/optimizer.rs:101-115
-- **Problem:** The AVIF adapter converts YUV to full-range RGB but stores the original matrix/range in metadata.cicp, which the PNG encoder copies verbatim. PNG requires matrix coefficients 0. Proven with the external BT.709/sRGB/full-range matrix-1 AVIF recipe in RIMG-2 without film grain: public lossless PNG encoding emits cICP [1,13,1,1], and preparing that PNG fails with "PNG CICP signaling is unsupported". The real CLI `rimage convert plain-srgb.avif --format png --lossless --effort fast -o plain.png --json` exits 3 with "no qualifying output: exact decoded samples differ" and publishes nothing. The required-color comparison sees the newly emitted invalid PNG chunk. This is independent of the film-grain defect.
-- **Recommendation:** Normalize coding-dependent CICP when source planes become full-range RGB. Keep source container matrix/range separate from metadata describing current samples. Preserve CICP authority over any inactive ICC profile while producing valid RGB PNG signaling. Add an external AVIF-to-PNG case that succeeds losslessly and asserts cICP [1,13,0,1], with named identity, BT.709/BT.601 and range cases at the conversion boundary.
-- **Fix with:** make-invalid-states-unrepresentable
-- **Effort:** M
-
-
 ### RIMG-6 · P2 · Compare admits the candidate without accounting for its pixels
 
 - **Area:** Comparison memory admission

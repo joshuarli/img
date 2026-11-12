@@ -71,7 +71,7 @@ pub(super) fn decode(bytes: &[u8],stop: &crate::cancellation::Cancellation) -> R
     let mut image = StillImage::from_samples(width, height, layout, pixels)?;
     image.format = Format::Avif;
     image.info.format = zencodec::ImageFormat::Avif;
-    image.metadata.cicp = Some(zencodec::Cicp::new(1, 13, matrix, full_range));
+    image.metadata.cicp = Some(zencodec::Cicp::new(1, 13, 0, true));
     if let Some(zenavif_parse::ColorInformation::IccProfile(icc)) = parser.color_info() { image.metadata = image.metadata.with_icc(icc.clone()); }
     if let Some(exif) = parser.exif() { image.metadata = image.metadata.with_exif(exif.map_err(|e| Error::caused(ErrorKind::Invalid, e))?.into_owned()); }
     if let Some(xmp) = parser.xmp() { image.metadata = image.metadata.with_xmp(xmp.map_err(|e| Error::caused(ErrorKind::Invalid, e))?.into_owned()); }
@@ -80,6 +80,7 @@ pub(super) fn decode(bytes: &[u8],stop: &crate::cancellation::Cancellation) -> R
     if total.is_none_or(|size| size > super::MAX_METADATA_BYTES) { return Err(Error::new(ErrorKind::Limit, "decoded metadata exceeds 8 MiB")); }
     image.info.orientation = image.metadata.orientation;
     image.info.source_color.cicp = image.metadata.cicp;
+    if matches!(parser.color_info(),Some(zenavif_parse::ColorInformation::Nclx {..})) {image.info.source_color.color_authority=zencodec::ColorAuthority::Cicp;}
     Ok(image)
 }
 

@@ -39,6 +39,15 @@ fn film_grain_is_in_displayed_samples_and_lossless_output() {
 }
 
 #[test]
+fn yuv_avif_to_png_signals_full_range_rgb() {
+    let bytes=include_bytes!("files/generated/film-grain.avif");
+    let source=StillImage::decode(bytes).unwrap();
+    let output=rimage::optimizer::process(bytes,rimage::optimizer::Request {operation:rimage::optimizer::Operation::Convert(Format::Png),fidelity:rimage::optimizer::Fidelity::Lossless,effort:Effort::Fast,..Default::default()}).unwrap();
+    let header=rimage::still::describe(&output.bytes).unwrap();assert_eq!(header.cicp,Some([1,13,0,1]));
+    let decoded=StillImage::decode(&output.bytes).unwrap();assert_eq!(decoded.samples(),source.samples());decoded.prepare().unwrap();
+}
+
+#[test]
 fn unverified_alpha_lossless_precision_and_gray_are_explicitly_refused() {
     let rgba: Vec<_> = (0..32 * 24).flat_map(|i| [80, 120, 160, (i % 256) as u8]).collect();
     let image = StillImage::from_samples(32, 24, SampleLayout::Rgba8, rgba).unwrap();
