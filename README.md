@@ -60,6 +60,10 @@ Run `rimage --help` for flags. See [CLI contracts and JSON](docs/CLI.md),
 
 Supported hosts are macOS ARM64 and Linux ARM64/x86-64. See [development checks](docs/CODEC-BOUNDARY.md#development-checks) and [verification status](plan.md).
 
+Prereleases use immutable `release-<commit>` tags with checksummed macOS ARM64
+and static Linux ARM64/x86-64 binaries. In `~/usr`, run `sh sync tools rimage`
+with `gh` authenticated for this private repository. See [release verification](docs/RELEASE.md).
+
 The combined distribution selects **AGPL-3.0-only** for Imazen components.
 Original Rimage code retains its MIT and Apache-2.0 notices.
 See [license provenance](docs/PROVENANCE.md) and the license files.

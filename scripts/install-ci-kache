@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+mkdir -p "$root/.work/tmp"
+scratch=$(mktemp -d "$root/.work/tmp/ci-kache.XXXXXX")
+release='release-88537005c6c5d90968c6064585ec51a7096093e5'
+for binary in kache kache-engine; do
+    case $binary in
+        kache) digest=fc388fec9678d15fd0402449fdef18ec9b148e5de35e2dbb7377217959a14a10 ;;
+        kache-engine) digest=9615a41b60008674e521c12e7a6a6fa58bf024a574c0fd3a76bb3c308d6cbb06 ;;
+    esac
+    archive="$scratch/$binary.zip"
+    curl --fail --location --retry 3 -o "$archive" "https://github.com/joshuarli/kache/releases/download/$release/$binary-aarch64-apple-darwin.zip"
+    printf '%s  %s\n' "$digest" "$archive" | shasum -a 256 -c -
+    unzip "$archive" -d "$scratch"
+    mkdir -p "$HOME/.local/bin"
+    mv "$scratch/$binary-aarch64-apple-darwin" "$HOME/.local/bin/$binary"
+    chmod +x "$HOME/.local/bin/$binary"
+done
+printf '%s\n' "$HOME/.local/bin" >> "$GITHUB_PATH"
