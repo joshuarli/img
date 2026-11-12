@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "3dc1a0e5114b50b84ddf8fb289f79c25cfb341c2",
+  "behaviorOracle": "2708512",
+  "originalCodecRevision": "66fc0fc",
+  "architecture": "aarch64-apple-darwin",
+  "profile": "dist",
+  "binaryBytes": 6547968,
+  "peakRssBytes": 4685824,
+  "workload": "generated RGB PNG 256x192, file to file, one job",
+  "timing": {
+    "status": "deferred: host busy",
+    "build": null,
+    "startup": null,
+    "runtime": null
+  },
+  "completed": 1,
+  "failures": 0
+}

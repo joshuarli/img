@@ -1,4 +1,10 @@
-.PHONY: test
+.PHONY: test baseline-check
+
+export RUSTC_WRAPPER := kache
+export TMPDIR := $(CURDIR)/.work/tmp
 
 test:
-	cargo test --all-features
+	cargo test --locked --all-features
+
+baseline-check:
+	cargo test --locked --all-features --test baseline
