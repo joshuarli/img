@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::{fs, path::{Path, PathBuf}, process::Command, sync::atomic::{AtomicU64, Ordering}};
 
 static NEXT: AtomicU64 = AtomicU64::new(0);
