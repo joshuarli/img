@@ -85,7 +85,7 @@ pub(super) fn decode(bytes: &[u8],stop: &crate::cancellation::Cancellation) -> R
 
 fn frame(data: &[u8]) -> Result<Frame, Error> {
     let mut settings = Settings::default();
-    settings.threads = 1; settings.apply_grain = false; settings.frame_size_limit = super::MAX_PIXELS as u32;
+    settings.threads = 1; settings.apply_grain = true; settings.frame_size_limit = super::MAX_PIXELS as u32;
     let mut decoder = Decoder::with_settings(settings).map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
     let first=decoder.decode(data).map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
     let first=match first {Some(frame)=>Some(frame),None=>decoder.get_frame().map_err(|e|Error::caused(ErrorKind::Invalid,e))?};

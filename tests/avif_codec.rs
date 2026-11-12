@@ -28,6 +28,17 @@ fn check_native(bytes: &[u8]) {
 }
 
 #[test]
+fn film_grain_is_in_displayed_samples_and_lossless_output() {
+    let bytes=include_bytes!("files/generated/film-grain.avif");
+    let displayed=native_avif::grain_fixture(bytes,true);let ungrained=native_avif::grain_fixture(bytes,false);
+    assert!(displayed.iter().zip(&ungrained).filter(|(a,b)|a!=b).count()>1000);
+    let decoded=StillImage::decode(bytes).unwrap().samples();
+    assert!(displayed.iter().zip(&decoded).all(|(a,b)|a.abs_diff(*b)<=3));
+    let output=rimage::optimizer::process(bytes,rimage::optimizer::Request {operation:rimage::optimizer::Operation::Convert(Format::Webp),fidelity:rimage::optimizer::Fidelity::Lossless,effort:Effort::Fast,..Default::default()}).unwrap();
+    assert_eq!(StillImage::decode(&output.bytes).unwrap().samples(),decoded);
+}
+
+#[test]
 fn unverified_alpha_lossless_precision_and_gray_are_explicitly_refused() {
     let rgba: Vec<_> = (0..32 * 24).flat_map(|i| [80, 120, 160, (i % 256) as u8]).collect();
     let image = StillImage::from_samples(32, 24, SampleLayout::Rgba8, rgba).unwrap();

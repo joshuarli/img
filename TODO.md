@@ -2,16 +2,6 @@ Prefix: RIMG
 Next: 11
 
 Priorities are assumed from impact and likelihood. Evidence was reproduced against `ba5f682175a746e80f351a6908b555fa7d0ce09c`; CI failures are outside this review.
-### RIMG-2 · P1 · Lossless conversion silently removes AVIF film grain
-
-- **Area:** AVIF displayed-sample fidelity
-- **Where:** src/still/avif.rs:27, src/still/avif.rs:49-74, src/still/avif.rs:88; tests/avif_codec.rs:9-27
-- **Problem:** The managed decoder unconditionally sets apply_grain=false, so all later verification uses an incomplete displayed reference. Proven with a valid 422-byte 64x64 opaque eight-bit AVIF whose AV1 header and nclx both specify BT.709 primaries, sRGB transfer, matrix 1 and full range. Generate gray yuv444p with FFmpeg/libaom-av1, crf 25, cpu-used 8, threads 1, still-picture 1 and aom-params `film-grain-test=1:color-primaries=1:transfer-characteristics=13:matrix-coefficients=1`; set matching FFmpeg color flags and correct nclx to 1/13/1/full if the muxer leaves it unspecified. `rimage convert grain-srgb.avif --format webp --lossless --effort fast -o grain.webp --json` succeeds without warnings. Independently decoded WebP matches libdav1d with grain disabled exactly, but differs from grain-enabled decoding in 11,237 of 12,288 RGB samples, with maximum error 21. Rimage produces uniform 128 instead of the displayed 108-149 range.
-- **Recommendation:** Apply AV1 grain when constructing displayed reference samples, or detect active grain and explicitly refuse it until supported. Keep the decoder within the existing resource bounds. Add a fixed external grain fixture and independent assertions for both source decode and published lossless output. Comparing source and candidate through the same grain-disabled decoder cannot establish fidelity.
-- **Fix with:** none
-- **Effort:** S
-
-
 ### RIMG-4 · P2 · Compressed PNG text bypasses the decoded-metadata budget
 
 - **Area:** Untrusted-input resource bounds
