@@ -23,3 +23,6 @@ benchmark-run:
 	cargo build --locked --profile dist --features build-binary
 	cargo run --locked --profile dist --all-features --example benchmark -- run
 	perf-gate-ready -1
+
+pure-rust-build-check:
+	./scripts/check-pure-rust-build

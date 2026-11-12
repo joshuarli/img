@@ -41,12 +41,12 @@ pub(crate) fn checked_sdr(value: f32) -> Result<f32, Error> {
 }
 
 pub(crate) fn srgb_to_linear(value: f32) -> f32 {
-    if value <= 0.04045 { value / 12.92 } else { ((value + 0.055) / 1.055).powf(2.4) }
+    if value <= 0.04045 { value / 12.92 } else { libm::powf((value + 0.055) / 1.055,2.4) }
 }
 
 #[cfg(feature="resize")]
 fn linear_to_srgb(value: f32) -> f32 {
-    if value <= 0.0031308 { value * 12.92 } else { 1.055 * value.powf(1.0 / 2.4) - 0.055 }
+    if value <= 0.0031308 { value * 12.92 } else { 1.055 * libm::powf(value,1.0 / 2.4) - 0.055 }
 }
 
 enum ColorInterpretation {
@@ -122,7 +122,7 @@ impl StillImage {
                 transform.transform(&input, &mut rgb).map_err(|e| Error::caused(ErrorKind::Unsupported, e))?;
                 for value in &mut rgb { *value = srgb_to_linear(checked_sdr(*value)?); }
             },
-            ColorInterpretation::Gamma(gamma) => for value in &mut rgb { *value = value.powf(gamma); },
+            ColorInterpretation::Gamma(gamma) => for value in &mut rgb { *value = libm::powf(*value,gamma); },
             ColorInterpretation::Srgb => for value in &mut rgb { *value = srgb_to_linear(*value); },
         }
         if rgb.iter().any(|v| !v.is_finite()) { return Err(Error::new(ErrorKind::Unsupported, "nonfinite prepared color sample")); }
@@ -193,7 +193,7 @@ impl StillImage {
                     transform.transform(&input, &mut rgb).map_err(|e| Error::caused(ErrorKind::Unsupported, e))?;
                     if gray_profile { rgb = rgb.into_iter().flat_map(|v| [v, v, v]).collect(); }
                 },
-                ColorInterpretation::Gamma(gamma) => for value in &mut rgb { *value = srgb_to_linear(*value).powf(1.0 / gamma); },
+                ColorInterpretation::Gamma(gamma) => for value in &mut rgb { *value = libm::powf(srgb_to_linear(*value),1.0 / gamma); },
                 ColorInterpretation::Srgb => {},
             }
             let gray = self.is_grayscale();

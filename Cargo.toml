@@ -24,13 +24,14 @@ limits = ["dep:sysinfo"]
 [dependencies]
 png = "=0.18.1"
 libc = "0.2"
+libm = "=0.2.16"
 zenpng = { version = "=0.1.4", default-features = false, features = ["quantize"] }
 crc32fast = "1.5"
 zenjpeg = { version = "=0.8.4", default-features = false, features = ["decoder", "zencodec", "yuv"] }
 zenwebp = { version = "=0.4.6", default-features = false, features = ["std", "fast-yuv", "zencodec"] }
 zenavif = { version = "=0.1.6", default-features = false, features = ["encode", "zencodec"] }
 zenavif-parse = { version = "=0.6.2", default-features = false }
-rav1d-safe = { version = "=0.5.7", default-features = false, features = ["bitdepth_8", "bitdepth_16"] }
+rav1d-safe = { version = "=0.5.7", default-features = false, features = ["bitdepth_8"] }
 yuv = { version = "=0.8.20", default-features = false }
 moxcms = { version = "=0.8.1", features = ["extended_range"] }
 fast-ssim2 = { version = "=0.9.1", default-features = false }
@@ -47,7 +48,7 @@ zune-image = { version = "0.5.0", default-features = false, features = ["simd"] 
 fast_image_resize = { version = "6.1", optional = true }
 imagequant = { version = "4.4", default-features = false, optional = true }
 # System resource probing for dynamic image size limits
-sysinfo = { version = "0.39.6", optional = true }
+sysinfo = { version = "0.39.6", default-features = false, features = ["disk", "system"], optional = true }
 
 # cli
 serde_json = { version = "1.0", optional = true }

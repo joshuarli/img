@@ -6,16 +6,34 @@ fn main() {
     if let Err(error)=run() {eprintln!("benchmark: {error}");std::process::exit(1);}
 }
 fn run()->Result<(),Box<dyn std::error::Error>> {
-    let timed=std::env::args().nth(1).as_deref()==Some("run");
+    let mode=std::env::args().nth(1).unwrap_or_else(||"capture".into());
+    if mode=="preparation-probe" {
+        let directory=PathBuf::from(std::env::args_os().nth(2).ok_or("preparation-probe requires an output directory")?);fs::create_dir_all(&directory)?;
+        for (name,path) in [("source","corpus/coffee.png"),("candidate","results/coffee_png-rimage-80-0.webp")] {
+            let image=StillImage::decode(&fs::read(support::root().join(path))?)?;
+            fs::write(directory.join(format!("{name}-samples.bin")),image.samples())?;
+            let prepared=image.prepare()?;fs::write(directory.join(format!("{name}-linear.bin")),bytemuck::cast_slice(prepared.linear_rgb()))?;
+        }
+        return Ok(());
+    }
+    if mode!="run"&&mode!="capture" {return Err("expected run, capture or preparation-probe".into());}
+    let timed=mode=="run";
     if timed && !Command::new("perf-gate-ready").status()?.success() {return Err("perf gate deferred: host busy".into());}
     let repository=Path::new(env!("CARGO_MANIFEST_DIR"));let benchmark=support::root();let output_dir=benchmark.join("results");fs::create_dir_all(&output_dir)?;
     let scratch=repository.join(".work/tmp/benchmark-capture");fs::create_dir_all(&scratch)?;
     let generated=benchmark.join("corpus/generated");fs::create_dir_all(&generated)?;
     let mut cases=support::photographic().into_iter().map(|(name,bytes)|(name,bytes,String::from("corpus"))).collect::<Vec<_>>();
-    for (name,bytes) in support::generated() {fs::write(generated.join(&name),&bytes)?;cases.push((name,bytes,"corpus/generated".into()));}
+    for (name,bytes) in support::generated() {
+        let path=generated.join(&name);
+        let bytes=if path.exists() {let stored=fs::read(&path)?;if !rimage::optimizer::samples_equal(&StillImage::decode(&bytes)?,&StillImage::decode(&stored)?) {return Err(format!("generated fixture changed; update {name} explicitly").into());}stored} else {fs::write(path,&bytes)?;bytes};
+        cases.push((name,bytes,"corpus/generated".into()));
+    }
     let current=std::env::var_os("RIMAGE_BENCH_BIN").map(PathBuf::from).unwrap_or_else(||repository.join("target/dist/rimage"));
     let original=std::env::var_os("RIMAGE_ORIGINAL_BIN").map(PathBuf::from).unwrap_or_else(||repository.join(".work/tmp/original-target/release/rimage"));
-    let revision=String::from_utf8(Command::new("git").args(["rev-parse","HEAD"]).output()?.stdout)?.trim().to_owned();
+    let revision=String::from_utf8(Command::new("git").current_dir(repository).args(["rev-parse","HEAD"]).output()?.stdout)?.trim().to_owned();
+    let source_diff=Command::new("git").current_dir(repository).args(["diff","HEAD","--","src","Cargo.toml","Cargo.lock"]).output()?.stdout;
+    let source_diff_sha256={use sha2::{Digest,Sha256};format!("{:x}",Sha256::digest(&source_diff))};
+    let binary_sha256={use sha2::{Digest,Sha256};format!("{:x}",Sha256::digest(fs::read(&current)?))};
     let tools=[("rimage",current.as_os_str().to_owned(),"new"),("rimage-png",current.as_os_str().to_owned(),"new-png"),("original-mozjpeg",original.as_os_str().to_owned(),"original-jpeg"),("original-oxipng",original.as_os_str().to_owned(),"original-png"),("cwebp","cwebp".into(),"cwebp")];
     let mut records=vec![];
     for run in 0..if timed {5} else {1} {
@@ -71,7 +89,7 @@ fn run()->Result<(),Box<dyn std::error::Error>> {
         }
     }
     if timed && !Command::new("perf-gate-ready").arg("-1").status()?.success() {return Err("discard overlapping timings; post-run perf gate failed".into());}
-    let document=json!({"schemaVersion":1,"revision":revision,"architecture":std::env::consts::ARCH,"timingGate":if timed {"accepted"} else {"deferred: host busy"},"runsPerSide":if timed {5} else {1},"tools":{"rimage":"locked repository dist","original":"66fc0fc plus docs/original-build.patch, release; runtime comparison only","cwebp":"1.6.0, single-threaded","jpegli":"unavailable","dedicatedAvif":"unavailable"},"summary":support::summarize(&records),"records":records});
+    let document=json!({"schemaVersion":1,"revision":revision,"architecture":std::env::consts::ARCH,"timingGate":if timed {"accepted"} else {"deferred: host busy"},"runsPerSide":if timed {5} else {1},"sourceDirty":!source_diff.is_empty(),"sourceDiffSha256":source_diff_sha256,"binarySha256":binary_sha256,"tools":{"rimage":"locked repository dist","original":"66fc0fc plus docs/original-build.patch, release; runtime comparison only","cwebp":"1.6.0, single-threaded","jpegli":"unavailable","dedicatedAvif":"unavailable"},"summary":support::summarize(&records),"records":records});
     fs::write(output_dir.join(if timed {"timed.json"} else {"untimed.json"}),serde_json::to_vec_pretty(&document)?)?;
     println!("saved {} records; {} completed",document["records"].as_array().unwrap().len(),document["records"].as_array().unwrap().iter().filter(|r|r["completed"]==true).count());
     Ok(())

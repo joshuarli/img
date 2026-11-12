@@ -139,6 +139,14 @@ fn quantized_nominal_srgb_profile_is_refused_when_independent_cms_leaves_gamut()
 }
 
 #[test]
+fn canonical_srgb_transfer_has_platform_stable_float_samples() {
+    for (value,expected) in [(0,0u32),(71,0x3d810b68),(180,0x3ee9aeb6),(255,0x3f800000)] {
+        let image=StillImage::from_rgb8(1,1,vec![value;3]).unwrap();
+        assert_eq!(image.prepare().unwrap().linear_rgb()[0].map(f32::to_bits),[expected;3],"sRGB code {value}");
+    }
+}
+
+#[test]
 fn png_cicp_authority_is_preserved_when_an_icc_profile_is_also_present() {
     let samples=[80,120,160].repeat(16*16);let profile=moxcms::ColorProfile::new_display_p3().encode().unwrap();
     let image=png_image(16,16,&samples,png::ColorType::Rgb,Some(profile),None);let ordinary=image.prepare().unwrap();

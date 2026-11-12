@@ -1,0 +1,28 @@
+#!/bin/sh
+set -eu
+campaign_root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+cd "$campaign_root"
+export TMPDIR="$campaign_root/.work/tmp"
+mkdir -p "$TMPDIR"
+proof_dir="$TMPDIR/native-tool-guard-$$"
+mkdir "$proof_dir"
+export RIMAGE_NATIVE_TOOL_LOG="$proof_dir/invocations.txt"
+: > "$RIMAGE_NATIVE_TOOL_LOG"
+cat > "$proof_dir/denied" <<'GUARD'
+#!/bin/sh
+printf '%s\n' "$0 $*" >> "$RIMAGE_NATIVE_TOOL_LOG"
+exit 97
+GUARD
+chmod +x "$proof_dir/denied"
+for tool in cmake pkg-config nasm bindgen; do cp "$proof_dir/denied" "$proof_dir/$tool"; done
+export CC="$proof_dir/denied" CXX="$proof_dir/denied"
+export CMAKE="$proof_dir/cmake" NASM="$proof_dir/nasm" PKG_CONFIG="$proof_dir/pkg-config"
+export LIBCLANG_PATH="$proof_dir/no-libclang"
+export PATH="$proof_dir:$PATH" RUSTC_WRAPPER=kache
+export CARGO_TARGET_DIR="${RIMAGE_PURE_TARGET:-$TMPDIR/pure-rust-target-$$}"
+case "$CARGO_TARGET_DIR" in "$TMPDIR"/*) ;; *) echo 'proof target must be in repository .work/tmp' >&2; exit 2 ;; esac
+if test -e "$CARGO_TARGET_DIR"; then echo 'proof requires a fresh target directory' >&2; exit 2; fi
+cargo build --locked --profile dist --features build-binary
+if test -s "$RIMAGE_NATIVE_TOOL_LOG"; then cat "$RIMAGE_NATIVE_TOOL_LOG" >&2; exit 1; fi
+printf 'binary=%s/dist/rimage\nguard=%s\n' "$CARGO_TARGET_DIR" "$proof_dir"
+"$CARGO_TARGET_DIR/dist/rimage" --version

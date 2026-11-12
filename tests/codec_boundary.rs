@@ -23,8 +23,8 @@ fn bounded_still_adapter_checks_actual_samples() {
         assert!(StillImage::from_rgb8(w, h, vec![]).is_err());
     }
     assert!(StillImage::from_rgb8(2, 2, vec![0; 11]).is_err());
-    assert_eq!(StillImage::from_rgb8(MAX_DIMENSION, 1, vec![]).err().unwrap().kind(), ErrorKind::Invalid);
-    assert_eq!(StillImage::from_rgb8(MAX_DIMENSION + 1, 1, vec![]).err().unwrap().kind(), ErrorKind::Limit);
+    assert_eq!(StillImage::from_rgb8(16_384, 1, vec![]).err().unwrap().kind(), ErrorKind::Invalid);
+    assert_eq!(StillImage::from_rgb8(16_385, 1, vec![]).err().unwrap().kind(), ErrorKind::Limit);
     assert_eq!(StillImage::from_rgb8(4096, 4096, vec![]).err().unwrap().kind(), ErrorKind::Invalid);
     assert_eq!(StillImage::from_rgb8(4096, 4097, vec![]).err().unwrap().kind(), ErrorKind::Limit);
     assert!(StillImage::decode(b"not an image").is_err());

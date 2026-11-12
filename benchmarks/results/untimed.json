@@ -1,5 +1,6 @@
 {
   "architecture": "aarch64",
+  "binarySha256": "8e7c0cef386d71d8adc554f30d9c8cb1dbb0642e63418e1aa07c2d3cf8917374",
   "records": [
     {
       "architecture": "aarch64",
@@ -23,7 +24,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/astronaut.png",
@@ -61,7 +62,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/astronaut.png",
@@ -93,7 +94,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/astronaut.png",
@@ -132,7 +133,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/astronaut.png",
@@ -164,7 +165,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/astronaut.png",
@@ -196,7 +197,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/astronaut.png",
@@ -228,7 +229,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/astronaut.png",
@@ -260,7 +261,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/astronaut.png",
@@ -292,7 +293,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/astronaut.png",
@@ -324,7 +325,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/astronaut.png",
@@ -356,7 +357,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/astronaut.png",
@@ -373,7 +374,7 @@
           "bytes": 93198,
           "exitCode": 0,
           "quality": 95,
-          "score": 85.61774916048898,
+          "score": 85.61683015419776,
           "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\nwarning: \"cross-format metadata loss: PNG tIME\"\n"
         }
       ],
@@ -402,10 +403,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 85.61774916048898,
+      "score": 85.61683015419776,
       "sourcePath": "corpus/coffee.png",
       "target": 80.0,
       "threads": 1,
@@ -441,7 +442,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/coffee.png",
@@ -463,35 +464,35 @@
           "bytes": 48550,
           "exitCode": 0,
           "quality": 25,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 48550,
           "exitCode": 0,
           "quality": 50,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 48550,
           "exitCode": 0,
           "quality": 75,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 48550,
           "exitCode": 0,
           "quality": 95,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 48550,
           "exitCode": 0,
           "quality": 100,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -514,7 +515,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/coffee.png",
@@ -559,7 +560,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -577,42 +578,42 @@
           "bytes": 3534,
           "exitCode": 0,
           "quality": 0,
-          "score": -31.78554639510577,
+          "score": -31.784403200054157,
           "stderr": ""
         },
         {
           "bytes": 14364,
           "exitCode": 0,
           "quality": 25,
-          "score": 40.434644768717675,
+          "score": 40.43957928832615,
           "stderr": ""
         },
         {
           "bytes": 22876,
           "exitCode": 0,
           "quality": 50,
-          "score": 59.01262395298173,
+          "score": 59.02613288589891,
           "stderr": ""
         },
         {
           "bytes": 31288,
           "exitCode": 0,
           "quality": 75,
-          "score": 69.17571009225114,
+          "score": 69.16540229116653,
           "stderr": ""
         },
         {
           "bytes": 87502,
           "exitCode": 0,
           "quality": 95,
-          "score": 85.82730886960019,
+          "score": 85.82117945823111,
           "stderr": ""
         },
         {
           "bytes": 124002,
           "exitCode": 0,
           "quality": 100,
-          "score": 87.46264630082061,
+          "score": 87.4639794218649,
           "stderr": ""
         }
       ],
@@ -641,10 +642,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 85.82730886960019,
+      "score": 85.82117945823111,
       "sourcePath": "corpus/coffee.png",
       "target": 80.0,
       "threads": 1,
@@ -688,7 +689,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -711,35 +712,35 @@
           "bytes": 48550,
           "exitCode": 0,
           "quality": 25,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 48550,
           "exitCode": 0,
           "quality": 50,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 48550,
           "exitCode": 0,
           "quality": 75,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 48550,
           "exitCode": 0,
           "quality": 95,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 48550,
           "exitCode": 0,
           "quality": 100,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -762,7 +763,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/coffee.png",
@@ -779,42 +780,42 @@
           "bytes": 3534,
           "exitCode": 0,
           "quality": 0,
-          "score": -31.78554639510577,
+          "score": -31.784403200054157,
           "stderr": ""
         },
         {
           "bytes": 14364,
           "exitCode": 0,
           "quality": 25,
-          "score": 40.434644768717675,
+          "score": 40.43957928832615,
           "stderr": ""
         },
         {
           "bytes": 22876,
           "exitCode": 0,
           "quality": 50,
-          "score": 59.01262395298173,
+          "score": 59.02613288589891,
           "stderr": ""
         },
         {
           "bytes": 31288,
           "exitCode": 0,
           "quality": 75,
-          "score": 69.17571009225114,
+          "score": 69.16540229116653,
           "stderr": ""
         },
         {
           "bytes": 87502,
           "exitCode": 0,
           "quality": 95,
-          "score": 85.82730886960019,
+          "score": 85.82117945823111,
           "stderr": ""
         },
         {
           "bytes": 124002,
           "exitCode": 0,
           "quality": 100,
-          "score": 87.46264630082061,
+          "score": 87.4639794218649,
           "stderr": ""
         }
       ],
@@ -837,7 +838,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/coffee.png",
@@ -883,7 +884,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -906,35 +907,35 @@
           "bytes": 48550,
           "exitCode": 0,
           "quality": 25,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 48550,
           "exitCode": 0,
           "quality": 50,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 48550,
           "exitCode": 0,
           "quality": 75,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 48550,
           "exitCode": 0,
           "quality": 95,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 48550,
           "exitCode": 0,
           "quality": 100,
-          "score": 73.37687469654917,
+          "score": 73.3879114518645,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/coffee.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -957,7 +958,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/coffee.png",
@@ -974,42 +975,42 @@
           "bytes": 3534,
           "exitCode": 0,
           "quality": 0,
-          "score": -31.78554639510577,
+          "score": -31.784403200054157,
           "stderr": ""
         },
         {
           "bytes": 14364,
           "exitCode": 0,
           "quality": 25,
-          "score": 40.434644768717675,
+          "score": 40.43957928832615,
           "stderr": ""
         },
         {
           "bytes": 22876,
           "exitCode": 0,
           "quality": 50,
-          "score": 59.01262395298173,
+          "score": 59.02613288589891,
           "stderr": ""
         },
         {
           "bytes": 31288,
           "exitCode": 0,
           "quality": 75,
-          "score": 69.17571009225114,
+          "score": 69.16540229116653,
           "stderr": ""
         },
         {
           "bytes": 87502,
           "exitCode": 0,
           "quality": 95,
-          "score": 85.82730886960019,
+          "score": 85.82117945823111,
           "stderr": ""
         },
         {
           "bytes": 124002,
           "exitCode": 0,
           "quality": 100,
-          "score": 87.46264630082061,
+          "score": 87.4639794218649,
           "stderr": ""
         }
       ],
@@ -1032,7 +1033,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/coffee.png",
@@ -1049,7 +1050,7 @@
           "bytes": 81068,
           "exitCode": 0,
           "quality": 95,
-          "score": 82.42900775199163,
+          "score": 82.42438852533945,
           "stderr": ""
         }
       ],
@@ -1078,10 +1079,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 82.42900775199163,
+      "score": 82.42438852533945,
       "sourcePath": "corpus/grass.png",
       "target": 80.0,
       "threads": 1,
@@ -1124,7 +1125,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -1147,35 +1148,35 @@
           "bytes": 101010,
           "exitCode": 0,
           "quality": 25,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 101010,
           "exitCode": 0,
           "quality": 50,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 101010,
           "exitCode": 0,
           "quality": 75,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 101010,
           "exitCode": 0,
           "quality": 95,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 101010,
           "exitCode": 0,
           "quality": 100,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -1204,10 +1205,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 81.24777033203564,
+      "score": 81.21896593381379,
       "sourcePath": "corpus/grass.png",
       "target": 80.0,
       "threads": 1,
@@ -1250,7 +1251,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -1268,42 +1269,42 @@
           "bytes": 8186,
           "exitCode": 0,
           "quality": 0,
-          "score": -23.408377631956796,
+          "score": -23.40866822310616,
           "stderr": ""
         },
         {
           "bytes": 46032,
           "exitCode": 0,
           "quality": 25,
-          "score": 65.79169448329694,
+          "score": 65.79385118668631,
           "stderr": ""
         },
         {
           "bytes": 64900,
           "exitCode": 0,
           "quality": 50,
-          "score": 77.05442083966177,
+          "score": 77.04436442936276,
           "stderr": ""
         },
         {
           "bytes": 82802,
           "exitCode": 0,
           "quality": 75,
-          "score": 84.18661948256121,
+          "score": 84.18511686324169,
           "stderr": ""
         },
         {
           "bytes": 146582,
           "exitCode": 0,
           "quality": 95,
-          "score": 94.41253320833347,
+          "score": 94.37072969593568,
           "stderr": ""
         },
         {
           "bytes": 176330,
           "exitCode": 0,
           "quality": 100,
-          "score": 95.72497328996963,
+          "score": 95.73136416177124,
           "stderr": ""
         }
       ],
@@ -1332,10 +1333,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 84.18661948256121,
+      "score": 84.18511686324169,
       "sourcePath": "corpus/grass.png",
       "target": 80.0,
       "threads": 1,
@@ -1350,7 +1351,7 @@
           "bytes": 143080,
           "exitCode": 0,
           "quality": 95,
-          "score": 93.72162762949107,
+          "score": 93.74692739713409,
           "stderr": ""
         }
       ],
@@ -1379,10 +1380,10 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 93.72162762949107,
+      "score": 93.74692739713409,
       "sourcePath": "corpus/grass.png",
       "target": 90.0,
       "threads": 1,
@@ -1402,35 +1403,35 @@
           "bytes": 101010,
           "exitCode": 0,
           "quality": 25,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 101010,
           "exitCode": 0,
           "quality": 50,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 101010,
           "exitCode": 0,
           "quality": 75,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 101010,
           "exitCode": 0,
           "quality": 95,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 101010,
           "exitCode": 0,
           "quality": 100,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -1453,7 +1454,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/grass.png",
@@ -1470,42 +1471,42 @@
           "bytes": 8186,
           "exitCode": 0,
           "quality": 0,
-          "score": -23.408377631956796,
+          "score": -23.40866822310616,
           "stderr": ""
         },
         {
           "bytes": 46032,
           "exitCode": 0,
           "quality": 25,
-          "score": 65.79169448329694,
+          "score": 65.79385118668631,
           "stderr": ""
         },
         {
           "bytes": 64900,
           "exitCode": 0,
           "quality": 50,
-          "score": 77.05442083966177,
+          "score": 77.04436442936276,
           "stderr": ""
         },
         {
           "bytes": 82802,
           "exitCode": 0,
           "quality": 75,
-          "score": 84.18661948256121,
+          "score": 84.18511686324169,
           "stderr": ""
         },
         {
           "bytes": 146582,
           "exitCode": 0,
           "quality": 95,
-          "score": 94.41253320833347,
+          "score": 94.37072969593568,
           "stderr": ""
         },
         {
           "bytes": 176330,
           "exitCode": 0,
           "quality": 100,
-          "score": 95.72497328996963,
+          "score": 95.73136416177124,
           "stderr": ""
         }
       ],
@@ -1534,10 +1535,10 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 94.41253320833347,
+      "score": 94.37072969593568,
       "sourcePath": "corpus/grass.png",
       "target": 90.0,
       "threads": 1,
@@ -1552,7 +1553,7 @@
           "bytes": 177586,
           "exitCode": 0,
           "quality": 95,
-          "score": 95.55432104473773,
+          "score": 95.53410083395124,
           "stderr": ""
         }
       ],
@@ -1581,10 +1582,10 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 95.55432104473773,
+      "score": 95.53410083395124,
       "sourcePath": "corpus/grass.png",
       "target": 95.0,
       "threads": 1,
@@ -1604,35 +1605,35 @@
           "bytes": 101010,
           "exitCode": 0,
           "quality": 25,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 101010,
           "exitCode": 0,
           "quality": 50,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 101010,
           "exitCode": 0,
           "quality": 75,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 101010,
           "exitCode": 0,
           "quality": 95,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 101010,
           "exitCode": 0,
           "quality": 100,
-          "score": 81.24777033203564,
+          "score": 81.21896593381379,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/grass.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -1655,7 +1656,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/grass.png",
@@ -1672,42 +1673,42 @@
           "bytes": 8186,
           "exitCode": 0,
           "quality": 0,
-          "score": -23.408377631956796,
+          "score": -23.40866822310616,
           "stderr": ""
         },
         {
           "bytes": 46032,
           "exitCode": 0,
           "quality": 25,
-          "score": 65.79169448329694,
+          "score": 65.79385118668631,
           "stderr": ""
         },
         {
           "bytes": 64900,
           "exitCode": 0,
           "quality": 50,
-          "score": 77.05442083966177,
+          "score": 77.04436442936276,
           "stderr": ""
         },
         {
           "bytes": 82802,
           "exitCode": 0,
           "quality": 75,
-          "score": 84.18661948256121,
+          "score": 84.18511686324169,
           "stderr": ""
         },
         {
           "bytes": 146582,
           "exitCode": 0,
           "quality": 95,
-          "score": 94.41253320833347,
+          "score": 94.37072969593568,
           "stderr": ""
         },
         {
           "bytes": 176330,
           "exitCode": 0,
           "quality": 100,
-          "score": 95.72497328996963,
+          "score": 95.73136416177124,
           "stderr": ""
         }
       ],
@@ -1736,10 +1737,10 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 95.72497328996963,
+      "score": 95.73136416177124,
       "sourcePath": "corpus/grass.png",
       "target": 95.0,
       "threads": 1,
@@ -1754,7 +1755,7 @@
           "bytes": 65226,
           "exitCode": 0,
           "quality": 95,
-          "score": 83.33501211206769,
+          "score": 83.33877996833023,
           "stderr": ""
         }
       ],
@@ -1783,10 +1784,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 83.33501211206769,
+      "score": 83.33877996833023,
       "sourcePath": "corpus/gravel.png",
       "target": 80.0,
       "threads": 1,
@@ -1829,7 +1830,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -1852,35 +1853,35 @@
           "bytes": 78229,
           "exitCode": 0,
           "quality": 25,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 78229,
           "exitCode": 0,
           "quality": 50,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 78229,
           "exitCode": 0,
           "quality": 75,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 78229,
           "exitCode": 0,
           "quality": 95,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 78229,
           "exitCode": 0,
           "quality": 100,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -1909,10 +1910,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 85.1943106405035,
+      "score": 85.20191997519598,
       "sourcePath": "corpus/gravel.png",
       "target": 80.0,
       "threads": 1,
@@ -1955,7 +1956,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -1973,42 +1974,42 @@
           "bytes": 7390,
           "exitCode": 0,
           "quality": 0,
-          "score": -6.018108356951927,
+          "score": -6.018530367130779,
           "stderr": ""
         },
         {
           "bytes": 31712,
           "exitCode": 0,
           "quality": 25,
-          "score": 67.71487663345549,
+          "score": 67.72515912730988,
           "stderr": ""
         },
         {
           "bytes": 45122,
           "exitCode": 0,
           "quality": 50,
-          "score": 77.61851802252494,
+          "score": 77.61626061326277,
           "stderr": ""
         },
         {
           "bytes": 59728,
           "exitCode": 0,
           "quality": 75,
-          "score": 83.52857187060816,
+          "score": 83.52520724004019,
           "stderr": ""
         },
         {
           "bytes": 124510,
           "exitCode": 0,
           "quality": 95,
-          "score": 94.225364892619,
+          "score": 94.19370600983848,
           "stderr": ""
         },
         {
           "bytes": 152426,
           "exitCode": 0,
           "quality": 100,
-          "score": 95.59716215153247,
+          "score": 95.63257977239108,
           "stderr": ""
         }
       ],
@@ -2037,10 +2038,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 83.52857187060816,
+      "score": 83.52520724004019,
       "sourcePath": "corpus/gravel.png",
       "target": 80.0,
       "threads": 1,
@@ -2055,7 +2056,7 @@
           "bytes": 127486,
           "exitCode": 0,
           "quality": 95,
-          "score": 93.82087867960578,
+          "score": 93.82837959826591,
           "stderr": ""
         }
       ],
@@ -2084,10 +2085,10 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 93.82087867960578,
+      "score": 93.82837959826591,
       "sourcePath": "corpus/gravel.png",
       "target": 90.0,
       "threads": 1,
@@ -2107,35 +2108,35 @@
           "bytes": 78229,
           "exitCode": 0,
           "quality": 25,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 78229,
           "exitCode": 0,
           "quality": 50,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 78229,
           "exitCode": 0,
           "quality": 75,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 78229,
           "exitCode": 0,
           "quality": 95,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 78229,
           "exitCode": 0,
           "quality": 100,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -2158,7 +2159,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/gravel.png",
@@ -2175,42 +2176,42 @@
           "bytes": 7390,
           "exitCode": 0,
           "quality": 0,
-          "score": -6.018108356951927,
+          "score": -6.018530367130779,
           "stderr": ""
         },
         {
           "bytes": 31712,
           "exitCode": 0,
           "quality": 25,
-          "score": 67.71487663345549,
+          "score": 67.72515912730988,
           "stderr": ""
         },
         {
           "bytes": 45122,
           "exitCode": 0,
           "quality": 50,
-          "score": 77.61851802252494,
+          "score": 77.61626061326277,
           "stderr": ""
         },
         {
           "bytes": 59728,
           "exitCode": 0,
           "quality": 75,
-          "score": 83.52857187060816,
+          "score": 83.52520724004019,
           "stderr": ""
         },
         {
           "bytes": 124510,
           "exitCode": 0,
           "quality": 95,
-          "score": 94.225364892619,
+          "score": 94.19370600983848,
           "stderr": ""
         },
         {
           "bytes": 152426,
           "exitCode": 0,
           "quality": 100,
-          "score": 95.59716215153247,
+          "score": 95.63257977239108,
           "stderr": ""
         }
       ],
@@ -2239,10 +2240,10 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 94.225364892619,
+      "score": 94.19370600983848,
       "sourcePath": "corpus/gravel.png",
       "target": 90.0,
       "threads": 1,
@@ -2257,7 +2258,7 @@
           "bytes": 157330,
           "exitCode": 0,
           "quality": 95,
-          "score": 95.41867809497145,
+          "score": 95.41179244671599,
           "stderr": ""
         }
       ],
@@ -2286,10 +2287,10 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 95.41867809497145,
+      "score": 95.41179244671599,
       "sourcePath": "corpus/gravel.png",
       "target": 95.0,
       "threads": 1,
@@ -2309,35 +2310,35 @@
           "bytes": 78229,
           "exitCode": 0,
           "quality": 25,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 78229,
           "exitCode": 0,
           "quality": 50,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 78229,
           "exitCode": 0,
           "quality": 75,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 78229,
           "exitCode": 0,
           "quality": 95,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 78229,
           "exitCode": 0,
           "quality": 100,
-          "score": 85.1943106405035,
+          "score": 85.20191997519598,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/gravel.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -2360,7 +2361,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/gravel.png",
@@ -2377,42 +2378,42 @@
           "bytes": 7390,
           "exitCode": 0,
           "quality": 0,
-          "score": -6.018108356951927,
+          "score": -6.018530367130779,
           "stderr": ""
         },
         {
           "bytes": 31712,
           "exitCode": 0,
           "quality": 25,
-          "score": 67.71487663345549,
+          "score": 67.72515912730988,
           "stderr": ""
         },
         {
           "bytes": 45122,
           "exitCode": 0,
           "quality": 50,
-          "score": 77.61851802252494,
+          "score": 77.61626061326277,
           "stderr": ""
         },
         {
           "bytes": 59728,
           "exitCode": 0,
           "quality": 75,
-          "score": 83.52857187060816,
+          "score": 83.52520724004019,
           "stderr": ""
         },
         {
           "bytes": 124510,
           "exitCode": 0,
           "quality": 95,
-          "score": 94.225364892619,
+          "score": 94.19370600983848,
           "stderr": ""
         },
         {
           "bytes": 152426,
           "exitCode": 0,
           "quality": 100,
-          "score": 95.59716215153247,
+          "score": 95.63257977239108,
           "stderr": ""
         }
       ],
@@ -2441,10 +2442,10 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 95.59716215153247,
+      "score": 95.63257977239108,
       "sourcePath": "corpus/gravel.png",
       "target": 95.0,
       "threads": 1,
@@ -2488,7 +2489,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -2534,7 +2535,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -2557,35 +2558,35 @@
           "bytes": 2207,
           "exitCode": 0,
           "quality": 25,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 50,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 75,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 95,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 100,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -2608,7 +2609,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/ui.png",
@@ -2653,7 +2654,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -2671,42 +2672,42 @@
           "bytes": 192,
           "exitCode": 0,
           "quality": 0,
-          "score": -6.76067181999548,
+          "score": -6.75984053955284,
           "stderr": ""
         },
         {
           "bytes": 302,
           "exitCode": 0,
           "quality": 25,
-          "score": 55.08634014665721,
+          "score": 55.08492463878817,
           "stderr": ""
         },
         {
           "bytes": 330,
           "exitCode": 0,
           "quality": 50,
-          "score": 55.69463561857802,
+          "score": 55.699699613754575,
           "stderr": ""
         },
         {
           "bytes": 356,
           "exitCode": 0,
           "quality": 75,
-          "score": 58.29451487400348,
+          "score": 58.29501910505134,
           "stderr": ""
         },
         {
           "bytes": 428,
           "exitCode": 0,
           "quality": 95,
-          "score": 57.30223413845345,
+          "score": 57.30273904933626,
           "stderr": ""
         },
         {
           "bytes": 424,
           "exitCode": 0,
           "quality": 100,
-          "score": 58.92254106666627,
+          "score": 58.92476512255733,
           "stderr": ""
         }
       ],
@@ -2729,7 +2730,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/ui.png",
@@ -2775,7 +2776,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -2798,35 +2799,35 @@
           "bytes": 2207,
           "exitCode": 0,
           "quality": 25,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 50,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 75,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 95,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 100,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -2849,7 +2850,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/ui.png",
@@ -2866,42 +2867,42 @@
           "bytes": 192,
           "exitCode": 0,
           "quality": 0,
-          "score": -6.76067181999548,
+          "score": -6.75984053955284,
           "stderr": ""
         },
         {
           "bytes": 302,
           "exitCode": 0,
           "quality": 25,
-          "score": 55.08634014665721,
+          "score": 55.08492463878817,
           "stderr": ""
         },
         {
           "bytes": 330,
           "exitCode": 0,
           "quality": 50,
-          "score": 55.69463561857802,
+          "score": 55.699699613754575,
           "stderr": ""
         },
         {
           "bytes": 356,
           "exitCode": 0,
           "quality": 75,
-          "score": 58.29451487400348,
+          "score": 58.29501910505134,
           "stderr": ""
         },
         {
           "bytes": 428,
           "exitCode": 0,
           "quality": 95,
-          "score": 57.30223413845345,
+          "score": 57.30273904933626,
           "stderr": ""
         },
         {
           "bytes": 424,
           "exitCode": 0,
           "quality": 100,
-          "score": 58.92254106666627,
+          "score": 58.92476512255733,
           "stderr": ""
         }
       ],
@@ -2924,7 +2925,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/ui.png",
@@ -2970,7 +2971,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -2993,35 +2994,35 @@
           "bytes": 2207,
           "exitCode": 0,
           "quality": 25,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 50,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 75,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 95,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 100,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/ui.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -3044,7 +3045,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/ui.png",
@@ -3061,42 +3062,42 @@
           "bytes": 192,
           "exitCode": 0,
           "quality": 0,
-          "score": -6.76067181999548,
+          "score": -6.75984053955284,
           "stderr": ""
         },
         {
           "bytes": 302,
           "exitCode": 0,
           "quality": 25,
-          "score": 55.08634014665721,
+          "score": 55.08492463878817,
           "stderr": ""
         },
         {
           "bytes": 330,
           "exitCode": 0,
           "quality": 50,
-          "score": 55.69463561857802,
+          "score": 55.699699613754575,
           "stderr": ""
         },
         {
           "bytes": 356,
           "exitCode": 0,
           "quality": 75,
-          "score": 58.29451487400348,
+          "score": 58.29501910505134,
           "stderr": ""
         },
         {
           "bytes": 428,
           "exitCode": 0,
           "quality": 95,
-          "score": 57.30223413845345,
+          "score": 57.30273904933626,
           "stderr": ""
         },
         {
           "bytes": 424,
           "exitCode": 0,
           "quality": 100,
-          "score": 58.92254106666627,
+          "score": 58.92476512255733,
           "stderr": ""
         }
       ],
@@ -3119,7 +3120,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/ui.png",
@@ -3165,7 +3166,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -3211,7 +3212,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -3234,35 +3235,35 @@
           "bytes": 3414,
           "exitCode": 0,
           "quality": 25,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3414,
           "exitCode": 0,
           "quality": 50,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3414,
           "exitCode": 0,
           "quality": 75,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3414,
           "exitCode": 0,
           "quality": 95,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3414,
           "exitCode": 0,
           "quality": 100,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -3291,10 +3292,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 95.49525393029765,
+      "score": 95.49875504346733,
       "sourcePath": "corpus/generated/text.png",
       "target": 80.0,
       "threads": 1,
@@ -3337,7 +3338,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -3355,42 +3356,42 @@
           "bytes": 490,
           "exitCode": 0,
           "quality": 0,
-          "score": 81.17294442176888,
+          "score": 81.18509417937707,
           "stderr": ""
         },
         {
           "bytes": 1002,
           "exitCode": 0,
           "quality": 25,
-          "score": 92.2053193606023,
+          "score": 92.24087754348596,
           "stderr": ""
         },
         {
           "bytes": 1164,
           "exitCode": 0,
           "quality": 50,
-          "score": 93.85253998311892,
+          "score": 93.88018266302966,
           "stderr": ""
         },
         {
           "bytes": 1320,
           "exitCode": 0,
           "quality": 75,
-          "score": 94.85548387394967,
+          "score": 94.86790897621746,
           "stderr": ""
         },
         {
           "bytes": 1924,
           "exitCode": 0,
           "quality": 95,
-          "score": 96.50882268220765,
+          "score": 96.47900767563371,
           "stderr": ""
         },
         {
           "bytes": 2070,
           "exitCode": 0,
           "quality": 100,
-          "score": 97.26657242686322,
+          "score": 97.30611401398991,
           "stderr": ""
         }
       ],
@@ -3419,10 +3420,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 81.17294442176888,
+      "score": 81.18509417937707,
       "sourcePath": "corpus/generated/text.png",
       "target": 80.0,
       "threads": 1,
@@ -3466,7 +3467,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -3489,35 +3490,35 @@
           "bytes": 3414,
           "exitCode": 0,
           "quality": 25,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3414,
           "exitCode": 0,
           "quality": 50,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3414,
           "exitCode": 0,
           "quality": 75,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3414,
           "exitCode": 0,
           "quality": 95,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3414,
           "exitCode": 0,
           "quality": 100,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -3546,10 +3547,10 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 95.49525393029765,
+      "score": 95.49875504346733,
       "sourcePath": "corpus/generated/text.png",
       "target": 90.0,
       "threads": 1,
@@ -3564,42 +3565,42 @@
           "bytes": 490,
           "exitCode": 0,
           "quality": 0,
-          "score": 81.17294442176888,
+          "score": 81.18509417937707,
           "stderr": ""
         },
         {
           "bytes": 1002,
           "exitCode": 0,
           "quality": 25,
-          "score": 92.2053193606023,
+          "score": 92.24087754348596,
           "stderr": ""
         },
         {
           "bytes": 1164,
           "exitCode": 0,
           "quality": 50,
-          "score": 93.85253998311892,
+          "score": 93.88018266302966,
           "stderr": ""
         },
         {
           "bytes": 1320,
           "exitCode": 0,
           "quality": 75,
-          "score": 94.85548387394967,
+          "score": 94.86790897621746,
           "stderr": ""
         },
         {
           "bytes": 1924,
           "exitCode": 0,
           "quality": 95,
-          "score": 96.50882268220765,
+          "score": 96.47900767563371,
           "stderr": ""
         },
         {
           "bytes": 2070,
           "exitCode": 0,
           "quality": 100,
-          "score": 97.26657242686322,
+          "score": 97.30611401398991,
           "stderr": ""
         }
       ],
@@ -3628,10 +3629,10 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 92.2053193606023,
+      "score": 92.24087754348596,
       "sourcePath": "corpus/generated/text.png",
       "target": 90.0,
       "threads": 1,
@@ -3675,7 +3676,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -3698,35 +3699,35 @@
           "bytes": 3414,
           "exitCode": 0,
           "quality": 25,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3414,
           "exitCode": 0,
           "quality": 50,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3414,
           "exitCode": 0,
           "quality": 75,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3414,
           "exitCode": 0,
           "quality": 95,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3414,
           "exitCode": 0,
           "quality": 100,
-          "score": 95.49525393029765,
+          "score": 95.49875504346733,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/text.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -3755,10 +3756,10 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 95.49525393029765,
+      "score": 95.49875504346733,
       "sourcePath": "corpus/generated/text.png",
       "target": 95.0,
       "threads": 1,
@@ -3773,42 +3774,42 @@
           "bytes": 490,
           "exitCode": 0,
           "quality": 0,
-          "score": 81.17294442176888,
+          "score": 81.18509417937707,
           "stderr": ""
         },
         {
           "bytes": 1002,
           "exitCode": 0,
           "quality": 25,
-          "score": 92.2053193606023,
+          "score": 92.24087754348596,
           "stderr": ""
         },
         {
           "bytes": 1164,
           "exitCode": 0,
           "quality": 50,
-          "score": 93.85253998311892,
+          "score": 93.88018266302966,
           "stderr": ""
         },
         {
           "bytes": 1320,
           "exitCode": 0,
           "quality": 75,
-          "score": 94.85548387394967,
+          "score": 94.86790897621746,
           "stderr": ""
         },
         {
           "bytes": 1924,
           "exitCode": 0,
           "quality": 95,
-          "score": 96.50882268220765,
+          "score": 96.47900767563371,
           "stderr": ""
         },
         {
           "bytes": 2070,
           "exitCode": 0,
           "quality": 100,
-          "score": 97.26657242686322,
+          "score": 97.30611401398991,
           "stderr": ""
         }
       ],
@@ -3837,10 +3838,10 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 96.50882268220765,
+      "score": 96.47900767563371,
       "sourcePath": "corpus/generated/text.png",
       "target": 95.0,
       "threads": 1,
@@ -3884,7 +3885,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -3930,7 +3931,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -3953,35 +3954,35 @@
           "bytes": 3755,
           "exitCode": 0,
           "quality": 25,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3755,
           "exitCode": 0,
           "quality": 50,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3755,
           "exitCode": 0,
           "quality": 75,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3755,
           "exitCode": 0,
           "quality": 95,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3755,
           "exitCode": 0,
           "quality": 100,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -4010,10 +4011,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 94.08606983477829,
+      "score": 94.12703891952786,
       "sourcePath": "corpus/generated/line.png",
       "target": 80.0,
       "threads": 1,
@@ -4056,7 +4057,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -4074,35 +4075,35 @@
           "bytes": 544,
           "exitCode": 0,
           "quality": 0,
-          "score": 72.25126969616356,
+          "score": 72.25800780603927,
           "stderr": ""
         },
         {
           "bytes": 1308,
           "exitCode": 0,
           "quality": 25,
-          "score": 88.21152385600922,
+          "score": 88.21901618567375,
           "stderr": ""
         },
         {
           "bytes": 1484,
           "exitCode": 0,
           "quality": 50,
-          "score": 91.6871032893603,
+          "score": 91.64996768622358,
           "stderr": ""
         },
         {
           "bytes": 1704,
           "exitCode": 0,
           "quality": 75,
-          "score": 94.20782449604572,
+          "score": 94.19279879028738,
           "stderr": ""
         },
         {
           "bytes": 2362,
           "exitCode": 0,
           "quality": 95,
-          "score": 97.2884226524715,
+          "score": 97.29838759789708,
           "stderr": ""
         },
         {
@@ -4138,10 +4139,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 88.21152385600922,
+      "score": 88.21901618567375,
       "sourcePath": "corpus/generated/line.png",
       "target": 80.0,
       "threads": 1,
@@ -4185,7 +4186,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -4208,35 +4209,35 @@
           "bytes": 3755,
           "exitCode": 0,
           "quality": 25,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3755,
           "exitCode": 0,
           "quality": 50,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3755,
           "exitCode": 0,
           "quality": 75,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3755,
           "exitCode": 0,
           "quality": 95,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3755,
           "exitCode": 0,
           "quality": 100,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -4265,10 +4266,10 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 94.08606983477829,
+      "score": 94.12703891952786,
       "sourcePath": "corpus/generated/line.png",
       "target": 90.0,
       "threads": 1,
@@ -4283,35 +4284,35 @@
           "bytes": 544,
           "exitCode": 0,
           "quality": 0,
-          "score": 72.25126969616356,
+          "score": 72.25800780603927,
           "stderr": ""
         },
         {
           "bytes": 1308,
           "exitCode": 0,
           "quality": 25,
-          "score": 88.21152385600922,
+          "score": 88.21901618567375,
           "stderr": ""
         },
         {
           "bytes": 1484,
           "exitCode": 0,
           "quality": 50,
-          "score": 91.6871032893603,
+          "score": 91.64996768622358,
           "stderr": ""
         },
         {
           "bytes": 1704,
           "exitCode": 0,
           "quality": 75,
-          "score": 94.20782449604572,
+          "score": 94.19279879028738,
           "stderr": ""
         },
         {
           "bytes": 2362,
           "exitCode": 0,
           "quality": 95,
-          "score": 97.2884226524715,
+          "score": 97.29838759789708,
           "stderr": ""
         },
         {
@@ -4347,10 +4348,10 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 91.6871032893603,
+      "score": 91.64996768622358,
       "sourcePath": "corpus/generated/line.png",
       "target": 90.0,
       "threads": 1,
@@ -4394,7 +4395,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -4417,35 +4418,35 @@
           "bytes": 3755,
           "exitCode": 0,
           "quality": 25,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3755,
           "exitCode": 0,
           "quality": 50,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3755,
           "exitCode": 0,
           "quality": 75,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3755,
           "exitCode": 0,
           "quality": 95,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 3755,
           "exitCode": 0,
           "quality": 100,
-          "score": 94.08606983477829,
+          "score": 94.12703891952786,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/line.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -4468,7 +4469,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/line.png",
@@ -4485,35 +4486,35 @@
           "bytes": 544,
           "exitCode": 0,
           "quality": 0,
-          "score": 72.25126969616356,
+          "score": 72.25800780603927,
           "stderr": ""
         },
         {
           "bytes": 1308,
           "exitCode": 0,
           "quality": 25,
-          "score": 88.21152385600922,
+          "score": 88.21901618567375,
           "stderr": ""
         },
         {
           "bytes": 1484,
           "exitCode": 0,
           "quality": 50,
-          "score": 91.6871032893603,
+          "score": 91.64996768622358,
           "stderr": ""
         },
         {
           "bytes": 1704,
           "exitCode": 0,
           "quality": 75,
-          "score": 94.20782449604572,
+          "score": 94.19279879028738,
           "stderr": ""
         },
         {
           "bytes": 2362,
           "exitCode": 0,
           "quality": 95,
-          "score": 97.2884226524715,
+          "score": 97.29838759789708,
           "stderr": ""
         },
         {
@@ -4549,10 +4550,10 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 97.2884226524715,
+      "score": 97.29838759789708,
       "sourcePath": "corpus/generated/line.png",
       "target": 95.0,
       "threads": 1,
@@ -4596,7 +4597,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -4642,7 +4643,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -4722,7 +4723,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 97.3429687601281,
@@ -4768,7 +4769,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -4786,28 +4787,28 @@
           "bytes": 84,
           "exitCode": 0,
           "quality": 0,
-          "score": 80.95575987624794,
+          "score": 80.9589227520722,
           "stderr": ""
         },
         {
           "bytes": 82,
           "exitCode": 0,
           "quality": 25,
-          "score": 90.18479579320625,
+          "score": 90.19499455304275,
           "stderr": ""
         },
         {
           "bytes": 88,
           "exitCode": 0,
           "quality": 50,
-          "score": 91.21866022679353,
+          "score": 91.23373278648427,
           "stderr": ""
         },
         {
           "bytes": 96,
           "exitCode": 0,
           "quality": 75,
-          "score": 92.0119432735943,
+          "score": 92.03757601305126,
           "stderr": ""
         },
         {
@@ -4850,10 +4851,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 90.18479579320625,
+      "score": 90.19499455304275,
       "sourcePath": "corpus/generated/flat.png",
       "target": 80.0,
       "threads": 1,
@@ -4897,7 +4898,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -4977,7 +4978,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 97.3429687601281,
@@ -4995,28 +4996,28 @@
           "bytes": 84,
           "exitCode": 0,
           "quality": 0,
-          "score": 80.95575987624794,
+          "score": 80.9589227520722,
           "stderr": ""
         },
         {
           "bytes": 82,
           "exitCode": 0,
           "quality": 25,
-          "score": 90.18479579320625,
+          "score": 90.19499455304275,
           "stderr": ""
         },
         {
           "bytes": 88,
           "exitCode": 0,
           "quality": 50,
-          "score": 91.21866022679353,
+          "score": 91.23373278648427,
           "stderr": ""
         },
         {
           "bytes": 96,
           "exitCode": 0,
           "quality": 75,
-          "score": 92.0119432735943,
+          "score": 92.03757601305126,
           "stderr": ""
         },
         {
@@ -5059,10 +5060,10 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 90.18479579320625,
+      "score": 90.19499455304275,
       "sourcePath": "corpus/generated/flat.png",
       "target": 90.0,
       "threads": 1,
@@ -5106,7 +5107,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -5186,7 +5187,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 97.3429687601281,
@@ -5204,28 +5205,28 @@
           "bytes": 84,
           "exitCode": 0,
           "quality": 0,
-          "score": 80.95575987624794,
+          "score": 80.9589227520722,
           "stderr": ""
         },
         {
           "bytes": 82,
           "exitCode": 0,
           "quality": 25,
-          "score": 90.18479579320625,
+          "score": 90.19499455304275,
           "stderr": ""
         },
         {
           "bytes": 88,
           "exitCode": 0,
           "quality": 50,
-          "score": 91.21866022679353,
+          "score": 91.23373278648427,
           "stderr": ""
         },
         {
           "bytes": 96,
           "exitCode": 0,
           "quality": 75,
-          "score": 92.0119432735943,
+          "score": 92.03757601305126,
           "stderr": ""
         },
         {
@@ -5268,7 +5269,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 97.3429687601281,
@@ -5315,7 +5316,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -5361,7 +5362,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -5406,7 +5407,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/transparent.png",
@@ -5451,7 +5452,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -5469,42 +5470,42 @@
           "bytes": 168,
           "exitCode": 0,
           "quality": 0,
-          "score": 81.27039383078517,
+          "score": 81.26736634295916,
           "stderr": ""
         },
         {
           "bytes": 224,
           "exitCode": 0,
           "quality": 25,
-          "score": 88.64121884080646,
+          "score": 88.6382719835207,
           "stderr": ""
         },
         {
           "bytes": 254,
           "exitCode": 0,
           "quality": 50,
-          "score": 92.04988410500071,
+          "score": 92.03623556962809,
           "stderr": ""
         },
         {
           "bytes": 312,
           "exitCode": 0,
           "quality": 75,
-          "score": 92.63510067068782,
+          "score": 92.61837470383188,
           "stderr": ""
         },
         {
           "bytes": 514,
           "exitCode": 0,
           "quality": 95,
-          "score": 94.62571390594063,
+          "score": 94.60087266045007,
           "stderr": ""
         },
         {
           "bytes": 770,
           "exitCode": 0,
           "quality": 100,
-          "score": 95.25408732908141,
+          "score": 95.22837979023595,
           "stderr": ""
         }
       ],
@@ -5533,10 +5534,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 81.27039383078517,
+      "score": 81.26736634295916,
       "sourcePath": "corpus/generated/transparent.png",
       "target": 80.0,
       "threads": 1,
@@ -5580,7 +5581,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -5625,7 +5626,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/transparent.png",
@@ -5642,42 +5643,42 @@
           "bytes": 168,
           "exitCode": 0,
           "quality": 0,
-          "score": 81.27039383078517,
+          "score": 81.26736634295916,
           "stderr": ""
         },
         {
           "bytes": 224,
           "exitCode": 0,
           "quality": 25,
-          "score": 88.64121884080646,
+          "score": 88.6382719835207,
           "stderr": ""
         },
         {
           "bytes": 254,
           "exitCode": 0,
           "quality": 50,
-          "score": 92.04988410500071,
+          "score": 92.03623556962809,
           "stderr": ""
         },
         {
           "bytes": 312,
           "exitCode": 0,
           "quality": 75,
-          "score": 92.63510067068782,
+          "score": 92.61837470383188,
           "stderr": ""
         },
         {
           "bytes": 514,
           "exitCode": 0,
           "quality": 95,
-          "score": 94.62571390594063,
+          "score": 94.60087266045007,
           "stderr": ""
         },
         {
           "bytes": 770,
           "exitCode": 0,
           "quality": 100,
-          "score": 95.25408732908141,
+          "score": 95.22837979023595,
           "stderr": ""
         }
       ],
@@ -5706,10 +5707,10 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 92.04988410500071,
+      "score": 92.03623556962809,
       "sourcePath": "corpus/generated/transparent.png",
       "target": 90.0,
       "threads": 1,
@@ -5753,7 +5754,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -5798,7 +5799,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/transparent.png",
@@ -5815,42 +5816,42 @@
           "bytes": 168,
           "exitCode": 0,
           "quality": 0,
-          "score": 81.27039383078517,
+          "score": 81.26736634295916,
           "stderr": ""
         },
         {
           "bytes": 224,
           "exitCode": 0,
           "quality": 25,
-          "score": 88.64121884080646,
+          "score": 88.6382719835207,
           "stderr": ""
         },
         {
           "bytes": 254,
           "exitCode": 0,
           "quality": 50,
-          "score": 92.04988410500071,
+          "score": 92.03623556962809,
           "stderr": ""
         },
         {
           "bytes": 312,
           "exitCode": 0,
           "quality": 75,
-          "score": 92.63510067068782,
+          "score": 92.61837470383188,
           "stderr": ""
         },
         {
           "bytes": 514,
           "exitCode": 0,
           "quality": 95,
-          "score": 94.62571390594063,
+          "score": 94.60087266045007,
           "stderr": ""
         },
         {
           "bytes": 770,
           "exitCode": 0,
           "quality": 100,
-          "score": 95.25408732908141,
+          "score": 95.22837979023595,
           "stderr": ""
         }
       ],
@@ -5879,10 +5880,10 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 95.25408732908141,
+      "score": 95.22837979023595,
       "sourcePath": "corpus/generated/transparent.png",
       "target": 95.0,
       "threads": 1,
@@ -5926,7 +5927,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -5972,7 +5973,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -5995,35 +5996,35 @@
           "bytes": 731,
           "exitCode": 0,
           "quality": 25,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 731,
           "exitCode": 0,
           "quality": 50,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 731,
           "exitCode": 0,
           "quality": 75,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 731,
           "exitCode": 0,
           "quality": 95,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 731,
           "exitCode": 0,
           "quality": 100,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -6052,10 +6053,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 97.99782884668497,
+      "score": 98.01334835067817,
       "sourcePath": "corpus/generated/gray.png",
       "target": 80.0,
       "threads": 1,
@@ -6098,7 +6099,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -6116,42 +6117,42 @@
           "bytes": 88,
           "exitCode": 0,
           "quality": 0,
-          "score": 80.34960569632088,
+          "score": 80.31603469401938,
           "stderr": ""
         },
         {
           "bytes": 112,
           "exitCode": 0,
           "quality": 25,
-          "score": 93.4336681263026,
+          "score": 93.37659706990272,
           "stderr": ""
         },
         {
           "bytes": 124,
           "exitCode": 0,
           "quality": 50,
-          "score": 95.07203673513615,
+          "score": 95.12360474954119,
           "stderr": ""
         },
         {
           "bytes": 134,
           "exitCode": 0,
           "quality": 75,
-          "score": 95.12378447909107,
+          "score": 95.01544932081268,
           "stderr": ""
         },
         {
           "bytes": 170,
           "exitCode": 0,
           "quality": 95,
-          "score": 96.63932068991392,
+          "score": 96.55520472249954,
           "stderr": ""
         },
         {
           "bytes": 144,
           "exitCode": 0,
           "quality": 100,
-          "score": 96.8594764079186,
+          "score": 96.58673843552373,
           "stderr": ""
         }
       ],
@@ -6180,10 +6181,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 80.34960569632088,
+      "score": 80.31603469401938,
       "sourcePath": "corpus/generated/gray.png",
       "target": 80.0,
       "threads": 1,
@@ -6227,7 +6228,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -6250,35 +6251,35 @@
           "bytes": 731,
           "exitCode": 0,
           "quality": 25,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 731,
           "exitCode": 0,
           "quality": 50,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 731,
           "exitCode": 0,
           "quality": 75,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 731,
           "exitCode": 0,
           "quality": 95,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 731,
           "exitCode": 0,
           "quality": 100,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -6307,10 +6308,10 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 97.99782884668497,
+      "score": 98.01334835067817,
       "sourcePath": "corpus/generated/gray.png",
       "target": 90.0,
       "threads": 1,
@@ -6325,42 +6326,42 @@
           "bytes": 88,
           "exitCode": 0,
           "quality": 0,
-          "score": 80.34960569632088,
+          "score": 80.31603469401938,
           "stderr": ""
         },
         {
           "bytes": 112,
           "exitCode": 0,
           "quality": 25,
-          "score": 93.4336681263026,
+          "score": 93.37659706990272,
           "stderr": ""
         },
         {
           "bytes": 124,
           "exitCode": 0,
           "quality": 50,
-          "score": 95.07203673513615,
+          "score": 95.12360474954119,
           "stderr": ""
         },
         {
           "bytes": 134,
           "exitCode": 0,
           "quality": 75,
-          "score": 95.12378447909107,
+          "score": 95.01544932081268,
           "stderr": ""
         },
         {
           "bytes": 170,
           "exitCode": 0,
           "quality": 95,
-          "score": 96.63932068991392,
+          "score": 96.55520472249954,
           "stderr": ""
         },
         {
           "bytes": 144,
           "exitCode": 0,
           "quality": 100,
-          "score": 96.8594764079186,
+          "score": 96.58673843552373,
           "stderr": ""
         }
       ],
@@ -6389,10 +6390,10 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 93.4336681263026,
+      "score": 93.37659706990272,
       "sourcePath": "corpus/generated/gray.png",
       "target": 90.0,
       "threads": 1,
@@ -6436,7 +6437,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -6459,35 +6460,35 @@
           "bytes": 731,
           "exitCode": 0,
           "quality": 25,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 731,
           "exitCode": 0,
           "quality": 50,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 731,
           "exitCode": 0,
           "quality": 75,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 731,
           "exitCode": 0,
           "quality": 95,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 731,
           "exitCode": 0,
           "quality": 100,
-          "score": 97.99782884668497,
+          "score": 98.01334835067817,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/gray.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -6516,10 +6517,10 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 97.99782884668497,
+      "score": 98.01334835067817,
       "sourcePath": "corpus/generated/gray.png",
       "target": 95.0,
       "threads": 1,
@@ -6534,42 +6535,42 @@
           "bytes": 88,
           "exitCode": 0,
           "quality": 0,
-          "score": 80.34960569632088,
+          "score": 80.31603469401938,
           "stderr": ""
         },
         {
           "bytes": 112,
           "exitCode": 0,
           "quality": 25,
-          "score": 93.4336681263026,
+          "score": 93.37659706990272,
           "stderr": ""
         },
         {
           "bytes": 124,
           "exitCode": 0,
           "quality": 50,
-          "score": 95.07203673513615,
+          "score": 95.12360474954119,
           "stderr": ""
         },
         {
           "bytes": 134,
           "exitCode": 0,
           "quality": 75,
-          "score": 95.12378447909107,
+          "score": 95.01544932081268,
           "stderr": ""
         },
         {
           "bytes": 170,
           "exitCode": 0,
           "quality": 95,
-          "score": 96.63932068991392,
+          "score": 96.55520472249954,
           "stderr": ""
         },
         {
           "bytes": 144,
           "exitCode": 0,
           "quality": 100,
-          "score": 96.8594764079186,
+          "score": 96.58673843552373,
           "stderr": ""
         }
       ],
@@ -6598,10 +6599,10 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 95.07203673513615,
+      "score": 95.12360474954119,
       "sourcePath": "corpus/generated/gray.png",
       "target": 95.0,
       "threads": 1,
@@ -6645,7 +6646,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -6691,7 +6692,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -6714,35 +6715,35 @@
           "bytes": 59861,
           "exitCode": 0,
           "quality": 25,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 59861,
           "exitCode": 0,
           "quality": 50,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 59861,
           "exitCode": 0,
           "quality": 75,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 59861,
           "exitCode": 0,
           "quality": 95,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 59861,
           "exitCode": 0,
           "quality": 100,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -6765,7 +6766,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/large.png",
@@ -6810,7 +6811,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -6828,42 +6829,42 @@
           "bytes": 5924,
           "exitCode": 0,
           "quality": 0,
-          "score": 34.577777766082974,
+          "score": 34.57569044107434,
           "stderr": ""
         },
         {
           "bytes": 6842,
           "exitCode": 0,
           "quality": 25,
-          "score": 67.29052234076968,
+          "score": 67.28940243087669,
           "stderr": ""
         },
         {
           "bytes": 8710,
           "exitCode": 0,
           "quality": 50,
-          "score": 71.09447939070941,
+          "score": 71.09903901855829,
           "stderr": ""
         },
         {
           "bytes": 10554,
           "exitCode": 0,
           "quality": 75,
-          "score": 77.86449634822792,
+          "score": 77.85918302962008,
           "stderr": ""
         },
         {
           "bytes": 42032,
           "exitCode": 0,
           "quality": 95,
-          "score": 84.03565963866933,
+          "score": 84.07749714420495,
           "stderr": ""
         },
         {
           "bytes": 53000,
           "exitCode": 0,
           "quality": 100,
-          "score": 85.2221241574186,
+          "score": 85.2061537385338,
           "stderr": ""
         }
       ],
@@ -6892,10 +6893,10 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
-      "score": 84.03565963866933,
+      "score": 84.07749714420495,
       "sourcePath": "corpus/generated/large.png",
       "target": 80.0,
       "threads": 1,
@@ -6939,7 +6940,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -6962,35 +6963,35 @@
           "bytes": 59861,
           "exitCode": 0,
           "quality": 25,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 59861,
           "exitCode": 0,
           "quality": 50,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 59861,
           "exitCode": 0,
           "quality": 75,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 59861,
           "exitCode": 0,
           "quality": 95,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 59861,
           "exitCode": 0,
           "quality": 100,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -7013,7 +7014,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/large.png",
@@ -7030,42 +7031,42 @@
           "bytes": 5924,
           "exitCode": 0,
           "quality": 0,
-          "score": 34.577777766082974,
+          "score": 34.57569044107434,
           "stderr": ""
         },
         {
           "bytes": 6842,
           "exitCode": 0,
           "quality": 25,
-          "score": 67.29052234076968,
+          "score": 67.28940243087669,
           "stderr": ""
         },
         {
           "bytes": 8710,
           "exitCode": 0,
           "quality": 50,
-          "score": 71.09447939070941,
+          "score": 71.09903901855829,
           "stderr": ""
         },
         {
           "bytes": 10554,
           "exitCode": 0,
           "quality": 75,
-          "score": 77.86449634822792,
+          "score": 77.85918302962008,
           "stderr": ""
         },
         {
           "bytes": 42032,
           "exitCode": 0,
           "quality": 95,
-          "score": 84.03565963866933,
+          "score": 84.07749714420495,
           "stderr": ""
         },
         {
           "bytes": 53000,
           "exitCode": 0,
           "quality": 100,
-          "score": 85.2221241574186,
+          "score": 85.2061537385338,
           "stderr": ""
         }
       ],
@@ -7088,7 +7089,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/large.png",
@@ -7134,7 +7135,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -7157,35 +7158,35 @@
           "bytes": 59861,
           "exitCode": 0,
           "quality": 25,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 59861,
           "exitCode": 0,
           "quality": 50,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 59861,
           "exitCode": 0,
           "quality": 75,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 59861,
           "exitCode": 0,
           "quality": 95,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         },
         {
           "bytes": 59861,
           "exitCode": 0,
           "quality": 100,
-          "score": 79.78233692650574,
+          "score": 79.79776042062068,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/large.png: failed to read EXIF metadata: No metadata found!\n"
         }
       ],
@@ -7208,7 +7209,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/large.png",
@@ -7225,42 +7226,42 @@
           "bytes": 5924,
           "exitCode": 0,
           "quality": 0,
-          "score": 34.577777766082974,
+          "score": 34.57569044107434,
           "stderr": ""
         },
         {
           "bytes": 6842,
           "exitCode": 0,
           "quality": 25,
-          "score": 67.29052234076968,
+          "score": 67.28940243087669,
           "stderr": ""
         },
         {
           "bytes": 8710,
           "exitCode": 0,
           "quality": 50,
-          "score": 71.09447939070941,
+          "score": 71.09903901855829,
           "stderr": ""
         },
         {
           "bytes": 10554,
           "exitCode": 0,
           "quality": 75,
-          "score": 77.86449634822792,
+          "score": 77.85918302962008,
           "stderr": ""
         },
         {
           "bytes": 42032,
           "exitCode": 0,
           "quality": 95,
-          "score": 84.03565963866933,
+          "score": 84.07749714420495,
           "stderr": ""
         },
         {
           "bytes": 53000,
           "exitCode": 0,
           "quality": 100,
-          "score": 85.2221241574186,
+          "score": 85.2061537385338,
           "stderr": ""
         }
       ],
@@ -7283,7 +7284,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/large.png",
@@ -7315,7 +7316,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/icc.png",
@@ -7329,7 +7330,7 @@
       "architecture": "aarch64",
       "attempts": [
         {
-          "bytes": 1335,
+          "bytes": 6402,
           "exitCode": 0,
           "quality": 95,
           "stderr": ""
@@ -7343,7 +7344,7 @@
       "inputBytes": 761,
       "lossless": true,
       "matchedWithinHalfPoint": false,
-      "outputBytes": 1335,
+      "outputBytes": 6402,
       "outputHeight": 64,
       "outputPath": "results/icc_png-rimage-png-80-0.png",
       "outputWidth": 96,
@@ -7360,7 +7361,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -7393,7 +7394,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/icc.png",
@@ -7432,7 +7433,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/icc.png",
@@ -7464,7 +7465,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/icc.png",
@@ -7496,7 +7497,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/icc.png",
@@ -7528,7 +7529,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/icc.png",
@@ -7560,7 +7561,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/icc.png",
@@ -7592,7 +7593,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/icc.png",
@@ -7624,7 +7625,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/icc.png",
@@ -7656,7 +7657,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/icc.png",
@@ -7688,7 +7689,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/deep.png",
@@ -7702,7 +7703,7 @@
       "architecture": "aarch64",
       "attempts": [
         {
-          "bytes": 175,
+          "bytes": 520,
           "exitCode": 0,
           "quality": 95,
           "stderr": ""
@@ -7716,7 +7717,7 @@
       "inputBytes": 175,
       "lossless": true,
       "matchedWithinHalfPoint": false,
-      "outputBytes": 175,
+      "outputBytes": 520,
       "outputHeight": 64,
       "outputPath": "results/deep_png-rimage-png-80-0.png",
       "outputWidth": 96,
@@ -7733,7 +7734,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -7766,7 +7767,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/deep.png",
@@ -7811,7 +7812,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -7844,7 +7845,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/deep.png",
@@ -7876,7 +7877,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/deep.png",
@@ -7908,7 +7909,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/deep.png",
@@ -7940,7 +7941,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/deep.png",
@@ -7972,7 +7973,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/deep.png",
@@ -8004,7 +8005,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/deep.png",
@@ -8036,7 +8037,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/deep.png",
@@ -8082,7 +8083,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -8128,7 +8129,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -8151,35 +8152,35 @@
           "bytes": 2207,
           "exitCode": 0,
           "quality": 25,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 50,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 75,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 95,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 100,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         }
       ],
@@ -8202,7 +8203,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/compressed.webp",
@@ -8247,7 +8248,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": null,
@@ -8265,42 +8266,42 @@
           "bytes": 190,
           "exitCode": 0,
           "quality": 0,
-          "score": -6.644039018592579,
+          "score": -6.643149765204555,
           "stderr": ""
         },
         {
           "bytes": 310,
           "exitCode": 0,
           "quality": 25,
-          "score": 54.67393170492011,
+          "score": 54.681584777470704,
           "stderr": ""
         },
         {
           "bytes": 336,
           "exitCode": 0,
           "quality": 50,
-          "score": 56.408188171751725,
+          "score": 56.4092270569341,
           "stderr": ""
         },
         {
           "bytes": 346,
           "exitCode": 0,
           "quality": 75,
-          "score": 58.87664847528542,
+          "score": 58.87623289656992,
           "stderr": ""
         },
         {
           "bytes": 428,
           "exitCode": 0,
           "quality": 95,
-          "score": 57.19209390906034,
+          "score": 57.193427886635234,
           "stderr": ""
         },
         {
           "bytes": 416,
           "exitCode": 0,
           "quality": 100,
-          "score": 58.92329174342883,
+          "score": 58.92405350095015,
           "stderr": ""
         }
       ],
@@ -8323,7 +8324,7 @@
         ],
         "target": 80.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/compressed.webp",
@@ -8369,7 +8370,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -8392,35 +8393,35 @@
           "bytes": 2207,
           "exitCode": 0,
           "quality": 25,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 50,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 75,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 95,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 100,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         }
       ],
@@ -8443,7 +8444,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/compressed.webp",
@@ -8460,42 +8461,42 @@
           "bytes": 190,
           "exitCode": 0,
           "quality": 0,
-          "score": -6.644039018592579,
+          "score": -6.643149765204555,
           "stderr": ""
         },
         {
           "bytes": 310,
           "exitCode": 0,
           "quality": 25,
-          "score": 54.67393170492011,
+          "score": 54.681584777470704,
           "stderr": ""
         },
         {
           "bytes": 336,
           "exitCode": 0,
           "quality": 50,
-          "score": 56.408188171751725,
+          "score": 56.4092270569341,
           "stderr": ""
         },
         {
           "bytes": 346,
           "exitCode": 0,
           "quality": 75,
-          "score": 58.87664847528542,
+          "score": 58.87623289656992,
           "stderr": ""
         },
         {
           "bytes": 428,
           "exitCode": 0,
           "quality": 95,
-          "score": 57.19209390906034,
+          "score": 57.193427886635234,
           "stderr": ""
         },
         {
           "bytes": 416,
           "exitCode": 0,
           "quality": 100,
-          "score": 58.92329174342883,
+          "score": 58.92405350095015,
           "stderr": ""
         }
       ],
@@ -8518,7 +8519,7 @@
         ],
         "target": 90.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/compressed.webp",
@@ -8564,7 +8565,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "score": 100.0,
@@ -8587,35 +8588,35 @@
           "bytes": 2207,
           "exitCode": 0,
           "quality": 25,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 50,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 75,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 95,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         },
         {
           "bytes": 2207,
           "exitCode": 0,
           "quality": 100,
-          "score": 52.630566020346166,
+          "score": 52.629120302826315,
           "stderr": "[WARN  rimage] /Users/josh/d/rimage/benchmarks/corpus/generated/compressed.webp: failed to read EXIF metadata: Expected first chunk of WebP file to be of type 'VP8X' but instead got VP8L!\n"
         }
       ],
@@ -8638,7 +8639,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/compressed.webp",
@@ -8655,42 +8656,42 @@
           "bytes": 190,
           "exitCode": 0,
           "quality": 0,
-          "score": -6.644039018592579,
+          "score": -6.643149765204555,
           "stderr": ""
         },
         {
           "bytes": 310,
           "exitCode": 0,
           "quality": 25,
-          "score": 54.67393170492011,
+          "score": 54.681584777470704,
           "stderr": ""
         },
         {
           "bytes": 336,
           "exitCode": 0,
           "quality": 50,
-          "score": 56.408188171751725,
+          "score": 56.4092270569341,
           "stderr": ""
         },
         {
           "bytes": 346,
           "exitCode": 0,
           "quality": 75,
-          "score": 58.87664847528542,
+          "score": 58.87623289656992,
           "stderr": ""
         },
         {
           "bytes": 428,
           "exitCode": 0,
           "quality": 95,
-          "score": 57.19209390906034,
+          "score": 57.193427886635234,
           "stderr": ""
         },
         {
           "bytes": 416,
           "exitCode": 0,
           "quality": 100,
-          "score": 58.92329174342883,
+          "score": 58.92405350095015,
           "stderr": ""
         }
       ],
@@ -8713,7 +8714,7 @@
         ],
         "target": 95.0
       },
-      "revision": "22fb595bc339510d99349daa509839264f3d9662",
+      "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
       "run": 0,
       "schemaVersion": 1,
       "sourcePath": "corpus/generated/compressed.webp",
@@ -8724,9 +8725,11 @@
       "width": 96
     }
   ],
-  "revision": "22fb595bc339510d99349daa509839264f3d9662",
+  "revision": "8d7556cf3c8ee6aa6e246fcafe5d9f88f8b44e0c",
   "runsPerSide": 1,
   "schemaVersion": 1,
+  "sourceDiffSha256": "80cb0f670e4896c9ee3289a3aeb5031572f68f483666ba6adfc139f5de8001c4",
+  "sourceDirty": true,
   "summary": {
     "cwebp:astronaut.png:80.0": {
       "completed": 0,
@@ -9540,7 +9543,7 @@
       "completed": 1,
       "failures": 0,
       "medianElapsedMs": null,
-      "medianOutputBytes": 175.0,
+      "medianOutputBytes": 520.0,
       "spreadMs": null,
       "timingGate": "deferred"
     },
@@ -9580,7 +9583,7 @@
       "completed": 1,
       "failures": 0,
       "medianElapsedMs": null,
-      "medianOutputBytes": 1335.0,
+      "medianOutputBytes": 6402.0,
       "spreadMs": null,
       "timingGate": "deferred"
     },
