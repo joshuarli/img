@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+case ${1:-} in
+    '') echo 'usage: package-source OUTPUT.tar.gz' >&2; exit 2 ;;
+    /*) output=$1 ;;
+    *) output="$PWD/$1" ;;
+esac
+cd "$root"
+git diff --quiet HEAD -- || { echo 'source packaging requires a clean tracked tree' >&2; exit 1; }
+mkdir -p .work/tmp
+scratch=$(mktemp -d "$root/.work/tmp/release-source.XXXXXX")
+mkdir "$scratch/rimage"
+git archive HEAD | tar -x -C "$scratch/rimage"
+(cd "$scratch/rimage" && cargo vendor --locked --versioned-dirs vendor >> .cargo/config.toml)
+tar -czf "$output" -C "$scratch" rimage
+printf 'source revision: %s\nsource directory: %s/rimage\n' "$(git rev-parse HEAD)" "$scratch"

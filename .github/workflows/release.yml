@@ -141,10 +141,7 @@ jobs:
       - name: Bundle locked source and dependency notices
         run: |
           rustup show active-toolchain
-          mkdir -p .work/tmp/source/rimage
-          git archive "$GITHUB_SHA" | tar -x -C .work/tmp/source/rimage
-          (cd .work/tmp/source/rimage && cargo vendor --locked --versioned-dirs vendor >> .cargo/config.toml)
-          tar -czf rimage-source.tar.gz -C .work/tmp/source rimage
+          scripts/package-source rimage-source.tar.gz
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: rimage-source

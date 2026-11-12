@@ -59,3 +59,9 @@ signature authority. Roll back by installing a previously verified release.
 Never move an existing SHA-named tag or overwrite assets; fixes get a new commit
 and release. Campaign performance/environment limitations remain recorded in
 [plan.md](../plan.md); a working prerelease does not establish those measurements.
+
+If hosted runners cannot start, a maintainer can run the same checks locally,
+package the three verified binaries and `scripts/package-source` output, then
+publish a new SHA tag through authenticated gh. Release notes must disclose the
+local build environments and the unavailable hosted result. This does not turn
+a blocked Actions run into a pass or authorize billing changes.

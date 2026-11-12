@@ -1,6 +1,7 @@
 .PHONY: test baseline-check decoder-reference-check ci release verify-release
 
 TARGET ?= $(shell rustc -vV | awk '/^host:/ {print $$2}')
+CARGO_TARGET_DIR ?= target
 
 export RUSTC_WRAPPER := kache
 export TMPDIR := $(CURDIR)/.work/tmp
@@ -18,7 +19,7 @@ release:
 	$(MAKE) verify-release TARGET=$(TARGET)
 
 verify-release:
-	python3 scripts/verify-release.py target/$(TARGET)/dist/rimage $(TARGET)
+	python3 scripts/verify-release.py "$(CARGO_TARGET_DIR)/$(TARGET)/dist/rimage" $(TARGET)
 
 baseline-check:
 	cargo test --locked --all-features --test baseline
