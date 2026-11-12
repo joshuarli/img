@@ -28,5 +28,10 @@ fn saved_schema_and_gate_arithmetic_reject_fake_work_and_regressions() {
     assert_eq!(gate(Some((100.0,2.0)),Some((80.0,3.0)),false,true),Gate::BaselineDebt);
     assert_eq!(gate(None,None,true,true),Gate::Deferred);assert_eq!(gate(None,None,true,false),Gate::Regression);
     let mut valid=json!({"schemaVersion":1,"tool":"fixture","fixture":"ui.png","revision":"fixed","completed":true,"width":8,"height":8,"outputWidth":8,"outputHeight":8,"inputBytes":100,"outputBytes":90,"lossless":false,"score":95.1,"target":95,"timingAccepted":false,"elapsedMs":null});
-    validate_record(&valid).unwrap();valid["score"]=json!(94.9);assert!(validate_record(&valid).is_err());valid["score"]=json!(95.1);valid["outputWidth"]=json!(9);assert!(validate_record(&valid).is_err());valid["outputWidth"]=json!(8);valid["elapsedMs"]=json!(0.01);assert!(validate_record(&valid).is_err());valid["elapsedMs"]=json!(null);valid["lossless"]=json!(true);valid["exactSamples"]=json!(false);assert!(validate_record(&valid).is_err());valid["completed"]=json!(false);assert!(validate_record(&valid).is_err());valid["failure"]=json!("tool unavailable");validate_record(&valid).unwrap();
+    validate_record(&valid).unwrap();
+    for (tool,command,wrong) in [("original-mozjpeg","mozjpeg","jpeg"),("original-oxipng","oxipng","png"),("original-ravif","avif","jpeg")] {
+        let mut mislabeled=valid.clone();mislabeled["tool"]=json!(tool);mislabeled["attempts"]=json!([{"command":["rimage",wrong]}]);assert!(validate_record(&mislabeled).is_err());
+        mislabeled["attempts"]=json!([{"command":["rimage",command]}]);validate_record(&mislabeled).unwrap();
+    }
+    valid["score"]=json!(94.9);assert!(validate_record(&valid).is_err());valid["score"]=json!(95.1);valid["outputWidth"]=json!(9);assert!(validate_record(&valid).is_err());valid["outputWidth"]=json!(8);valid["elapsedMs"]=json!(0.01);assert!(validate_record(&valid).is_err());valid["elapsedMs"]=json!(null);valid["lossless"]=json!(true);valid["exactSamples"]=json!(false);assert!(validate_record(&valid).is_err());valid["completed"]=json!(false);assert!(validate_record(&valid).is_err());valid["failure"]=json!("tool unavailable");validate_record(&valid).unwrap();
 }

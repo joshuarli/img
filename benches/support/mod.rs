@@ -54,6 +54,8 @@ pub fn gate(baseline:Option<(f64,f64)>,candidate:Option<(f64,f64)>,baseline_comp
 pub fn validate_record(value:&Value)->Result<(),String> {
     let fail=||Err("invalid saved benchmark record".into());
     if value["schemaVersion"]!=1 || !value["tool"].is_string()||!value["fixture"].is_string()||!value["revision"].is_string() {return fail();}
+    let expected_command=match value["tool"].as_str() {Some("original-mozjpeg")=>Some("mozjpeg"),Some("original-oxipng")=>Some("oxipng"),Some("original-ravif")=>Some("avif"),Some("rimage"|"rimage-png")=>Some("convert"),_=>None};
+    if let Some(expected)=expected_command {let attempts=value["attempts"].as_array().ok_or("missing tool invocations")?;if attempts.iter().any(|attempt|attempt["command"][1]!=expected) {return Err("benchmark tool label does not match invoked command".into());}}
     if value["completed"]!=true {return if value["failure"].is_string() {Ok(())} else {fail()};}
     let width=value["width"].as_u64().ok_or("missing width")?;let height=value["height"].as_u64().ok_or("missing height")?;
     if width==0||height==0||value["outputWidth"]!=width||value["outputHeight"]!=height||value["inputBytes"].as_u64().is_none_or(|n|n==0)||value["outputBytes"].as_u64().is_none_or(|n|n==0) {return fail();}
