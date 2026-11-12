@@ -2,6 +2,9 @@
 
 use std::{ffi::{CString, OsStr}, fs::{File, Metadata}, io::{self, Read, Write}, os::{fd::{AsRawFd, FromRawFd}, unix::{ffi::OsStrExt, fs::MetadataExt}}, path::{Component, Path, PathBuf}, sync::atomic::{AtomicU64, Ordering}};
 
+#[cfg(target_os="macos")]
+mod macos;
+
 static NEXT: AtomicU64 = AtomicU64::new(0);
 
 fn cstring(value: &OsStr) -> io::Result<CString> {
@@ -185,19 +188,19 @@ pub fn destination_key(path: &Path) -> io::Result<PathBuf> {
     let name=path.file_name().ok_or_else(||io::Error::other("missing filename"))?;
     let mut ancestor=path.parent().filter(|p|!p.as_os_str().is_empty()).unwrap_or(Path::new("."));
     let mut missing=Vec::new();
-    loop {
+    let dir=loop {
         match directory(ancestor) {
-            Ok(_)=>break,
+            Ok(dir)=>break dir,
             Err(error) if error.kind()==io::ErrorKind::NotFound=>{
                 missing.push(ancestor.file_name().ok_or_else(||io::Error::other("invalid destination ancestor"))?);
                 ancestor=ancestor.parent().filter(|p|!p.as_os_str().is_empty()).unwrap_or(Path::new("."));
             },
             Err(error)=>return Err(error),
         }
-    }
+    };
     let mut key=ancestor.canonicalize()?;
-    for part in missing.into_iter().rev() { key.push(part); }
-    Ok(key.join(name))
+    for part in missing.into_iter().rev() { key.push(collision_name(&dir,part)?); }
+    Ok(key.join(collision_name(&dir,name)?))
 }
 
 /// Create destination ancestors without traversing symlinks.
@@ -271,3 +274,8 @@ fn errno_pointer()->*mut libc::c_int { // SAFETY: OS accessor returns this threa
 fn errno_pointer()->*mut libc::c_int { // SAFETY: OS accessor returns this thread's errno location.
     unsafe {libc::__errno_location()}
 }
+
+#[cfg(target_os="macos")]
+fn collision_name(directory:&File,name:&OsStr)->io::Result<std::ffi::OsString> {macos::name(directory,name)}
+#[cfg(not(target_os="macos"))]
+fn collision_name(_directory:&File,name:&OsStr)->io::Result<std::ffi::OsString> {Ok(name.to_owned())}

@@ -93,3 +93,14 @@ fn inspect_describes_high_depth_and_animation_without_pixel_processing() {
     assert_eq!(run(&["optimize".as_ref(),animated.as_os_str(),"--lossless".as_ref()]).status.code(),Some(3));assert!(!animated.with_file_name("animated.optimized.png").exists());
     let input=scratch.0.join("normal.png");common::write_png(&input,16,16);let output=success(run(&["compare".as_ref(),input.as_os_str(),input.as_os_str()]));assert_eq!(std::str::from_utf8(&output.stdout).unwrap().trim().parse::<f64>().unwrap(),100.0);
 }
+
+#[cfg(target_os="macos")]
+#[test]
+fn equivalent_case_and_unicode_destinations_fail_before_any_publication() {
+    let scratch=common::Scratch::new("native-collisions");let probe=scratch.0.join("probe");fs::write(&probe,b"probe").unwrap();if !scratch.0.join("PROBE").exists() {return;}
+    for (index,(a,b)) in [("foo.jpg","FOO.png"),("café.jpg","cafe\u{301}.png")].into_iter().enumerate() {
+        let first=scratch.0.join(a);let second=scratch.0.join(b);common::write_png(&first,16,16);common::write_png(&second,16,16);
+        let out=scratch.0.join(format!("out-{index}"));let output=run(&["convert".as_ref(),first.as_os_str(),second.as_os_str(),"--out-dir".as_ref(),out.as_os_str(),"--format".as_ref(),"png".as_ref(),"--lossless".as_ref(),"--json".as_ref()]);
+        assert_eq!(output.status.code(),Some(4),"{}",String::from_utf8_lossy(&output.stdout));assert!(!out.exists(),"colliding outputs must all fail during preflight");
+    }
+}
