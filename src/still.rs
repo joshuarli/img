@@ -228,6 +228,7 @@ impl StillImage {
                 if header.num_components == 1 { config.inner_mut().output_format = Some(zenjpeg::decoder::PixelFormat::Gray); }
                 decode(config, bytes, format)
             },
+            Format::Webp => decode(zenwebp::zencodec::WebpDecoderConfig::new(), bytes, format),
             _ => Err(Error::new(ErrorKind::Unsupported, "codec adapter not available")),
         }
     }
@@ -276,6 +277,14 @@ impl StillImage {
                     .map_err(|e| Error::caused(ErrorKind::Encode, e))?;
                 limits().check_output_size(output.len() as u64).map_err(|e| Error::caused(ErrorKind::Limit, e))?;
                 Ok(output)
+            },
+            Format::Webp => {
+                if self.bit_depth() != 8 { return Err(Error::new(ErrorKind::Unsupported, "WebP encoding requires eight-bit samples")); }
+                let config = match mode {
+                    EncodingMode::Lossless => zenwebp::zencodec::WebpEncoderConfig::lossless().with_exact(true),
+                    EncodingMode::Quality(quality) => zenwebp::zencodec::WebpEncoderConfig::lossy().with_quality(quality.value()),
+                }.with_alpha_quality_value(100.0).with_effort_u32(match effort { Effort::Fast => 0, Effort::Balanced => 6, Effort::Best => 10 });
+                encode(config, self)
             },
             _ => Err(Error::new(ErrorKind::Unsupported, "codec adapter not available")),
         }

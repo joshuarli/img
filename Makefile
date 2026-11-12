@@ -10,4 +10,4 @@ baseline-check:
 	cargo test --locked --all-features --test baseline
 
 decoder-reference-check:
-	cargo test --locked --all-features --test jpeg_codec --test codec_boundary
+	cargo test --locked --all-features --test jpeg_codec --test webp_codec --test codec_boundary

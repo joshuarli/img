@@ -82,6 +82,7 @@ limits = ["dep:sysinfo"]
 libc = "0.2"
 zenpng = { version = "=0.1.4", default-features = false }
 zenjpeg = { version = "=0.8.4", default-features = false, features = ["decoder", "zencodec", "yuv"] }
+zenwebp = { version = "=0.4.6", default-features = false, features = ["std", "fast-yuv", "zencodec"] }
 zencodec = "=0.1.26"
 zenpixels = { version = "=0.2.16", default-features = false }
 rgb = { version = "0.8" }
