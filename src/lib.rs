@@ -70,3 +70,6 @@ pub mod perceptual;
 
 #[cfg(test)]
 mod test_utils;
+
+/// Deterministic, bounded optimization and conversion capabilities.
+pub mod optimizer;
