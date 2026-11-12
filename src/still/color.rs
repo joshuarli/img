@@ -67,7 +67,7 @@ impl StillImage {
         for chunk in &self.png_metadata {
             match &chunk[4..8] {
                 b"cICP" if chunk.get(8..12) != Some(&[1, 13, 0, 1]) => return Err(Error::new(ErrorKind::Unsupported, "PNG CICP signaling is unsupported")),
-                b"cLLi" | b"mDCV" => return Err(Error::new(ErrorKind::Unsupported, "PNG HDR signaling is unsupported")),
+                b"cLLI" | b"mDCV" => return Err(Error::new(ErrorKind::Unsupported, "PNG HDR signaling is unsupported")),
                 b"cHRM" => {
                     let expected: Vec<_> = [31270u32, 32900, 64000, 33000, 30000, 60000, 15000, 6000].into_iter().flat_map(u32::to_be_bytes).collect();
                     if chunk.get(8..40) != Some(expected.as_slice()) && self.metadata.icc_profile.is_none() {
@@ -156,7 +156,7 @@ impl StillImage {
         image.metadata.exif = None; image.metadata.xmp = None;
         image.metadata.orientation = zencodec::Orientation::Identity;
         image.info.orientation = zencodec::Orientation::Identity;
-        image.png_metadata.retain(|chunk| matches!(&chunk[4..8], b"iCCP" | b"cICP" | b"sRGB" | b"gAMA" | b"cHRM" | b"cLLi" | b"mDCV"));
+        image.png_metadata.retain(|chunk| super::png::is_color_chunk(&chunk[4..8]));
         Ok(image)
     }
 

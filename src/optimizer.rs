@@ -100,7 +100,7 @@ fn expanded(image: &StillImage) -> Vec<[u16; 4]> {
 }
 fn required_png_color(image:&StillImage)->Vec<&[u8]> {
     let mut facts:Vec<_>=image.png_metadata.iter().filter(|chunk|match &chunk[4..8] {
-        b"cLLi"|b"mDCV"=>true,
+        b"cLLI"|b"mDCV"=>true,
         b"cICP"=>chunk.get(8..12)!=Some(&[1,13,0,1])||image.metadata.icc_profile.is_some(),
         b"gAMA"|b"cHRM"=>image.metadata.icc_profile.is_none(),
         _=>false,
@@ -135,7 +135,7 @@ fn strip_compliant(bytes: &[u8], format: Format) -> bool {
             let mut at = 8;
             while let Some(header) = bytes.get(at..at+8) {
                 let len = u32::from_be_bytes(header[..4].try_into().unwrap()) as usize;
-                if !matches!(&header[4..8], b"IHDR"|b"PLTE"|b"IDAT"|b"IEND"|b"tRNS"|b"iCCP"|b"cICP"|b"sRGB"|b"gAMA"|b"cHRM"|b"cLLi"|b"mDCV") { return false; }
+                if !matches!(&header[4..8], b"IHDR"|b"PLTE"|b"IDAT"|b"IEND"|b"tRNS") && !crate::still::png::is_color_chunk(&header[4..8]) { return false; }
                 at += len+12;
             }
             at == bytes.len()

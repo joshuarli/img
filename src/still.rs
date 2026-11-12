@@ -4,7 +4,7 @@ use std::{borrow::Cow, fmt, io::Read};
 use zencodec::{decode::{DecodeJob, Decode, DecoderConfig}, encode::{EncodeJob, Encoder, EncoderConfig}};
 use zenpixels::{PixelBuffer, PixelDescriptor};
 
-mod png;
+pub(crate) mod png;
 mod jpeg;
 mod avif;
 pub(crate) mod color;

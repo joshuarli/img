@@ -90,6 +90,26 @@ fn png_private_metadata_and_color_chunks_survive_exact_encoding() {
 }
 
 #[test]
+fn lossless_png_strip_preserves_final_content_light_metadata() {
+    use rimage::optimizer::{self,Fidelity,MetadataPolicy,Operation,Request};
+    let mut base=Vec::new();let mut encoder=png::Encoder::new(&mut base,1,1);
+    encoder.set_color(png::ColorType::Rgb);encoder.set_depth(png::BitDepth::Sixteen);
+    encoder.write_header().unwrap().write_image_data(&[0x2e,0xe0,0x55,0xf0,0x7d,0x00]).unwrap();
+    let chunk=|kind:&[u8;4],data:&[u8]| {let mut c=(data.len() as u32).to_be_bytes().to_vec();c.extend_from_slice(kind);c.extend_from_slice(data);let crc=crc32fast::hash(&c[4..]);c.extend_from_slice(&crc.to_be_bytes());c};
+    let cicp=chunk(b"cICP",&[9,16,0,1]);let light=chunk(b"cLLI",&[0,0x98,0x96,0x80,0,0x3d,0x09,0]);
+    let mut tagged=base.clone();tagged.splice(33..33,[cicp.clone(),light.clone()].concat());
+    let original=StillImage::decode(&tagged).unwrap();
+    let mut no_light=base;no_light.splice(33..33,cicp.clone());
+    assert!(!optimizer::samples_equal(&original,&StillImage::decode(&no_light).unwrap()));
+    for metadata in [MetadataPolicy::Keep,MetadataPolicy::Strip] {
+        let output=optimizer::process(&tagged,Request {operation:Operation::Convert(Format::Png),fidelity:Fidelity::Lossless,metadata,effort:Effort::Fast,..Request::default()}).unwrap();
+        assert!(output.bytes.windows(cicp.len()).any(|c|c==cicp));
+        assert!(output.bytes.windows(light.len()).any(|c|c==light));
+        assert!(optimizer::samples_equal(&original,&StillImage::decode(&output.bytes).unwrap()));
+    }
+}
+
+#[test]
 fn layout_sensitive_png_metadata_is_never_silently_discarded() {
     let image = StillImage::from_rgb8(8, 8, [80, 90, 100].repeat(64)).unwrap();
     let mut original = Vec::new();

@@ -8,7 +8,7 @@ Preparation applies EXIF orientation once and keeps exact eight-bit alpha separa
 
 Resizing uses fast_image_resize with bilinear filtering in linear light. Alpha is premultiplied before filtering and unpremultiplied afterward. The result is converted back through the source color interpretation and retains the source profile. Dimensions preserve aspect ratio and never enlarge. Stored orientation and its tags remain consistent until stripping is requested.
 
-Stripping removes EXIF, XMP and private PNG chunks and retains recognized required color chunks. The current lists use the obsolete `cLLi` spelling, so lossless stripping of a 16-bit PQ PNG can silently remove final-spec `cLLI` content-light metadata while retaining PQ and exact samples ([RIMG-3](../TODO.md#rimg-3--p1--lossless-png-stripping-drops-required-clli-light-metadata)). Stripping physically normalizes orientation before removing tags. Exact sample preservation refuses nonidentity orientation. Tests cover all eight EXIF orientations and repeat preparation after encoding to catch double rotation.
+Stripping removes EXIF, XMP and private PNG chunks and retains required color chunks, including `cLLI` content-light metadata. Stripping physically normalizes orientation before removing tags. Exact sample preservation refuses nonidentity orientation. Tests cover all eight EXIF orientations and repeat preparation after encoding to catch double rotation.
 
 Float color buffers and metric pyramids contribute to the working reservation. [Still-image limits](CODEC-BOUNDARY.md) own the ceilings, admission model and current metadata/comparison gaps.
 

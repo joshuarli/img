@@ -18,7 +18,7 @@ Each attempt records settings, size, actual decoded score, encode wall time,
 and failure. Diagnostic encode times are not benchmark evidence. Only one
 candidate is encoded per image at a time. Reference metric pyramids are reused.
 Direct quality also decodes and validates the bytes but adds no score minimum.
-Lossless compares expanded samples, depth, hidden RGB, alpha, ICC, orientation and recognized required PNG color facts. [Color](COLOR.md) records the omitted `cLLI` case.
+Lossless compares expanded samples, depth, hidden RGB, alpha, ICC, orientation and required PNG color facts.
 Strict lossless JPEG output is available only as a same-format byte copy.
 AVIF encoding has no strict lossless mode.
 

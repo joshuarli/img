@@ -12,16 +12,6 @@ Priorities are assumed from impact and likelihood. Evidence was reproduced again
 - **Effort:** S
 
 
-### RIMG-3 · P1 · Lossless PNG stripping drops required cLLI light metadata
-
-- **Area:** PNG color preservation
-- **Where:** src/still/color.rs:70, src/still/color.rs:159; src/still/png.rs:49, src/still/png.rs:85-96; src/optimizer.rs:101-115, src/optimizer.rs:138
-- **Problem:** The duplicated required-color lists recognize obsolete cLLi rather than final-spec cLLI, and the exact layout writer relies on retained raw chunks for content-light metadata. Proven with a 108-byte 1x1 RGB16 PNG containing samples 12000/22000/32000, cICP [9,16,0,1] and cLLI with BE32 values 1000*10000 and 400*10000, valid CRCs and a zlib-compressed scanline. `rimage convert hdr-clli-16.png --format png --lossless --strip-metadata --effort fast -o stripped.png --json` succeeds, writes 91 bytes and reports no warning. Decoded maxCLL/maxFALL change from 1000/400 to absent while samples_equal returns true. PQ signaling and exact samples remain, so this is content-light loss rather than removal of all HDR signaling. [PNG Third Edition](https://www.w3.org/TR/png-3/) explicitly renamed cLLi to cLLI.
-- **Recommendation:** Use final-spec cLLI consistently in stripping, encoding, HDR classification and exact verification. Give required PNG color-chunk classification one owner. Assert that this 16-bit strip case preserves both cICP and content-light values, and that equality rejects a candidate that loses them. Cover keep and strip behavior without weakening sample or metadata assertions.
-- **Fix with:** single-source-of-truth
-- **Effort:** S
-
-
 ### RIMG-4 · P2 · Compressed PNG text bypasses the decoded-metadata budget
 
 - **Area:** Untrusted-input resource bounds

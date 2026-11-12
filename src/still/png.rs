@@ -1,5 +1,9 @@
 use super::{Effort, EncodingMode, Error, ErrorKind, StillImage, MAX_METADATA_BYTES};
 
+pub(crate) fn is_color_chunk(kind:&[u8])->bool {
+    matches!(kind,b"iCCP"|b"cICP"|b"sRGB"|b"gAMA"|b"cHRM"|b"cLLI"|b"mDCV")
+}
+
 pub(super) fn metadata_chunks(bytes: &[u8]) -> Result<Vec<Vec<u8>>, Error> {
     let mut chunks = Vec::new();
     let mut at = 8usize;
@@ -46,7 +50,7 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, sto
     if image.png_metadata.iter().any(|chunk| {
         let kind = &chunk[4..8];
         matches!(kind, b"bKGD" | b"sBIT") || (kind[3].is_ascii_uppercase()
-            && !matches!(kind, b"cHRM" | b"gAMA" | b"iCCP" | b"sRGB" | b"cICP" | b"cLLi" | b"mDCV" | b"eXIf"))
+            && !is_color_chunk(kind) && kind != b"eXIf")
     }) { return Err(Error::new(ErrorKind::Unsupported, "PNG layout-sensitive or unknown unsafe-to-copy metadata requires explicit stripping")); }
     let compression = match effort { Effort::Fast => zenpng::Compression::Fastest, Effort::Balanced => zenpng::Compression::Fast, Effort::Best => zenpng::Compression::Balanced };
     let bytes = match mode {
