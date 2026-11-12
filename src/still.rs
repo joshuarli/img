@@ -397,6 +397,8 @@ pub struct Description {
     pub orientation: u8,
     /// Animation or multiple-image sequence.
     pub animation: bool,
+    /// Container declares a grid of coded tiles.
+    pub grid: bool,
     /// Embedded EXIF.
     pub exif: bool,
     /// Embedded XMP.
@@ -407,7 +409,7 @@ fn describe_info(info: zencodec::ImageInfo, format: Format) -> Description {
     Description { format,width:info.width,height:info.height,bit_depth:info.source_color.bit_depth,alpha:info.has_alpha,
         grayscale:info.source_color.channel_count.map(|c|c<=2),icc:info.source_color.icc_profile.is_some(),
         cicp:info.source_color.cicp.map(|c|[c.color_primaries as u16,c.transfer_characteristics as u16,c.matrix_coefficients as u16,c.full_range as u16]),
-        orientation,animation:info.sequence!=zencodec::ImageSequence::Single,exif:info.embedded_metadata.exif.is_some(),xmp:info.embedded_metadata.xmp.is_some() }
+        orientation,animation:info.sequence!=zencodec::ImageSequence::Single,grid:false,exif:info.embedded_metadata.exif.is_some(),xmp:info.embedded_metadata.xmp.is_some() }
 }
 /// Inspect bounded encoded headers, including representations refused for pixel processing.
 pub fn describe(bytes: &[u8]) -> Result<Description, Error> {
@@ -420,10 +422,13 @@ pub fn describe(bytes: &[u8]) -> Result<Description, Error> {
         Format::Avif => {
             let config=zenavif_parse::DecodeConfig::default().with_peak_memory_limit(IMAGE_MEMORY_BYTES);
             let parser=zenavif_parse::AvifParser::from_bytes_with_config(bytes,&config,&zencodec::Unstoppable).map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
-            let header=parser.primary_metadata().map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
+            let (width,height)=if let Some(grid)=parser.grid_config() {
+                if grid.output_width==0||grid.output_height==0 {return Err(Error::new(ErrorKind::Unsupported,"grid inspection requires declared canvas dimensions"));}
+                (grid.output_width,grid.output_height)
+            } else {let header=parser.primary_metadata().map_err(|e|Error::caused(ErrorKind::Invalid,e))?;(header.max_frame_width.get(),header.max_frame_height.get())};
             let exif=parser.exif().transpose().map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
             let cicp=match parser.color_info() { Some(zenavif_parse::ColorInformation::Nclx {color_primaries,transfer_characteristics,matrix_coefficients,full_range})=>Some([*color_primaries,*transfer_characteristics,*matrix_coefficients,*full_range as u16]), _=>None };
-            return Ok(Description {format,width:header.max_frame_width.get(),height:header.max_frame_height.get(),bit_depth:parser.av1_config().map(|c|c.bit_depth),alpha:parser.alpha_metadata().is_some(),grayscale:parser.av1_config().map(|c|c.monochrome),icc:matches!(parser.color_info(),Some(zenavif_parse::ColorInformation::IccProfile(_))),cicp,orientation:exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation).map(|o|o as u8).unwrap_or(1),animation:parser.animation_info().is_some(),exif:exif.is_some(),xmp:parser.xmp().is_some()});
+            return Ok(Description {format,width,height,bit_depth:parser.av1_config().map(|c|c.bit_depth),alpha:parser.alpha_metadata().is_some(),grayscale:parser.av1_config().map(|c|c.monochrome),icc:matches!(parser.color_info(),Some(zenavif_parse::ColorInformation::IccProfile(_))),cicp,orientation:exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation).map(|o|o as u8).unwrap_or(1),animation:parser.animation_info().is_some(),grid:parser.grid_config().is_some(),exif:exif.is_some(),xmp:parser.xmp().is_some()});
         },
     }?;
     Ok(describe_info(info,format))

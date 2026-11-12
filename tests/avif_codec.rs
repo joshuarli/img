@@ -72,4 +72,5 @@ fn real_grid_container_is_refused_without_decoding_tiles() {
     grid.set_color_config(config);
     let bytes = grid.serialize(1, 2, 32, 16, 16, 16, &[&tile, &tile], None).unwrap();
     assert!(StillImage::decode(&bytes).err().unwrap().to_string().contains("grid"));
+    let header=rimage::still::describe(&bytes).unwrap();assert_eq!((header.width,header.height),(32,16));
 }

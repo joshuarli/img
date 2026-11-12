@@ -163,7 +163,7 @@ fn read(job:&Job)->Result<(Vec<u8>,Option<Source>),Failure> {
     if job.id.is_some_and(|id|id!=source.file_id()) {return Err(Failure::new(&job.input,None,"input.changed","source identity changed after planning",3));}
     let bytes=still::read_bounded(&mut source).map_err(|e|Failure::new(&job.input,None,"input.limit",e,3))?;Ok((bytes,Some(source)))
 }
-fn details(header:&still::Description)->Value {json!({"width":header.width,"height":header.height,"bitDepth":header.bit_depth,"alpha":header.alpha,"grayscale":header.grayscale,"icc":header.icc,"cicp":header.cicp,"orientation":header.orientation,"animation":header.animation,"exif":header.exif,"xmp":header.xmp})}
+fn details(header:&still::Description)->Value {json!({"width":header.width,"height":header.height,"bitDepth":header.bit_depth,"alpha":header.alpha,"grayscale":header.grayscale,"icc":header.icc,"cicp":header.cicp,"orientation":header.orientation,"animation":header.animation,"grid":header.grid,"exif":header.exif,"xmp":header.xmp})}
 fn execute(job:&Job,args:&Arguments,budget:u64)->Result<Completed,Failure> {
     if let Some(failure)=&job.failure {return Err(failure.clone());}
     if args.verbose {eprintln!("{}: admitted",job.input.display());}
