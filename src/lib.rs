@@ -65,5 +65,8 @@ pub mod still;
 /// Atomic per-file output publication.
 pub mod publication;
 
+/// Verified perceptual comparison of encoded still images.
+pub mod perceptual;
+
 #[cfg(test)]
 mod test_utils;

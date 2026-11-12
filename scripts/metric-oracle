@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+cjxl "$1" "$1.jxl" -d 0 -e 1 -x color_space=RGB_D65_SRG_Rel_Lin >/dev/null 2>&1
+cjxl "$2" "$2.jxl" -d 0 -e 1 -x color_space=RGB_D65_SRG_Rel_Lin >/dev/null 2>&1
+ssimulacra2 "$1.jxl" "$2.jxl"

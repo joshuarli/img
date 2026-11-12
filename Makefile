@@ -11,3 +11,6 @@ baseline-check:
 
 decoder-reference-check:
 	cargo test --locked --all-features --test jpeg_codec --test webp_codec --test png_codec --test avif_codec --test codec_boundary
+
+metric-reference-check:
+	cargo test --locked --all-features --test metric_reference -- --ignored --nocapture

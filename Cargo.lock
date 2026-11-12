@@ -596,6 +596,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dab93c7205280c4785c44517fe84d99751b81f6deb8450cb196da6be88e332bb"
 
 [[package]]
+name = "fast-ssim2"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1f3216821c49c3988daa5f35451152559093e7b55c065ec3240ec60a11cc61b"
+dependencies = [
+ "archmage",
+ "bytemuck",
+ "enough",
+ "linear-srgb",
+ "magetypes",
+ "num-traits",
+ "thiserror",
+ "zenpixels",
+]
+
+[[package]]
 name = "fast_image_resize"
 version = "6.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1953,10 +1969,12 @@ version = "0.14.0"
 dependencies = [
  "anyhow",
  "avif-parse",
+ "bytemuck",
  "crc32fast",
  "dav1d",
  "enough",
  "env_logger",
+ "fast-ssim2",
  "fast_image_resize",
  "filetime",
  "glob",

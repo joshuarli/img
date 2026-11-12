@@ -89,6 +89,8 @@ zenavif-parse = { version = "=0.6.2", default-features = false }
 rav1d-safe = { version = "=0.5.7", default-features = false, features = ["bitdepth_8", "bitdepth_16"] }
 yuv = { version = "=0.8.20", default-features = false }
 moxcms = { version = "=0.8.1", features = ["extended_range"] }
+fast-ssim2 = { version = "=0.9.1", default-features = false }
+bytemuck = "1.25"
 zencodec = "=0.1.26"
 imgref = "1"
 zenpixels = { version = "=0.2.16", default-features = false }
