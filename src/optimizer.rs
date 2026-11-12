@@ -140,27 +140,7 @@ fn strip_compliant(bytes: &[u8], format: Format) -> bool {
             }
             at == bytes.len()
         },
-        Format::Jpeg => {
-            let mut at = 2;
-            while bytes.get(at) == Some(&255) {
-                while bytes.get(at) == Some(&255) { at += 1; }
-                let Some(&marker) = bytes.get(at) else { return false; }; at += 1;
-                if marker == 0xDA || marker == 0xD9 { return true; }
-                let Some(len) = bytes.get(at..at+2) else { return false; };
-                let len = u16::from_be_bytes(len.try_into().unwrap()) as usize;
-                let Some(segment) = bytes.get(at+2..at+len) else { return false; };
-                let private=match marker {
-                    0xE0=>segment.len()!=14||!segment.starts_with(b"JFIF\0")||segment[12..14]!=[0,0],
-                    0xEE=>segment.len()!=12||!segment.starts_with(b"Adobe"),
-                    0xE2=>!segment.starts_with(b"ICC_PROFILE\0"),
-                    0xFE|0xE1..=0xEF=>true,
-                    _=>false,
-                };
-                if private {return false;}
-                at += len;
-            }
-            false
-        },
+        Format::Jpeg => false,
         Format::Webp => {
             let mut at = 12;
             while let Some(header) = bytes.get(at..at+8) {

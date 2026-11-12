@@ -73,6 +73,18 @@ fn jpeg_identity_cannot_bypass_stripping_private_app_zero_data() {
 }
 
 #[test]
+fn jpeg_strip_cannot_copy_late_segments_or_trailing_payloads() {
+    let image=StillImage::from_rgb8(24,16,common::pixels(24,16)).unwrap();let jpeg=image.encode(Format::Jpeg,EncodingMode::Quality(Quality::new(80.0).unwrap()),Effort::Fast).unwrap();
+    let payload=b"private owner metadata";
+    let mut late=jpeg[..jpeg.len()-2].to_vec();late.extend_from_slice(&[255,254]);late.extend_from_slice(&((payload.len()+2) as u16).to_be_bytes());late.extend_from_slice(payload);late.extend_from_slice(&[255,217]);
+    let mut trailing=jpeg.clone();trailing.extend_from_slice(payload);
+    StillImage::decode(&late).unwrap();
+    for bytes in [late,trailing] {
+        assert!(optimizer::process(&bytes,Request {fidelity:Fidelity::Lossless,metadata:MetadataPolicy::Strip,..Request::default()}).is_err(),"private data after scan start cannot survive strip fallback");
+    }
+}
+
+#[test]
 fn direct_quality_is_refused_for_a_lossless_only_png_representation() {
     let gray=StillImage::from_samples(16,16,SampleLayout::Gray8,vec![80;256]).unwrap().encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
     assert!(optimizer::process(&gray,Request {fidelity:Fidelity::Quality(Quality::new(80.0).unwrap()),..Request::default()}).is_err());

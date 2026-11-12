@@ -18,16 +18,16 @@ Each attempt records settings, size, actual decoded score, encode wall time,
 and failure. Diagnostic encode times are not benchmark evidence. Only one
 candidate is encoded per image at a time. Reference metric pyramids are reused.
 Direct quality also decodes and validates the bytes but adds no score minimum.
-Lossless compares expanded samples, depth, hidden RGB, alpha, ICC and orientation.
+Lossless compares expanded samples, depth, hidden RGB, alpha, ICC, orientation and required PNG color facts.
 Same-format lossless JPEG copies bytes; cross-format JPEG and AVIF lossless fail.
 
 Keep mode verifies ICC, EXIF, XMP and orientation after encoding. Cross-format
 PNG ancillary losses are listed individually. Required PNG color signaling
-without a preservable ICC profile prevents cross-format conversion. Unknown
+that cannot be represented by the destination prevents cross-format conversion, including CICP overriding an otherwise preservable ICC. Unknown
 unsafe-to-copy and layout-sensitive PNG metadata require explicit strip before
 re-encoding. Keep can still choose compliant original bytes. Strip fallback
 is allowed only after checking the source container has no private chunks;
-source AVIF identity under strip is conservatively ineligible.
+JPEG and AVIF identity under strip are ineligible. JPEG headers alone cannot establish absence of private data after scan start, so strip requires verified re-encoding.
 
 Source fallback is reported unchanged, never as an encoded candidate or an
 unmeasured successful search. A source representation that cannot satisfy a
