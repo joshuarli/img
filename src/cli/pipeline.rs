@@ -1,7 +1,6 @@
 #[cfg(any(feature = "avif", feature = "webp", feature = "tiff"))]
 use std::io::{Seek, SeekFrom};
 use std::{collections::BTreeMap, path::Path};
-#[cfg(any(feature = "limits", feature = "avif", feature = "webp", feature = "tiff", test))]
 use std::fs::File;
 
 #[cfg(feature = "avif")]
@@ -70,7 +69,6 @@ fn decode_options() -> DecoderOptions {
 /// from the widest the input format allows rather than assumed, because the
 /// screen cannot see the real one yet.
 ///
-#[cfg(feature = "limits")]
 #[allow(unused_variables)]
 fn check_input_limits(
     path: &Path,
@@ -84,20 +82,35 @@ fn check_input_limits(
         .extension()
         .and_then(|ext| ext.to_str())
         .unwrap_or_default();
-    let format = ImageFormatId::from_extension(extension);
+    let mut format = ImageFormatId::from_extension(extension);
 
     // Only worth probing for formats we can size up front. Anything else is
     // rejected later by the decoder. A file that
     // cannot even be opened is left for the decode step to report, so the
     // missing-file message keeps coming from one place.
-    let Ok(reader) = File::open(path) else {
+    let Ok(mut reader) = File::open(path) else {
         return Ok(());
     };
 
+    if reader.metadata().is_ok_and(|m| m.len() > rimage::still::MAX_INPUT_BYTES) {
+        return Err(rimage::error::classify_input(path, &ImageErrors::GenericStr("compressed input exceeds 128 MiB"), None));
+    }
+    let mut magic = [0; 32];
+    use std::io::{Read, Seek};
+    if let Ok(length) = reader.read(&mut magic) {
+        if let Ok(sniffed) = rimage::still::Format::sniff(&magic[..length]) {
+            format = ImageFormatId::from_extension(sniffed.extension());
+        }
+        let _ = reader.rewind();
+    }
     let Some((width, height)) = probe_dimensions(reader, format) else {
         return Ok(());
     };
 
+    if width > u64::from(rimage::still::MAX_DIMENSION) || height > u64::from(rimage::still::MAX_DIMENSION)
+        || width.checked_mul(height).is_none_or(|n| n > rimage::still::MAX_PIXELS) {
+        return Err(rimage::error::classify_input(path, &ImageErrors::GenericStr("mandatory image resource ceiling exceeded"), None));
+    }
     let (depth, colorspace) = format.max_pixel_layout();
     let budget = SystemBudget::probe(concurrency);
     let limits = LimitSet::for_input(
@@ -124,7 +137,6 @@ fn check_input_limits(
 /// an IFD whose location depends on the header. Both are walked rather than
 /// scanned for a byte pattern, because a pattern would also match inside
 /// compressed image data and report the wrong size.
-#[cfg(feature = "limits")]
 fn probe_dimensions<R: std::io::Read>(
     mut reader: R,
     format: rimage::limits::ImageFormatId,
@@ -184,7 +196,6 @@ fn probe_dimensions<R: std::io::Read>(
 /// itself. Segments that carry no length (`RSTn`, `TEM`, and the standalone
 /// `SOI`/`EOI` markers) would desynchronise the walk, so encountering one is
 /// treated as "cannot read this file" rather than guessed at.
-#[cfg(feature = "limits")]
 fn jpeg_dimensions(data: &[u8]) -> Option<(u64, u64)> {
     /// Markers that introduce entropy-coded data; the frame header always
     /// precedes the first of them, so reaching one means it was not found.
@@ -249,7 +260,6 @@ fn jpeg_dimensions(data: &[u8]) -> Option<(u64, u64)> {
 ///
 /// The signature is 8 bytes, then a 4-byte length, a 4-byte type, and the
 /// 13-byte `IHDR` payload whose first eight bytes are the dimensions.
-#[cfg(feature = "limits")]
 const PNG_HEADER_PROBE_BYTES: usize = 32;
 
 /// Read the width and height from a PNG `IHDR` chunk.
@@ -258,7 +268,6 @@ const PNG_HEADER_PROBE_BYTES: usize = 32;
 /// decoder applies its own ceiling of 16384 from `DecoderOptions`, so an image
 /// can be well within the format's capability and still be rejected. Probing
 /// here is what turns that refusal into a message naming the ceiling.
-#[cfg(feature = "limits")]
 fn png_dimensions(data: &[u8]) -> Option<(u64, u64)> {
     /// The eight-byte signature every PNG starts with (PNG spec § 5.2).
     const SIGNATURE: [u8; 8] = [0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A];
@@ -296,7 +305,6 @@ fn png_dimensions(data: &[u8]) -> Option<(u64, u64)> {
 /// at an offset given in the first eight bytes, so both are reachable from the
 /// front of the file. The bound keeps refusing an oversized input cheap: the
 /// prefix is read, never the payload.
-#[cfg(feature = "limits")]
 const CONTAINER_HEADER_PROBE_BYTES: usize = 64 * 1024;
 
 /// Read the width and height from an AVIF `ispe` property box.
@@ -309,7 +317,6 @@ const CONTAINER_HEADER_PROBE_BYTES: usize = 64 * 1024;
 ///
 /// Returns `None` for a malformed or truncated file: the decoder reports that
 /// better than a pre-check could.
-#[cfg(feature = "limits")]
 fn avif_dimensions(data: &[u8]) -> Option<(u64, u64)> {
     /// A box header is a 4-byte big-endian size followed by a 4-byte type.
     const BOX_HEADER: usize = 8;
@@ -384,7 +391,6 @@ fn avif_dimensions(data: &[u8]) -> Option<(u64, u64)> {
 /// Both byte orders are handled, as are both value types the specification
 /// allows for these tags: a `SHORT` when the dimension fits in 16 bits and a
 /// `LONG` otherwise. Anything else is left to the decoder.
-#[cfg(feature = "limits")]
 fn tiff_dimensions(data: &[u8]) -> Option<(u64, u64)> {
     /// Tag numbers from TIFF 6.0 § 8: `ImageWidth` and `ImageLength`.
     const TAG_IMAGE_WIDTH: u16 = 0x0100;
@@ -483,7 +489,6 @@ fn tiff_dimensions(data: &[u8]) -> Option<(u64, u64)> {
 /// Returns `None` when nothing could be read. A short read is not an error: a
 /// file too small to hold a header simply is not pre-checked, and the decoder
 /// gets to report the real problem.
-#[cfg(feature = "limits")]
 fn read_prefix<R: std::io::Read>(reader: &mut R, limit: usize) -> Option<Vec<u8>> {
     let mut prefix = vec![0u8; limit];
     let mut filled = 0;
@@ -509,7 +514,6 @@ fn read_prefix<R: std::io::Read>(reader: &mut R, limit: usize) -> Option<Vec<u8>
 /// can be large but are almost never larger than this. A file whose header
 /// falls beyond the prefix simply is not pre-checked, and the decoder reports
 /// the problem instead.
-#[cfg(feature = "limits")]
 const JPEG_HEADER_PROBE_BYTES: usize = 64 * 1024;
 
 /// Bytes of a file read to recover a WebP bitstream header.
@@ -534,8 +538,7 @@ pub fn decode<P: AsRef<Path>>(
 ) -> Result<Image, rimage::error::RimageError> {
     // The size pre-check already knows which ceiling it broke, so it produces
     // the structured error directly instead of round-tripping through a string.
-    #[cfg(feature = "limits")]
-    check_input_limits(f.as_ref(), matches, output, concurrency)?;
+        check_input_limits(f.as_ref(), matches, output, concurrency)?;
 
     Image::open_with_options(f.as_ref(), decode_options())
         .or_else(|e| decode_with_fallback(f.as_ref(), e))

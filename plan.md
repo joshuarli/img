@@ -4,7 +4,8 @@
 
 - Goal: still-image JPEG, PNG, WebP, and AVIF conversion and verified perceptual optimization.
 - Accepted preparation: SVG removal at `2708512`. S0 accepted: independent PNG sample pilot, parser and backup safety, source notices, benchmark correctness workload, and size/RSS baseline. `make baseline-check` passes against integration, `2708512`, and the patched original codec binary. Integrated `make test`: 249 passed.
-- Next: S1, serial implementation. Delivery is limited by implementation. No local slice is parked.
+- S1 accepted: bounded still-image API and published PNG adapter, mandatory limits, shared no-clobber publisher and source identity checks. Six `codec_boundary` tests pass, including real races, replacement, symlinks, permissions and stream caps. Retained parser, backup, deadlock and timestamp suites pass. The minimal binary build passes. Distribution selects AGPL-3.0-only and preserves upstream notices.
+- Next: S2, serial implementation. Delivery is limited by implementation. No local slice is parked.
 - Execution authorized by the owner on 2026-11-11. Local commits only. Timing gates are deferred while this host is busy. S0 evidence and reproduction commands are in `BENCHMARKS.md`.
 - Foundation: current macOS ARM64 tests pass. Published AVIF encode/decode and metric discrimination probes pass. Independent metric, color, alpha, and matched-quality proofs remain outstanding.
 

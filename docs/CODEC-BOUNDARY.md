@@ -1,0 +1,15 @@
+# Still-image boundary
+
+The public `still` module exposes bounded image operations and four concrete formats. Codec settings, parser state, `zencodec` traits, and `zenpixels` storage remain private. Existing unrelated library operations remain available.
+
+The running PNG adapter test compares the low-level `zenpng::encode_rgb8` entry point with its published `zencodec` adapter. Both preserve the independent RGB sample oracle. The low-level path needs separate entry points and typed repacking for gray, RGB, RGBA, and 16-bit samples. The shared adapter accepts the stored pixel descriptor and carries resource limits and metadata in one job. The boundary adopts that private adapter protocol with an explicit local format enum. No registry or pipeline framework is introduced. PixelBuffer is required here to carry native 16-bit interleaved samples through those published APIs without reducing precision. The retained zune operations have not been redesigned.
+
+Limits apply without the optional system-probing feature. The retained side ceiling is 16,384 pixels. An image reserves at most 512 MiB, with a conservative 32 bytes per pixel, so the area ceiling is 16,777,216 pixels. Compressed input and buffered output are capped at 128 MiB. Decoded ICC, EXIF, and XMP together are capped at 8 MiB. Dimensions and byte products are checked before sample construction and codec allocation. These are mandatory safety ceilings, not new CLI tuning flags.
+
+Publication holds directory handles opened one component at a time with `O_NOFOLLOW`. New outputs use `linkat` for atomic no-clobber creation. Replacement accepts an opened source and rechecks its device, inode, length, modification time, and change time immediately before `renameat`. File data is synced before publication and the parent directory afterward. A later failure explicitly reports committed output. Unpublished temporary files are owned by RAII cleanup.
+
+The legacy CLI temporarily stages its metadata rewrites before passing the completed bytes to the shared publisher. This extra staging copy ends when S9 removes the old runtime. Backups use exclusive copies so creating a backup does not invalidate the source identity through a hard-link change time update.
+
+APFS on the local macOS host refuses invalid UTF-8 filenames with `EILSEQ`. The filesystem test proves this refusal preserves files. On a filesystem that supports native byte names, the same test publishes and reads such a name. Linux execution remains required for that success case.
+
+New direct production dependencies are the prescribed `zenpng` 0.1.4 (AGPL-3.0-only), `zencodec` 0.1.26, `zenpixels` 0.2.16, `enough` 0.4.5, `imgref` 1.12.3, and existing `rgb` 0.8.53. The latter five use permissive MIT or Apache-2.0 licenses. `libc` 0.2 supplies OS interfaces, not a codec runtime. The selected PNG compression graph includes `zenflate` 0.3.6 under AGPL-3.0-only. These published packages require no native build scripts. Final graph, build, binary size, and performance comparisons remain S10/S11 gates.

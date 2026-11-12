@@ -2,6 +2,7 @@
 name = "rimage"
 version = "0.14.0"
 edition = "2024"
+license = "AGPL-3.0-only"
 
 [lib]
 doctest = false
@@ -56,7 +57,7 @@ metadata = ["zune-image/metadata"]
 # Enables resize operation
 resize = ["dep:fast_image_resize"]
 # Enables quantize operation
-quantization = ["dep:imagequant", "dep:rgb"]
+quantization = ["dep:imagequant"]
 
 # Enables mozjpeg codec
 mozjpeg = ["dep:mozjpeg"]
@@ -67,7 +68,6 @@ webp = ["dep:webp"]
 # Enables avif codec
 avif = [
     "dep:ravif",
-    "dep:rgb",
     "dep:dav1d",
     "dep:avif-parse",
     "dep:yuvutils-rs",
@@ -79,6 +79,11 @@ icc = ["dep:lcms2"]
 limits = ["dep:sysinfo"]
 
 [dependencies]
+libc = "0.2"
+zenpng = { version = "=0.1.4", default-features = false }
+zencodec = "=0.1.26"
+zenpixels = { version = "=0.2.16", default-features = false }
+rgb = { version = "0.8" }
 log = "0.4"
 # zune-core 0.5.3 would cause build error.
 # REF: https://github.com/etemesi254/zune-image/issues/439
@@ -86,7 +91,6 @@ zune-core = { version = "=0.5.1", features = ["std"] }
 zune-image = { version = "0.5.0", features = ["simd"] }
 fast_image_resize = { version = "6.1", optional = true }
 imagequant = { version = "4.4", default-features = false, optional = true }
-rgb = { version = "0.8", optional = true }
 mozjpeg = { version = "0.10.13", default-features = false, features = [
     "with_simd",
 ], optional = true }
@@ -142,6 +146,8 @@ codegen-units = 1
 strip = true
 
 [dev-dependencies]
+enough = "0.4"
+imgref = "1"
 png = "0.18"
 rustybench = "=0.5.0"
 

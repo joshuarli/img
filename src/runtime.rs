@@ -268,10 +268,15 @@ impl TemporaryOutput {
         ))
     }
 
-    fn publish(mut self, target: &Path) -> std::io::Result<()> {
-        fs::rename(&self.path, target)?;
-        self.published = true;
-        Ok(())
+    fn publish(self, target: &Path, input: &Path, source: &rimage::publication::Source) -> std::io::Result<()> {
+        let bytes = fs::read(&self.path)?;
+        let destination = if paths_equivalent(target, input) {
+            rimage::publication::Destination::Replace(source)
+        } else {
+            rimage::publication::Destination::New(target)
+        };
+        let modified = fs::metadata(&self.path)?.modified()?;
+        rimage::publication::publish(&bytes, destination, Some(modified)).map_err(std::io::Error::other)
     }
 }
 
@@ -294,12 +299,8 @@ fn append_output_extension(path: &mut PathBuf, extension: &str) {
     }
 }
 
-fn output_path_key(path: &Path) -> String {
-    // Fold case in keys on every platform: path comparisons are treated as
-    // case-insensitive by default (fail-safe), so collisions between e.g.
-    // `img@Backup.png` and `img@backup.png` are detected before publishing
-    // over the backup. See `cli::utils::paths::component_eq`.
-    path.to_string_lossy().into_owned().to_lowercase()
+fn output_path_key(path: &Path) -> std::ffi::OsString {
+    path.as_os_str().to_ascii_lowercase()
 }
 
 fn size_ratio(output_size: u64, input_size: u64) -> f64 {
@@ -623,16 +624,6 @@ impl Drop for BackupFileGuard {
 /// Prefers a hard link; falls back to copying the bytes for filesystems without hard link support.
 /// `fs::copy` is deliberately not used because it truncates an existing destination, which could destroy the original image preserved by an earlier run.
 fn create_backup(input: &Path, backup_path: &Path) -> std::io::Result<()> {
-    match fs::hard_link(input, backup_path) {
-        Ok(()) => return Ok(()),
-        Err(error) => {
-            log::debug!(
-                "{}: hard link backup failed, falling back to copy: {error}",
-                input.display()
-            );
-        }
-    }
-
     let mut source = fs::File::open(input)?;
     let mut guard = BackupFileGuard {
         path: backup_path.to_path_buf(),
@@ -647,6 +638,7 @@ fn create_backup(input: &Path, backup_path: &Path) -> std::io::Result<()> {
     let destination = guard.file.as_mut().expect("backup file is present");
     std::io::copy(&mut source, destination)?;
     destination.flush()?;
+    destination.sync_all()?;
     guard.committed = true;
     Ok(())
 }
@@ -906,6 +898,8 @@ pub(crate) fn run(arguments: Arguments) -> std::process::ExitCode {
                         let preserved_mtime = preserve_timestamps
                             .then(|| FileTime::from_last_modification_time(&input_metadata));
 
+                        let source = fail_pipeline!(state, rimage::publication::Source::open(&input)
+                            .map_err(|e| rimage::error::RimageError::Input(rimage::error::InputError::Open { path: input.clone(), cause: e })));
                         let mut img = fail_pipeline!(state, decode(&input, matches, target_format, in_flight));
 
                         // Preserve JPEG metadata directly from the source file.
@@ -1053,7 +1047,7 @@ pub(crate) fn run(arguments: Arguments) -> std::process::ExitCode {
                             if let Err(error) = create_backup(&input, backup_path) {
                                 refuse_file!(output, state, output, "{}: {error}", input.display());
                             }
-                            if let Err(error) = temporary.publish(&output) {
+                            if let Err(error) = temporary.publish(&output, &input, &source) {
                                 if let Err(cleanup_error) = fs::remove_file(backup_path) {
                                     refuse_file!(
                                         output,
@@ -1079,7 +1073,7 @@ pub(crate) fn run(arguments: Arguments) -> std::process::ExitCode {
                             }
                         } else {
                             fail_pipeline!(state, temporary
-                                .publish(&output)
+                                .publish(&output, &input, &source)
                                 .map_err(|e| rimage::error::output_io_error(&output, &e)));
                         }
 

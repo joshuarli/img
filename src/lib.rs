@@ -59,5 +59,11 @@ pub mod error;
 /// without parsing stderr. See [`exit::ExitCode`].
 pub mod exit;
 
+/// Bounded still-image operations.
+pub mod still;
+
+/// Atomic per-file output publication.
+pub mod publication;
+
 #[cfg(test)]
 mod test_utils;
