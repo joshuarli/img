@@ -20,11 +20,14 @@ fn invalid_parser_and_backup_collision_preserve_inputs() {
     let input = scratch.0.join("image.png");
     common::write_png(&input, 32, 24);
     let original = fs::read(&input).unwrap();
-    let result = Command::new(binary()).arg("png").arg("--unknown").arg(&input).output().unwrap();
+    let legacy=std::env::var_os("RIMAGE_ORACLE_BIN").is_some();
+    let result = Command::new(binary()).arg(if legacy {"png"} else {"convert"}).arg("--unknown").arg(&input).output().unwrap();
     assert_eq!(result.status.code(), Some(2));
-    let result = Command::new(binary()).arg("png").arg(&input)
-        .args(["-b", "-s", "@backup", "--quiet"]).output().unwrap();
-    assert_eq!(result.status.code(), Some(3));
+    let mut command=Command::new(binary());
+    let expected=if legacy {command.arg("png").arg(&input).args(["-b", "-s", "@backup", "--quiet"]);3}
+        else {command.arg("convert").arg(&input).args(["--lossless","-o"]).arg(&input);4};
+    let result=command.output().unwrap();
+    assert_eq!(result.status.code(), Some(expected));
     assert_eq!(fs::read(&input).unwrap(), original);
     assert_eq!(fs::read_dir(&scratch.0).unwrap().count(), 1);
     assert!(!Path::new(&scratch.0.join("image@backup.png")).exists());

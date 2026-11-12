@@ -1,9 +1,9 @@
 use super::{Effort, EncodingMode, Error, ErrorKind, Format, SampleLayout, StillImage};
 use rav1d_safe::src::managed::{ColorPrimaries, ColorRange, Decoder, Frame, PixelLayout, Planes, Settings, TransferCharacteristics};
 
-pub(super) fn decode(bytes: &[u8]) -> Result<StillImage, Error> {
+pub(super) fn decode(bytes: &[u8],stop: &crate::cancellation::Cancellation) -> Result<StillImage, Error> {
     let config = zenavif_parse::DecodeConfig::default().with_peak_memory_limit(super::IMAGE_MEMORY_BYTES);
-    let parser = zenavif_parse::AvifParser::from_bytes_with_config(bytes, &config, &zencodec::Unstoppable)
+    let parser = zenavif_parse::AvifParser::from_bytes_with_config(bytes, &config, stop)
         .map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
     if parser.grid_config().is_some() { return Err(Error::new(ErrorKind::Unsupported, "AVIF grid images are unsupported")); }
     if parser.animation_info().is_some() { return Err(Error::new(ErrorKind::Unsupported, "AVIF animation is unsupported")); }
@@ -87,7 +87,7 @@ fn frame(data: &[u8]) -> Result<Frame, Error> {
     Ok(frames.remove(0))
 }
 
-pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort) -> Result<Vec<u8>, Error> {
+pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
     let EncodingMode::Quality(quality) = mode else { return Err(Error::new(ErrorKind::Unsupported, "strict lossless AVIF encoding is unsupported")); };
     if image.bit_depth() != 8 { return Err(Error::new(ErrorKind::Unsupported, "AVIF encoding requires eight-bit SDR samples")); }
     if image.has_alpha() { return Err(Error::new(ErrorKind::Unsupported, "AVIF encoding cannot guarantee exact alpha with the selected encoder")); }
@@ -96,5 +96,5 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort) -> 
         .with_effort_u32(match effort { Effort::Fast => 10, Effort::Balanced => 8, Effort::Best => 6 });
     *config.inner_mut() = config.inner().clone().bit_depth(zenavif::EncodeBitDepth::Eight).threads(Some(1))
         .color_primaries(1).transfer_characteristics(13).matrix_coefficients(6);
-    super::encode(config, image)
+    super::encode(config, image,stop)
 }

@@ -139,8 +139,14 @@ impl Pending {
 /// Flush and sync a destination-directory temporary file, then publish atomically.
 /// A new destination never overwrites any existing directory entry.
 pub fn publish(bytes: &[u8], destination: Destination<'_>, modified: Option<std::time::SystemTime>) -> Result<(), PublishError> {
+    publish_cancellable(bytes,destination,modified,&crate::cancellation::Cancellation::default())
+}
+
+/// Publish only if cancellation has not been requested before the atomic commit.
+pub fn publish_cancellable(bytes: &[u8], destination: Destination<'_>, modified: Option<std::time::SystemTime>, cancellation: &crate::cancellation::Cancellation) -> Result<(), PublishError> {
     let mut committed = false;
     let result = (|| {
+        if cancellation.is_cancelled() {return Err(io::Error::new(io::ErrorKind::Interrupted,"publication cancelled"));}
         let (dir, target) = match &destination {
             Destination::New(path) => split(path)?,
             Destination::Replace(source) => (source.dir.try_clone()?, source.name.clone()),
@@ -151,6 +157,7 @@ pub fn publish(bytes: &[u8], destination: Destination<'_>, modified: Option<std:
         if let Destination::Replace(source) = &destination { pending.file.set_permissions(source.metadata()?.permissions())?; }
         pending.file.flush()?;
         pending.file.sync_all()?;
+        if cancellation.is_cancelled() {return Err(io::Error::new(io::ErrorKind::Interrupted,"publication cancelled"));}
         let result = match &destination {
             Destination::New(_) => {
                 // SAFETY: directory descriptors and both NUL-terminated names remain live. linkat fails atomically if target exists.
@@ -175,7 +182,92 @@ pub fn publish(bytes: &[u8], destination: Destination<'_>, modified: Option<std:
 
 /// Resolve a destination parent without following symlinks and return a native path key.
 pub fn destination_key(path: &Path) -> io::Result<PathBuf> {
-    let _ = split(path)?;
-    let parent = path.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
-    Ok(parent.canonicalize()?.join(path.file_name().ok_or_else(|| io::Error::other("missing filename"))?))
+    let name=path.file_name().ok_or_else(||io::Error::other("missing filename"))?;
+    let mut ancestor=path.parent().filter(|p|!p.as_os_str().is_empty()).unwrap_or(Path::new("."));
+    let mut missing=Vec::new();
+    loop {
+        match directory(ancestor) {
+            Ok(_)=>break,
+            Err(error) if error.kind()==io::ErrorKind::NotFound=>{
+                missing.push(ancestor.file_name().ok_or_else(||io::Error::other("invalid destination ancestor"))?);
+                ancestor=ancestor.parent().filter(|p|!p.as_os_str().is_empty()).unwrap_or(Path::new("."));
+            },
+            Err(error)=>return Err(error),
+        }
+    }
+    let mut key=ancestor.canonicalize()?;
+    for part in missing.into_iter().rev() { key.push(part); }
+    Ok(key.join(name))
+}
+
+/// Create destination ancestors without traversing symlinks.
+pub fn create_parent(path: &Path) -> io::Result<()> {
+    let parent=path.parent().filter(|p|!p.as_os_str().is_empty()).unwrap_or(Path::new("."));
+    let mut dir=File::open(if parent.is_absolute() { "/" } else { "." })?;
+    for component in parent.components() {
+        match component {
+            Component::RootDir|Component::CurDir=>{},
+            Component::Normal(name)=>{
+                let encoded=cstring(name)?;
+                // SAFETY: directory fd and NUL-terminated name are live; no pointers are retained.
+                let created=unsafe { libc::mkdirat(dir.as_raw_fd(),encoded.as_ptr(),0o755) };
+                if created<0 { let error=io::Error::last_os_error(); if error.kind()!=io::ErrorKind::AlreadyExists { return Err(error); } }
+                dir=open_at(&dir,name,libc::O_RDONLY|libc::O_DIRECTORY)?;
+            },
+            Component::ParentDir=>{ dir=open_at(&dir,OsStr::new(".."),libc::O_RDONLY|libc::O_DIRECTORY)?; },
+            _=>return Err(io::Error::new(io::ErrorKind::InvalidInput,"unsupported path component")),
+        }
+    }
+    Ok(())
+}
+
+/// Native directory entry inspected without following links.
+pub struct DirectoryEntry {
+    /// Entry name relative to its directory.
+    pub name: std::ffi::OsString,
+    /// Entry is a directory.
+    pub directory: bool,
+    /// Entry is a regular file.
+    pub file: bool,
+    /// Entry is a symlink.
+    pub symlink: bool,
+}
+/// Read a directory through a no-follow handle. Returned names are sorted natively.
+pub fn read_directory(path:&Path)->io::Result<Vec<DirectoryEntry>> {
+    use std::os::fd::IntoRawFd;
+    struct Entries(*mut libc::DIR);
+    impl Drop for Entries { fn drop(&mut self) { // SAFETY: fdopendir owns this live stream exclusively.
+        unsafe {libc::closedir(self.0);}
+    } }
+    let fd=directory(path)?.into_raw_fd();
+    // SAFETY: fd is an owned directory descriptor, transferred only on success.
+    let raw=unsafe {libc::fdopendir(fd)};
+    if raw.is_null() {let error=io::Error::last_os_error(); // SAFETY: failed fdopendir did not consume fd.
+        unsafe {libc::close(fd);} return Err(error);}
+    let entries=Entries(raw);let mut output=vec![];
+    loop {
+        // SAFETY: platform errno pointer is thread-local and valid for this thread.
+        unsafe { *errno_pointer()=0; }
+        // SAFETY: stream is live, uniquely owned, and not accessed by another thread.
+        let entry=unsafe {libc::readdir(entries.0)};
+        if entry.is_null() {let error=io::Error::last_os_error();if error.raw_os_error()!=Some(0) {return Err(error);}break;}
+        // SAFETY: readdir supplies a NUL-terminated name valid until its next call.
+        let name=unsafe {std::ffi::CStr::from_ptr((*entry).d_name.as_ptr())};
+        if name.to_bytes()==b"."||name.to_bytes()==b".." {continue;}
+        // SAFETY: stat is plain C data; fstatat initializes it on success.
+        let mut stat:libc::stat=unsafe {std::mem::zeroed()};
+        // SAFETY: live directory descriptor, entry name and output pointer; no link following.
+        if unsafe {libc::fstatat(fd,name.as_ptr(),&mut stat,libc::AT_SYMLINK_NOFOLLOW)}<0 {return Err(io::Error::last_os_error());}
+        let kind=stat.st_mode & libc::S_IFMT;
+        output.push(DirectoryEntry {name:OsStr::from_bytes(name.to_bytes()).to_owned(),directory:kind==libc::S_IFDIR,file:kind==libc::S_IFREG,symlink:kind==libc::S_IFLNK});
+    }
+    output.sort_by(|a,b|a.name.cmp(&b.name));Ok(output)
+}
+#[cfg(target_os="macos")]
+fn errno_pointer()->*mut libc::c_int { // SAFETY: OS accessor returns this thread's errno location.
+    unsafe {libc::__error()}
+}
+#[cfg(target_os="linux")]
+fn errno_pointer()->*mut libc::c_int { // SAFETY: OS accessor returns this thread's errno location.
+    unsafe {libc::__errno_location()}
 }

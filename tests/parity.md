@@ -6,11 +6,11 @@ Generated fixture samples are defined by `tests/common/mod.rs::pixels`. Tests ma
 | Behavior | Disposition | Fixture and proof |
 | --- | --- | --- |
 | Exact RGB PNG dimensions and samples | retained | generated 256×192, `baseline::real_png_workload_has_independent_sample_proof`, independent `png` decoder |
-| Unknown option exits 2 without writes | retained | generated PNG, `baseline::invalid_parser_and_backup_collision_preserve_inputs` |
-| Backup collision preserves original | retained safety, backup CLI intentionally removed at S9 | same pilot and `deadlock` backup regressions |
-| Codec command aliases | intentionally replaced at S9 | existing `cli` suite until S9 |
-| SVG | intentionally removed before campaign | `cli::unsupported_vector_input_does_not_publish_output` |
-| Traversal, globs, file lists, timestamps | open | existing `deadlock`, `timestamps`, path unit tests |
+| Unknown option exits 2 without writes | retained | generated PNG, baseline and `cli::command_help_invalid_combinations_and_removed_surface` |
+| Backup collision preserves original | safety retained, backup CLI intentionally removed at S9 | baseline oracle branch; new destination-collision and alias regressions |
+| Codec command aliases | intentionally removed at S9 | `cli::command_help_invalid_combinations_and_removed_surface` rejects retired commands |
+| SVG | intentionally removed before campaign | CLI mixed input/output fixture verifies input refusal without publication |
+| Traversal, globs, file lists, timestamps | retained; new output naming intentional | `deadlock`, `timestamps`, CLI ordered traversal and output-subtree exclusion; explicit file lists are relative to list |
 | Metadata, color, alpha, precision | retained or explicitly refused | codec suites and `color_fidelity`; supported representations in `docs/COLOR.md` and `docs/AVIF.md` |
 | JPEG progressive, gray, ICC/EXIF, corruption | retained | `jpeg_codec`; independent zune-jpeg decode, stored EXIF orientation |
 | JPEG alpha flattening and high-precision reduction | intentionally refused | `jpeg_codec::invalid_quality_alpha_precision_and_corruption_are_named_errors` |
@@ -19,5 +19,7 @@ Generated fixture samples are defined by `tests/common/mod.rs::pixels`. Tests ma
 | Palette quantization | explicitly lossy | `png_codec::direct_palette_mode_is_explicit_and_keeps_dimensions` |
 | AVIF opaque eight-bit SDR | retained with corrected color handling | `avif_codec`, independent dav1d decode at direct quality 0, 80, 100 |
 | AVIF alpha, monochrome, HDR/high depth, grid, animation, container transforms | intentionally refused until validated | `avif_codec`; failing alpha experiment preserved at `a4d2fb5`, details in `docs/AVIF.md` |
-| Exit aggregation and resource limits | open | `exit`, `limits` suites; mandatory limits at S1 |
-| Streams, signals, concurrent publication | open | S1 and S9 |
+| Exit aggregation and resource limits | retained with mandatory limits | `exit`, `codec_boundary`, CLI mixed zero-success and partial-success JSON; worker memory admission |
+| Streams, signals, concurrent publication | retained and strengthened | `codec_boundary`, `signals`, CLI binary streams and broken-pipe tests |
+
+The baseline harness selects legacy argv only for explicitly selected historical binaries. Production accepts only the new operation-first surface. Removed resize syntax and arbitrary preprocessing flags are intentionally replaced by explicit max-dimension. No retained behavior remains open.

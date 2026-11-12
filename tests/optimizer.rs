@@ -19,7 +19,7 @@ fn search_finishes_coarse_grid_before_refining_and_does_not_assume_monotonicity(
     let bytes=StillImage::from_rgb8(48,32,(0..32u8).flat_map(|y|(0..48u8).flat_map(move|x|[x*4,y*6,100])).collect()).unwrap().encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
     let result=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Score(ScoreTarget::new(40.0).unwrap()),effort:Effort::Balanced,..Request::default() }).unwrap();
     assert_eq!(result.evaluations.len(),24);
-    assert_eq!(result.evaluations[..6].iter().map(|e|e.quality.unwrap()).collect::<Vec<_>>(),[95.0,50.0,0.0,100.0,75.0,25.0]);
+    assert_eq!(result.evaluations[1..7].iter().map(|e|e.quality.unwrap()).collect::<Vec<_>>(),[95.0,50.0,0.0,100.0,75.0,25.0]);
     assert_eq!(result.bytes.len(),result.evaluations.iter().filter(|e|e.failure.is_none()).map(|e|e.bytes.unwrap()).min().unwrap());
     let impossible=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Jpeg),fidelity:Fidelity::Score(ScoreTarget::new(100.0).unwrap()),effort:Effort::Fast,..Request::default() });
     assert!(impossible.is_err());
@@ -59,5 +59,5 @@ fn direct_quality_converts_even_when_larger_and_cancellation_prevents_work() {
     let bytes=source();
     let result=optimizer::process(&bytes,Request {operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Quality(Quality::new(100.0).unwrap()),..Request::default()}).unwrap();
     assert_eq!(result.format,Format::Webp); assert_eq!(result.evaluations.len(),1); assert!(!result.unchanged);
-    assert!(optimizer::process_cancellable(&bytes,Request::default(),&std::sync::atomic::AtomicBool::new(true)).is_err());
+    assert!(optimizer::process_cancellable(&bytes,Request::default(),&{ let c=rimage::cancellation::Cancellation::default(); c.cancel(); c }).is_err());
 }

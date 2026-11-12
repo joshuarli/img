@@ -222,13 +222,16 @@ impl StillImage {
     }
 
     /// Decode actual encoded bytes. Animation and unsupported precision fail.
-    pub fn decode(bytes: &[u8]) -> Result<Self, Error> {
+    pub fn decode(bytes: &[u8]) -> Result<Self, Error> { Self::decode_cancellable(bytes,&crate::cancellation::Cancellation::default()) }
+
+    /// Decode with cooperative codec cancellation where supported.
+    pub fn decode_cancellable(bytes: &[u8], stop: &crate::cancellation::Cancellation) -> Result<Self, Error> {
         limits().check_input_size(bytes.len() as u64).map_err(|e| Error::caused(ErrorKind::Limit, e))?;
         let format = Format::sniff(bytes)?;
         match format {
             Format::Png => {
                 let chunks = png::metadata_chunks(bytes)?;
-                let mut image = decode(zenpng::PngDecoderConfig::new(), bytes, format)?;
+                let mut image = decode(zenpng::PngDecoderConfig::new(), bytes, format, stop)?;
                 if chunks.iter().any(|chunk| &chunk[4..8] == b"iCCP") && image.metadata.icc_profile.is_none() {
                     return Err(Error::new(ErrorKind::Unsupported, "PNG ICC profile could not be preserved"));
                 }
@@ -249,10 +252,10 @@ impl StillImage {
                 let mut config = zenjpeg::JpegDecoderConfig::new();
                 let header = config.inner().read_info(bytes).map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
                 if header.num_components == 1 { config.inner_mut().output_format = Some(zenjpeg::decoder::PixelFormat::Gray); }
-                decode(config, bytes, format)
+                decode(config, bytes, format, stop)
             },
-            Format::Webp => decode(zenwebp::zencodec::WebpDecoderConfig::new(), bytes, format),
-            Format::Avif => avif::decode(bytes),
+            Format::Webp => decode(zenwebp::zencodec::WebpDecoderConfig::new(), bytes, format, stop),
+            Format::Avif => avif::decode(bytes,stop),
         }
     }
 
@@ -272,9 +275,12 @@ impl StillImage {
     }
 
     /// Encode a candidate without silently discarding alpha or reducing precision.
-    pub fn encode(&self, format: Format, mode: EncodingMode, effort: Effort) -> Result<Vec<u8>, Error> {
+    pub fn encode(&self, format: Format, mode: EncodingMode, effort: Effort) -> Result<Vec<u8>, Error> { self.encode_cancellable(format,mode,effort,&crate::cancellation::Cancellation::default()) }
+
+    /// Encode with cooperative codec cancellation where supported.
+    pub fn encode_cancellable(&self, format: Format, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
         match format {
-            Format::Png => png::encode(self, mode, effort),
+            Format::Png => png::encode(self, mode, effort,stop),
             Format::Jpeg => {
                 let EncodingMode::Quality(quality) = mode else { return Err(Error::new(ErrorKind::Unsupported, "JPEG lossless requires original-byte preservation")); };
                 if self.bit_depth() != 8 { return Err(Error::new(ErrorKind::Unsupported, "JPEG encoding requires eight-bit samples")); }
@@ -286,7 +292,7 @@ impl StillImage {
                     _ => zenjpeg::encoder::OptimizationPreset::JpegliProgressive,
                 };
                 let config = config.optimization(preset).progressive(true);
-                let mut request = config.request();
+                let mut request = config.request().stop(stop);
                 if let Some(icc) = &opaque.metadata.icc_profile { request = request.icc_profile(icc); }
                 if let Some(exif) = &opaque.metadata.exif { request = request.exif(zenjpeg::encoder::Exif::raw(exif.to_vec())); }
                 if let Some(xmp) = &opaque.metadata.xmp { request = request.xmp(xmp); }
@@ -304,9 +310,9 @@ impl StillImage {
                     EncodingMode::Lossless => zenwebp::zencodec::WebpEncoderConfig::lossless().with_exact(true),
                     EncodingMode::Quality(quality) => zenwebp::zencodec::WebpEncoderConfig::lossy().with_quality(quality.value()),
                 }.with_alpha_quality_value(100.0).with_effort_u32(match effort { Effort::Fast => 0, Effort::Balanced => 6, Effort::Best => 10 });
-                encode(config, self)
+                encode(config, self,stop)
             },
-            Format::Avif => avif::encode(self, mode, effort),
+            Format::Avif => avif::encode(self, mode, effort,stop),
         }
     }
 
@@ -327,11 +333,11 @@ impl StillImage {
     }
 }
 
-pub(crate) fn decode<C: DecoderConfig>(config: C, bytes: &[u8], format: Format) -> Result<StillImage, Error> {
+pub(crate) fn decode<C: DecoderConfig>(config: C, bytes: &[u8], format: Format, stop: &crate::cancellation::Cancellation) -> Result<StillImage, Error> {
     let mut policy = zencodec::decode::DecodePolicy::none();
     policy.strict = Some(true);
     policy.allow_truncated = Some(false);
-    let job = config.job().with_limits(limits()).with_policy(policy).with_orientation(zencodec::OrientationHint::Preserve);
+    let job = config.job().with_stop(stop.token()).with_limits(limits()).with_policy(policy).with_orientation(zencodec::OrientationHint::Preserve);
     let info = job.probe(bytes).map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
     check_dimensions(info.width, info.height)?;
     if info.sequence != zencodec::ImageSequence::Single { return Err(Error::new(ErrorKind::Unsupported, "animation is unsupported")); }
@@ -356,14 +362,69 @@ pub(crate) fn decode<C: DecoderConfig>(config: C, bytes: &[u8], format: Format) 
     Ok(StillImage { pixels: result.into_buffer(), metadata, format, info, png_metadata: vec![] })
 }
 
-pub(crate) fn encode<C: EncoderConfig>(config: C, image: &StillImage) -> Result<Vec<u8>, Error>
+pub(crate) fn encode<C: EncoderConfig>(config: C, image: &StillImage, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error>
 where <C::Job as EncodeJob>::Enc: Encoder {
     // Published adapters require a transfer tag even when encoding raw profile-tagged samples.
     // Color interpretation remains in retained metadata; this view does not transform samples.
     let view = image.pixels.as_slice();
     let descriptor = view.descriptor().with_transfer(zenpixels::TransferFunction::Srgb);
     let view = view.with_descriptor(descriptor);
-    config.job().with_limits(limits()).with_metadata_policy(image.metadata.clone(), zencodec::MetadataPolicy::PreserveExact).encoder()
+    config.job().with_stop(stop.token()).with_limits(limits()).with_metadata_policy(image.metadata.clone(), zencodec::MetadataPolicy::PreserveExact).encoder()
         .map_err(|e| Error::caused(ErrorKind::Encode, e))?.encode(view)
         .map(|out| out.into_vec()).map_err(|e| Error::caused(ErrorKind::Encode, e))
+}
+
+/// Header details available without decoding pixel planes.
+#[derive(Clone, Debug)]
+pub struct Description {
+    /// Detected container.
+    pub format: Format,
+    /// Stored width.
+    pub width: u32,
+    /// Stored height.
+    pub height: u32,
+    /// Declared precision when available.
+    pub bit_depth: Option<u8>,
+    /// Presence of alpha.
+    pub alpha: bool,
+    /// Declared grayscale when available.
+    pub grayscale: Option<bool>,
+    /// Embedded ICC profile.
+    pub icc: bool,
+    /// CICP primaries, transfer, matrix and full-range flag.
+    pub cicp: Option<[u16;4]>,
+    /// EXIF orientation, one through eight.
+    pub orientation: u8,
+    /// Animation or multiple-image sequence.
+    pub animation: bool,
+    /// Embedded EXIF.
+    pub exif: bool,
+    /// Embedded XMP.
+    pub xmp: bool,
+}
+fn describe_info(info: zencodec::ImageInfo, format: Format) -> Description {
+    let orientation=info.embedded_metadata.exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation).unwrap_or(info.orientation) as u8;
+    Description { format,width:info.width,height:info.height,bit_depth:info.source_color.bit_depth,alpha:info.has_alpha,
+        grayscale:info.source_color.channel_count.map(|c|c<=2),icc:info.source_color.icc_profile.is_some(),
+        cicp:info.source_color.cicp.map(|c|[c.color_primaries as u16,c.transfer_characteristics as u16,c.matrix_coefficients as u16,c.full_range as u16]),
+        orientation,animation:info.sequence!=zencodec::ImageSequence::Single,exif:info.embedded_metadata.exif.is_some(),xmp:info.embedded_metadata.xmp.is_some() }
+}
+/// Inspect bounded encoded headers, including representations refused for pixel processing.
+pub fn describe(bytes: &[u8]) -> Result<Description, Error> {
+    if bytes.len() as u64 > MAX_INPUT_BYTES { return Err(Error::new(ErrorKind::Limit,"compressed input exceeds 128 MiB")); }
+    let format=Format::sniff(bytes)?;
+    let info=match format {
+        Format::Png => zenpng::PngDecoderConfig::new().job().with_limits(limits()).probe(bytes).map_err(|e|Error::caused(ErrorKind::Invalid,e)),
+        Format::Jpeg => zenjpeg::JpegDecoderConfig::new().job().with_limits(limits()).probe(bytes).map_err(|e|Error::caused(ErrorKind::Invalid,e)),
+        Format::Webp => zenwebp::zencodec::WebpDecoderConfig::new().job().with_limits(limits()).probe(bytes).map_err(|e|Error::caused(ErrorKind::Invalid,e)),
+        Format::Avif => {
+            let config=zenavif_parse::DecodeConfig::default().with_peak_memory_limit(IMAGE_MEMORY_BYTES);
+            let parser=zenavif_parse::AvifParser::from_bytes_with_config(bytes,&config,&zencodec::Unstoppable).map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
+            let header=parser.primary_metadata().map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
+            let exif=parser.exif().transpose().map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
+            let cicp=match parser.color_info() { Some(zenavif_parse::ColorInformation::Nclx {color_primaries,transfer_characteristics,matrix_coefficients,full_range})=>Some([*color_primaries,*transfer_characteristics,*matrix_coefficients,*full_range as u16]), _=>None };
+            return Ok(Description {format,width:header.max_frame_width.get(),height:header.max_frame_height.get(),bit_depth:parser.av1_config().map(|c|c.bit_depth),alpha:parser.alpha_metadata().is_some(),grayscale:parser.av1_config().map(|c|c.monochrome),icc:matches!(parser.color_info(),Some(zenavif_parse::ColorInformation::IccProfile(_))),cicp,orientation:exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation).map(|o|o as u8).unwrap_or(1),animation:parser.animation_info().is_some(),exif:exif.is_some(),xmp:parser.xmp().is_some()});
+        },
+    }?;
+    Ok(describe_info(info,format))
 }

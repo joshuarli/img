@@ -1,32 +1,15 @@
 /*!
-# Rimage
+Bounded JPEG, PNG, WebP and AVIF conversion and verified optimization.
 
-Rimage is a powerful Rust image optimization library extending `zune_image` crate. Designed to enhance your image optimization workflows.
+[`still`] decodes bounded still images and preserves explicit sample layouts.
+[`optimizer`] selects verified actual encoded bytes under one global encode cap.
+[`perceptual`] compares orientation-correct SDR pixels with exact alpha.
+[`publication`] creates outputs atomically without clobbering existing files.
 
-## Features
-
-- Modern codecs:
-    - Rimage uses modern codecs optimized to produce tiny images
-    - Under the hood uses `zune_image` crate that enhances performance
-- Optimization operations:
-    - Rimage provides several image optimization operation
-    - Resize - uses `fast_image_resize` crate that has incredible performance
-    - Quantization - allowing to reduce image palette
-
-## Formats
-
-| Image Format | Decoder | Encoder |
-|--------------|---------|---------|
-| jpeg         | -       | mozjpeg |
-| png          | -       | oxipng  |
-| avif         | dav1d   | ravif   |
-| webp         | webp    | webp    |
-
-> AVIF decoding requires a system-installed `dav1d` (>= 1.3.0) found through
-> pkg-config and only handles still images: grid collages and animated
-> sequences are rejected, 10/12-bit sources are converted to 8-bit output, and
-> ICC profiles are not applied.
-
+Scoring supports validated eight-bit SDR profiles. Exact PNG paths preserve
+sixteen-bit samples. Unsupported alpha, precision, HDR, animation and color
+representations fail explicitly. See the repository's docs for the supported
+representation matrix and independent validation evidence.
 */
 
 #![warn(missing_docs)]
@@ -73,3 +56,6 @@ mod test_utils;
 
 /// Deterministic, bounded optimization and conversion capabilities.
 pub mod optimizer;
+
+/// Cooperative cancellation of image work.
+pub mod cancellation;

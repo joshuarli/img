@@ -42,7 +42,7 @@ pub(super) fn restore_metadata(bytes: &[u8], metadata: &[Vec<u8>]) -> Result<Vec
     Ok(output)
 }
 
-pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort) -> Result<Vec<u8>, Error> {
+pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
     if image.png_metadata.iter().any(|chunk| {
         let kind = &chunk[4..8];
         matches!(kind, b"bKGD" | b"sBIT") || (kind[3].is_ascii_uppercase()
@@ -60,7 +60,7 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort) -> 
             let config = zenpng::EncodeConfig::default().with_compression(compression);
             let colors = 2 + (quality.value() * 254.0 / 100.0).round() as u16;
             let quantizer = zenpng::ZenquantQuantizer::new().with_max_colors(colors);
-            zenpng::encode_indexed(pixels.as_ref(), &config, &quantizer, Some(&image.metadata), &zencodec::Unstoppable, &zencodec::Unstoppable)
+            zenpng::encode_indexed(pixels.as_ref(), &config, &quantizer, Some(&image.metadata), stop, stop)
                 .map_err(|e| Error::caused(ErrorKind::Encode, e))?
         },
         EncodingMode::Lossless if image.is_grayscale() && image.has_alpha() => {
@@ -78,7 +78,7 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort) -> 
             encoder.encode(&image, &mut output).map_err(|e| Error::new(ErrorKind::Encode, e.to_string()))?;
             output.into_inner()
         },
-        EncodingMode::Lossless => super::encode(zenpng::PngEncoderConfig::new().with_compression(compression), image)?,
+        EncodingMode::Lossless => super::encode(zenpng::PngEncoderConfig::new().with_compression(compression), image,stop)?,
     };
     let mut metadata = image.png_metadata.clone();
     if image.is_grayscale() && image.has_alpha() {

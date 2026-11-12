@@ -122,3 +122,11 @@ fn symlinks_directories_aliases_and_native_names_are_safe() {
     assert_eq!(fs::read(target).unwrap(), b"original");
     assert!(!Path::new(&scratch.0.join("escape")).exists());
 }
+
+#[test]
+fn cancelled_publication_has_no_visible_destination() {
+    let scratch=common::Scratch::new("cancel-publication");let output=scratch.0.join("output.png");
+    let cancellation=rimage::cancellation::Cancellation::default();cancellation.cancel();
+    let error=rimage::publication::publish_cancellable(b"complete bytes",rimage::publication::Destination::New(&output),None,&cancellation).unwrap_err();
+    assert!(!error.committed());assert!(!output.exists());assert_eq!(std::fs::read_dir(&scratch.0).unwrap().count(),0);
+}

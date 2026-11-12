@@ -1,5 +1,5 @@
 //! Bounded, deterministic selection over verified encoded still images.
-use std::{num::NonZeroU32, sync::atomic::{AtomicBool, Ordering}, time::Instant};
+use std::{num::NonZeroU32, time::Instant};
 use crate::{perceptual::{PerceptualReference, ScoreTarget}, still::{Effort, EncodingMode, Error, ErrorKind, Format, Quality, SamplePreservation, StillImage}};
 
 /// Requested fidelity contract.
@@ -175,20 +175,20 @@ fn validate_metadata(source: &StillImage, candidate: &StillImage, format: Format
 }
 /// Process one bounded source. This function performs no publication.
 pub fn process(bytes: &[u8], request: Request) -> Result<Outcome, Error> {
-    process_cancellable(bytes, request, &AtomicBool::new(false))
+    process_cancellable(bytes, request, &crate::cancellation::Cancellation::default())
 }
 /// Process with cooperative cancellation between encode attempts.
-pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &AtomicBool) -> Result<Outcome, Error> {
-    if cancelled.load(Ordering::Relaxed) { return Err(Error::new(ErrorKind::Invalid,"processing cancelled")); }
+pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::cancellation::Cancellation) -> Result<Outcome, Error> {
+    if cancelled.is_cancelled() { return Err(Error::new(ErrorKind::Invalid,"processing cancelled")); }
     if matches!(request.fidelity, Fidelity::Lossless) && request.max_dimension.is_some() { return Err(Error::new(ErrorKind::Invalid, "lossless conflicts with resizing")); }
-    let mut image = StillImage::decode(bytes)?;
+    let mut image = StillImage::decode_cancellable(bytes,cancelled)?;
     let source_format = image.format();
     let source_eligible = request.max_dimension.is_none() && (request.metadata == MetadataPolicy::Keep || strip_compliant(bytes, source_format));
     if request.metadata == MetadataPolicy::Strip {
         image = image.strip_metadata(if matches!(request.fidelity,Fidelity::Lossless) { SamplePreservation::Exact } else { SamplePreservation::AllowReorientation })?;
     }
     if let Some(dimension) = request.max_dimension { image = image.resize_to_fit(dimension)?; }
-    let metric = match request.fidelity { Fidelity::Lossless => None, _ => Some(PerceptualReference::new(&image)?) };
+    let metric = match request.fidelity { Fidelity::Lossless => None, _ => Some(PerceptualReference::new_cancellable(&image,cancelled)?) };
     let identity_score = metric.as_ref().map(|_|100.0);
     let optimize = matches!(request.operation, Operation::Optimize(_));
     let formats = match request.operation {
@@ -211,7 +211,7 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &AtomicBoo
         Fidelity::Lossless => for &f in &formats { settings.push((f,None)); },
         Fidelity::Quality(q) => for &f in &formats { settings.push((f,Some(q.value()))); },
         Fidelity::Score(_) => {
-            if formats.contains(&Format::Png) { settings.push((Format::Png,None)); }
+            for format in [Format::Png,Format::Webp] {if formats.contains(&format) {settings.push((format,None));}}
             for q in [95.0,50.0,0.0,100.0,75.0,25.0] {
                 for &f in &formats { if f != Format::Png || !image.is_grayscale() { settings.push((f,Some(q))); } }
             }
@@ -222,7 +222,7 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &AtomicBoo
     let mut encode_error = false;
     let mut next = 0;
     while evaluations.len() < cap {
-        if cancelled.load(Ordering::Relaxed) { return Err(Error::new(ErrorKind::Invalid,"processing cancelled")); }
+        if cancelled.is_cancelled() { return Err(Error::new(ErrorKind::Invalid,"processing cancelled")); }
         if next >= settings.len() {
             if !matches!(request.fidelity,Fidelity::Score(_)) { break; }
             let mut refined = false;
@@ -238,14 +238,14 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &AtomicBoo
         }
         let (format,quality) = settings[next]; next+=1;
         let start=Instant::now();
-        let encoded=image.encode(format,quality.map(|q|EncodingMode::Quality(Quality::new(q).unwrap())).unwrap_or(EncodingMode::Lossless),request.effort);
+        let encoded=image.encode_cancellable(format,quality.map(|q|EncodingMode::Quality(Quality::new(q).unwrap())).unwrap_or(EncodingMode::Lossless),request.effort,cancelled);
         let mut evaluation=Evaluation { format,quality,bytes:None,score:None,encode_ms:start.elapsed().as_secs_f64()*1000.0,failure:None };
         match encoded {
             Err(error) => { encode_error |= error.kind() == ErrorKind::Encode; evaluation.failure=Some(error.to_string()); },
             Ok(candidate_bytes) => {
                 encoded_any=true; evaluation.bytes=Some(candidate_bytes.len());
                 let validated=(|| {
-                    let candidate=StillImage::decode(&candidate_bytes)?;
+                    let candidate=StillImage::decode_cancellable(&candidate_bytes,cancelled)?;
                     validate_metadata(&image,&candidate,format)?;
                     if matches!(request.fidelity,Fidelity::Lossless) {
                         if !samples_equal(&image,&candidate) { return Err(Error::new(ErrorKind::Score,"exact decoded samples differ")); }

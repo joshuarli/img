@@ -27,17 +27,11 @@ default = [
 
 # Used for binary
 build-binary = [
-    "dep:anyhow",
+    "dep:serde_json",
+    "limits",
     "dep:lexopt",
-    "dep:rayon",
-    "dep:env_logger",
-    "dep:zune-imageprocs",
     "dep:glob",
-    "dep:filetime",
     "zune-image/default",
-    "dep:indicatif",
-    "dep:indicatif-log-bridge",
-    "dep:little_exif",
     "icc",
 ]
 
@@ -121,16 +115,9 @@ tiff = { version = "0.11.3", default-features = false, features = [
 sysinfo = { version = "0.39.6", optional = true }
 
 # cli
-anyhow = { version = "1.0", optional = true }
+serde_json = { version = "1.0", optional = true }
 lexopt = { version = "0.3.2", optional = true }
-env_logger = { version = "0.11", optional = true, default-features = false }
-rayon = { version = "1.12.0", optional = true }
-zune-imageprocs = { version = "0.5.1", features = ["exif"], optional = true }
-little_exif = { version = "0.6.23", optional = true }
-indicatif = { version = "0.18", features = ["rayon"], optional = true }
-indicatif-log-bridge = { version = "0.2.3", optional = true }
 glob = { version = "0.3", optional = true }
-filetime = { version = "0.2.29", optional = true }
 
 [target.'cfg(all(target_arch = "aarch64", target_os = "linux", target_env = "musl"))'.dependencies]
 ravif = { version = "0.13.0", default-features = false, optional = true }
@@ -156,6 +143,7 @@ codegen-units = 1
 strip = true
 
 [dev-dependencies]
+filetime = "0.2.29"
 lcms2 = "6.2"
 zenavif-serialize = "=0.1.4"
 enough = "0.4"
