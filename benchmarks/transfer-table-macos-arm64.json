@@ -1,0 +1,448 @@
+{
+  "schemaVersion": 1,
+  "architecture": "aarch64-apple-darwin",
+  "baselineRevision": "d21db7b",
+  "candidate": "same production graph plus per-preparation eight-bit sRGB table",
+  "timingGate": "accepted pre/post perf-gate-ready",
+  "method": "five interleaved conversions per side and fixture; dist, score 80 coffee and score 95 large/ui, fast effort, jobs 1; includes child startup through atomic publication; CPU from child rusage; validation after timed region",
+  "failures": 0,
+  "completed": 30,
+  "outputProof": "all outputs byte-identical across both sides and all five runs per fixture; actual score meets target; prepared coffee source/candidate float dumps byte-identical",
+  "results": [
+    {
+      "fixture": "coffee",
+      "sides": [
+        {
+          "side": "after",
+          "measurement": {
+            "samples": [
+              {
+                "run": 0,
+                "fixture": "coffee",
+                "side": "after",
+                "elapsedNs": 447218625,
+                "userCpuNs": 216711000,
+                "systemCpuNs": 10986000,
+                "inputBytes": 466706,
+                "outputBytes": 93198,
+                "actualScore": 85.61683015419776,
+                "outputSha256": "ed1782fdf618a426cb5e911e195541f3284c7ad69d118e263fc690ccb24a68ec"
+              },
+              {
+                "run": 1,
+                "fixture": "coffee",
+                "side": "after",
+                "elapsedNs": 265110334,
+                "userCpuNs": 213877000,
+                "systemCpuNs": 9977000,
+                "inputBytes": 466706,
+                "outputBytes": 93198,
+                "actualScore": 85.61683015419776,
+                "outputSha256": "ed1782fdf618a426cb5e911e195541f3284c7ad69d118e263fc690ccb24a68ec"
+              },
+              {
+                "run": 2,
+                "fixture": "coffee",
+                "side": "after",
+                "elapsedNs": 283849250,
+                "userCpuNs": 228578000,
+                "systemCpuNs": 13933000,
+                "inputBytes": 466706,
+                "outputBytes": 93198,
+                "actualScore": 85.61683015419776,
+                "outputSha256": "ed1782fdf618a426cb5e911e195541f3284c7ad69d118e263fc690ccb24a68ec"
+              },
+              {
+                "run": 3,
+                "fixture": "coffee",
+                "side": "after",
+                "elapsedNs": 249945917,
+                "userCpuNs": 220416000,
+                "systemCpuNs": 10114000,
+                "inputBytes": 466706,
+                "outputBytes": 93198,
+                "actualScore": 85.61683015419776,
+                "outputSha256": "ed1782fdf618a426cb5e911e195541f3284c7ad69d118e263fc690ccb24a68ec"
+              },
+              {
+                "run": 4,
+                "fixture": "coffee",
+                "side": "after",
+                "elapsedNs": 466808459,
+                "userCpuNs": 202656000,
+                "systemCpuNs": 8454000,
+                "inputBytes": 466706,
+                "outputBytes": 93198,
+                "actualScore": 85.61683015419776,
+                "outputSha256": "ed1782fdf618a426cb5e911e195541f3284c7ad69d118e263fc690ccb24a68ec"
+              }
+            ],
+            "medianElapsedNs": 283849250,
+            "spreadElapsedNs": 216862542,
+            "medianCpuNs": 227697000
+          }
+        },
+        {
+          "side": "before",
+          "measurement": {
+            "samples": [
+              {
+                "run": 0,
+                "fixture": "coffee",
+                "side": "before",
+                "elapsedNs": 378306875,
+                "userCpuNs": 310902000,
+                "systemCpuNs": 12804000,
+                "inputBytes": 466706,
+                "outputBytes": 93198,
+                "actualScore": 85.61683015419776,
+                "outputSha256": "ed1782fdf618a426cb5e911e195541f3284c7ad69d118e263fc690ccb24a68ec"
+              },
+              {
+                "run": 1,
+                "fixture": "coffee",
+                "side": "before",
+                "elapsedNs": 387774292,
+                "userCpuNs": 320582000,
+                "systemCpuNs": 12793000,
+                "inputBytes": 466706,
+                "outputBytes": 93198,
+                "actualScore": 85.61683015419776,
+                "outputSha256": "ed1782fdf618a426cb5e911e195541f3284c7ad69d118e263fc690ccb24a68ec"
+              },
+              {
+                "run": 2,
+                "fixture": "coffee",
+                "side": "before",
+                "elapsedNs": 384663583,
+                "userCpuNs": 341625000,
+                "systemCpuNs": 16326000,
+                "inputBytes": 466706,
+                "outputBytes": 93198,
+                "actualScore": 85.61683015419776,
+                "outputSha256": "ed1782fdf618a426cb5e911e195541f3284c7ad69d118e263fc690ccb24a68ec"
+              },
+              {
+                "run": 3,
+                "fixture": "coffee",
+                "side": "before",
+                "elapsedNs": 358558166,
+                "userCpuNs": 305464000,
+                "systemCpuNs": 11244000,
+                "inputBytes": 466706,
+                "outputBytes": 93198,
+                "actualScore": 85.61683015419776,
+                "outputSha256": "ed1782fdf618a426cb5e911e195541f3284c7ad69d118e263fc690ccb24a68ec"
+              },
+              {
+                "run": 4,
+                "fixture": "coffee",
+                "side": "before",
+                "elapsedNs": 339362708,
+                "userCpuNs": 307056000,
+                "systemCpuNs": 9990000,
+                "inputBytes": 466706,
+                "outputBytes": 93198,
+                "actualScore": 85.61683015419776,
+                "outputSha256": "ed1782fdf618a426cb5e911e195541f3284c7ad69d118e263fc690ccb24a68ec"
+              }
+            ],
+            "medianElapsedNs": 378306875,
+            "spreadElapsedNs": 48411584,
+            "medianCpuNs": 323706000
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "large",
+      "sides": [
+        {
+          "side": "after",
+          "measurement": {
+            "samples": [
+              {
+                "run": 0,
+                "fixture": "large",
+                "side": "after",
+                "elapsedNs": 1655524333,
+                "userCpuNs": 1566798000,
+                "systemCpuNs": 42845000,
+                "inputBytes": 79758,
+                "outputBytes": 7014,
+                "actualScore": 100.0,
+                "outputSha256": "daa2c7958717a065996d7a7ef6c443840ab3e97ebe7ade597b042b87f7bdb04b"
+              },
+              {
+                "run": 1,
+                "fixture": "large",
+                "side": "after",
+                "elapsedNs": 1666850292,
+                "userCpuNs": 1564718000,
+                "systemCpuNs": 38582000,
+                "inputBytes": 79758,
+                "outputBytes": 7014,
+                "actualScore": 100.0,
+                "outputSha256": "daa2c7958717a065996d7a7ef6c443840ab3e97ebe7ade597b042b87f7bdb04b"
+              },
+              {
+                "run": 2,
+                "fixture": "large",
+                "side": "after",
+                "elapsedNs": 1721176250,
+                "userCpuNs": 1594777000,
+                "systemCpuNs": 50273000,
+                "inputBytes": 79758,
+                "outputBytes": 7014,
+                "actualScore": 100.0,
+                "outputSha256": "daa2c7958717a065996d7a7ef6c443840ab3e97ebe7ade597b042b87f7bdb04b"
+              },
+              {
+                "run": 3,
+                "fixture": "large",
+                "side": "after",
+                "elapsedNs": 1624003125,
+                "userCpuNs": 1529905000,
+                "systemCpuNs": 39882000,
+                "inputBytes": 79758,
+                "outputBytes": 7014,
+                "actualScore": 100.0,
+                "outputSha256": "daa2c7958717a065996d7a7ef6c443840ab3e97ebe7ade597b042b87f7bdb04b"
+              },
+              {
+                "run": 4,
+                "fixture": "large",
+                "side": "after",
+                "elapsedNs": 1722276375,
+                "userCpuNs": 1584004000,
+                "systemCpuNs": 52073000,
+                "inputBytes": 79758,
+                "outputBytes": 7014,
+                "actualScore": 100.0,
+                "outputSha256": "daa2c7958717a065996d7a7ef6c443840ab3e97ebe7ade597b042b87f7bdb04b"
+              }
+            ],
+            "medianElapsedNs": 1666850292,
+            "spreadElapsedNs": 98273250,
+            "medianCpuNs": 1609643000
+          }
+        },
+        {
+          "side": "before",
+          "measurement": {
+            "samples": [
+              {
+                "run": 0,
+                "fixture": "large",
+                "side": "before",
+                "elapsedNs": 2564599083,
+                "userCpuNs": 2445524000,
+                "systemCpuNs": 47909000,
+                "inputBytes": 79758,
+                "outputBytes": 7014,
+                "actualScore": 100.0,
+                "outputSha256": "daa2c7958717a065996d7a7ef6c443840ab3e97ebe7ade597b042b87f7bdb04b"
+              },
+              {
+                "run": 1,
+                "fixture": "large",
+                "side": "before",
+                "elapsedNs": 2674843042,
+                "userCpuNs": 2549208000,
+                "systemCpuNs": 61680000,
+                "inputBytes": 79758,
+                "outputBytes": 7014,
+                "actualScore": 100.0,
+                "outputSha256": "daa2c7958717a065996d7a7ef6c443840ab3e97ebe7ade597b042b87f7bdb04b"
+              },
+              {
+                "run": 2,
+                "fixture": "large",
+                "side": "before",
+                "elapsedNs": 2745970417,
+                "userCpuNs": 2595850000,
+                "systemCpuNs": 70879000,
+                "inputBytes": 79758,
+                "outputBytes": 7014,
+                "actualScore": 100.0,
+                "outputSha256": "daa2c7958717a065996d7a7ef6c443840ab3e97ebe7ade597b042b87f7bdb04b"
+              },
+              {
+                "run": 3,
+                "fixture": "large",
+                "side": "before",
+                "elapsedNs": 2621087834,
+                "userCpuNs": 2450113000,
+                "systemCpuNs": 49117000,
+                "inputBytes": 79758,
+                "outputBytes": 7014,
+                "actualScore": 100.0,
+                "outputSha256": "daa2c7958717a065996d7a7ef6c443840ab3e97ebe7ade597b042b87f7bdb04b"
+              },
+              {
+                "run": 4,
+                "fixture": "large",
+                "side": "before",
+                "elapsedNs": 2547789625,
+                "userCpuNs": 2416944000,
+                "systemCpuNs": 52688000,
+                "inputBytes": 79758,
+                "outputBytes": 7014,
+                "actualScore": 100.0,
+                "outputSha256": "daa2c7958717a065996d7a7ef6c443840ab3e97ebe7ade597b042b87f7bdb04b"
+              }
+            ],
+            "medianElapsedNs": 2621087834,
+            "spreadElapsedNs": 198180792,
+            "medianCpuNs": 2499230000
+          }
+        }
+      ]
+    },
+    {
+      "fixture": "ui",
+      "sides": [
+        {
+          "side": "after",
+          "measurement": {
+            "samples": [
+              {
+                "run": 0,
+                "fixture": "ui",
+                "side": "after",
+                "elapsedNs": 33973000,
+                "userCpuNs": 5490000,
+                "systemCpuNs": 3589000,
+                "inputBytes": 142,
+                "outputBytes": 82,
+                "actualScore": 100.0,
+                "outputSha256": "06e6b58e7a1745ebe8aff5c09bac9dde5473d3955c95f353f5116731aaee7e9b"
+              },
+              {
+                "run": 1,
+                "fixture": "ui",
+                "side": "after",
+                "elapsedNs": 48223459,
+                "userCpuNs": 5840000,
+                "systemCpuNs": 4897000,
+                "inputBytes": 142,
+                "outputBytes": 82,
+                "actualScore": 100.0,
+                "outputSha256": "06e6b58e7a1745ebe8aff5c09bac9dde5473d3955c95f353f5116731aaee7e9b"
+              },
+              {
+                "run": 2,
+                "fixture": "ui",
+                "side": "after",
+                "elapsedNs": 35559666,
+                "userCpuNs": 5716000,
+                "systemCpuNs": 4396000,
+                "inputBytes": 142,
+                "outputBytes": 82,
+                "actualScore": 100.0,
+                "outputSha256": "06e6b58e7a1745ebe8aff5c09bac9dde5473d3955c95f353f5116731aaee7e9b"
+              },
+              {
+                "run": 3,
+                "fixture": "ui",
+                "side": "after",
+                "elapsedNs": 112874458,
+                "userCpuNs": 5479000,
+                "systemCpuNs": 4321000,
+                "inputBytes": 142,
+                "outputBytes": 82,
+                "actualScore": 100.0,
+                "outputSha256": "06e6b58e7a1745ebe8aff5c09bac9dde5473d3955c95f353f5116731aaee7e9b"
+              },
+              {
+                "run": 4,
+                "fixture": "ui",
+                "side": "after",
+                "elapsedNs": 83722458,
+                "userCpuNs": 5111000,
+                "systemCpuNs": 3895000,
+                "inputBytes": 142,
+                "outputBytes": 82,
+                "actualScore": 100.0,
+                "outputSha256": "06e6b58e7a1745ebe8aff5c09bac9dde5473d3955c95f353f5116731aaee7e9b"
+              }
+            ],
+            "medianElapsedNs": 48223459,
+            "spreadElapsedNs": 78901458,
+            "medianCpuNs": 9800000
+          }
+        },
+        {
+          "side": "before",
+          "measurement": {
+            "samples": [
+              {
+                "run": 0,
+                "fixture": "ui",
+                "side": "before",
+                "elapsedNs": 39130000,
+                "userCpuNs": 8332000,
+                "systemCpuNs": 4911000,
+                "inputBytes": 142,
+                "outputBytes": 82,
+                "actualScore": 100.0,
+                "outputSha256": "06e6b58e7a1745ebe8aff5c09bac9dde5473d3955c95f353f5116731aaee7e9b"
+              },
+              {
+                "run": 1,
+                "fixture": "ui",
+                "side": "before",
+                "elapsedNs": 51999875,
+                "userCpuNs": 8681000,
+                "systemCpuNs": 5623000,
+                "inputBytes": 142,
+                "outputBytes": 82,
+                "actualScore": 100.0,
+                "outputSha256": "06e6b58e7a1745ebe8aff5c09bac9dde5473d3955c95f353f5116731aaee7e9b"
+              },
+              {
+                "run": 2,
+                "fixture": "ui",
+                "side": "before",
+                "elapsedNs": 55801958,
+                "userCpuNs": 8334000,
+                "systemCpuNs": 4407000,
+                "inputBytes": 142,
+                "outputBytes": 82,
+                "actualScore": 100.0,
+                "outputSha256": "06e6b58e7a1745ebe8aff5c09bac9dde5473d3955c95f353f5116731aaee7e9b"
+              },
+              {
+                "run": 3,
+                "fixture": "ui",
+                "side": "before",
+                "elapsedNs": 64042541,
+                "userCpuNs": 8223000,
+                "systemCpuNs": 5093000,
+                "inputBytes": 142,
+                "outputBytes": 82,
+                "actualScore": 100.0,
+                "outputSha256": "06e6b58e7a1745ebe8aff5c09bac9dde5473d3955c95f353f5116731aaee7e9b"
+              },
+              {
+                "run": 4,
+                "fixture": "ui",
+                "side": "before",
+                "elapsedNs": 51754917,
+                "userCpuNs": 7400000,
+                "systemCpuNs": 3513000,
+                "inputBytes": 142,
+                "outputBytes": 82,
+                "actualScore": 100.0,
+                "outputSha256": "06e6b58e7a1745ebe8aff5c09bac9dde5473d3955c95f353f5116731aaee7e9b"
+              }
+            ],
+            "medianElapsedNs": 51999875,
+            "spreadElapsedNs": 24912541,
+            "medianCpuNs": 13243000
+          }
+        }
+      ]
+    }
+  ]
+}

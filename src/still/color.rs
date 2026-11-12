@@ -105,9 +105,11 @@ impl StillImage {
         let color = self.color_interpretation()?;
         let channels = self.pixels.descriptor().channels();
         let samples = self.samples();
+        let srgb_transfer: Option<[f32;256]> = matches!(&color,ColorInterpretation::Srgb)
+            .then(|| std::array::from_fn(|value| srgb_to_linear(value as f32 / 255.0)));
         let mut rgb: Vec<f32> = samples.chunks_exact(channels).flat_map(|p| {
             let rgb = if self.is_grayscale() { [p[0], p[0], p[0]] } else { [p[0], p[1], p[2]] };
-            rgb.map(|v| v as f32 / 255.0)
+            rgb.map(|v| match &srgb_transfer {Some(transfer)=>transfer[v as usize],None=>v as f32 / 255.0})
         }).collect();
         match color {
             ColorInterpretation::Profile(profile) => {
@@ -123,7 +125,7 @@ impl StillImage {
                 for value in &mut rgb { *value = srgb_to_linear(checked_sdr(*value)?); }
             },
             ColorInterpretation::Gamma(gamma) => for value in &mut rgb { *value = libm::powf(*value,gamma); },
-            ColorInterpretation::Srgb => for value in &mut rgb { *value = srgb_to_linear(*value); },
+            ColorInterpretation::Srgb => {},
         }
         if rgb.iter().any(|v| !v.is_finite()) { return Err(Error::new(ErrorKind::Unsupported, "nonfinite prepared color sample")); }
         let alpha: Vec<_> = samples.chunks_exact(channels).map(|p| if self.has_alpha() { p[channels - 1] } else { 255 }).collect();

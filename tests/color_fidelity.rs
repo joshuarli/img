@@ -140,6 +140,13 @@ fn quantized_nominal_srgb_profile_is_refused_when_independent_cms_leaves_gamut()
 
 #[test]
 fn canonical_srgb_transfer_has_platform_stable_float_samples() {
+    let samples=(0..=255).flat_map(|value| [value;3]).collect();
+    let image=StillImage::from_rgb8(256,1,samples).unwrap();
+    for (value,pixel) in image.prepare().unwrap().linear_rgb().iter().enumerate() {
+        let encoded=value as f32/255.0;
+        let expected=if encoded<=0.04045 {encoded/12.92} else {libm::powf((encoded+0.055)/1.055,2.4)};
+        assert_eq!(pixel.map(f32::to_bits),[expected.to_bits();3]);
+    }
     for (value,expected) in [(0,0u32),(71,0x3d810b68),(180,0x3ee9aeb6),(255,0x3f800000)] {
         let image=StillImage::from_rgb8(1,1,vec![value;3]).unwrap();
         assert_eq!(image.prepare().unwrap().linear_rgb()[0].map(f32::to_bits),[expected;3],"sRGB code {value}");

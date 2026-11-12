@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+from pathlib import Path
+import hashlib
+import resource
+import subprocess
+import time
+import sys
+import tempfile
+
+if len(sys.argv) != 3:
+    raise SystemExit('usage: benchmark-transfer-table BEFORE_BINARY AFTER_BINARY')
+root = Path(__file__).resolve().parent.parent
+scratch = Path(tempfile.mkdtemp(prefix='transfer-table-', dir=root / '.work/tmp'))
+binaries = {'before': Path(sys.argv[1]).resolve(), 'after': Path(sys.argv[2]).resolve()}
+cases = [('coffee', root / 'benchmarks/corpus/coffee.png', 80),
+         ('large', root / 'benchmarks/corpus/generated/large.png', 95),
+         ('ui', root / 'benchmarks/corpus/generated/ui.png', 95)]
+subprocess.run(['perf-gate-ready'], check=True)
+hashes = {}
+with (scratch / 'samples.tsv').open('w') as samples:
+    for run in range(5):
+        for name, source, target in cases:
+            for side in (['before', 'after'] if run % 2 == 0 else ['after', 'before']):
+                output = scratch / f'{name}-{side}-{run}.webp'
+                report = output.with_suffix('.json')
+                with report.open('wb') as stdout, output.with_suffix('.stderr').open('wb') as stderr:
+                    prior = resource.getrusage(resource.RUSAGE_CHILDREN)
+                    start = time.perf_counter_ns()
+                    result = subprocess.run([str(binaries[side]), 'convert', str(source), '--score', str(target), '--effort', 'fast', '--json', '-o', str(output)], stdout=stdout, stderr=stderr)
+                    elapsed = time.perf_counter_ns() - start
+                    usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+                assert result.returncode == 0
+                score = subprocess.check_output(['jaq', '-e', f'if (.failures|length)==0 and (.results|length)==1 and .results[0].score>={target} then .results[0].score else error("incomplete work") end', str(report)], text=True).strip()
+                digest = hashlib.sha256(output.read_bytes()).hexdigest()
+                assert hashes.setdefault(name, digest) == digest
+                samples.write('\t'.join(map(str, [run, name, side, elapsed, round((usage.ru_utime-prior.ru_utime)*1e9), round((usage.ru_stime-prior.ru_stime)*1e9), source.stat().st_size, output.stat().st_size, score, digest])) + '\n')
+                samples.flush()
+subprocess.run(['perf-gate-ready', '-1'], check=True)
+print('30 completed conversions; byte-identical outputs; pre/post gates passed')
+print(scratch)
