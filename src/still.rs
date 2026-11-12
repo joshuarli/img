@@ -400,6 +400,14 @@ pub struct Description {
     pub animation: bool,
     /// Container declares a grid of coded tiles.
     pub grid: bool,
+    /// Counter-clockwise container rotation in degrees, separately from EXIF.
+    pub rotation_ccw_degrees: Option<u16>,
+    /// Container mirror axis: zero flips left/right, one flips top/bottom.
+    pub mirror_axis: Option<u8>,
+    /// Container pixel aspect ratio, horizontal and vertical spacing.
+    pub pixel_aspect_ratio: Option<[u32;2]>,
+    /// Explicit HDR signaling, mastering/luminance or gain-map metadata.
+    pub hdr_metadata: bool,
     /// Embedded EXIF.
     pub exif: bool,
     /// Embedded XMP.
@@ -410,7 +418,7 @@ fn describe_info(info: zencodec::ImageInfo, format: Format) -> Description {
     Description { format,width:info.width,height:info.height,bit_depth:info.source_color.bit_depth,alpha:info.has_alpha,
         grayscale:info.source_color.channel_count.map(|c|c<=2),icc:info.source_color.icc_profile.is_some(),
         cicp:info.source_color.cicp.map(|c|[c.color_primaries as u16,c.transfer_characteristics as u16,c.matrix_coefficients as u16,c.full_range as u16]),
-        orientation,animation:info.sequence!=zencodec::ImageSequence::Single,grid:false,exif:info.embedded_metadata.exif.is_some(),xmp:info.embedded_metadata.xmp.is_some() }
+        orientation,animation:info.sequence!=zencodec::ImageSequence::Single,grid:false,rotation_ccw_degrees:None,mirror_axis:None,pixel_aspect_ratio:None,hdr_metadata:info.source_color.content_light_level.is_some()||info.source_color.mastering_display.is_some()||info.source_color.cicp.is_some_and(|c|matches!(c.transfer_characteristics,16|18)),exif:info.embedded_metadata.exif.is_some(),xmp:info.embedded_metadata.xmp.is_some() }
 }
 /// Inspect bounded encoded headers, including representations refused for pixel processing.
 pub fn describe(bytes: &[u8]) -> Result<Description, Error> {
@@ -429,7 +437,7 @@ pub fn describe(bytes: &[u8]) -> Result<Description, Error> {
             } else {let header=parser.primary_metadata().map_err(|e|Error::caused(ErrorKind::Invalid,e))?;(header.max_frame_width.get(),header.max_frame_height.get())};
             let exif=parser.exif().transpose().map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
             let cicp=match parser.color_info() { Some(zenavif_parse::ColorInformation::Nclx {color_primaries,transfer_characteristics,matrix_coefficients,full_range})=>Some([*color_primaries,*transfer_characteristics,*matrix_coefficients,*full_range as u16]), _=>None };
-            return Ok(Description {format,width,height,bit_depth:parser.av1_config().map(|c|c.bit_depth),alpha:parser.alpha_metadata().is_some(),grayscale:parser.av1_config().map(|c|c.monochrome),icc:matches!(parser.color_info(),Some(zenavif_parse::ColorInformation::IccProfile(_))),cicp,orientation:exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation).map(|o|o as u8).unwrap_or(1),animation:parser.animation_info().is_some(),grid:parser.grid_config().is_some(),exif:exif.is_some(),xmp:parser.xmp().is_some()});
+            return Ok(Description {format,width,height,bit_depth:parser.av1_config().map(|c|c.bit_depth),alpha:parser.alpha_metadata().is_some(),grayscale:parser.av1_config().map(|c|c.monochrome),icc:matches!(parser.color_info(),Some(zenavif_parse::ColorInformation::IccProfile(_))),cicp,orientation:exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation).map(|o|o as u8).unwrap_or(1),animation:parser.animation_info().is_some(),grid:parser.grid_config().is_some(),rotation_ccw_degrees:parser.rotation().map(|r|r.angle),mirror_axis:parser.mirror().map(|m|m.axis),pixel_aspect_ratio:parser.pixel_aspect_ratio().map(|p|[p.h_spacing,p.v_spacing]),hdr_metadata:parser.content_light_level().is_some()||parser.mastering_display().is_some()||parser.gain_map_metadata().is_some()||cicp.is_some_and(|c|matches!(c[1],16|18)),exif:exif.is_some(),xmp:parser.xmp().is_some()});
         },
     }?;
     Ok(describe_info(info,format))

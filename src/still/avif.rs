@@ -5,6 +5,12 @@ pub(super) fn decode(bytes: &[u8],stop: &crate::cancellation::Cancellation) -> R
     let config = zenavif_parse::DecodeConfig::default().with_peak_memory_limit(super::IMAGE_MEMORY_BYTES);
     let parser = zenavif_parse::AvifParser::from_bytes_with_config(bytes, &config, stop)
         .map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+    if parser.content_light_level().is_some()||parser.mastering_display().is_some()||parser.gain_map_metadata().is_some() {
+        return Err(Error::new(ErrorKind::Unsupported,"AVIF HDR metadata or gain maps require independently validated processing"));
+    }
+    if parser.pixel_aspect_ratio().is_some_and(|p|p.h_spacing==0||p.v_spacing==0||p.h_spacing!=p.v_spacing) {
+        return Err(Error::new(ErrorKind::Unsupported,"AVIF requires square nonzero pixel aspect ratio"));
+    }
     if parser.grid_config().is_some() { return Err(Error::new(ErrorKind::Unsupported, "AVIF grid images are unsupported")); }
     if parser.animation_info().is_some() { return Err(Error::new(ErrorKind::Unsupported, "AVIF animation is unsupported")); }
     let config = parser.av1_config().ok_or_else(|| Error::new(ErrorKind::Invalid, "AVIF configuration missing"))?;

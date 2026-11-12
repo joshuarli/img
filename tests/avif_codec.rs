@@ -83,3 +83,16 @@ fn multiple_still_temporal_units_are_not_silently_truncated() {
     let bytes=serializer.to_vec(&combined,None,16,16,8);let parser=zenavif_parse::AvifParser::from_bytes(&bytes).unwrap();assert!(parser.animation_info().is_none());assert!(parser.primary_metadata().unwrap().still_picture);
     assert!(StillImage::decode(&bytes).is_err(),"multiple temporal units must not return only the first frame");
 }
+
+#[test]
+fn header_inspection_exposes_transforms_and_unvalidated_hdr_is_refused() {
+    let image=StillImage::from_rgb8(16,16,common::pixels(16,16)).unwrap();let original=image.encode(Format::Avif,mode(),Effort::Fast).unwrap();let parser=zenavif_parse::AvifParser::from_bytes(&original).unwrap();let data=parser.primary_data().unwrap();let config=parser.av1_config().unwrap();
+    for kind in 0..3 {
+        let mut serializer=zenavif_serialize::Aviffy::new();serializer.set_chroma_subsampling((config.chroma_subsampling_x!=0,config.chroma_subsampling_y!=0)).set_seq_profile(config.profile);
+        if kind==0 {serializer.set_content_light_level(1000,400);} else if kind==1 {serializer.set_pixel_aspect_ratio(2,1);} else {serializer.set_rotation(1).set_mirror(1);}
+        let bytes=serializer.to_vec(&data,None,16,16,8);
+        assert!(StillImage::decode(&bytes).is_err(),"unvalidated HDR, nonsquare pixels or container transforms must not lose their interpretation");
+        let header=rimage::still::describe(&bytes).unwrap();
+        match kind {0=>assert!(header.hdr_metadata),1=>assert_eq!(header.pixel_aspect_ratio,Some([2,1])),_=>{assert_eq!(header.rotation_ccw_degrees,Some(90));assert_eq!(header.mirror_axis,Some(1));}}
+    }
+}
