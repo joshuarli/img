@@ -136,6 +136,6 @@ fn bitstream_and_container_hdr_metadata_are_reported_and_refused() {
         if kind==2 {serializer.set_content_light_level(1000,400);} else if kind==3 {serializer.set_mastering_display([(100,200);3],(100,200),10000,1);}
         let bytes=serializer.to_vec(&stream,None,16,16,8);
         assert!(rimage::still::describe(&bytes).unwrap().hdr_metadata,"kind {kind}");
-        assert!(StillImage::decode(&bytes).is_err(),"kind {kind}");
+        let error=StillImage::decode(&bytes).err().unwrap();assert!(error.to_string().contains("HDR"),"kind {kind}: {error}");
     }
 }
