@@ -36,25 +36,35 @@ fn discover(path:&Path,relative:&Path,args:&Arguments,output_root:Option<(u64,u6
     }
 }
 fn expand(args:&Arguments)->Result<(Vec<Job>,bool),String> {
-    let mut inputs=args.inputs.clone();
+    enum Selection { Argument(PathBuf), Literal(PathBuf) }
+    let mut inputs:Vec<_>=args.inputs.iter().cloned().map(Selection::Argument).collect();
     let mut lists=args.lists.clone();
-    if let Some(list)=inputs.iter().find(|p|p.file_name().is_some_and(|p|p=="file.list")).cloned() {inputs.clear();lists.push(list);}
+    if let Some(list)=args.inputs.iter().find(|p|p.file_name().is_some_and(|p|p=="file.list")).cloned() {inputs.clear();lists.push(list);}
     for list in lists {
         let source=Source::open(&list).map_err(|e|format!("file list {}: {e}",list.display()))?;
         let bytes=still::read_bounded(source).map_err(|e|e.to_string())?;
         let contents=std::str::from_utf8(&bytes).map_err(|_|"file list must be UTF-8")?;
-        let parent=list.parent().unwrap_or(Path::new("."));
-        for line in contents.lines().filter(|s|!s.is_empty()) {let path=Path::new(line);inputs.push(if path.is_absolute() {path.to_owned()} else {parent.join(path)});}
+        let parent=list.parent().filter(|p|!p.as_os_str().is_empty()).unwrap_or(Path::new("."));
+        for line in contents.lines().filter(|s|!s.is_empty()) {
+            let path=Path::new(line);let path=if path.is_absolute() {path.to_owned()} else {parent.join(path)};
+            let path=if path==Path::new("-") {std::env::current_dir().map_err(|e|e.to_string())?.join(path)} else {path};
+            inputs.push(Selection::Literal(path));
+        }
     }
     let output_root=args.out_dir.as_deref().and_then(|path|publication::directory_file_id(path).ok());
     let mut jobs=vec![];let mut directory=false;
-    for input in inputs {
+    for selection in inputs {
         let mut expanded=vec![];
-        if let Some(text)=input.to_str().filter(|s|s.contains(['*','?','['])) {
-            let paths=glob::glob(text).map_err(|e|e.to_string())?;
-            for result in paths {expanded.push(result.map_err(|e|e.to_string())?);}
-            if expanded.is_empty() {expanded.push(input);}
-        } else {expanded.push(input);}
+        match selection {
+            Selection::Literal(path)=>expanded.push(path),
+            Selection::Argument(input)=>{
+                if let Some(text)=input.to_str().filter(|s|s.contains(['*','?','[']) && fs::symlink_metadata(&input).is_err_and(|e|e.kind()==io::ErrorKind::NotFound)) {
+                    let paths=glob::glob(text).map_err(|e|e.to_string())?;
+                    for result in paths {expanded.push(result.map_err(|e|e.to_string())?);}
+                    if expanded.is_empty() {expanded.push(input);}
+                } else {expanded.push(input);}
+            },
+        }
         expanded.sort();
         for path in expanded {
             let name=path.file_name().unwrap_or(path.as_os_str());

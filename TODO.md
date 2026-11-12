@@ -2,16 +2,6 @@ Prefix: RIMG
 Next: 11
 
 Priorities are assumed from impact and likelihood. Evidence was reproduced against `ba5f682175a746e80f351a6908b555fa7d0ce09c`; CI failures are outside this review.
-### RIMG-1 · P1 · Literal file-list paths can overwrite a different file
-
-- **Area:** Input discovery and publication
-- **Where:** src/runtime.rs:38-60, src/runtime.rs:156
-- **Problem:** File-list entries lose their literal-path provenance when appended to the positional input vector. The shared expansion loop interprets wildcard characters again, and a bare dash can become stdin. Proven in the real CLI: with two 32x32 images named photo[1].png and photo1.png and selected.list containing only photo[1].png, `rimage optimize --file-list selected.list --in-place --max-dimension 8 --effort fast --json` exits 0, leaves the listed image unchanged, and overwrites photo1.png with an 8x8 image. A relative list containing the valid filename `-` reads stdin instead. This is reachable wrong-file data loss under an explicitly literal selection contract.
-- **Recommendation:** Keep file-list paths distinct from glob patterns and stdin through discovery and execution. Resolve list entries literally without a second interpretation pass. Define literal handling for already-existing positional paths as well. Add regressions for bracket, star and question-mark filenames and a literal dash, including the two-file in-place case that must leave the unrelated image untouched.
-- **Fix with:** make-invalid-states-unrepresentable
-- **Effort:** M
-
-
 ### RIMG-2 · P1 · Lossless conversion silently removes AVIF film grain
 
 - **Area:** AVIF displayed-sample fidelity

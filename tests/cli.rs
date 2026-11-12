@@ -47,6 +47,24 @@ fn explicit_resize_matches_new_reference_and_never_enlarges() {
     assert_eq!(rimage::still::StillImage::decode(&fs::read(output).unwrap()).unwrap().dimensions(),(24,16));
 }
 #[test]
+fn file_list_and_existing_positional_paths_are_literal() {
+    let scratch=common::Scratch::new("literal-inputs");
+    for (listed,other) in [("photo[1].png","photo1.png"),("photo*.png","photoX.png"),("photo?.png","photoY.png")] {
+        let listed=scratch.0.join(listed);let other=scratch.0.join(other);
+        common::write_png(&listed,32,32);common::write_png(&other,32,32);
+        let before=fs::read(&other).unwrap();let list=scratch.0.join("selected.list");
+        fs::write(&list,format!("{}\n",listed.file_name().unwrap().to_str().unwrap())).unwrap();
+        success(run(&["optimize".as_ref(),"--file-list".as_ref(),list.as_os_str(),"--in-place".as_ref(),"--max-dimension".as_ref(),"8".as_ref(),"--score".as_ref(),"0".as_ref(),"--effort".as_ref(),"fast".as_ref()]));
+        assert_eq!(rimage::still::StillImage::decode(&fs::read(&listed).unwrap()).unwrap().dimensions(),(8,8));
+        assert_eq!(fs::read(&other).unwrap(),before);
+        let report=json(run(&["inspect".as_ref(),listed.as_os_str(),"--json".as_ref()]));
+        assert_eq!(report["results"][0]["input"],listed.to_str().unwrap());
+    }
+    common::write_png(&scratch.0.join("-"),8,8);fs::write(scratch.0.join("selected.list"),"-\n").unwrap();
+    let output=Command::new(env!("CARGO_BIN_EXE_rimage")).current_dir(&scratch.0).args(["inspect","--file-list","selected.list","--json"]).stdin(Stdio::null()).output().unwrap();
+    assert_eq!(json(output)["results"][0]["image"]["width"],8);
+}
+#[test]
 fn traversal_auto_order_output_exclusion_and_collisions() {
     let scratch=common::Scratch::new("cli-batch");let root=scratch.0.join("images");fs::create_dir_all(root.join("nested")).unwrap();
     for name in ["a.png","b.png","nested/c.png"] {common::write_png(&root.join(name),24,16);}

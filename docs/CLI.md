@@ -23,14 +23,12 @@ Duplicate sources, hard-link source aliases, duplicate planned destinations and
 preexisting destinations fail before image publication for those jobs.
 All possible auto destinations are reserved during planning.
 
-Quote glob arguments for expansion by Rimage.
+Quote glob arguments for expansion by Rimage. Existing positional paths are
+treated literally, including paths containing glob characters.
 `--file-list PATH` reads UTF-8 paths, one per line, relative to the list.
 A positional `file.list` retains the earlier selection behavior: it supplies
 the inputs and ignores other positional inputs. No shell evaluation occurs.
-Discovery currently reinterprets wildcard characters in all inputs, including
-file-list entries and shell-expanded paths. A relative list entry `-` can also
-become stdin. These literal-path defects can select the wrong file for in-place
-replacement; see [RIMG-1](../TODO.md#rimg-1--p1--literal-file-list-paths-can-overwrite-a-different-file).
+File-list entries are literal, including a filename of `-`.
 Empty input sets fail. There is a 100000-file bound and a 128 MiB input/list cap.
 Ordinary paths retain native bytes. JSON rejects non-UTF-8 paths before writes.
 
