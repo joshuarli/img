@@ -13,3 +13,10 @@ Stripping removes EXIF, XMP and private PNG chunks while retaining required colo
 The area limit remains 16,777,216 pixels. Float color buffers and metric pyramids increase the conservative working reservation to 256 bytes per pixel, up to 4 GiB per active image. This is an admission reservation, not a measured RSS result. The runtime must bound jobs and admission using that reservation. Compressed input and output remain capped at 128 MiB, and decoded private metadata at 8 MiB.
 
 The legacy library's `ApplyICC::new` now accepts ICC bytes and returns a parse result. It no longer exposes a LittleCMS profile type. The operation supports RGB and RGBA integer samples at 8 or 16 bits. Other color layouts fail explicitly. This constructor change follows removal of the native color backend. LittleCMS remains a development-only independent reference.
+
+Some nominal sRGB ICC files contain quantized colorants whose floating-point
+transform leaves the destination gamut near its endpoints. These are refused
+rather than clipped. The pinned astronaut photograph exercises this case:
+independent LittleCMS also produces values outside the supported interval.
+Exact sample-preserving paths can retain that profile. Its refusal is recorded
+as incomplete work in benchmark results, never as a fast successful encode.

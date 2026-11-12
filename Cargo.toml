@@ -143,6 +143,7 @@ codegen-units = 1
 strip = true
 
 [dev-dependencies]
+sha2 = "0.10"
 filetime = "0.2.29"
 lcms2 = "6.2"
 zenavif-serialize = "=0.1.4"
@@ -153,4 +154,8 @@ rustybench = "=0.5.0"
 [[bench]]
 name = "workflow"
 harness = false
+required-features = ["build-binary"]
+
+[[example]]
+name = "benchmark"
 required-features = ["build-binary"]

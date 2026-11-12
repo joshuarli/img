@@ -123,3 +123,17 @@ fn gray_profiles_and_explicit_png_signaling_have_defined_behavior() {
     let output = stripped.encode(Format::Png, EncodingMode::Lossless, Effort::Fast).unwrap();
     assert!(output.windows(4).any(|part| part == b"gAMA"));
 }
+
+#[test]
+fn quantized_nominal_srgb_profile_is_refused_when_independent_cms_leaves_gamut() {
+    let bytes=include_bytes!("../benchmarks/corpus/astronaut.png");
+    let reader=png::Decoder::new(std::io::Cursor::new(bytes)).read_info().unwrap();
+    let profile=reader.info().icc_profile.as_deref().unwrap();
+    let source=lcms2::Profile::new_icc(profile).unwrap();let target=lcms2::Profile::new_srgb();
+    let transform=lcms2::Transform::<[f32;3],[f32;3]>::new(&source,lcms2::PixelFormat::RGB_FLT,&target,lcms2::PixelFormat::RGB_FLT,lcms2::Intent::RelativeColorimetric).unwrap();
+    let image=StillImage::decode(bytes).unwrap();let input:Vec<[f32;3]>=image.samples().chunks_exact(3).map(|p|[p[0] as f32/255.0,p[1] as f32/255.0,p[2] as f32/255.0]).collect();
+    let mut output=vec![[0.0;3];input.len()];transform.transform_pixels(&input,&mut output);
+    let minimum=output.iter().flatten().copied().fold(f32::INFINITY,f32::min);let maximum=output.iter().flatten().copied().fold(f32::NEG_INFINITY,f32::max);
+    assert!(minimum < -0.00001 || maximum > 1.00001);
+    assert!(image.prepare().err().unwrap().to_string().contains("gamut"));
+}

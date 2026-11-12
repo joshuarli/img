@@ -14,3 +14,12 @@ decoder-reference-check:
 
 metric-reference-check:
 	cargo test --locked --all-features --test metric_reference -- --ignored --nocapture
+
+benchmark-verify:
+	cargo test --locked --all-features --test benchmark_verify
+
+benchmark-run:
+	perf-gate-ready
+	cargo build --locked --profile dist --features build-binary
+	cargo run --locked --profile dist --all-features --example benchmark -- run
+	perf-gate-ready -1

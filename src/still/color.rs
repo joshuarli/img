@@ -33,7 +33,7 @@ pub(crate) fn transform_options() -> TransformOptions {
 
 pub(crate) fn checked_sdr(value: f32) -> Result<f32, Error> {
     if !value.is_finite() || !(-0.00001..=1.00001).contains(&value) {
-        return Err(Error::new(ErrorKind::Unsupported, "color transform leaves the SDR sRGB gamut"));
+        return Err(Error::new(ErrorKind::Unsupported, format!("color transform leaves the SDR sRGB gamut: {value}")));
     }
     Ok(value.clamp(0.0, 1.0))
 }
