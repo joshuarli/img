@@ -59,3 +59,13 @@ fn rgb_and_explicit_gray_conversion_are_exact() {
         assert_eq!(output.samples(), expected);
     }
 }
+
+#[test]
+fn decoded_untagged_png_samples_can_be_encoded_without_color_conversion() {
+    let samples=transparent();
+    let image=StillImage::from_samples(32,24,SampleLayout::Rgba8,samples.clone()).unwrap();
+    let png=image.encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
+    let decoded=StillImage::decode(&png).unwrap();
+    let webp=decoded.encode(Format::Webp,EncodingMode::Lossless,Effort::Fast).unwrap();
+    assert_eq!(webp::Decoder::new(&webp).decode().unwrap().to_vec(),samples);
+}

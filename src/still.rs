@@ -358,7 +358,12 @@ pub(crate) fn decode<C: DecoderConfig>(config: C, bytes: &[u8], format: Format) 
 
 pub(crate) fn encode<C: EncoderConfig>(config: C, image: &StillImage) -> Result<Vec<u8>, Error>
 where <C::Job as EncodeJob>::Enc: Encoder {
+    // Published adapters require a transfer tag even when encoding raw profile-tagged samples.
+    // Color interpretation remains in retained metadata; this view does not transform samples.
+    let view = image.pixels.as_slice();
+    let descriptor = view.descriptor().with_transfer(zenpixels::TransferFunction::Srgb);
+    let view = view.with_descriptor(descriptor);
     config.job().with_limits(limits()).with_metadata_policy(image.metadata.clone(), zencodec::MetadataPolicy::PreserveExact).encoder()
-        .map_err(|e| Error::caused(ErrorKind::Encode, e))?.encode(image.pixels.as_slice())
+        .map_err(|e| Error::caused(ErrorKind::Encode, e))?.encode(view)
         .map(|out| out.into_vec()).map_err(|e| Error::caused(ErrorKind::Encode, e))
 }
