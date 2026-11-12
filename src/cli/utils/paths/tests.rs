@@ -3,7 +3,8 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use super::*;
+use super::{collect_files, is_file_list_path, MAX_FILE_LIST_BYTES, check_input_file, expand_file_lists, get_common_path, get_paths, normalize_lexically, paths_equivalent, read_file_list_entries, strip_prefix_components, valid_suffix};
+use std::path::{Path, PathBuf};
 
 fn unique_test_dir(name: &str) -> PathBuf {
     let id = SystemTime::now()

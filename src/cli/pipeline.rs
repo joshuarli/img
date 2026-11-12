@@ -1,6 +1,8 @@
 #[cfg(any(feature = "avif", feature = "webp", feature = "svg", feature = "tiff"))]
 use std::io::{Seek, SeekFrom};
-use std::{collections::BTreeMap, fs::File, path::Path};
+use std::{collections::BTreeMap, path::Path};
+#[cfg(any(feature = "limits", feature = "avif", feature = "webp", feature = "svg", feature = "tiff", test))]
+use std::fs::File;
 
 #[cfg(feature = "avif")]
 use std::io::Read;
@@ -8,7 +10,7 @@ use std::io::Read;
 #[cfg(feature = "resize")]
 use crate::cli::preprocessors::ResizeValue;
 use crate::cli::utils::jpeg::JfifDensity;
-use clap::ArgMatches;
+use crate::cli::{Arguments, Step};
 #[cfg(feature = "avif")]
 use rimage::codecs::avif::AvifEncoder;
 #[cfg(feature = "mozjpeg")]
@@ -81,7 +83,7 @@ fn decode_options() -> DecoderOptions {
 #[allow(unused_variables)]
 fn check_input_limits(
     path: &Path,
-    matches: &ArgMatches,
+    matches: &Arguments,
     output: rimage::limits::ImageFormatId,
     concurrency: usize,
 ) -> Result<(), rimage::error::RimageError> {
@@ -535,7 +537,7 @@ const WEBP_HEADER_PROBE_BYTES: usize = 64 * 1024;
 #[allow(unused_mut, unused_variables)]
 pub fn decode<P: AsRef<Path>>(
     f: P,
-    matches: &ArgMatches,
+    matches: &Arguments,
     output: rimage::limits::ImageFormatId,
     concurrency: usize,
 ) -> Result<Image, rimage::error::RimageError> {
@@ -559,7 +561,7 @@ pub fn decode<P: AsRef<Path>>(
 #[cfg(feature = "svg")]
 #[allow(unused_variables)]
 fn svg_pixel_budget(
-    matches: &ArgMatches,
+    matches: &Arguments,
     output: rimage::limits::ImageFormatId,
     concurrency: usize,
 ) -> Option<u64> {
@@ -596,7 +598,7 @@ fn svg_pixel_budget(
 #[allow(unused_variables)]
 fn decode_with_fallback(
     path: &Path,
-    matches: &ArgMatches,
+    matches: &Arguments,
     output: rimage::limits::ImageFormatId,
     concurrency: usize,
     e: ImageErrors,
@@ -708,7 +710,7 @@ fn decode_with_fallback(
 /// classification still reports it as an input failure on the right format.
 fn classify_decode_failure(
     path: &Path,
-    _matches: &ArgMatches,
+    _matches: &Arguments,
     error: &ImageErrors,
 ) -> rimage::error::RimageError {
     rimage::error::classify_input(path, error, None)
@@ -716,28 +718,18 @@ fn classify_decode_failure(
 
 #[cfg(all(feature = "svg", feature = "resize"))]
 fn svg_target_size(
-    matches: &ArgMatches,
+    matches: &Arguments,
     size: (usize, usize),
 ) -> Result<Option<(u32, u32)>, ImageErrors> {
-    use crate::cli::preprocessors::ResizeValue;
-
-    let Some(values) = matches.get_many::<ResizeValue>("resize") else {
-        return Ok(None);
-    };
-
-    let downscale = matches.get_flag("downscale") && !matches.get_flag("no-downscale");
-    let upscale = matches.get_flag("upscale") && !matches.get_flag("no-upscale");
-
     let first_other = first_other_index(matches);
     let plan = resize_plan(
-        values
-            .into_iter()
-            .zip(matches.indices_of("resize").into_iter().flatten())
-            .map(|(value, idx)| (idx, value))
-            .take_while(|(idx, _)| *idx < first_other),
+        matches.steps.iter().filter_map(|(idx, step)| match step {
+            Step::Resize(value) if *idx < first_other => Some((*idx, value)),
+            _ => None,
+        }),
         size,
-        downscale,
-        upscale,
+        matches.downscale,
+        matches.upscale,
     );
 
     if plan.is_empty() {
@@ -770,26 +762,11 @@ fn svg_target_size(
 /// every true `--premultiply` flag. Steps at or after this index must run as
 /// ordinary raster resize operations so command-line order is preserved.
 #[cfg(feature = "resize")]
-fn first_other_index(matches: &ArgMatches) -> usize {
-    let first_premultiply = matches.get_many::<bool>("premultiply").and_then(|values| {
-        values
-            .into_iter()
-            .zip(matches.indices_of("premultiply")?)
-            .find_map(|(value, idx)| if *value { Some(idx) } else { None })
-    });
-
-    #[cfg(feature = "quantization")]
-    let first_quantization = matches
-        .indices_of("quantization")
-        .and_then(|mut indices| indices.next());
-    #[cfg(not(feature = "quantization"))]
-    let first_quantization: Option<usize> = None;
-
-    [first_premultiply, first_quantization]
-        .into_iter()
-        .flatten()
-        .min()
-        .unwrap_or(usize::MAX)
+fn first_other_index(matches: &Arguments) -> usize {
+    matches.steps.iter().find_map(|(index, step)| match step {
+        Step::Resize(_) => None,
+        _ => Some(*index),
+    }).unwrap_or(usize::MAX)
 }
 
 /// Plans a chain of resize operations, returning only the steps that are not
@@ -838,7 +815,7 @@ fn resize_plan<'a>(
 #[allow(unused_variables)]
 #[allow(unused_mut)]
 pub fn operations(
-    matches: &ArgMatches,
+    matches: &Arguments,
     img: &Image,
     skip_resize: bool,
 ) -> BTreeMap<usize, Box<dyn OperationsTrait>> {
@@ -846,109 +823,42 @@ pub fn operations(
 
     #[cfg(feature = "resize")]
     {
-        use crate::cli::preprocessors::ResizeFilter;
         use fast_image_resize::ResizeAlg;
         use rimage::operations::resize::Resize;
 
-        if let Some(values) = matches.get_many::<ResizeValue>("resize") {
-            let filter = matches.get_one::<ResizeFilter>("filter");
-
-            let downscale = matches.get_flag("downscale") && !matches.get_flag("no-downscale");
-            let upscale = matches.get_flag("upscale") && !matches.get_flag("no-upscale");
-
-            log::debug!("downscale: {downscale}, upscale: {upscale}");
-
-            let first_other = first_other_index(matches);
-            let plan = resize_plan(
-                values
-                    .into_iter()
-                    .zip(matches.indices_of("resize").into_iter().flatten())
-                    .map(|(value, idx)| (idx, value))
-                    .filter(|(idx, _)| !skip_resize || *idx >= first_other),
-                img.dimensions(),
-                downscale,
-                upscale,
-            );
-
-            for (idx, (w, h)) in plan {
-                map.insert(
-                    idx,
-                    Box::new(Resize::new(
-                        w,
-                        h,
-                        filter
-                            .copied()
-                            .map(Into::<ResizeAlg>::into)
-                            .unwrap_or_default(),
-                    )),
-                );
+        let first_other = first_other_index(matches);
+        let plan = resize_plan(
+            matches.steps.iter().filter_map(|(idx, step)| match step {
+                Step::Resize(value) if !skip_resize || *idx >= first_other => Some((*idx, value)),
+                _ => None,
+            }),
+            img.dimensions(), matches.downscale, matches.upscale,
+        );
+        for (idx, (width, height)) in plan {
+            map.insert(idx, Box::new(Resize::new(width, height,
+                matches.filter.map(Into::<ResizeAlg>::into).unwrap_or_default())));
+        }
+    }
+    #[cfg(feature = "quantization")]
+    for (idx, step) in &matches.steps {
+        if let Step::Quantize(value) = step {
+            use rimage::operations::quantize::Quantize;
+            map.insert(*idx, Box::new(Quantize::new(*value, matches.dithering.map(|q| q as f32 / 100.))));
+        }
+    }
+    for (idx, step) in &matches.steps {
+        if matches!(step, Step::Premultiply) {
+            if map.contains_key(&(idx + 2)) {
+                map.insert(*idx, Box::new(PremultiplyAlpha::new(AlphaState::PreMultiplied)));
+                if let std::collections::btree_map::Entry::Vacant(slot) = map.entry(idx + 3) {
+                    slot.insert(Box::new(PremultiplyAlpha::new(AlphaState::NonPreMultiplied)));
+                } else {
+                    log::warn!("premultiply at index {idx}: position {} already occupied, skipping un-premultiply step", idx + 3);
+                }
+            } else {
+                log::warn!("No operation found for premultiply at index {idx}");
             }
         }
-    }
-
-    #[cfg(feature = "quantization")]
-    {
-        use rimage::operations::quantize::Quantize;
-
-        if let Some(values) = matches.get_many::<u8>("quantization") {
-            let dithering = matches.get_one::<u8>("dithering");
-
-            values
-                .into_iter()
-                .zip(matches.indices_of("quantization").into_iter().flatten())
-                .for_each(|(value, idx)| {
-                    log::trace!("setup quantization {value} on index {idx}");
-
-                    map.insert(
-                        idx,
-                        Box::new(Quantize::new(*value, dithering.map(|q| *q as f32 / 100.))),
-                    );
-                })
-        }
-    }
-
-    if let Some(values) = matches.get_many::<bool>("premultiply") {
-        values
-            .into_iter()
-            .zip(matches.indices_of("premultiply").into_iter().flatten())
-            .for_each(|(value, idx)| {
-                // Position-sensitive flags inject a trailing default `false`
-                // occurrence when the flag is absent from the command line,
-                // which must stay silent.
-                if !*value {
-                    return;
-                }
-
-                if let Some(op) = map.get(&(idx + 2)) {
-                    log::trace!("setup alpha premultiply for {}", op.name());
-
-                    map.insert(
-                        idx,
-                        Box::new(PremultiplyAlpha::new(AlphaState::PreMultiplied)),
-                    );
-
-                    // If a subsequent operation already occupies idx+3,
-                    // log a warning and skip the un-premultiply insertion
-                    // rather than aborting the process (which would happen
-                    // with `assert!` under `panic = "abort"` in release).
-                    match map.entry(idx + 3) {
-                        std::collections::btree_map::Entry::Occupied(_) => {
-                            log::warn!(
-                                "premultiply at index {idx}: position {} already occupied, \
-                                 skipping un-premultiply step",
-                                idx + 3
-                            );
-                        }
-                        std::collections::btree_map::Entry::Vacant(slot) => {
-                            slot.insert(Box::new(PremultiplyAlpha::new(
-                                AlphaState::NonPreMultiplied,
-                            )));
-                        }
-                    }
-                } else {
-                    log::warn!("No operation found for premultiply at index {idx}")
-                }
-            })
     }
 
     map
@@ -1045,7 +955,7 @@ impl AvailableEncoders {
     }
 }
 
-pub fn encoder(name: &str, matches: &ArgMatches) -> Result<AvailableEncoders, ImageErrors> {
+pub fn encoder(name: &str, matches: &Arguments) -> Result<AvailableEncoders, ImageErrors> {
     match name {
         "farbfeld" => Ok(AvailableEncoders::FarbFeld(
             Box::new(FarbFeldEncoder::new()),
@@ -1053,11 +963,11 @@ pub fn encoder(name: &str, matches: &ArgMatches) -> Result<AvailableEncoders, Im
         "jpeg" => {
             let options = EncoderOptions::default();
 
-            if let Some(quality) = matches.get_one::<u8>("quality") {
+            if let Some(quality) = matches.quality.as_ref() {
                 options.set_quality(*quality);
             }
 
-            options.set_jpeg_encode_progressive(matches.get_flag("progressive"));
+            options.set_jpeg_encode_progressive(matches.progressive);
 
             Ok(AvailableEncoders::Jpeg(Box::new(
                 JpegEncoder::new_with_options(options),
@@ -1069,23 +979,18 @@ pub fn encoder(name: &str, matches: &ArgMatches) -> Result<AvailableEncoders, Im
             use mozjpeg::qtable;
             use rimage::codecs::mozjpeg::MozJpegOptions;
 
-            let quality = matches.get_one::<u8>("quality").copied().unwrap_or(75) as f32;
-            let chroma_quality = matches
-                .get_one::<u8>("chroma_quality")
-                .map(|q| *q as f32)
+            let quality = matches.quality.unwrap_or(75) as f32;
+            let chroma_quality = matches.chroma_quality
+                .map(|q| q as f32)
                 .unwrap_or(quality);
 
             let options = MozJpegOptions {
                 quality,
-                progressive: !matches.get_flag("baseline"),
-                optimize_coding: !matches.get_flag("no_optimize_coding"),
-                smoothing: matches
-                    .get_one::<u8>("smoothing")
-                    .copied()
+                progressive: !matches.baseline,
+                optimize_coding: !matches.no_optimize_coding,
+                smoothing: matches.smoothing
                     .unwrap_or_default(),
-                color_space: match matches
-                    .get_one::<String>("colorspace")
-                    .map(|s| s.as_str())
+                color_space: match matches.colorspace.as_deref()
                     .unwrap_or("ycbcr")
                 {
                     "ycbcr" => mozjpeg::ColorSpace::JCS_YCbCr,
@@ -1097,10 +1002,10 @@ pub fn encoder(name: &str, matches: &ArgMatches) -> Result<AvailableEncoders, Im
                         )));
                     }
                 },
-                trellis_multipass: matches.get_flag("multipass"),
-                chroma_subsample: matches.get_one::<u8>("subsample").copied(),
+                trellis_multipass: matches.multipass,
+                chroma_subsample: matches.subsample,
 
-                luma_qtable: match matches.get_one::<String>("qtable") {
+                luma_qtable: match matches.qtable.as_ref() {
                     Some(c) => Some(match c.as_str() {
                         "AhumadaWatsonPeterson" => {
                             qtable::AhumadaWatsonPeterson.scaled(quality, quality)
@@ -1128,7 +1033,7 @@ pub fn encoder(name: &str, matches: &ArgMatches) -> Result<AvailableEncoders, Im
                     None => None,
                 },
 
-                chroma_qtable: match matches.get_one::<String>("qtable") {
+                chroma_qtable: match matches.qtable.as_ref() {
                     Some(c) => Some(match c.as_str() {
                         "AhumadaWatsonPeterson" => {
                             qtable::AhumadaWatsonPeterson.scaled(chroma_quality, chroma_quality)
@@ -1166,9 +1071,9 @@ pub fn encoder(name: &str, matches: &ArgMatches) -> Result<AvailableEncoders, Im
             use rimage::codecs::oxipng::OxiPngOptions;
 
             let mut options =
-                OxiPngOptions::from_preset(*matches.get_one::<u8>("effort").unwrap_or(&2));
+                OxiPngOptions::from_preset(*matches.effort.as_ref().unwrap_or(&2));
 
-            options.interlace = if matches.get_flag("interlace") {
+            options.interlace = if matches.interlace {
                 Some(true)
             } else {
                 None
@@ -1183,12 +1088,10 @@ pub fn encoder(name: &str, matches: &ArgMatches) -> Result<AvailableEncoders, Im
             use rimage::codecs::avif::AvifOptions;
 
             let options = AvifOptions {
-                quality: matches.get_one::<u8>("quality").copied().unwrap_or(50) as f32,
-                alpha_quality: matches.get_one::<u8>("alpha_quality").map(|q| *q as f32),
-                speed: matches.get_one::<u8>("speed").copied().unwrap_or(6),
-                color_space: match matches
-                    .get_one::<String>("colorspace")
-                    .map(|s| s.as_str())
+                quality: matches.quality.unwrap_or(50) as f32,
+                alpha_quality: matches.alpha_quality.map(|q| q as f32),
+                speed: matches.speed.unwrap_or(6),
+                color_space: match matches.colorspace.as_deref()
                     .unwrap_or("ycbcr")
                 {
                     "ycbcr" => ravif::ColorModel::YCbCr,
@@ -1199,9 +1102,7 @@ pub fn encoder(name: &str, matches: &ArgMatches) -> Result<AvailableEncoders, Im
                         )));
                     }
                 },
-                alpha_color_mode: match matches
-                    .get_one::<String>("alpha_mode")
-                    .map(|s| s.as_str())
+                alpha_color_mode: match matches.alpha_mode.as_deref()
                     .unwrap_or("UnassociatedClean")
                 {
                     "UnassociatedDirty" => ravif::AlphaColorMode::UnassociatedDirty,
@@ -1229,11 +1130,11 @@ pub fn encoder(name: &str, matches: &ArgMatches) -> Result<AvailableEncoders, Im
                 )
             })?;
 
-            options.quality = matches.get_one::<u8>("quality").copied().unwrap_or(75) as f32;
-            options.lossless = matches.get_flag("lossless") as i32;
+            options.quality = matches.quality.unwrap_or(75) as f32;
+            options.lossless = matches.lossless as i32;
             options.near_lossless =
-                100 - matches.get_one::<u8>("slight_loss").copied().unwrap_or(0) as i32;
-            options.exact = matches.get_flag("exact") as i32;
+                100 - matches.slight_loss.unwrap_or(0) as i32;
+            options.exact = matches.exact as i32;
 
             Ok(AvailableEncoders::Webp(Box::new(
                 WebPEncoder::new_with_options(options),
@@ -1253,19 +1154,17 @@ pub fn encoder(name: &str, matches: &ArgMatches) -> Result<AvailableEncoders, Im
 mod tests {
     use zune_core::colorspace::ColorSpace;
 
-    use super::*;
-    use crate::cli::cli;
+    use super::{operations, Arguments, Image, Step};
+    use crate::cli::command::{parse, Outcome};
 
     /// Builds the codec subcommand matches the way `main` passes them to [`operations`].
     ///
     /// `farbfeld` is used because it is the one codec that is never feature gated.
-    fn matches_from(args: &[&str]) -> ArgMatches {
-        cli()
-            .get_matches_from(args)
-            .subcommand()
-            .expect("clap ensures a subcommand is always provided")
-            .1
-            .clone()
+    fn matches_from(args: &[&str]) -> Arguments {
+        match parse(args.iter().skip(1).copied()).unwrap() {
+            Outcome::Run(args) => args,
+            _ => panic!("expected command"),
+        }
     }
 
     fn test_image(width: usize, height: usize) -> Image {
@@ -1564,12 +1463,9 @@ mod tests {
             .map(|(idx, _)| *idx)
             .collect();
 
-        let expected: Vec<usize> = matches
-            .indices_of("resize")
-            .into_iter()
-            .flatten()
-            .skip(1)
-            .collect();
+        let expected: Vec<usize> = matches.steps.iter().filter_map(|(index, step)| {
+            matches!(step, Step::Resize(_)).then_some(*index)
+        }).skip(1).collect();
         assert_eq!(resize_indices, expected);
     }
 
@@ -1659,19 +1555,17 @@ mod tests {
 
 #[cfg(all(test, feature = "limits"))]
 mod limit_tests {
-    use super::*;
-    use crate::cli::cli;
+    use super::{Arguments, File, Path, probe_dimensions, check_input_limits, png_dimensions, avif_dimensions, tiff_dimensions};
+    use crate::cli::command::{parse, Outcome};
 
     /// Builds the codec subcommand matches the way `main` passes them to
     /// [`decode`]. Local to this module because the shared helper lives behind
     /// the `resize` feature, and the limit checks must be testable without it.
-    fn matches_from(args: &[&str]) -> ArgMatches {
-        cli()
-            .get_matches_from(args)
-            .subcommand()
-            .expect("clap ensures a subcommand is always provided")
-            .1
-            .clone()
+    fn matches_from(args: &[&str]) -> Arguments {
+        match parse(args.iter().skip(1).copied()).unwrap() {
+            Outcome::Run(args) => args,
+            _ => panic!("expected command"),
+        }
     }
 
     /// A JPEG header probe must recover the real dimensions from an ordinary

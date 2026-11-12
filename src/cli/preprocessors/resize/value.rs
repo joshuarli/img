@@ -201,7 +201,7 @@ impl std::str::FromStr for ResizeValue {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::ResizeValue;
 
     #[test]
     fn display() {

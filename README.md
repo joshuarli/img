@@ -45,26 +45,8 @@ cargo binstall rimage
 
 ## Usage
 
-```text
-Usage: rimage [COMMAND]
+Run `rimage --help` for all commands and options. Run `rimage <command> --help` for a command's options.
 
-Commands:
-  avif      Encode images into AVIF format. (Small and Efficient)
-  farbfeld  Encode images into Farbfeld format. (Bitmapped)
-  jpeg      Encode images into JPEG format. (Progressive-able)
-  jpeg_xl   Encode images into JpegXL format. (Big but Lossless)
-  mozjpeg   Encode images into JPEG format using MozJpeg codec. (RECOMMENDED and Small)
-  oxipng    Encode images into PNG format using OxiPNG codec. (Progressive-able)
-  png       Encode images into PNG format.
-  ppm       Encode images into PPM format. (Bitmapped)
-  qoi       Encode images into QOI format. (Trendy and Small)
-  webp      Encode images into WebP format. (Lossless-able)
-  help      Print this message or the help of the given subcommand(s)
-
-Options:
-  -h, --help     Print help
-  -V, --version  Print version
-```
 
 ### Basic optimization suitable for web
 
@@ -269,45 +251,7 @@ is a raster resampling filter and has no effect on vector SVG rendering.
 
 ### Advanced options
 
-If you want customize optimization you can provide additional options to encoders. For mozjpeg this options are valid:
-
-```text
-Options:
-  -q, --quality <NUM>
-          Quality, values 60-80 are recommended.
-
-          [default: 75]
-
-      --chroma_quality <NUM>
-          Separate chrome quality.
-
-      --baseline
-          Set to use baseline encoding (by default is progressive).
-
-      --no_optimize_coding
-          Set to make files larger for no reason.
-
-      --smoothing <NUM>
-          Use MozJPEG's smoothing.
-
-      --colorspace <COLOR>
-          Set color space of JPEG being written.
-
-          [default: ycbcr]
-          [possible values: ycbcr, grayscale, rgb]
-
-      --multipass
-          Specifies whether multiple scans should be considered during trellis quantization.
-
-      --subsample <PIX>
-          Sets chroma subsampling.
-
-      --qtable <TABLE>
-          Use a specific quantization table.
-
-          [default: NRobidoux]
-          [possible values: AhumadaWatsonPeterson, AnnexK, Flat, KleinSilversteinCarney, MSSSIM, NRobidoux, PSNRHVS, PetersonAhumadaWatson, WatsonTaylorBorthwick]
-```
+Each encoder accepts additional options. For example, `rimage mozjpeg --help` lists JPEG quality, chroma subsampling, and quantization-table settings.
 
 For more info use `rimage help <command>`, e.g. `rimage help mozjpeg`
 

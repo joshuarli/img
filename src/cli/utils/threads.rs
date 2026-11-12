@@ -1,6 +1,5 @@
 use std::{num::NonZeroUsize, thread};
 
-use clap::ArgMatches;
 
 /// Parallelism the machine reports: the most concurrency that can ever pay off.
 ///
@@ -20,10 +19,8 @@ pub fn num_threads() -> usize {
 ///
 /// Pair it with [`clamp`]; every caller wants the clamped value, and reading
 /// the raw one is only useful for telling the user what was reduced.
-pub fn requested(matches: &ArgMatches) -> usize {
-    matches
-        .get_one::<u16>("threads")
-        .copied()
+pub fn requested(threads: Option<u16>) -> usize {
+    threads
         .map(|threads| threads as usize)
         .unwrap_or(1)
         .max(1)
@@ -67,7 +64,7 @@ pub fn in_flight(requested: usize, files: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{clamp, in_flight, num_threads};
 
     /// The machine's own parallelism is accepted unchanged, so a request the
     /// host can actually honour is never silently reduced.

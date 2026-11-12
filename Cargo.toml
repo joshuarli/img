@@ -28,8 +28,7 @@ default = [
 # Used for binary
 build-binary = [
     "dep:anyhow",
-    "dep:clap",
-    "dep:indoc",
+    "dep:lexopt",
     "dep:rayon",
     "dep:env_logger",
     "dep:zune-imageprocs",
@@ -120,8 +119,7 @@ sysinfo = { version = "0.39.6", optional = true }
 
 # cli
 anyhow = { version = "1.0", optional = true }
-clap = { version = "4.6.7", default-features = false, features = ["std", "help", "usage", "error-context", "suggestions", "cargo", "string"], optional = true }
-indoc = { version = "2.0", optional = true }
+lexopt = { version = "0.3.2", optional = true }
 env_logger = { version = "0.11", optional = true, default-features = false }
 rayon = { version = "1.12.0", optional = true }
 zune-imageprocs = { version = "0.5.1", features = ["exif"], optional = true }

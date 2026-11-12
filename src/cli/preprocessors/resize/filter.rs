@@ -1,5 +1,4 @@
 use anyhow::anyhow;
-use clap::{ValueEnum, builder::PossibleValue};
 use fast_image_resize as fr;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -13,38 +12,13 @@ pub enum ResizeFilter {
     Lanczos3,
 }
 
-impl ValueEnum for ResizeFilter {
-    fn value_variants<'a>() -> &'a [Self] {
-        &[
-            ResizeFilter::Nearest,
-            ResizeFilter::Box,
-            ResizeFilter::Bilinear,
-            ResizeFilter::Hamming,
-            ResizeFilter::CatmullRom,
-            ResizeFilter::Mitchell,
-            ResizeFilter::Lanczos3,
-        ]
-    }
-
-    fn to_possible_value(&self) -> Option<clap::builder::PossibleValue> {
-        Some(match self {
-            ResizeFilter::Nearest => PossibleValue::new("nearest").help("Simplest filter, for each destination pixel gets nearest source pixel."),
-            ResizeFilter::Box => PossibleValue::new("box").help("Each pixel contributes equally to destination. For upscaling, like Nearest."),
-            ResizeFilter::Bilinear => PossibleValue::new("bilinear").help("Uses linear interpolation among contributing pixels for output."),
-            ResizeFilter::Hamming => PossibleValue::new("hamming").help("Provides quality akin to bicubic for downscaling, sharper than Bilinear, but not optimal for upscaling."),
-            ResizeFilter::CatmullRom => PossibleValue::new("catmull-rom").help("Employs cubic interpolation for output pixel calculation."),
-            ResizeFilter::Mitchell => PossibleValue::new("mitchell").help("Utilizes cubic interpolation for output pixel calculation."),
-            ResizeFilter::Lanczos3 => PossibleValue::new("lanczos3").help("Applies high-quality Lanczos filter for output pixel calculation."),
-        })
-    }
-}
-
 impl std::fmt::Display for ResizeFilter {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.to_possible_value()
-            .expect("no values are skipped")
-            .get_name()
-            .fmt(f)
+        f.write_str(match self {
+            Self::Nearest => "nearest", Self::Box => "box", Self::Bilinear => "bilinear",
+            Self::Hamming => "hamming", Self::CatmullRom => "catmull-rom",
+            Self::Mitchell => "mitchell", Self::Lanczos3 => "lanczos3",
+        })
     }
 }
 
@@ -52,12 +26,12 @@ impl std::str::FromStr for ResizeFilter {
     type Err = anyhow::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        for variant in Self::value_variants() {
-            if variant.to_possible_value().unwrap().matches(s, false) {
-                return Ok(*variant);
-            }
+        match s {
+            "nearest" => Ok(Self::Nearest), "box" => Ok(Self::Box), "bilinear" => Ok(Self::Bilinear),
+            "hamming" => Ok(Self::Hamming), "catmull-rom" => Ok(Self::CatmullRom),
+            "mitchell" => Ok(Self::Mitchell), "lanczos3" => Ok(Self::Lanczos3),
+            _ => Err(anyhow!("invalid variant: {s}")),
         }
-        Err(anyhow!("invalid variant: {s}"))
     }
 }
 
