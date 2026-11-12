@@ -16,7 +16,8 @@ rimage optimize photo.jpg
 
 The output is `photo.optimized.jpg`. If no strictly smaller qualifying candidate
 exists, Rimage copies compliant source bytes and reports `unchanged`.
-To authorize replacement of the source, add `--in-place`.
+To authorize replacement of the source, add `--in-place`. Keep external editors
+and other writers away from that file until Rimage finishes.
 
 Choose among compatible formats at a requested score:
 

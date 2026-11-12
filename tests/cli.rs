@@ -73,6 +73,44 @@ fn file_list_and_existing_positional_paths_are_literal() {
     let output=Command::new(env!("CARGO_BIN_EXE_rimage")).current_dir(&scratch.0).args(["inspect","--file-list","selected.list","--json"]).stdin(Stdio::null()).output().unwrap();
     assert_eq!(json(output)["results"][0]["image"]["width"],8);
 }
+
+#[test]
+fn in_place_conflicts_with_an_existing_directory_writer() {
+    use std::os::fd::AsRawFd;
+    let scratch=common::Scratch::new("in-place-ownership");let input=scratch.0.join("source.png");common::write_png(&input,32,32);
+    let other=scratch.0.join("other.png");common::write_png(&other,32,32);
+    let original=fs::read(&input).unwrap();let other_original=fs::read(&other).unwrap();let owner=fs::File::open(&scratch.0).unwrap();
+    // SAFETY: owner is an open directory descriptor held for the duration of the test.
+    assert_eq!(unsafe {libc::flock(owner.as_raw_fd(),libc::LOCK_EX|libc::LOCK_NB)},0);
+    let command=["optimize".as_ref(),input.as_os_str(),"--in-place".as_ref(),"--max-dimension".as_ref(),"8".as_ref(),"--score".as_ref(),"0".as_ref(),"--effort".as_ref(),"fast".as_ref(),"--json".as_ref()];
+    let output=run(&command);assert_eq!(output.status.code(),Some(3));
+    let report:Value=serde_json::from_slice(&output.stdout).unwrap();assert_eq!(report["failures"][0]["kind"],"input.conflict");assert_eq!(fs::read(&input).unwrap(),original);
+    let output=run(&["optimize".as_ref(),other.as_os_str(),"--in-place".as_ref(),"--lossless".as_ref(),"--json".as_ref()]);assert_eq!(output.status.code(),Some(3));
+    let report:Value=serde_json::from_slice(&output.stdout).unwrap();assert_eq!(report["failures"][0]["kind"],"input.conflict");assert_eq!(fs::read(&other).unwrap(),other_original);
+    drop(owner);success(run(&command));assert_eq!(rimage::still::StillImage::decode(&fs::read(&input).unwrap()).unwrap().dimensions(),(8,8));
+}
+
+#[test]
+fn replacement_owner_keeps_the_lock_across_commit_until_drop() {
+    use rimage::{publication::{publish,Destination,ReplacementSource},still::{Effort,EncodingMode,Format,StillImage}};
+    let scratch=common::Scratch::new("in-place-commit-lock");let input=scratch.0.join("source.png");common::write_png(&input,32,32);
+    let owner=ReplacementSource::open(&input).unwrap();
+    let replacement=StillImage::from_rgb8(16,16,common::pixels(16,16)).unwrap().encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
+    let command=["optimize".as_ref(),input.as_os_str(),"--in-place".as_ref(),"--max-dimension".as_ref(),"8".as_ref(),"--score".as_ref(),"0".as_ref(),"--effort".as_ref(),"fast".as_ref(),"--json".as_ref()];
+    assert_eq!(run(&command).status.code(),Some(3));
+    publish(&replacement,Destination::Replace(&owner),None).unwrap();assert_eq!(fs::read(&input).unwrap(),replacement);
+    assert_eq!(run(&command).status.code(),Some(3));assert_eq!(fs::read(&input).unwrap(),replacement);
+    drop(owner);success(run(&command));assert_eq!(StillImage::decode(&fs::read(&input).unwrap()).unwrap().dimensions(),(8,8));
+}
+
+#[test]
+fn parallel_in_place_batch_serializes_same_directory_jobs() {
+    let scratch=common::Scratch::new("in-place-batch");
+    for index in 0..8 {common::write_png(&scratch.0.join(format!("{index}.png")),32,32);}
+    let report=json(run(&["optimize".as_ref(),scratch.0.as_os_str(),"--in-place".as_ref(),"--jobs".as_ref(),"8".as_ref(),"--max-dimension".as_ref(),"8".as_ref(),"--score".as_ref(),"0".as_ref(),"--effort".as_ref(),"fast".as_ref(),"--json".as_ref()]));
+    assert_eq!(report["results"].as_array().unwrap().len(),8);
+    for index in 0..8 {assert_eq!(rimage::still::StillImage::decode(&fs::read(scratch.0.join(format!("{index}.png"))).unwrap()).unwrap().dimensions(),(8,8));}
+}
 #[test]
 fn traversal_auto_order_output_exclusion_and_collisions() {
     let scratch=common::Scratch::new("cli-batch");let root=scratch.0.join("images");fs::create_dir_all(root.join("nested")).unwrap();

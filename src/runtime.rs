@@ -1,10 +1,31 @@
-use std::{collections::{BTreeMap,BTreeSet},ffi::OsString,fs,io,os::unix::fs::MetadataExt,path::{Path,PathBuf},sync::{Mutex,atomic::{AtomicBool,AtomicI32,AtomicUsize,Ordering}},time::Instant};
-use rimage::{cancellation::Cancellation,optimizer::{self,FormatSelection,Operation,Request},publication::{self,Destination,Source},still::{self,Format}};
+use std::{collections::{BTreeMap,BTreeSet},ffi::OsString,fs,io,os::unix::fs::MetadataExt,path::{Path,PathBuf},sync::{Condvar,Mutex,OnceLock,atomic::{AtomicBool,AtomicI32,AtomicUsize,Ordering}},time::{Duration,Instant}};
+use rimage::{cancellation::Cancellation,optimizer::{self,FormatSelection,Operation,Request},publication::{self,Destination,ReplacementSource,Source},still::{self,Format}};
 use serde_json::{Value,json};
 use crate::cli::{Arguments,Command};
 static CANCELLED:AtomicBool=AtomicBool::new(false);
 static SIGNAL:AtomicI32=AtomicI32::new(0);
 const MAX_FILES:usize=100_000;
+static IN_PLACE_DIRECTORIES:OnceLock<(Mutex<BTreeSet<(u64,u64)>>,Condvar)>=OnceLock::new();
+struct InPlaceDirectory((u64,u64));
+impl InPlaceDirectory {
+    fn acquire(path:&Path,cancelled:&AtomicBool)->io::Result<Self> {
+        let parent=path.parent().filter(|p|!p.as_os_str().is_empty()).unwrap_or(Path::new("."));
+        let id=publication::directory_file_id(parent)?;
+        let (lock,changed)=IN_PLACE_DIRECTORIES.get_or_init(||(Mutex::new(BTreeSet::new()),Condvar::new()));
+        let mut active=lock.lock().unwrap_or_else(|e|e.into_inner());
+        loop {
+            if cancelled.load(Ordering::Relaxed) {return Err(io::Error::new(io::ErrorKind::Interrupted,"cancelled while waiting for in-place directory"));}
+            if !active.contains(&id) {active.insert(id);return Ok(Self(id));}
+            active=changed.wait_timeout(active,Duration::from_millis(100)).unwrap_or_else(|e|e.into_inner()).0;
+        }
+    }
+}
+impl Drop for InPlaceDirectory {
+    fn drop(&mut self) {
+        let (lock,changed)=IN_PLACE_DIRECTORIES.get().unwrap();
+        lock.lock().unwrap_or_else(|e|e.into_inner()).remove(&self.0);changed.notify_all();
+    }
+}
 #[derive(Clone,Debug)]
 struct Failure {input:PathBuf,output:Option<PathBuf>,kind:&'static str,message:String,code:u8}
 impl Failure {
@@ -195,17 +216,29 @@ fn stdout_bytes(bytes:&[u8],finish_after_cancel:bool)->io::Result<()> {
     if restored<0 && result.is_ok() {return Err(io::Error::last_os_error());}
     result
 }
-fn read(job:&Job)->Result<(Vec<u8>,Option<Source>),Failure> {
+enum InputSource { Read(Source), Replacement(ReplacementSource) }
+impl InputSource {
+    fn source(&self)->&Source {match self {Self::Read(source)=>source,Self::Replacement(source)=>source}}
+}
+impl io::Read for InputSource {
+    fn read(&mut self,bytes:&mut [u8])->io::Result<usize> {match self {Self::Read(source)=>source.read(bytes),Self::Replacement(source)=>source.read(bytes)}}
+}
+fn read(job:&Job,in_place:bool)->Result<(Vec<u8>,Option<InputSource>),Failure> {
     if job.input==Path::new("-") {return stdin_bytes().map(|b|(b,None)).map_err(|e|Failure::new(&job.input,None,"input.io",e,3));}
-    let mut source=Source::open(&job.input).map_err(|e|Failure::new(&job.input,None,"input.io",e,3))?;
-    if job.id.is_some_and(|id|id!=source.file_id()) {return Err(Failure::new(&job.input,None,"input.changed","source identity changed after planning",3));}
+    let source=if in_place {ReplacementSource::open(&job.input).map(InputSource::Replacement)} else {Source::open(&job.input).map(InputSource::Read)};
+    let mut source=source.map_err(|e|if in_place && e.kind()==io::ErrorKind::WouldBlock {
+        Failure::new(&job.input,None,"input.conflict","another in-place writer owns the source directory",3)
+    } else {Failure::new(&job.input,None,"input.io",e,3)})?;
+    if job.id.is_some_and(|id|id!=source.source().file_id()) {return Err(Failure::new(&job.input,None,"input.changed","source identity changed after planning",3));}
     let bytes=still::read_bounded(&mut source).map_err(|e|Failure::new(&job.input,None,"input.limit",e,3))?;Ok((bytes,Some(source)))
 }
 fn details(header:&still::Description)->Value {json!({"width":header.width,"height":header.height,"bitDepth":header.bit_depth,"alpha":header.alpha,"grayscale":header.grayscale,"icc":header.icc,"cicp":header.cicp,"orientation":header.orientation,"animation":header.animation,"grid":header.grid,"rotationCcwDegrees":header.rotation_ccw_degrees,"mirrorAxis":header.mirror_axis,"pixelAspectRatio":header.pixel_aspect_ratio,"hdrMetadata":header.hdr_metadata,"exif":header.exif,"xmp":header.xmp})}
 fn execute(job:&Job,args:&Arguments,budget:u64)->Result<Completed,Failure> {
     if let Some(failure)=&job.failure {return Err(failure.clone());}
     if args.verbose {eprintln!("{}: admitted",job.input.display());}
-    let start=Instant::now();let (bytes,source)=read(job)?;
+    let start=Instant::now();
+    let _directory=if args.in_place {Some(InPlaceDirectory::acquire(&job.input,&CANCELLED).map_err(|e|Failure::new(&job.input,None,if e.kind()==io::ErrorKind::Interrupted {"input.cancelled"} else {"input.io"},e,3))?)} else {None};
+    let (bytes,source)=read(job,args.in_place)?;
     let header=still::describe(&bytes).map_err(|e|Failure::new(&job.input,None,"input.decode",e,3))?;
     if args.command==Command::Inspect {
         return Ok(Completed {input:job.input.clone(),output:None,status:"inspected",value:json!({"input":job.input.to_str(),"output":null,"format":header.format.extension(),"inputBytes":bytes.len(),"outputBytes":null,"score":null,"elapsedMs":start.elapsed().as_secs_f64()*1000.0,"status":"inspected","warnings":[],"image":details(&header)})});
@@ -223,8 +256,8 @@ fn execute(job:&Job,args:&Arguments,budget:u64)->Result<Completed,Failure> {
     if output==Path::new("-") {stdout_bytes(&outcome.bytes,false).map_err(|e|Failure::new(&job.input,Some(&output),"output.io",e,4))?;}
     else if !(args.in_place && outcome.unchanged) {
         publication::create_parent(&output).map_err(|e|Failure::new(&job.input,Some(&output),"output.path",e,4))?;
-        let timestamp=if args.timestamps {source.as_ref().map(|s|s.metadata().and_then(|m|m.modified())).transpose().map_err(|e|Failure::new(&job.input,Some(&output),"input.io",e,3))?} else {None};
-        let destination=if args.in_place {Destination::Replace(source.as_ref().ok_or_else(||Failure::new(&job.input,Some(&output),"output.plan","stdin cannot be replaced",4))?)} else {Destination::New(&output)};
+        let timestamp=if args.timestamps {source.as_ref().map(|s|s.source().metadata().and_then(|m|m.modified())).transpose().map_err(|e|Failure::new(&job.input,Some(&output),"input.io",e,3))?} else {None};
+        let destination=if args.in_place {match &source {Some(InputSource::Replacement(source))=>Destination::Replace(source),_=>return Err(Failure::new(&job.input,Some(&output),"output.plan","stdin cannot be replaced",4))}} else {Destination::New(&output)};
         publication::publish_cancellable(&outcome.bytes,destination,timestamp,&cancellation).map_err(|e|Failure::new(&job.input,Some(&output),if e.committed() {"output.committed"} else {"output.publish"},e,4))?;
     }
     if args.verbose {eprintln!("{}: published {}",job.input.display(),output.display());}
@@ -234,7 +267,7 @@ fn execute(job:&Job,args:&Arguments,budget:u64)->Result<Completed,Failure> {
 fn compare(jobs:&[Job],budget:u64)->Result<Completed,Failure> {
     let start=Instant::now();let reference=&jobs[0];let candidate=&jobs[1];
     if let Some(failure)=jobs.iter().find_map(|j|j.failure.clone()) {return Err(failure);}
-    let (original,_)=read(reference)?;let (encoded,_)=read(candidate)?;
+    let (original,_)=read(reference,false)?;let (encoded,_)=read(candidate,false)?;
     let reference_header=still::describe(&original).map_err(|e|Failure::new(&reference.input,None,"input.decode",e,3))?;
     let candidate_header=still::describe(&encoded).map_err(|e|Failure::new(&candidate.input,None,"input.decode",e,3))?;
     let area=|header:&still::Description|u64::from(header.width).saturating_mul(u64::from(header.height));
@@ -250,6 +283,21 @@ fn compare(jobs:&[Job],budget:u64)->Result<Completed,Failure> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn waiting_in_place_job_observes_cancellation() {
+        let path=Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+        let cancelled=std::sync::Arc::new(AtomicBool::new(false));let owner=InPlaceDirectory::acquire(&path,&cancelled).unwrap();
+        let (started,ready)=std::sync::mpsc::sync_channel(1);let (finished,result)=std::sync::mpsc::sync_channel(1);
+        let flag=cancelled.clone();let worker=std::thread::spawn(move|| {
+            started.send(()).unwrap();
+            let kind=match InPlaceDirectory::acquire(&path,&flag) {Ok(_)=>None,Err(error)=>Some(error.kind())};
+            finished.send(kind).unwrap();
+        });
+        ready.recv().unwrap();cancelled.store(true,Ordering::Relaxed);
+        assert_eq!(result.recv_timeout(Duration::from_secs(3)).unwrap(),Some(io::ErrorKind::Interrupted));
+        drop(owner);worker.join().unwrap();
+    }
 
     #[test]
     fn compare_reserves_both_images_before_decoding() {

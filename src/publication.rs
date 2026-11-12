@@ -58,9 +58,13 @@ pub struct Source {
 }
 
 impl Source {
-    /// Open a regular source and retain its identity for replacement checks.
+    /// Open a regular source and retain its identity.
     pub fn open(path: &Path) -> io::Result<Self> {
         let (dir, name) = split(path)?;
+        Self::open_in(dir,name)
+    }
+
+    fn open_in(dir:File,name:CString)->io::Result<Self> {
         let file = open_at(&dir, OsStr::from_bytes(name.as_bytes()), libc::O_RDONLY | libc::O_NONBLOCK)?;
         let identity = Identity::from(file.metadata()?)?;
         Ok(Self { file, dir, name, identity })
@@ -80,6 +84,30 @@ impl Source {
     }
 }
 
+/// A source held under an exclusive cooperative lock on its parent directory.
+/// Callers must exclude external writers that do not honor this lock.
+pub struct ReplacementSource { source: Source }
+
+impl ReplacementSource {
+    /// Acquire the directory lock without waiting, then open the source.
+    /// Returns `WouldBlock` when another owner holds the directory lock.
+    pub fn open(path:&Path)->io::Result<Self> {
+        let (dir,name)=split(path)?;
+        // SAFETY: dir is a live directory descriptor; the lock lasts until its final close.
+        if unsafe {libc::flock(dir.as_raw_fd(),libc::LOCK_EX|libc::LOCK_NB)}<0 {return Err(io::Error::last_os_error());}
+        Ok(Self {source:Source::open_in(dir,name)?})
+    }
+}
+
+impl std::ops::Deref for ReplacementSource {
+    type Target=Source;
+    fn deref(&self)->&Source {&self.source}
+}
+
+impl Read for ReplacementSource {
+    fn read(&mut self,bytes:&mut [u8])->io::Result<usize> {self.source.read(bytes)}
+}
+
 impl Read for Source {
     fn read(&mut self, bytes: &mut [u8]) -> io::Result<usize> { self.file.read(bytes) }
 }
@@ -88,8 +116,8 @@ impl Read for Source {
 pub enum Destination<'a> {
     /// Atomically create a previously absent destination.
     New(&'a Path),
-    /// Replace after a best-effort identity check; concurrent writers are not excluded.
-    Replace(&'a Source),
+    /// Replace a locked source after an identity check; external writers must be excluded by the caller.
+    Replace(&'a ReplacementSource),
 }
 
 /// A failed publication distinguishes committed output from unpublished work.

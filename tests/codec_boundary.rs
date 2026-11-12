@@ -1,7 +1,7 @@
 mod common;
 
 use std::{fs, io::{self, Read}, os::unix::{ffi::OsStringExt, fs::symlink}, path::Path, sync::{Arc, Barrier}};
-use rimage::{publication::{publish, Destination, Source}, still::{StillImage, ErrorKind, MAX_DIMENSION, MAX_INPUT_BYTES, Format, EncodingMode, Effort}};
+use rimage::{publication::{publish, Destination, ReplacementSource, Source}, still::{StillImage, ErrorKind, MAX_DIMENSION, MAX_INPUT_BYTES, Format, EncodingMode, Effort}};
 
 #[test]
 fn bounded_still_adapter_checks_actual_samples() {
@@ -78,15 +78,35 @@ fn replacement_requires_unchanged_open_source() {
     let scratch = common::Scratch::new("boundary-replace");
     let target = scratch.0.join("source.bin");
     fs::write(&target, b"original").unwrap();
-    let source = Source::open(&target).unwrap();
+    let source = ReplacementSource::open(&target).unwrap();
     publish(b"changed", Destination::Replace(&source), None).unwrap();
     assert_eq!(fs::read(&target).unwrap(), b"changed");
     assert!(publish(b"stale", Destination::Replace(&source), None).is_err());
-    let source = Source::open(&target).unwrap();
+    drop(source);
+    let source = ReplacementSource::open(&target).unwrap();
     fs::rename(&target, scratch.0.join("moved")).unwrap();
     fs::write(&target, b"another file").unwrap();
     assert!(publish(b"stale", Destination::Replace(&source), None).is_err());
     assert_eq!(fs::read(&target).unwrap(), b"another file");
+}
+
+#[test]
+fn replacement_lock_is_released_when_its_process_exits() {
+    use std::{io::{BufRead,BufReader},process::{Command,Stdio}};
+    const OWNER_PATH:&str="RIMAGE_TEST_REPLACEMENT_OWNER_PATH";
+    if let Some(path)=std::env::var_os(OWNER_PATH) {
+        let _owner=ReplacementSource::open(Path::new(&path)).unwrap();
+        println!("replacement-owner-ready");
+        let mut byte=[0];let _=io::stdin().read(&mut byte);
+        return;
+    }
+    let scratch=common::Scratch::new("replacement-owner-exit");let target=scratch.0.join("source");fs::write(&target,b"source").unwrap();
+    let mut child=Command::new(std::env::current_exe().unwrap()).args(["--exact","replacement_lock_is_released_when_its_process_exits","--nocapture"]).env(OWNER_PATH,&target).stdin(Stdio::piped()).stdout(Stdio::piped()).spawn().unwrap();
+    let mut output=BufReader::new(child.stdout.take().unwrap());
+    loop {let mut line=String::new();assert!(output.read_line(&mut line).unwrap()>0,"owner process exited before acquiring lock");if line.contains("replacement-owner-ready") {break;}}
+    assert_eq!(ReplacementSource::open(&target).err().unwrap().kind(),io::ErrorKind::WouldBlock);
+    child.kill().unwrap();child.wait().unwrap();
+    drop(ReplacementSource::open(&target).unwrap());
 }
 
 #[test]
@@ -97,6 +117,8 @@ fn symlinks_directories_aliases_and_native_names_are_safe() {
     let link = scratch.0.join("link");
     symlink(&target, &link).unwrap();
     assert!(Source::open(&link).is_err());
+    assert!(ReplacementSource::open(&link).is_err());
+    drop(ReplacementSource::open(&target).unwrap());
     assert!(publish(b"bad", Destination::New(&link), None).is_err());
     let alias = scratch.0.join("alias");
     fs::hard_link(&target, &alias).unwrap();

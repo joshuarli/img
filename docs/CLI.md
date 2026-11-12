@@ -57,9 +57,18 @@ and evaluated candidate settings. Quiet and verbose conflict.
 `--preserve-timestamps` copies source modification time on file outputs.
 New files use mode 0600. In-place replacements copy the source's permissions.
 New destinations use exclusive destination-directory staging, atomic no-clobber
-publication, file sync and parent sync. In-place checks the opened source's
-identity before renaming, but a concurrent replacement after that check can be
-overwritten. [RIMG-8](../TODO.md#rimg-8--p2--in-place-rename-can-erase-a-source-changed-after-verification) and its draft RFC track that race.
+publication, file sync and parent sync. In-place work requires exclusive writer
+ownership of the source until the job finishes. Cooperating Rimage writers lock
+the source's parent directory before opening it and hold that lock through
+publication. Another process using the same protocol fails with `input.conflict`
+when that directory is locked, including when it selects a different file in
+the directory. Jobs in one batch wait for each other without holding a second
+directory lock. Process exit releases the lock and leaves no lock file.
+
+The identity check before renaming detects many external edits but is not atomic
+with the rename. External editors, older Rimage versions, and other writers that
+ignore the lock must not modify or replace the source while the job runs; their
+changes can otherwise be overwritten.
 A post-publication durability failure has kind
 `output.committed` and explicitly says the output was committed.
 
