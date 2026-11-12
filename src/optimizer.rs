@@ -101,7 +101,7 @@ fn expanded(image: &StillImage) -> Vec<[u16; 4]> {
 fn required_png_color(image:&StillImage)->Vec<&[u8]> {
     let mut facts:Vec<_>=image.png_metadata.iter().filter(|chunk|match &chunk[4..8] {
         b"cLLi"|b"mDCV"=>true,
-        b"cICP"=>chunk.get(8..12)!=Some(&[1,13,0,1]),
+        b"cICP"=>chunk.get(8..12)!=Some(&[1,13,0,1])||image.metadata.icc_profile.is_some(),
         b"gAMA"|b"cHRM"=>image.metadata.icc_profile.is_none(),
         _=>false,
     }).map(Vec::as_slice).collect();

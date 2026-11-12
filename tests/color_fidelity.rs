@@ -137,3 +137,14 @@ fn quantized_nominal_srgb_profile_is_refused_when_independent_cms_leaves_gamut()
     assert!(minimum < -0.00001 || maximum > 1.00001);
     assert!(image.prepare().err().unwrap().to_string().contains("gamut"));
 }
+
+#[test]
+fn png_cicp_authority_is_preserved_when_an_icc_profile_is_also_present() {
+    let samples=[80,120,160].repeat(16*16);let profile=moxcms::ColorProfile::new_display_p3().encode().unwrap();
+    let image=png_image(16,16,&samples,png::ColorType::Rgb,Some(profile),None);let ordinary=image.prepare().unwrap();
+    let mut bytes=image.encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();let mut chunk=4u32.to_be_bytes().to_vec();chunk.extend_from_slice(b"cICP");chunk.extend_from_slice(&[1,13,0,1]);let crc=crc32fast::hash(&chunk[4..]);chunk.extend_from_slice(&crc.to_be_bytes());bytes.splice(33..33,chunk);
+    let tagged=StillImage::decode(&bytes).unwrap();let reference=StillImage::from_rgb8(16,16,samples).unwrap().prepare().unwrap();
+    assert!((ordinary.linear_rgb()[0][0]-reference.linear_rgb()[0][0]).abs()>0.001);
+    assert_eq!(tagged.prepare().unwrap().linear_rgb(),reference.linear_rgb(),"PNG CICP supersedes ICC for preparation");
+    assert!(rimage::optimizer::process(&bytes,rimage::optimizer::Request {operation:rimage::optimizer::Operation::Convert(Format::Webp),fidelity:rimage::optimizer::Fidelity::Lossless,..Default::default()}).is_err(),"conversion must not drop authoritative CICP and activate a different ICC interpretation");
+}

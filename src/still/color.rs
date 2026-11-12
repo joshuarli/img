@@ -77,6 +77,7 @@ impl StillImage {
                 _ => {},
             }
         }
+        if self.info.source_color.color_authority==zencodec::ColorAuthority::Cicp {return Ok(ColorInterpretation::Srgb);}
         if let Some(icc) = &self.metadata.icc_profile {
             if icc.len() > MAX_METADATA_BYTES { return Err(Error::new(ErrorKind::Limit, "ICC profile exceeds metadata limit")); }
             let profile = ColorProfile::new_from_slice(icc).map_err(|e| Error::caused(ErrorKind::Unsupported, e))?;
