@@ -74,3 +74,12 @@ fn real_grid_container_is_refused_without_decoding_tiles() {
     assert!(StillImage::decode(&bytes).err().unwrap().to_string().contains("grid"));
     let header=rimage::still::describe(&bytes).unwrap();assert_eq!((header.width,header.height),(32,16));
 }
+
+#[test]
+fn multiple_still_temporal_units_are_not_silently_truncated() {
+    let image=StillImage::from_rgb8(16,16,common::pixels(16,16)).unwrap();let bytes=image.encode(Format::Avif,mode(),Effort::Fast).unwrap();let parser=zenavif_parse::AvifParser::from_bytes(&bytes).unwrap();let data=parser.primary_data().unwrap();
+    let mut combined=data.to_vec();combined.extend_from_slice(&data);let config=parser.av1_config().unwrap();
+    let mut serializer=zenavif_serialize::Aviffy::new();serializer.set_chroma_subsampling((config.chroma_subsampling_x!=0,config.chroma_subsampling_y!=0)).set_seq_profile(config.profile);
+    let bytes=serializer.to_vec(&combined,None,16,16,8);let parser=zenavif_parse::AvifParser::from_bytes(&bytes).unwrap();assert!(parser.animation_info().is_none());assert!(parser.primary_metadata().unwrap().still_picture);
+    assert!(StillImage::decode(&bytes).is_err(),"multiple temporal units must not return only the first frame");
+}

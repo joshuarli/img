@@ -81,10 +81,12 @@ fn frame(data: &[u8]) -> Result<Frame, Error> {
     let mut settings = Settings::default();
     settings.threads = 1; settings.apply_grain = false; settings.frame_size_limit = super::MAX_PIXELS as u32;
     let mut decoder = Decoder::with_settings(settings).map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
-    if let Some(frame) = decoder.decode(data).map_err(|e| Error::caused(ErrorKind::Invalid, e))? { return Ok(frame); }
-    let mut frames = decoder.flush().map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
-    if frames.len() != 1 { return Err(Error::new(ErrorKind::Unsupported, "AVIF requires exactly one displayed frame")); }
-    Ok(frames.remove(0))
+    let first=decoder.decode(data).map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
+    let first=match first {Some(frame)=>Some(frame),None=>decoder.get_frame().map_err(|e|Error::caused(ErrorKind::Invalid,e))?};
+    if decoder.get_frame().map_err(|e|Error::caused(ErrorKind::Invalid,e))?.is_some() {
+        return Err(Error::new(ErrorKind::Unsupported,"AVIF requires exactly one displayed frame"));
+    }
+    first.ok_or_else(||Error::new(ErrorKind::Invalid,"AVIF bitstream contains no displayed frame"))
 }
 
 pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
