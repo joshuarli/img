@@ -13,13 +13,3 @@ Priorities are assumed from impact and likelihood. Evidence was reproduced again
 - **Design:** docs/rfc/RIMG-8-in-place-concurrency.md
 
 
-### RIMG-9 · P2 · A full stdout pipe prevents graceful signal termination
-
-- **Area:** Cancellation and output lifecycle
-- **Where:** src/runtime.rs:181, src/runtime.rs:210, src/runtime.rs:224, src/runtime.rs:255-261, src/runtime.rs:272-274
-- **Problem:** The graceful handler sets cancellation atomics, but binary stdout uses blocking write_all and the main thread joins that worker before re-raising the signal. Proven in the real CLI with a noisy 512x512 PNG and `convert --format png --lossless -o - --quiet`, with stdout held open and undrained. FIONREAD and F_GETPIPE_SZ both showed the pipe full at 65,536 bytes. After SIGTERM the process remained alive for the two-second observation, then completed its 787,072-byte output and exited by SIGTERM only after the reader drained the pipe. Report writes are also blocking. A live downstream process that stops reading can prevent orderly termination without any active codec call.
-- **Recommendation:** Make stdout publication and reporting cancellable while blocked, using bounded writes and an interruptible readiness wait. Check cancellation between writes, preserve ordinary broken-pipe classification, clean unpublished file state, and re-raise the original signal. Add a full but open pipe regression with a termination deadline; a closed-pipe test does not cover this state.
-- **Fix with:** lifecycle-concurrency
-- **Effort:** M
-
-

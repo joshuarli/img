@@ -29,3 +29,34 @@ fn cancellation_keeps_committed_files_and_removes_unpublished_temps() {
     assert!(std::fs::read_dir(&out).unwrap().all(|entry|!entry.unwrap().file_name().as_encoded_bytes().starts_with(b".rimage-tmp-")));
     let report:serde_json::Value=serde_json::from_slice(&output.stdout).unwrap();assert!(report["results"].as_array().unwrap().iter().any(|r|r["input"].as_str()==first.to_str()));
 }
+
+#[test]
+fn termination_interrupts_a_full_open_stdout_pipe() {
+    use std::os::fd::{AsRawFd,FromRawFd};
+    let scratch=common::Scratch::new("cancel-full-pipe");let input=scratch.0.join("noisy.png");
+    let mut state=1u32;let pixels:Vec<u8>=(0..512*512*3).map(|_|{state^=state<<13;state^=state>>17;state^=state<<5;state as u8}).collect();
+    let mut encoder=png::Encoder::new(std::fs::File::create(&input).unwrap(),512,512);encoder.set_color(png::ColorType::Rgb);encoder.write_header().unwrap().write_image_data(&pixels).unwrap();
+    let mut fds=[0;2];
+    // SAFETY: fds has space for the two file descriptors returned by pipe.
+    assert_eq!(unsafe {libc::pipe(fds.as_mut_ptr())},0);
+    // SAFETY: pipe returned two newly owned descriptors.
+    let reader=unsafe {std::fs::File::from_raw_fd(fds[0])};let writer=unsafe {std::fs::File::from_raw_fd(fds[1])};
+    let mut child=Command::new(env!("CARGO_BIN_EXE_rimage")).arg("convert").arg(&input).args(["--format","png","--lossless","-o","-","--quiet"]).stdout(Stdio::from(writer.try_clone().unwrap())).stderr(Stdio::null()).spawn().unwrap();
+    let deadline=std::time::Instant::now()+Duration::from_secs(30);
+    loop {
+        let mut available:libc::c_int=0;
+        // SAFETY: reader is a live pipe and available points to writable integer storage.
+        assert_eq!(unsafe {libc::ioctl(reader.as_raw_fd(),libc::FIONREAD,&mut available)},0);
+        let mut poll=libc::pollfd {fd:writer.as_raw_fd(),events:libc::POLLOUT,revents:0};
+        // SAFETY: poll points to one initialized descriptor.
+        let ready=unsafe {libc::poll(&mut poll,1,0)};assert!(ready>=0);
+        if available>0 && ready==0 {break;}
+        if std::time::Instant::now()>deadline {let _=child.kill();let _=child.wait();panic!("stdout pipe did not fill");}
+        assert!(child.try_wait().unwrap().is_none(),"child exited before filling stdout");std::thread::yield_now();
+    }
+    // SAFETY: child is live and SIGTERM requests graceful shutdown.
+    assert_eq!(unsafe {libc::kill(child.id() as i32,libc::SIGTERM)},0);
+    let pid=child.id();let (sender,receiver)=std::sync::mpsc::sync_channel(1);std::thread::spawn(move||sender.send(child.wait().unwrap()).unwrap());
+    match receiver.recv_timeout(Duration::from_secs(3)) {Ok(status)=>assert_eq!(status.signal(),Some(libc::SIGTERM)),Err(error)=>{unsafe {libc::kill(pid as i32,libc::SIGKILL);}panic!("blocked stdout prevented termination: {error}");}}
+    drop((reader,writer));
+}

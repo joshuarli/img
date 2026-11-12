@@ -1,4 +1,4 @@
-use std::{collections::{BTreeMap,BTreeSet},ffi::OsString,fs,io::{self,Write},os::unix::fs::MetadataExt,path::{Path,PathBuf},sync::{Mutex,atomic::{AtomicBool,AtomicI32,AtomicUsize,Ordering}},time::Instant};
+use std::{collections::{BTreeMap,BTreeSet},ffi::OsString,fs,io,os::unix::fs::MetadataExt,path::{Path,PathBuf},sync::{Mutex,atomic::{AtomicBool,AtomicI32,AtomicUsize,Ordering}},time::Instant};
 use rimage::{cancellation::Cancellation,optimizer::{self,FormatSelection,Operation,Request},publication::{self,Destination,Source},still::{self,Format}};
 use serde_json::{Value,json};
 use crate::cli::{Arguments,Command};
@@ -163,6 +163,38 @@ fn stdin_bytes()->io::Result<Vec<u8>> {
         bytes.extend_from_slice(&buffer[..read as usize]);
     }
 }
+fn stdout_bytes(bytes:&[u8],finish_after_cancel:bool)->io::Result<()> {
+    let _lock=io::stdout().lock();
+    let allow_one_cancelled_write=finish_after_cancel && CANCELLED.load(Ordering::Relaxed);
+    // SAFETY: stdout is a borrowed descriptor and fcntl retains no pointers.
+    let flags=unsafe {libc::fcntl(1,libc::F_GETFL)};
+    if flags<0 {return Err(io::Error::last_os_error());}
+    // SAFETY: F_SETFL changes only the file status flags for this descriptor.
+    if unsafe {libc::fcntl(1,libc::F_SETFL,flags|libc::O_NONBLOCK)}<0 {return Err(io::Error::last_os_error());}
+    let result=(|| {
+        let mut remaining=bytes;
+        while !remaining.is_empty() {
+            if !allow_one_cancelled_write && CANCELLED.load(Ordering::Relaxed) {return Err(io::Error::new(io::ErrorKind::Interrupted,"cancelled stdout"));}
+            let mut poll=libc::pollfd {fd:1,events:libc::POLLOUT,revents:0};
+            // SAFETY: poll points to one initialized descriptor and retains no references.
+            let ready=unsafe {libc::poll(&mut poll,1,100)};
+            if ready<0 {let error=io::Error::last_os_error();if error.kind()==io::ErrorKind::Interrupted {continue;}return Err(error);}
+            if ready==0 {if CANCELLED.load(Ordering::Relaxed) {return Err(io::Error::new(io::ErrorKind::Interrupted,"cancelled stdout"));}continue;}
+            let chunk=&remaining[..remaining.len().min(65536)];
+            // SAFETY: chunk is readable for its length and stdout is a borrowed descriptor.
+            let written=unsafe {libc::write(1,chunk.as_ptr().cast(),chunk.len())};
+            if written<0 {let error=io::Error::last_os_error();if matches!(error.kind(),io::ErrorKind::Interrupted|io::ErrorKind::WouldBlock) {if CANCELLED.load(Ordering::Relaxed) {return Err(io::Error::new(io::ErrorKind::Interrupted,"cancelled stdout"));}continue;}return Err(error);}
+            if written==0 {return Err(io::Error::new(io::ErrorKind::WriteZero,"stdout write returned zero"));}
+            remaining=&remaining[written as usize..];
+            if !remaining.is_empty() && CANCELLED.load(Ordering::Relaxed) {return Err(io::Error::new(io::ErrorKind::Interrupted,"cancelled stdout"));}
+        }
+        Ok(())
+    })();
+    // SAFETY: the descriptor remains open and flags were obtained from F_GETFL.
+    let restored=unsafe {libc::fcntl(1,libc::F_SETFL,flags)};
+    if restored<0 && result.is_ok() {return Err(io::Error::last_os_error());}
+    result
+}
 fn read(job:&Job)->Result<(Vec<u8>,Option<Source>),Failure> {
     if job.input==Path::new("-") {return stdin_bytes().map(|b|(b,None)).map_err(|e|Failure::new(&job.input,None,"input.io",e,3));}
     let mut source=Source::open(&job.input).map_err(|e|Failure::new(&job.input,None,"input.io",e,3))?;
@@ -188,7 +220,7 @@ fn execute(job:&Job,args:&Arguments,budget:u64)->Result<Completed,Failure> {
     let output=job.destinations.iter().find(|p|p.0==outcome.format).map(|p|p.1.clone()).ok_or_else(||Failure::new(&job.input,None,"output.plan","winner has no planned destination",4))?;
     if CANCELLED.load(Ordering::Relaxed) {return Err(Failure::new(&job.input,Some(&output),"input.cancelled","cancelled before publication",3));}
     if args.verbose {for evaluation in &outcome.evaluations {eprintln!("{}: {:?} quality={:?} bytes={:?} score={:?} encodeMs={:.3} failure={:?}",job.input.display(),evaluation.format,evaluation.quality,evaluation.bytes,evaluation.score,evaluation.encode_ms,evaluation.failure);}}
-    if output==Path::new("-") {io::stdout().lock().write_all(&outcome.bytes).and_then(|_|io::stdout().flush()).map_err(|e|Failure::new(&job.input,Some(&output),"output.io",e,4))?;}
+    if output==Path::new("-") {stdout_bytes(&outcome.bytes,false).map_err(|e|Failure::new(&job.input,Some(&output),"output.io",e,4))?;}
     else if !(args.in_place && outcome.unchanged) {
         publication::create_parent(&output).map_err(|e|Failure::new(&job.input,Some(&output),"output.path",e,4))?;
         let timestamp=if args.timestamps {source.as_ref().map(|s|s.metadata().and_then(|m|m.modified())).transpose().map_err(|e|Failure::new(&job.input,Some(&output),"input.io",e,3))?} else {None};
@@ -241,8 +273,8 @@ fn report(args:&Arguments,completed:Vec<Result<Completed,Failure>>)->u8 {
                 successes+=1;
                 if !args.json {
                     if !args.quiet || matches!(args.command,Command::Inspect|Command::Compare) {
-                    if result.status=="compared" {if writeln!(io::stdout(),"{}",result.value["score"]).is_err() {return 4;}}
-                    else if result.status=="inspected" {if writeln!(io::stdout(),"{}: {} {}",result.input.display(),result.value["format"],result.value["image"]).is_err() {return 4;}}
+                    if result.status=="compared" {if stdout_bytes(format!("{}\n",result.value["score"]).as_bytes(),true).is_err() {return 4;}}
+                    else if result.status=="inspected" {if stdout_bytes(format!("{}: {} {}\n",result.input.display(),result.value["format"],result.value["image"]).as_bytes(),true).is_err() {return 4;}}
                     else {eprintln!("{}: {} {}",result.input.display(),result.status,result.output.as_deref().unwrap_or(Path::new("-")).display());}
                     }
                     if let Some(warnings)=result.value["warnings"].as_array() {for warning in warnings {eprintln!("warning: {warning}");}}
@@ -254,7 +286,8 @@ fn report(args:&Arguments,completed:Vec<Result<Completed,Failure>>)->u8 {
     }
     let code=if failures.is_empty() {0} else if successes>0||categories.len()>1 {5} else {*categories.first().unwrap_or(&3)};
     if args.json {
-        if let Err(error)=serde_json::to_writer(io::stdout().lock(),&json!({"schemaVersion":1,"results":results,"failures":failures})).map_err(io::Error::other).and_then(|_|writeln!(io::stdout()).and_then(|_|io::stdout().flush())) {eprintln!("output: {error}");return 4;}
+        let data=serde_json::to_vec(&json!({"schemaVersion":1,"results":results,"failures":failures})).map_err(io::Error::other).and_then(|mut data| {data.push(b'\n');stdout_bytes(&data,true)});
+        if let Err(error)=data {eprintln!("output: {error}");return 4;}
     }
     code
 }

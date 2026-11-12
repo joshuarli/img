@@ -71,8 +71,7 @@ Codec adapters receive cooperative cancellation where their APIs support it.
 The AV1 plane decoder and PNG layout-preserving writer have no cooperative stop API;
 shutdown waits for those active calls. INT, TERM, HUP and QUIT request cancellation,
 join workers, clean unpublished temporary files, then terminate by the signal.
-Blocking stdout writes currently prevent that shutdown from completing while
-an open pipe remains full; see [RIMG-9](../TODO.md#rimg-9--p2--a-full-stdout-pipe-prevents-graceful-signal-termination).
+Stdout writes stop on cancellation even when a pipe remains open and full.
 Fatal handlers restore disposition and re-raise without cleanup allocation.
 Completed outputs survive cancellation. SIGKILL and power loss have no cleanup
 promise, and restart never deletes unknown temporary files.
