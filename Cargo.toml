@@ -80,10 +80,12 @@ limits = ["dep:sysinfo"]
 
 [dependencies]
 libc = "0.2"
-zenpng = { version = "=0.1.4", default-features = false }
+zenpng = { version = "=0.1.4", default-features = false, features = ["quantize"] }
+crc32fast = "1.5"
 zenjpeg = { version = "=0.8.4", default-features = false, features = ["decoder", "zencodec", "yuv"] }
 zenwebp = { version = "=0.4.6", default-features = false, features = ["std", "fast-yuv", "zencodec"] }
 zencodec = "=0.1.26"
+imgref = "1"
 zenpixels = { version = "=0.2.16", default-features = false }
 rgb = { version = "0.8" }
 log = "0.4"
@@ -149,7 +151,6 @@ strip = true
 
 [dev-dependencies]
 enough = "0.4"
-imgref = "1"
 png = "0.18"
 rustybench = "=0.5.0"
 

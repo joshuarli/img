@@ -14,5 +14,8 @@ Generated fixture samples are defined by `tests/common/mod.rs::pixels`. Tests ma
 | Metadata, color, alpha, precision | open | codec and operation suites; expand S2–S6 |
 | JPEG progressive, gray, ICC/EXIF, corruption | retained | `jpeg_codec`; independent zune-jpeg decode, stored EXIF orientation |
 | JPEG alpha flattening and high-precision reduction | intentionally refused | `jpeg_codec::invalid_quality_alpha_precision_and_corruption_are_named_errors` |
+| WebP exact samples and hidden RGB, both alpha modes | retained | `webp_codec`, independent libwebp decode |
+| PNG 8/16-bit gray/RGB/alpha and expanded palette samples | retained | `png_codec`, independent png 0.18 decode |
+| Palette quantization | explicitly lossy | `png_codec::direct_palette_mode_is_explicit_and_keeps_dimensions` |
 | Exit aggregation and resource limits | open | `exit`, `limits` suites; mandatory limits at S1 |
 | Streams, signals, concurrent publication | open | S1 and S9 |

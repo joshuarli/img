@@ -1798,6 +1798,7 @@ version = "0.14.0"
 dependencies = [
  "anyhow",
  "avif-parse",
+ "crc32fast",
  "dav1d",
  "enough",
  "env_logger",
@@ -2567,6 +2568,22 @@ dependencies = [
  "zenflate",
  "zenpixels",
  "zenpixels-convert",
+ "zenquant",
+]
+
+[[package]]
+name = "zenquant"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "440257260e03abacc233712332cd164f59afb98e8385e49ca5a0581ef0c7269d"
+dependencies = [
+ "archmage",
+ "imgref",
+ "linear-srgb",
+ "magetypes",
+ "num-traits",
+ "rgb",
+ "thiserror",
 ]
 
 [[package]]

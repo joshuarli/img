@@ -4,6 +4,8 @@ use std::{borrow::Cow, fmt, io::Read};
 use zencodec::{decode::{DecodeJob, Decode, DecoderConfig}, encode::{EncodeJob, Encoder, EncoderConfig}};
 use zenpixels::{PixelBuffer, PixelDescriptor};
 
+mod png;
+
 /// Maximum compressed input, including stdin.
 pub const MAX_INPUT_BYTES: u64 = 128 * 1024 * 1024;
 /// Maximum side length, matching the retained decoder ceiling.
@@ -73,7 +75,6 @@ pub enum Effort {
 impl Effort {
     /// Total candidate cap across all eligible formats.
     pub fn candidate_cap(self) -> usize { match self { Self::Fast => 8, Self::Balanced => 24, Self::Best => 64 } }
-    pub(crate) fn level(self) -> i32 { match self { Self::Fast => 0, Self::Balanced => 1, Self::Best => 2 } }
 }
 
 /// Exact-sample encoding or direct lossy encoder control.
@@ -188,11 +189,12 @@ pub struct StillImage {
     pub(crate) metadata: zencodec::Metadata,
     pub(crate) format: Format,
     pub(crate) info: zencodec::ImageInfo,
+    pub(crate) png_metadata: Vec<Vec<u8>>,
 }
 
 impl Clone for StillImage {
     fn clone(&self) -> Self {
-        Self { pixels: self.pixels.crop_copy(0, 0, self.pixels.width(), self.pixels.height()), metadata: self.metadata.clone(), format: self.format, info: self.info.clone() }
+        Self { pixels: self.pixels.crop_copy(0, 0, self.pixels.width(), self.pixels.height()), metadata: self.metadata.clone(), format: self.format, info: self.info.clone(), png_metadata: self.png_metadata.clone() }
     }
 }
 
@@ -213,7 +215,7 @@ impl StillImage {
         let mut info = zencodec::ImageInfo::new(width, height, zencodec::ImageFormat::Png);
         info.has_alpha = descriptor.has_alpha();
         info.source_color.bit_depth = Some(if descriptor.bytes_per_pixel() == descriptor.channels() { 8 } else { 16 });
-        Ok(Self { pixels, metadata: zencodec::Metadata::none(), format: Format::Png, info })
+        Ok(Self { pixels, metadata: zencodec::Metadata::none(), format: Format::Png, info, png_metadata: vec![] })
     }
 
     /// Decode actual encoded bytes. Animation and unsupported precision fail.
@@ -221,7 +223,25 @@ impl StillImage {
         limits().check_input_size(bytes.len() as u64).map_err(|e| Error::caused(ErrorKind::Limit, e))?;
         let format = Format::sniff(bytes)?;
         match format {
-            Format::Png => decode(zenpng::PngDecoderConfig::new(), bytes, format),
+            Format::Png => {
+                let chunks = png::metadata_chunks(bytes)?;
+                let mut image = decode(zenpng::PngDecoderConfig::new(), bytes, format)?;
+                if chunks.iter().any(|chunk| &chunk[4..8] == b"iCCP") && image.metadata.icc_profile.is_none() {
+                    return Err(Error::new(ErrorKind::Unsupported, "PNG ICC profile could not be preserved"));
+                }
+                if matches!(bytes[25], 0 | 4) && image.bit_depth() == 8 && image.pixels.descriptor().channels() == 4 {
+                    let samples = image.samples();
+                    if samples.chunks_exact(4).any(|p| p[0] != p[1] || p[1] != p[2]) {
+                        return Err(Error::new(ErrorKind::Invalid, "grayscale PNG decoder returned unequal RGB channels"));
+                    }
+                    let gray_alpha = samples.chunks_exact(4).flat_map(|p| [p[0], p[3]]).collect();
+                    let (width, height) = image.dimensions();
+                    image.pixels = PixelBuffer::from_vec(gray_alpha, width, height, PixelDescriptor::GRAYA8_SRGB)
+                        .map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+                }
+                image.png_metadata = chunks;
+                Ok(image)
+            },
             Format::Jpeg => {
                 let mut config = zenjpeg::JpegDecoderConfig::new();
                 let header = config.inner().read_info(bytes).map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
@@ -251,10 +271,7 @@ impl StillImage {
     /// Encode a candidate without silently discarding alpha or reducing precision.
     pub fn encode(&self, format: Format, mode: EncodingMode, effort: Effort) -> Result<Vec<u8>, Error> {
         match format {
-            Format::Png => match mode {
-                EncodingMode::Lossless => self.encode_png(),
-                _ => Err(Error::new(ErrorKind::Unsupported, "direct quality is unsupported for exact PNG encoding")),
-            },
+            Format::Png => png::encode(self, mode, effort),
             Format::Jpeg => {
                 let EncodingMode::Quality(quality) = mode else { return Err(Error::new(ErrorKind::Unsupported, "JPEG lossless requires original-byte preservation")); };
                 if self.bit_depth() != 8 { return Err(Error::new(ErrorKind::Unsupported, "JPEG encoding requires eight-bit samples")); }
@@ -305,9 +322,6 @@ impl StillImage {
         image.info = self.info.clone();
         Ok(Cow::Owned(image))
     }
-    fn encode_png(&self) -> Result<Vec<u8>, Error> {
-        encode(zenpng::PngEncoderConfig::new(), self)
-    }
 }
 
 pub(crate) fn decode<C: DecoderConfig>(config: C, bytes: &[u8], format: Format) -> Result<StillImage, Error> {
@@ -331,7 +345,7 @@ pub(crate) fn decode<C: DecoderConfig>(config: C, bytes: &[u8], format: Format) 
     if decoded_info.source_color.bit_depth.is_none() { decoded_info.source_color.bit_depth = info.source_color.bit_depth; }
     if decoded_info.source_color.channel_count.is_none() { decoded_info.source_color.channel_count = info.source_color.channel_count; }
     let info = decoded_info;
-    Ok(StillImage { pixels: result.into_buffer(), metadata, format, info })
+    Ok(StillImage { pixels: result.into_buffer(), metadata, format, info, png_metadata: vec![] })
 }
 
 pub(crate) fn encode<C: EncoderConfig>(config: C, image: &StillImage) -> Result<Vec<u8>, Error>
