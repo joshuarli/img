@@ -88,3 +88,20 @@ fn png_private_metadata_and_color_chunks_survive_exact_encoding() {
     assert!(encoded.windows(chunk.len()).any(|part| part == chunk));
     assert_eq!(StillImage::decode(&encoded).unwrap().samples(), image.samples());
 }
+
+#[test]
+fn layout_sensitive_png_metadata_is_never_silently_discarded() {
+    let image = StillImage::from_rgb8(8, 8, [80, 90, 100].repeat(64)).unwrap();
+    let mut original = Vec::new();
+    let mut encoder = png::Encoder::new(&mut original, 8, 8); encoder.set_color(png::ColorType::Rgb);
+    encoder.write_header().unwrap().write_image_data(&image.samples()).unwrap();
+    for (kind, data) in [(b"sBIT", vec![7, 7, 7]), (b"bKGD", vec![0, 80, 0, 80, 0, 80]), (b"vpAG", vec![1, 2, 3])] {
+        let mut bytes = original.clone();
+        let mut chunk = (data.len() as u32).to_be_bytes().to_vec(); chunk.extend_from_slice(kind); chunk.extend_from_slice(&data);
+        let crc = crc32fast::hash(&chunk[4..]); chunk.extend_from_slice(&crc.to_be_bytes()); bytes.splice(33..33, chunk);
+        let source = StillImage::decode(&bytes).unwrap();
+        assert!(source.encode(Format::Png, EncodingMode::Lossless, Effort::Fast).is_err(), "must not discard or misapply {kind:?}");
+        let stripped = source.strip_metadata(rimage::still::SamplePreservation::Exact).unwrap();
+        assert_eq!(StillImage::decode(&stripped.encode(Format::Png, EncodingMode::Lossless, Effort::Fast).unwrap()).unwrap().samples(), source.samples());
+    }
+}

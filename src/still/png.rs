@@ -15,7 +15,7 @@ pub(super) fn metadata_chunks(bytes: &[u8]) -> Result<Vec<Vec<u8>>, Error> {
         if crc32fast::hash(&chunk[4..chunk.len() - 4]) != expected { return Err(Error::new(ErrorKind::Invalid, "PNG chunk checksum mismatch")); }
         let kind = &header[4..8];
         if matches!(kind, b"acTL" | b"fcTL" | b"fdAT") { return Err(Error::new(ErrorKind::Unsupported, "PNG animation is unsupported")); }
-        if kind[0].is_ascii_lowercase() && kind != b"tRNS" && kind != b"bKGD" && kind != b"sBIT" {
+        if kind[0].is_ascii_lowercase() && kind != b"tRNS" {
             total = total.checked_add(chunk.len()).ok_or_else(|| Error::new(ErrorKind::Limit, "PNG metadata length overflow"))?;
             if total > MAX_METADATA_BYTES { return Err(Error::new(ErrorKind::Limit, "PNG metadata exceeds 8 MiB")); }
             chunks.push(chunk.to_vec());
@@ -43,6 +43,11 @@ pub(super) fn restore_metadata(bytes: &[u8], metadata: &[Vec<u8>]) -> Result<Vec
 }
 
 pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort) -> Result<Vec<u8>, Error> {
+    if image.png_metadata.iter().any(|chunk| {
+        let kind = &chunk[4..8];
+        matches!(kind, b"bKGD" | b"sBIT") || (kind[3].is_ascii_uppercase()
+            && !matches!(kind, b"cHRM" | b"gAMA" | b"iCCP" | b"sRGB" | b"cICP" | b"cLLi" | b"mDCV" | b"eXIf"))
+    }) { return Err(Error::new(ErrorKind::Unsupported, "PNG layout-sensitive or unknown unsafe-to-copy metadata requires explicit stripping")); }
     let compression = match effort { Effort::Fast => zenpng::Compression::Fastest, Effort::Balanced => zenpng::Compression::Fast, Effort::Best => zenpng::Compression::Balanced };
     let bytes = match mode {
         EncodingMode::Quality(quality) => {
