@@ -1,14 +1,12 @@
 # Optimize and convert still images
 
 Rimage optimizes JPEG, PNG, WebP and AVIF with verified decoded fidelity.
-Outputs use atomic publication and refuse existing destinations.
+New outputs use atomic publication and refuse existing destinations.
 This branch contains an operation-first CLI with breaking changes from 0.14.0.
 
-Build with the repository's pinned Rust toolchain:
-
-```sh
-cargo build --locked --profile dist --features build-binary
-```
+In `~/usr`, run `sh sync tools rimage` with `gh` authenticated for this private
+repository. Prereleases provide checksummed macOS ARM64 and static Linux
+ARM64/x86-64 binaries. See [installation and release verification](docs/RELEASE.md).
 
 Optimize a file at the default minimum SSIMULACRA2 score of 95:
 
@@ -58,11 +56,9 @@ Run `rimage --help` for flags. See [CLI contracts and JSON](docs/CLI.md),
 [AVIF limitations](docs/AVIF.md), and [independent scoring](docs/SCORING.md).
 [Benchmark evidence](BENCHMARKS.md) distinguishes measured results from deferred gates.
 
-Supported hosts are macOS ARM64 and Linux ARM64/x86-64. See [development checks](docs/CODEC-BOUNDARY.md#development-checks) and [verification status](plan.md).
-
-Prereleases use immutable `release-<commit>` tags with checksummed macOS ARM64
-and static Linux ARM64/x86-64 binaries. In `~/usr`, run `sh sync tools rimage`
-with `gh` authenticated for this private repository. See [release verification](docs/RELEASE.md).
+Supported hosts are macOS ARM64 and Linux ARM64/x86-64. For source builds and
+contributing, see [development checks](docs/CODEC-BOUNDARY.md#development-checks).
+Open defects are tracked in [TODO.md](TODO.md).
 
 The combined distribution selects **AGPL-3.0-only** for Imazen components.
 Original Rimage code retains its MIT and Apache-2.0 notices.

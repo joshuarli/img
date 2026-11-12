@@ -1,22 +1,12 @@
-//! Process exit codes.
+//! Stable exit-code categories and a library outcome accumulator.
 //!
-//! rimage's failure modes are distinct enough that a caller (a build script, a
-//! CI job, a shell wrapper) benefits from telling them apart without parsing
-//! stderr. The codes below are the contract that makes that possible; they are
-//! stable, and adding a new one is a breaking change.
-//!
-//! The values follow the conventional Unix convention of `0` for success and a
-//! small non-zero number for each category. `1` is deliberately not used for a
-//! specific meaning: it is the generic "something failed" code countless tools
-//! already emit, so reusing it would make a handled failure indistinguishable
-//! from an unhandled one. (Crashes never produce `1` anyway: a Rust panic
-//! exits as `101`, and a signal death is reported by the shell as `128+SIG` —
-//! `134` for the abort that `panic = "abort"` raises.)
+//! The CLI reports the same numeric categories through its own runtime. An
+//! output failure can occur after publication, so a code alone does not prove
+//! that no file changed. The CLI identifies such failures as `output.committed`.
 
 /// How the process ended.
 ///
-/// Ordered from "everything worked" to "some of it did not", which is also the
-/// order of increasing severity.
+/// Numeric values identify categories, not a severity ordering.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
 pub enum ExitCode {
@@ -24,20 +14,13 @@ pub enum ExitCode {
     Success = 0,
     /// The command line, configuration, or output layout was unusable.
     ///
-    /// Nothing was attempted: a bad argument, an empty file set, a `--resize`
-    /// value the format cannot satisfy, two inputs mapping to one output.
+    /// Examples include a bad argument, an empty file set, or conflicting output options.
     Usage = 2,
-    /// Reading or decoding at least one input failed, and nothing was written.
+    /// Input processing or score verification failed without a recorded success.
     Input = 3,
-    /// Encoding or writing at least one output failed, and nothing was written.
-    ///
-    /// The input was read successfully; the failure happened afterwards.
+    /// Output processing or publication failed without a recorded success.
     Output = 4,
-    /// Some files were written, others failed.
-    ///
-    /// Distinguishing this from [`ExitCode::Input`] / [`ExitCode::Output`]
-    /// matters: a partial run has already modified the user's files, so a
-    /// wrapper must not treat it as a clean no-op retry.
+    /// Successes and failures were mixed, or both input and output failures occurred.
     Partial = 5,
 }
 
@@ -48,27 +31,12 @@ impl ExitCode {
     }
 }
 
-/// The running verdict for a multi-file run.
+/// Accumulate per-file outcomes for library callers.
 ///
-/// Kept separate from [`ExitCode`] because two things about a run are not
-/// expressible by folding over per-file exit codes alone:
-///
-/// 1. [`ExitCode::Partial`] needs to remember that *some* file succeeded at
-///    some point. A fold that only keeps the last failure cannot tell a clean
-///    total failure from a run that wrote half its outputs.
-/// 2. Whether *any* file has been considered yet is genuinely a distinct
-///    state, even though it currently reports the same code as a full success.
-///    Conflating them would make "no files" look like "all files worked".
-///
-/// The lattice is not totally ordered. [`RunState::InputFailed`] and
-/// [`RunState::OutputFailed`] are *incomparable*: either alone means nothing
-/// was written, but together they mean some files were written and some were
-/// not. Forcing a single rank order would have to give one of them precedence
-/// and would report a partial run as a clean failure.
-///
-/// Use [`RunState::start`] then [`RunState::record`] per file; read the code
-/// with [`RunState::exit_code`]. The type is `Copy`, so it can be accumulated
-/// behind a mutex in the worker threads and folded once at the end.
+/// Use [`RunState::start`], then [`RunState::record`] per file, and read
+/// [`RunState::exit_code`]. The state retains both success and failure categories.
+/// Input and output failures together produce [`RunState::Mixed`] even when
+/// nothing succeeded. The accumulator records reported outcomes, not durability.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RunState {
     /// No file has been recorded yet.
@@ -76,18 +44,16 @@ pub enum RunState {
     Idle,
     /// Every file recorded so far was written, and at least one was.
     Succeeded,
-    /// At least one input failed; no output has been written.
+    /// At least one input failed; no success has been recorded.
     InputFailed,
-    /// At least one output failed; nothing was written successfully.
+    /// At least one output failed; no success has been recorded.
     OutputFailed,
     /// A success and a failure, or a failure on each side: a partial run.
     Mixed,
     /// A verdict decided outside the per-file loop, which passes through.
     ///
-    /// Used for the configuration failures discovered before any file is
-    /// touched (a bad argument, a colliding output path, a `--resize` the
-    /// format cannot satisfy). It overrides the per-file state because those
-    /// failures mean no file was processed at all.
+    /// A caller can use this for configuration failures outside the per-file loop.
+    /// It overrides accumulated per-file outcomes.
     Fatal(ExitCode),
 }
 

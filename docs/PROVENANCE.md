@@ -11,10 +11,10 @@ Original notices are preserved in `LICENSE-MIT` and `LICENSE-APACHE`, retrieved 
 Upstream HEAD at retrieval: `978a87075ad60fbbd033ba851036fbe84e9e0f47`.
 SHA-256: MIT `cd5681828f9fe1cd224e817fb50be47d0fa16d6414a15c5f530910c276a8e50d`, Apache `4ec8872ad1b5ac7de77fc46235e2a4a97201c5c55426f2635764b0f5c56decef`.
 
-This fork modifies the upstream source. Campaign additions follow the selected AGPL-3.0 distribution path when Imazen dependencies are integrated.
+This fork modifies the upstream source. Its additions follow the selected AGPL-3.0 distribution path with the integrated Imazen dependencies.
 Upstream notices remain applicable to the original material. The resolved production audit is recorded below.
 
-`tests/common/mod.rs` creates procedural RGB samples for the campaign. These generated samples are offered under CC0-1.0.
+`tests/common/mod.rs` creates procedural RGB samples. These generated samples are offered under CC0-1.0.
 Existing `tests/files` arrived in the source history without per-file photographic provenance. They remain regression inputs and do not establish a redistributable benchmark corpus.
 Do not distribute them as a newly licensed photographic corpus without establishing their origin.
 
@@ -36,4 +36,4 @@ The combined work follows AGPL-3.0-only; dependency files keep their own license
 
 Permissive alternatives are selected in the inventory; self_cell chooses Apache-2.0, avoiding its GPL-2.0-only alternative. unicode-ident also requires Unicode-3.0. No package has an unknown declared license. Published locked releases are used without upstream workspace patches, vendoring or Git dependencies. The actively maintained Imazen stack supplies the required pure-Rust codecs; adapters and removal conditions are documented at [the boundary](CODEC-BOUNDARY.md). The png adapter is required for precision/profile correctness. libm was already resolved and now supplies platform-stable transfer math. Their required artifact/RSS costs are reported in [benchmarks](../BENCHMARKS.md).
 
-`png` 0.18.1 also independently verifies test samples. `rustybench` 0.5.0 (MIT) is development-only. Native dav1d/libwebp/LittleCMS references remain development-only and do not enter normal binary linkage. Source packages and upstream legal notices remain available through the locked registry sources; this local campaign does not create a distributable release bundle.
+`png` 0.18.1 also independently verifies test samples. `rustybench` 0.5.0 (MIT) is development-only. Native dav1d/libwebp/LittleCMS references remain development-only and do not enter normal binary linkage. The [release source archive](RELEASE.md) contains the exact source tree, lockfile and vendored dependencies with their upstream notices.

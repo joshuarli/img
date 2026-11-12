@@ -88,7 +88,7 @@ impl Read for Source {
 pub enum Destination<'a> {
     /// Atomically create a previously absent destination.
     New(&'a Path),
-    /// Replace the selected source if its identity and contents have not changed.
+    /// Replace after a best-effort identity check; concurrent writers are not excluded.
     Replace(&'a Source),
 }
 
@@ -145,7 +145,7 @@ pub fn publish(bytes: &[u8], destination: Destination<'_>, modified: Option<std:
     publish_cancellable(bytes,destination,modified,&crate::cancellation::Cancellation::default())
 }
 
-/// Publish only if cancellation has not been requested before the atomic commit.
+/// Check cancellation before staging and before starting the final publication step.
 pub fn publish_cancellable(bytes: &[u8], destination: Destination<'_>, modified: Option<std::time::SystemTime>, cancellation: &crate::cancellation::Cancellation) -> Result<(), PublishError> {
     let mut committed = false;
     let result = (|| {

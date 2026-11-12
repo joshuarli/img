@@ -57,8 +57,8 @@ shasum -a 256 -c SHA256SUMS
 Checksums bind downloaded bytes to the release manifest; they are not a separate
 signature authority. Roll back by installing a previously verified release.
 Never move an existing SHA-named tag or overwrite assets; fixes get a new commit
-and release. Campaign performance/environment limitations remain recorded in
-[plan.md](../plan.md); a working prerelease does not establish those measurements.
+and release. Performance and environment limitations remain recorded in
+[benchmark evidence](../BENCHMARKS.md#remaining-proofs); a working prerelease does not establish those measurements.
 
 If hosted runners cannot start, a maintainer can run the same checks locally,
 package the three verified binaries and `scripts/package-source` output, then

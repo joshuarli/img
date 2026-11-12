@@ -1,43 +1,18 @@
-//! Structured, side-tagged errors for the decode and encode pipeline.
+//! Structured input/output errors for retained zune_image library operations.
 //!
-//! [`zune_image::errors::ImageErrors`] is a single flat enum: a failure to read
-//! a truncated input and a failure to write into a full disk are both
-//! `String`s, and neither names the format we were working with. The CLI needs
-//! to tell those apart to pick a message, a hint and an exit code.
+//! [`RimageError`] wraps [`zune_image::errors::ImageErrors`] with a direction,
+//! path, format and optional hint. [`RimageError::source`] exposes the stored
+//! cause, and [`Display`] renders its chain.
 //!
-//! [`RimageError`] wraps rather than replaces it. [`RimageError::source`]
-//! carries the original value, so nothing is lost, and [`Display`] renders the
-//! chain so existing `{error}` call sites keep printing something equivalent to
-//! what `ImageErrors` produced.
+//! Output helpers can infer a format from the destination extension. Callers
+//! that know the encoder use [`output_encode_error`] to supply its name.
+//! [`output_io_error`] handles direct filesystem errors, and
+//! [`RimageError::log`] prints the error with its optional hint.
 //!
-//! # Layers
-//!
-//! ```text
-//! RimageError
-//! ├── Input(InputError)    the file we were asked to read
-//! └── Output(OutputError)  the file we were asked to write
-//! ```
-//!
-//! # Output direction
-//!
-//! Output failures are classified by the format inferred from the output path's
-//! extension. Unlike input paths, output paths are always under our control:
-//! the encoder chooses the extension, so `.jpg` → jpeg, `.png` → png, etc. The
-//! format tag is therefore authoritative at output, even though the underlying
-//! `ImageErrors` value does not carry it.
-//!
-//! Call sites that know the encoder name (the CLI subcommand) can use
-//! [`output_encode_error`] for an even more authoritative tag, and
-//! [`output_io_error`] for direct `io::Error` values from directory creation,
-//! temp-file allocation, and file publishing.
+//! The still-image CLI uses its own failure and JSON reporting path. These
+//! helpers remain available to library callers.
 //!
 //! [`Display`]: std::fmt::Display
-//!
-//! # Scope note
-//!
-//! This module is additive. The CLI reports failures through
-//! [`RimageError::log`], which keeps the `{error}`-style line it printed before
-//! and appends the hint when there is one.
 
 use std::fmt::{self, Display, Formatter};
 use std::path::{Path, PathBuf};
@@ -130,7 +105,7 @@ pub enum InputError {
         /// Which ceiling was exceeded, and by how much.
         violation: LimitViolation,
     },
-    /// A `--resize` value cannot be represented by the resize operation.
+    /// Requested dimensions cannot be represented by the resize operation.
     InvalidResize {
         /// The dimensions that were requested or computed.
         requested: (u64, u64),

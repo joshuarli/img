@@ -18,8 +18,9 @@ Each attempt records settings, size, actual decoded score, encode wall time,
 and failure. Diagnostic encode times are not benchmark evidence. Only one
 candidate is encoded per image at a time. Reference metric pyramids are reused.
 Direct quality also decodes and validates the bytes but adds no score minimum.
-Lossless compares expanded samples, depth, hidden RGB, alpha, ICC, orientation and required PNG color facts.
-Same-format lossless JPEG copies bytes; cross-format JPEG and AVIF lossless fail.
+Lossless compares expanded samples, depth, hidden RGB, alpha, ICC, orientation and recognized required PNG color facts. [Color](COLOR.md) records the omitted `cLLI` case.
+Strict lossless JPEG output is available only as a same-format byte copy.
+AVIF encoding has no strict lossless mode.
 
 Keep mode verifies ICC, EXIF, XMP and orientation after encoding. Cross-format
 PNG ancillary losses are listed individually. Required PNG color signaling
@@ -33,3 +34,6 @@ Source fallback is reported unchanged, never as an encoded candidate or an
 unmeasured successful search. A source representation that cannot satisfy a
 requested transformation cannot be selected. If no qualifying output exists,
 processing fails before publication. The caller uses the shared atomic publisher.
+Currently, merely specifying `--max-dimension` disables source fallback even
+when the image already fits. A request that would otherwise report unchanged
+can therefore fail; see [RIMG-7](../TODO.md#rimg-7--p2--a-no-op-resize-disables-valid-unchanged-output).

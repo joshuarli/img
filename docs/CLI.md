@@ -23,10 +23,14 @@ Duplicate sources, hard-link source aliases, duplicate planned destinations and
 preexisting destinations fail before image publication for those jobs.
 All possible auto destinations are reserved during planning.
 
-Quote glob arguments for expansion by Rimage. Shell-expanded paths also work.
-`--file-list PATH` reads literal UTF-8 paths, one per line, relative to the list.
+Quote glob arguments for expansion by Rimage.
+`--file-list PATH` reads UTF-8 paths, one per line, relative to the list.
 A positional `file.list` retains the earlier selection behavior: it supplies
 the inputs and ignores other positional inputs. No shell evaluation occurs.
+Discovery currently reinterprets wildcard characters in all inputs, including
+file-list entries and shell-expanded paths. A relative list entry `-` can also
+become stdin. These literal-path defects can select the wrong file for in-place
+replacement; see [RIMG-1](../TODO.md#rimg-1--p1--literal-file-list-paths-can-overwrite-a-different-file).
 Empty input sets fail. There is a 100000-file bound and a 128 MiB input/list cap.
 Ordinary paths retain native bytes. JSON rejects non-UTF-8 paths before writes.
 
@@ -39,9 +43,9 @@ PNG selects 2–256 palette colors, and AVIF maps the interval to native 1–99.
 Scored search may evaluate exact PNG and WebP as well as lossy candidates.
 Fast, balanced and best permit 8, 24 and 64 total encode attempts respectively.
 
-Keep is the metadata default. Strip retains required color signaling and
+Keep is the metadata default. Strip is intended to retain required color signaling and
 normalizes orientation once. Lossless refuses a strip that must reorder samples.
-Transformations that cannot preserve precision, alpha or color semantics fail.
+Known color-preservation defects are recorded in [Color](COLOR.md) and [AVIF](AVIF.md).
 Inspect reads headers without decoding planes, including declared unsupported
 precision and animation/multiple-image signals, including JPEG MPF and gain-map declarations. JPEG trailing payloads and late application metadata are unsupported for pixel processing. Compare returns a measured score without a threshold.
 
@@ -53,20 +57,24 @@ Broken pipes are output errors. Diagnostics and progress go to stderr.
 and evaluated candidate settings. Quiet and verbose conflict.
 
 `--preserve-timestamps` copies source modification time on file outputs.
-Published files use mode 0600, including in-place replacements.
+New files use mode 0600. In-place replacements copy the source's permissions.
 New destinations use exclusive destination-directory staging, atomic no-clobber
-publication, file sync and parent sync. In-place requires the opened source's
-identity to remain unchanged. A post-publication durability failure has kind
+publication, file sync and parent sync. In-place checks the opened source's
+identity before renaming, but a concurrent replacement after that check can be
+overwritten. [RIMG-8](../TODO.md#rimg-8--p2--in-place-rename-can-erase-a-source-changed-after-verification) and its draft RFC track that race.
+A post-publication durability failure has kind
 `output.committed` and explicitly says the output was committed.
 
 Jobs default to one, capped by requested jobs, CPU parallelism, available memory
-and work count. Admission reserves 256 bytes per pixel plus compressed input and
-candidate buffers. Unknown memory uses the retained conservative fallback.
+and work count. [Still-image limits](CODEC-BOUNDARY.md) describe admission and its
+known gaps. Unknown memory uses the retained conservative fallback.
 No decoded images are queued. One candidate runs per image.
 Codec adapters receive cooperative cancellation where their APIs support it.
 The AV1 plane decoder and PNG layout-preserving writer have no cooperative stop API;
-shutdown waits for bounded active calls. INT, TERM, HUP and QUIT stop admission,
+shutdown waits for those active calls. INT, TERM, HUP and QUIT request cancellation,
 join workers, clean unpublished temporary files, then terminate by the signal.
+Blocking stdout writes currently prevent that shutdown from completing while
+an open pipe remains full; see [RIMG-9](../TODO.md#rimg-9--p2--a-full-stdout-pipe-prevents-graceful-signal-termination).
 Fatal handlers restore disposition and re-raise without cleanup allocation.
 Completed outputs survive cancellation. SIGKILL and power loss have no cleanup
 promise, and restart never deletes unknown temporary files.

@@ -2,6 +2,22 @@
 
 `still` exposes four formats, validated quality, effort and sample layouts. Codec settings, parser state, zencodec jobs and zenpixels storage are private. `optimizer` selects verified bytes without filesystem effects; `publication` owns file transactions. Unrelated zune library operations remain available.
 
+The product scope is a still-image CLI for JPEG, PNG, WebP and AVIF on macOS ARM64 and Linux ARM64/x86-64. Windows, animation and other formats are outside that scope. Keep the operation-first CLI and preserve unrelated public library contracts. Codec/color runtimes stay pure Rust; OS interfaces and independent native development references are permitted. Do not add a plugin registry, server or persistent cache to this pipeline.
+
+## Source and contract map
+
+| Boundary | Source | Contract |
+| --- | --- | --- |
+| Arguments, planning, workers and reporting | `src/cli/command.rs`, `src/runtime.rs` | [CLI](CLI.md) |
+| Decode, encode, sample layouts and color | `src/still.rs`, `src/still/` | [Color](COLOR.md), [AVIF](AVIF.md) |
+| Candidate selection and fidelity | `src/optimizer.rs`, `src/perceptual.rs` | [Optimization](OPTIMIZATION.md), [scoring](SCORING.md) |
+| Filesystem transactions and cancellation | `src/publication.rs`, `src/cancellation.rs` | [CLI file and shutdown behavior](CLI.md) |
+| Retained library operations and helpers | `src/operations/`, `src/limits.rs`, `src/error.rs`, `src/exit.rs` | Public Rust API documentation |
+| Regression fixtures and measurement | `tests/`, `benches/`, `examples/benchmark.rs` | [Behavior matrix](../tests/parity.md), [benchmarks](../BENCHMARKS.md) |
+| Packaging and distribution | `scripts/package-source`, `scripts/package-release.py` | [Release](RELEASE.md), [provenance](PROVENANCE.md) |
+
+The CLI uses `SystemBudget` for admission. The retained `LimitSet`, `RimageError` and `RunState` APIs serve library callers; they do not define the current CLI's fixed still-image limits or reporting path.
+
 The shared published zencodec job carries bounded decode requests, metadata and pixel descriptors. A local format enum keeps implementation traits out of the public API. PixelBuffer carries native interleaved 16-bit samples. No registry or generalized pipeline is needed.
 
 JPEG encoding uses zenjpeg 0.8.4's native request: its generic adapter applies the effort preset after progressive settings, disabling progressive output at fast effort. The native path applies the preset first. Remove this workaround when the generic adapter passes the independent progressive regression. Color uses ApproxJpegli quality and 4:2:0; gray remains native gray. Four-component CMYK/YCCK, non-eight-bit JPEG, MPF auxiliary images, HDR gain-map signaling, trailing payloads and application metadata after scan start are refused. A bounded marker walker distinguishes entropy stuffing/restarts from real markers across progressive scans; this closes base-image extraction and late-profile/orientation loss that the shared header adapter does not expose. Inspection still reports declared precision, multi-image/HDR signals and metadata headers. Same-format lossless JPEG is an optimizer-owned byte copy.
@@ -10,9 +26,9 @@ PNG uses zenpng 0.1.4 and single-threaded zenquant 0.1.3 for ordinary exact eigh
 
 WebP uses zenwebp 0.4.6, exact hidden RGB in lossless mode, and alpha quality 100 in lossy mode. High-depth reduction is refused. AVIF's managed plane adapter and narrower supported representation are documented in [AVIF](AVIF.md). [Color](COLOR.md) and [scoring](SCORING.md) own preparation and fidelity rules.
 
-Mandatory ceilings apply without optional system probing: 16,384 pixels per side, 16,777,216 pixels total, 128 MiB compressed input/output and 8 MiB decoded metadata. Checked arithmetic precedes allocation. Admission reserves 256 bytes/pixel, up to 4 GiB, plus compressed buffers per active image. This reservation is not a measured RSS claim.
+The still-image boundary sets ceilings of 16,384 pixels per side, 16,777,216 pixels total, 128 MiB compressed input/output and 8 MiB decoded metadata. Compressed PNG text currently bypasses the cumulative decoded-metadata ceiling, including during inspection ([RIMG-4](../TODO.md#rimg-4--p2--compressed-png-text-bypasses-the-decoded-metadata-budget)). Transformation admission reserves 256 bytes/pixel, up to 4 GiB, plus compressed buffers per active image. Comparison currently accounts only for the reference's pixels before decoding both images ([RIMG-6](../TODO.md#rimg-6--p2--compare-admits-the-candidate-without-accounting-for-its-pixels)). These reservations are not measured RSS claims.
 
-Publication opens each directory component with O_NOFOLLOW. New files use exclusive staging and linkat no-clobber publication. In-place publication rechecks the opened source's device, inode, size, modification and change times immediately before renameat. File data and parent directory are synced; later errors identify committed output. RAII removes only owned unpublished staging files. New staging files are owner-only (0600).
+Publication opens each directory component with O_NOFOLLOW. New files use exclusive staging and linkat no-clobber publication. In-place publication rechecks the opened source's device, inode, size, modification and change times before renameat. That check and replacement are separate operations; the [in-place concurrency RFC](rfc/RIMG-8-in-place-concurrency.md) describes the remaining race. File data and parent directory are synced; later errors identify committed output. RAII removes only owned unpublished staging files. New staging files start owner-only (0600); in-place publication copies source permissions.
 
 Destination keys honor APFS case and Unicode collation without changing actual native path bytes. Output subtree exclusion uses directory IDs. macOS rejects invalid UTF-8 filenames with EILSEQ; Linux's real native-byte success case passes. JSON rejects such paths before writes.
 
@@ -21,6 +37,9 @@ Destination keys honor APFS case and Unicode collation without changing actual n
 Use the pinned nightly, kache and a repository-local TMPDIR. Do not run formatters.
 
 ```sh
+mkdir -p .work/tmp
+TMPDIR="$PWD/.work/tmp" RUSTC_WRAPPER=kache cargo build --locked --profile dist --features build-binary
+make baseline-check
 make test
 make decoder-reference-check
 make metric-reference-check
@@ -30,6 +49,8 @@ cargo check --locked --no-default-features --features build-binary
 cargo clippy --locked --all-features --all-targets
 make pure-rust-build-check
 ```
+
+Use `.work/tmp` for disposable images and `.work/wt` for worktrees. Keep tests away from the owner's image collection. `tests/baseline.rs` is the small end-to-end PNG and destination-safety baseline. The larger suites add independent decoder, color, metadata, filesystem and signal checks. Existing performance gates apply to measured claims, not to ordinary correctness checks. Remaining external proofs and retry commands are in [benchmark evidence](../BENCHMARKS.md#remaining-proofs).
 
 The metric executable check needs JPEG XL 0.12.0 tools. Native libwebp, dav1d and LittleCMS bindings are development-only independent references. Production build scripts in rav1d-safe and zenrav1e emit Rust configuration with assembly/FFI disabled; cc and nasm-rs are dormant Rust build dependencies, not evidence of executed native compilation. The fresh-target guarded build denies CC/CXX, CMake, NASM, pkg-config and bindgen and points libclang to an absent path. Rust's OS linker remains available. This is a masked-tool proof; a physically clean host is a separate release proof.
 

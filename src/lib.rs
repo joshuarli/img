@@ -6,10 +6,9 @@ Bounded JPEG, PNG, WebP and AVIF conversion and verified optimization.
 [`perceptual`] compares orientation-correct SDR pixels with exact alpha.
 [`publication`] creates outputs atomically without clobbering existing files.
 
-Scoring supports validated eight-bit SDR profiles. Exact PNG paths preserve
-sixteen-bit samples. Unsupported alpha, precision, HDR, animation and color
-representations fail explicitly. See the repository's docs for the supported
-representation matrix and independent validation evidence.
+Scoring supports eight-bit SDR profiles. Exact PNG paths preserve sixteen-bit
+samples. The repository's docs describe supported representations, independent
+validation evidence and known validation gaps.
 */
 
 #![warn(missing_docs)]
@@ -19,12 +18,11 @@ compile_error!("rimage supports macOS ARM64 and Linux x86-64/ARM64");
 /// All additional operations for the zune_image
 pub mod operations;
 
-/// Runtime-derived image size limits.
+/// Resource-derived limits for retained library operations and CLI admission.
 ///
-/// Deciding whether an image is too large to process is a property of the
-/// machine, not of the source code, so the ceiling is derived from the format's
-/// own published limits intersected with the memory actually available. See
-/// [`limits::SystemBudget`] and [`limits::LimitSet`].
+/// [`limits::LimitSet`] combines format, memory and disk constraints for library
+/// callers. The CLI uses [`limits::SystemBudget`] alongside the fixed ceilings
+/// enforced by [`still`].
 pub mod limits;
 
 /// Structured, side-tagged pipeline errors.
@@ -34,11 +32,10 @@ pub mod limits;
 /// involved. See [`error::RimageError`].
 pub mod error;
 
-/// Exit codes reported to the shell.
+/// Exit-code categories and an outcome accumulator for library callers.
 ///
-/// A caller can distinguish a clean success, a usage error, a failure reading
-/// an input, a failure writing an output, and a run that only partly succeeded
-/// without parsing stderr. See [`exit::ExitCode`].
+/// [`exit::ExitCode`] distinguishes success, usage, input, output, and partial
+/// or mixed failures. The CLI reports the same numeric categories separately.
 pub mod exit;
 
 /// Bounded still-image operations.

@@ -1,24 +1,12 @@
-//! Runtime-derived image size limits.
+//! Resource-derived limits for retained library operations and CLI admission.
 //!
-//! rimage decodes a whole image into an interleaved pixel buffer, keeps one or
-//! more copies alive through resize / quantize, and then hands another copy to
-//! the encoder. Peak memory therefore scales with the pixel count, which means
-//! the largest acceptable image is a property of the *machine*, not a constant
-//! baked into the source.
+//! [`LimitSet`] intersects format dimensions from [`format_caps`], memory from
+//! [`SystemBudget`], and destination space from [`LimitSet::for_output`].
+//! [`PipelineCost`] estimates the live buffers used by those library operations.
 //!
-//! This module derives that ceiling at runtime from three independent sources:
-//!
-//! 1. [`format_caps`] — dimensions a format itself declares as hard limits.
-//!    Only values with an authoritative, citable source are listed here.
-//! 2. [`SystemBudget`] — memory available to this process, divided by the
-//!    concurrency and the peak number of live pixel buffers.
-//! 3. [`LimitSet::for_output`] — free space on the destination volume, which
-//!    bounds the size of the file that can be written.
-//!
-//! The effective limit is the intersection of the three. No fixed pixel
-//! threshold is hardcoded; the only hardcoded numbers are the `format_caps`
-//! values that the format specifications themselves mandate, plus the
-//! documented estimates in [`PipelineCost`].
+//! The current still-image CLI uses [`SystemBudget`] for worker admission and
+//! also applies the fixed dimensions, byte and metadata ceilings in [`crate::still`].
+//! `LimitSet` does not replace those separate checks.
 
 use std::path::Path;
 #[cfg(feature = "limits")]
@@ -239,16 +227,16 @@ const DISK_RESERVE_BYTES: u64 = 100 * 1024 * 1024;
 /// Peak number of live full-image buffers, as a multiplier on
 /// `pixels * bytes_per_pixel`.
 ///
-/// These are *estimates of the current pipeline*, not format limits. They are
+/// These estimate retained library operations, not format limits. They are
 /// deliberately kept as named constants with a documented basis so they can be
 /// recalibrated from measurement rather than guessed at a call site.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PipelineCost {
     /// Buffers alive at peak while decoding.
     pub decode: u64,
-    /// Extra buffers introduced by `--resize`.
+    /// Extra buffers introduced by resizing.
     pub resize: u64,
-    /// Extra buffers introduced by `--quantization`.
+    /// Extra buffers introduced by quantization.
     pub quantize: u64,
     /// Peak buffers held by the encoder itself.
     pub encode: u64,
@@ -623,7 +611,7 @@ impl LimitSet {
 
     /// Largest square side that satisfies the pixel ceiling.
     ///
-    /// Used to suggest a concrete `--resize` value in error messages.
+    /// Used to suggest dimensions in library error messages.
     pub fn suggested_side(&self) -> u64 {
         let by_pixels = self.max_pixels.isqrt();
         by_pixels.min(self.max_width).min(self.max_height).max(1)

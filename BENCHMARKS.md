@@ -49,7 +49,7 @@ cd .work/wt/original
 TMPDIR=/absolute/path/to/rimage/.work/tmp RUSTC_WRAPPER=kache cargo build --locked --release --features build-binary
 ```
 
-The original has no dist profile. Its release binary is used for runtime configurations, never directly as a stripped/LTO size comparison. SVG remains excluded from parity. The S0 file workload is the historical generic PNG command, with independent dimensions and every RGB sample checked; it is not an OxiPNG-specific workload.
+The original has no dist profile. Its release binary is used for runtime configurations, never directly as a stripped/LTO size comparison. SVG remains excluded from parity. The initial file workload is the historical generic PNG command, with independent dimensions and every RGB sample checked; it is not an OxiPNG-specific workload.
 
 ## Transfer-table tuning
 
@@ -101,4 +101,18 @@ scripts/benchmark-build-cost ORACLE_CHECKOUT
 /usr/bin/time -l target/dist/rimage convert benchmarks/resource-rgb.png --lossless -o RESULT.png --quiet
 ```
 
-Native Linux timing, stable short-workflow comparisons, JPEGli/eight-bit external AVIF comparisons, physical clean macOS builds and allocation/copy totals remain Needs environment. All functional and actual-byte fidelity checks are complete locally.
+## Remaining proofs
+
+These measurements need the stated environments. Existing results apply to their recorded source and supported fixtures; they do not establish correctness for every accepted image representation.
+
+Optional implementation and dependency changes need a reproducible benefit beyond observed spread. Reject regressions above 10% in median runtime, build time, release size or peak RSS unless a required correctness capability justifies the cost. Record those costs explicitly. Compare equivalent completed workflows; a multi-candidate optimizer is not equivalent to one legacy encode.
+
+| Proof | Prerequisite and retry |
+| --- | --- |
+| Native Linux timing | Dedicated stable x86-64 and ARM64 hosts. Run `make benchmark-run` and `make benchmark-verify`; require five interleaved completed cases, passing load gates, and medians separated from spread before claiming an ordering. Emulated functional execution is not native timing. |
+| Stable startup, file and batch comparisons | A quiet host and immutable normal-dist binaries. Run `scripts/benchmark-workflows ORACLE_BINARY CURRENT_PRODUCTION_BINARY`; retain correct outputs and report inconclusive differences when spread overlaps. |
+| Physical clean macOS build | macOS ARM64 without third-party native build tools. Run `make pure-rust-build-check`, inspect its empty native-tool log and `otool -L`; require OS-only linkage. |
+| JPEGli and external eight-bit AVIF comparisons | Install those tools and validate command adapters before extending `examples/benchmark.rs`. `make benchmark-run` does not discover new tools automatically. Rerun verification and retain failures alongside actual decoded scores and dimensions. |
+| Allocation and copy totals | An environment where Instruments can attach. Run `xcrun xctrace record --template Allocations --no-prompt --time-limit 30s --output .work/tmp/allocations.trace --launch -- target/dist/rimage convert benchmarks/corpus/generated/large.png --score 95 --effort fast -o .work/tmp/profile.webp --quiet` with fresh output names. Require an attached trace and attributed counts for completed work; unsupported zero counters are not measurements. |
+
+AVIF alpha, monochrome, high depth/HDR, grids and unsupported display transforms are product refusals, not deferred environment proofs. Their retry conditions belong in [AVIF support](docs/AVIF.md). Open implementation defects belong in [TODO.md](TODO.md).
