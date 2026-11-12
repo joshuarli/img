@@ -355,6 +355,15 @@ cargo build --all-features
 make test
 ```
 
+For Linux testing with the Alpine musl toolchain:
+
+```sh
+docker build -t rimage-linux .
+docker run --rm -v "$PWD:/rimage" -v rimage-linux-target:/rimage/target rimage-linux
+```
+
+The image installs the toolchain from `rust-toolchain.toml`. Rebuild the image after changing it.
+
 ## Contributing
 
 Read the [contribution guide](CONTRIBUTING.md) for build instructions and guidelines.
