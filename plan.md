@@ -2,771 +2,198 @@
 
 ## Status
 
-- Goal: deliver still-image JPEG, PNG, WebP, and AVIF conversion and verified perceptual optimization.
-- Baseline: `ed310366d1129d57ad3901404789d48f28fbfcd0`; no campaign slices accepted, red, or parked.
-- Next: S0. Use `cargo test --all-features --bin rimage cli::command::tests` as the first check.
-- Foundation evidence: `make test` passed at `a1e434b` on macOS ARM64 and in the Alpine Linux ARM64 image; the subsequent error-classification change passed its focused parser tests. A standalone probe using published `zenavif 0.1.6` with `encode` decoded, encoded, and decoded the existing 48×80 AVIF fixture. `fast-ssim2 0.9.1` gave 100 for identical 16×16 RGB images and a lower score for a changed image. These probes do not establish color, alpha, lossless, or independent metric parity.
-- Ready for S0 after a separate explicit request to execute this campaign.
+- Goal: still-image JPEG, PNG, WebP, and AVIF conversion and verified perceptual optimization.
+- Accepted preparation: SVG removal at `2708512`. Campaign S0–S11: none accepted, red, or parked.
+- Next: S0. First command: `cargo test --locked --all-features --bin rimage cli::command::tests`.
+- Launch requires a separate execution request. No campaign implementation is authorized by this plan.
+- Foundation: current macOS ARM64 tests pass. Published AVIF encode/decode and metric discrimination probes pass. Independent metric, color, alpha, and matched-quality proofs remain outstanding.
 
 ## Charter
 
-Work unattended within the execution grant. Decide ordinary engineering choices and record only decisions a later slice needs. An agent-authored plan grants no authority. Never push, publish, deploy, purchase a license, or run a formatter as part of this campaign. Keep worktrees under `.work/wt/` and scratch under `.work/tmp/`. Preserve the pinned Rust nightly unless the owner explicitly changes it.
+Decide ordinary engineering choices and continue within the owner's execution grant. Record only decisions later slices depend on. A plan does not grant missing authority. Never push, publish, deploy, purchase, edit CI, run formatters, or change the pinned nightly.
 
-Keep the integration branch green. Run one writer at a time: every implementation slice shares the manifest, lockfile, CLI, or image pipeline. A separate read-only research lane may run alongside a writer without changing those files. Follow `orchestrate` for any lane and run its parent steering checkpoint after every accepted slice, on resume, and after two failures. The coordinator may change methods and slice order if the contracts and proofs stay intact.
+Use one writer. Every slice shares pipeline, manifest, or test contracts, so no parallel implementation pairs qualify. Optional read-only research must follow the installed `orchestrate` skill. Use its campaign mechanics and parent steering checkpoint (installed skill reference: `orchestrate/references/campaigns.md#parent-steering-checkpoint`) after every accepted slice, on resume, and after two failures. The coordinator may change tactics and subdivide items while preserving contracts, prerequisites, and proof. Put worktrees in `.work/wt/<slice>`, scratch in `.work/tmp`, and ignore `.work/` through `.git/info/exclude` before writing. Set `TMPDIR` to that scratch directory and use `RUSTC_WRAPPER=kache`. Linux musl links with mold.
 
-Run the item command and the narrow affected tests before each commit. Run `make test` at the codec, optimizer, and close milestones. Reproduce failures and establish the cause before retrying. After two failed attempts on the same cause, park that item with its cause and retry condition, then continue independent items. Park irreversible or outside-repository actions and an item whose verification loop cannot run. Keep unavailable host-specific proof in **Needs environment**.
+Each item ends with one local acceptance command and the narrowest affected suite on the integrated tree. Commands for future targets below are implementation deliverables, not commands available today. Use `--locked` after deliberate dependency resolution. Run `make test` at S5, S8, and S11. Keep integration green. Commit verified slices as Conventional Commits with workstream scope and item ID in the body. Do not commit red work to integration.
 
-Fix a defect encountered on the path in a separate commit when it loses or corrupts user data, violates a supported output contract, or makes a named acceptance command fail. Record lesser unrelated issues without expanding the slice. Preserve useful tests. Add regression tests for observed bugs and do not weaken a test to obtain a pass.
+Reproduce a failure before repair and test one causal hypothesis at a time. After two failed fixes for the same cause, park the item on a preserved branch with cause and retry condition. Continue independent work. A blocked prerequisite parks its dependants. A single coordinator owns shared environment failures. Stop only when local deliverables pass or every remaining item is behind a stated hard stop. A parked local requirement prevents a claim of local completion.
 
-Implement parity and complete behavior before tuning. A measurement does not gate early slices unless the owner states a numeric gate. Before time-based measurements, require `perf-gate-ready` and `perf-gate-ready -1` to pass around each run; discard overlapping runs. If the host stays busy, record `perf gate deferred: host busy`, continue implementation, and do not declare performance or release readiness. Measure binary size and peak memory regardless of host load.
+Fix encountered data loss, supported-output corruption, or acceptance-command failures in separate commits. Also repair an execution check that takes over 180 seconds warm or a small-fixture operation that exceeds its 30-second test deadline. First prove the cause. Bound loop repairs to two attempts and one acceptance command. Record unrelated lesser issues without expanding scope.
+
+Deliver feature and test parity before optimization. Measure early product costs without gating them. Final performance gates follow the installed performance instructions: require `perf-gate-ready` before and `perf-gate-ready -1` after timed runs. Discard overlapping runs. Busy hosts defer performance readiness, not implementation. Memory and artifact-size measurements still run. Never call deferred proof passed.
 
 ## Decisions
 
-- **Owner:** target macOS ARM64, Linux x86-64, and Linux ARM64. Remove Windows support. Static Linux musl is a separate goal, not a reason to mislabel a dynamically linked build.
-- **Owner:** select the AGPL-3.0 open-source path for the Imazen codecs. Preserve rimage's existing MIT/Apache attribution and upstream license notices. Audit the resolved production graph and state the combined distribution's license accurately. Do not assume a commercial license.
-- **Owner:** remove the old `--metadata` JSON file report. The future `--json` command output is a distinct machine-readable result on stdout; it must not recreate that report or write a JSON file implicitly. Use one object with `schemaVersion: 1`, `results`, and `failures`. Each result records input, output, format, bytes, score when applicable, and elapsed time. Reject non-UTF-8 paths in JSON mode with a clear error instead of changing their bytes.
-- **Owner:** replace the codec-first commands with `optimize`, `convert`, `inspect`, and `compare`. Remove old commands and aliases at the CLI cutover. Keep the previous executable as a test oracle until its retained behavior has been exercised.
-- **Prescribed:** keep same-format optimization from producing a larger result. If no candidate wins, leave an in-place source unchanged or copy its bytes to the new output. `convert` honors its requested format even when larger. Refuse an existing destination unless it is the source explicitly authorized by `--in-place`; do not follow a destination symlink when replacing it.
-- **Prescribed:** `--lossless` conflicts with `--score` and explicit lossy `--quality`. `--quality` conflicts with `--score`. Reject unsupported lossless, animation, HDR, bit-depth, alpha, or color transformations with a named error. Never flatten alpha or truncate precision silently.
-- **Prescribed:** `--format auto` evaluates only formats that preserve required alpha, precision, and color semantics. Select the smallest candidate whose decoded bytes score at least the requested threshold. Break equal-size ties by higher score, then by the stable format order JPEG, PNG, WebP, AVIF, then evaluation order. If none qualifies, preserve the source for same-format optimization and fail conversion without publishing output.
-- **Prescribed:** accept finite scores from 0 through 100; default to 95. The default search budget is at most 8, 24, or 64 encoded candidates per image for `fast`, `balanced`, or `best`. Search need not be monotonic. Record the evaluated candidate, bytes, score, and encoder settings; choose deterministically on ties. Do not expose a separate budget option until a concrete caller requires it.
-- **Prescribed:** require an output format when writing binary output to stdout. Sniff stdin bytes for the input format. Keep binary stdout free of logs, progress, and JSON. Reject conflicting output flags, including an explicit format that disagrees with the destination extension.
-- **Prescribed:** process files with bounded concurrency and disable nested codec threading by default. A candidate owns its buffers and temporary output. On failure or cancellation, clean up unpublished files and retain the original. Use destination-directory temporary files and atomic publication; test symlinks, existing files, errors, and interruption on real filesystems.
-- **Delegated:** choose compatible published codec versions first. Enable only features needed for a supported path. Use a coherent pinned Git revision only if a published release cannot meet a named acceptance case. Inspect licenses, transitive dependencies, native code, binary size, and build and runtime costs before accepting each dependency. Do not update the nightly to make a dependency compile.
-- **Delegated:** compare a small concrete codec interface with the published `zencodec` API at S1. Use `zencodec` only when it reduces the adapters and preserves the required types; otherwise use a local enum. Choose from running examples and tests, not a framework preference.
-- **Prescribed:** for metric validation, compare fixed decoded pixels against an independent SSIMULACRA2 implementation. Record its version and input conversion. Require a maximum absolute score difference of 0.05 on the controlled SDR corpus. Investigate discrepancies rather than silently widening the tolerance. The identity probe above is not independent validation.
+### Source requirements
+
+These requirements come from the supplied draft. They are binding product intent, not new owner answers or authority to execute.
+
+- Support macOS ARM64, Linux x86-64, and Linux ARM64. Remove Windows support. Static Linux musl is a separate best-effort artifact, never a label for a dynamically linked build.
+- Use the AGPL-3.0 open-source path for selected Imazen dependencies. Preserve upstream MIT/Apache notices. Audit resolved licenses and describe the combined distribution accurately. No assumed commercial license.
+- Replace codec-first commands and aliases with `optimize`, `convert`, `inspect`, and `compare`. Remove the old surface at S9. The already removed `--metadata` JSON file report stays removed.
+- No third-party C/C++ codec or color-management runtime. No normal production build requiring libclang, CMake, NASM, pkg-config, or system codec packages. OS runtime interfaces remain allowed.
+- JPEG, PNG, WebP, and AVIF are the final format scope. No implicit resizing, alpha flattening, precision reduction, HDR tone mapping, or first-frame extraction.
+
+**Owner, 2026-11-11:** remove SVG support and its dependencies before the rewrite. Implemented at `2708512`. SVG is outside parity; do not restore its fixtures or reference implementation.
+
+### Prescribed contracts
+
+- Ordinary `optimize` keeps the source format. Default score is 95 and effort is `balanced`. Explicit `--quality` selects direct encoder control without a score guarantee. It still decodes and validates output. `--quality` and `--score` conflict. `--lossless` conflicts with both explicit flags and with resizing.
+- Same-format optimization publishes only strictly smaller candidates satisfying all requested transformations. Otherwise preserve source bytes, in place or copied to a new destination, **only when those bytes satisfy the request**. A request to strip metadata cannot fall back to bytes containing that metadata. If no smaller compliant result exists, fail without publishing. Conversion honors its requested format even when larger. Convert uses score 95 unless explicit quality or lossless selects another mode.
+- A source-byte fallback is an explicit unchanged result, not an encoded candidate with a fabricated score. Its identity score may be reported only when scoring that source representation is supported.
+- `--format auto` is optimize-only. It considers compatible formats, including the source as an identity option. Choose the smallest qualifying evaluated output. Tie-break by score, then JPEG, PNG, WebP, AVIF, then evaluation order. No unsupported alpha, precision, or color path is eligible. PNG exact candidates count within the budget.
+- Accept finite requested scores in [0, 100]. Actual SSIMULACRA2 scores can be negative; never clamp measured scores. Reject nonfinite metric results. A score is not a claim of human indistinguishability.
+- Candidate caps are 8, 24, and 64 encodes per image for fast, balanced, and best, across all formats and refinements combined. Do not assume monotonic quality. Cache reference preparation; score each candidate only after decoding its actual encoded bytes. Record evaluated settings, size, score, and encode time. No separate budget flag in v1.
+- Lossless means exact decoded sample equality, including hidden RGB under zero alpha, channel precision, and alpha. Compare expanded palette samples rather than palette indices. Preserve orientation and color interpretation. No decode/re-encode JPEG called lossless: same-format lossless JPEG copies original bytes unless a tested coefficient-preserving implementation exists. Unsupported cross-format or AVIF lossless modes fail explicitly.
+- For scored lossy paths, prepare orientation-correct SDR sRGB references, using floating-point intermediates for color management. Treat alpha separately: require exact decoded alpha, and score composites on both black and white using the same linear-light preparation. Use the lower score. Never publish a flattened composite. This conservative v1 rule prevents unnoticed alpha damage and arbitrary hidden-RGB scoring.
+- Support 8-bit SDR scoring first. Preserve 16-bit PNG in exact lossless paths. Reject scored high-bit-depth, HDR, unrecognized color signaling, or unsupported profiles until independently validated. Inspect must still describe their headers when safely readable. No silent gamut clipping. Non-sRGB content may be preserved with its profile for exact paths; reject lossy transformations that cannot preserve its semantics.
+- Preserve grayscale where the destination can represent it. An explicit conversion to an RGB-only format may expand gray to equal RGB channels without reducing precision. JPEG rejects nonopaque alpha. For other unsupported combinations, return a named error.
+- Default metadata policy is keep. Preserve ICC/CICP, orientation semantics, EXIF, and XMP where representable. Emit warnings listing cross-format metadata losses. Strip removes ancillary private metadata; retain required color signaling. Normalize orientation once when stripping orientation tags. If exact sample preservation prevents normalization, reject the lossless strip request. JPEG byte-copy fallback cannot satisfy stripping.
+- Plan all destinations before writing. No overwrites except the source explicitly selected by `--in-place`. Refuse destination symlinks and directories. Reject symlink inputs and symlink traversal entries; do not follow directory cycles. Detect hard-link aliases to sources and duplicate outputs before publishing. Do not use lossy path strings as identity keys.
+- Publish each file atomically from a destination-directory temporary file with exclusive creation. New destinations require atomic no-clobber publication, not exists-then-rename. In-place replaces only the authorized source and detects source identity changes. Flush and sync file data before publication. Sync the parent directory for replacement durability where supported. Distinguish a committed output with a later durability error from an unpublished failure.
+- Output is a per-file transaction; batches are best effort, not globally atomic. Keep completed results, report every failure, and remove unpublished temporary files on errors. Cancellation stops admission, cancels codec work where supported, joins workers, cleans unpublished files, and preserves already published results. Graceful INT, TERM, HUP, and QUIT terminate with signal semantics. Use async-signal-safe fatal handlers to restore signal disposition and re-raise; fatal cleanup must not allocate or lock. Do not promise cleanup after SIGKILL or power loss; never delete unknown temporary files on restart.
+- Preserve numeric exit categories 0 success, 2 usage, 3 input, 4 output, 5 mixed/partial. Existing mixed input/output failures with zero successes also return 5; retain this convention and document it. Score failure and unsupported input are input errors; candidate-encode or publication failures are output errors. Compare reports a score and succeeds; it does not silently introduce a pass/fail threshold.
+- New code exposes operation capabilities, not codec implementation details. Keep parser and search internals private. Use concrete types or enums for format, validated score, effort, pixel representation, encoding mode, and publication mode. Resolve process globals once and keep selection logic separate from I/O. No plugin registry or generalized pipeline framework.
+
+### Bounded executor choices
+
+- Prefer compatible published releases. Pin the resolved lockfile and explicitly document Git revisions only when a published API cannot meet a named case. Do not import upstream workspace patch tables or vendor entire repositories. Inspect maintenance, licenses, transitive weight, native build scripts, duplicate codecs, and feature unification.
+- Evaluate `zenjpeg`, `zenwebp`, `zenpng`, `zenavif`, and `fast-ssim2` first. Use `moxcms` for color management if its verified supported profiles meet the corpus. Keep existing `fast_image_resize` for resizing. Use `zenpixels`, conversion helpers, a pure-Rust quantizer, or Rayon only for a concrete accepted path. No `zenpipe`, `zenpicker`, or `zenanalyze` without demonstrated adapter reduction and the same dependency gates.
+- At S1, compare a small concrete codec enum with published `zencodec` using one running adapter. Adopt the latter only if it reduces code and preserves required contracts. Prefer the smaller local enum on a tie. Keep useful `zune-image` operations initially; migrate pixel storage only for measured conversion savings or a required capability.
+- At S0, capture build time, release binary size, startup, runtime, and RSS baselines. Dependencies must stay within the final comparison gates below. Before S0 has release numbers, record costs without inventing numeric baselines. No nightly update to rescue compatibility.
+- Candidate scheduling and codec effort mapping are executor choices within the global caps. Evaluate a fixed coarse quality grid before deterministic local refinement. Reserve at least one attempt for every eligible format. Favor lower code and memory cost on equal compression results.
+- Default jobs is 1; `--jobs N` is positive and bounded by available CPUs and the memory reservation model. Never run multiple candidates from one image concurrently initially. Disable codec-internal threading. Queue at most twice the worker count, with blocking backpressure.
+- Derive numeric input, pixel, metadata, and memory ceilings at S1 from the existing limits and codec requirements. Never leave the limits feature as the only protection against arithmetic overflow or unbounded stdin. Use checked dimension/stride arithmetic and reject before allocation. No new public tuning flags unless a real fixture needs one.
+- No compatibility aliases or shims for deleted commands or formats. Update affected exports, feature flags, call sites, tests, and docs in the same slice. Preserve unrelated library contracts; park any additional breaking library change not implied by the enumerated codec/format removals.
 
 ## Baseline and loop
 
-The current binary uses lexopt and supports codec-first commands. The library still links native MozJPEG, libwebp, dav1d, and lcms2 on enabled paths. `Cargo.toml` also retains image metadata support; that is separate from the removed JSON report. The README claims MIT/Apache licensing, but this checkout has no license files; S0 must inspect the original upstream notices before changing the distribution license. The Alpine image currently links the system dav1d shared library and is not a static production release.
+The implementation baseline is `2708512`, with lexopt, native MozJPEG, libwebp, dav1d, and lcms2 paths, plus TIFF and other formats still exposed through zune-image. SVG and its font/rendering graph are gone. `metadata` remains image metadata support, separate from the removed JSON file report. There are no independent scoring tests, optimizer, operation-first commands, or benchmark targets yet.
 
-At preflight, the focused parser check took 0.45 seconds wall time on a warm macOS ARM64 build. This is a single loop measurement, not a performance comparison. `make test` passed at `a1e434b` on macOS ARM64 and Linux ARM64. Use initial commit `66fc0fc` as the original rimage codec baseline and `ed31036` as the retained-behavior oracle. The initial commit fails to build because its Windows-only `build.rs` imports undeclared `winresource`. In a disposable baseline worktree, remove that script and its manifest entry, record that minimal patch with the benchmark commands, and make no other baseline changes. Identify future codec versions in the benchmark report; do not treat debug-binary sizes as a release-size result. No independent score oracle or matched-quality benchmark has yet passed.
+`src/runtime.rs` has destination-directory temporary files and rename publication. It does not yet implement the planned atomic no-clobber contract. It also derives path keys through lossy lowercase strings. Existing tests protect backup collisions, recursion, timestamps, and single-thread deadlock. Preserve those guarantees while replacing their mechanisms.
+
+`src/lib.rs` documents current AVIF limitations: still-only, 10/12-bit decoded to 8-bit, ICC not applied. Treat these as known fidelity debt, not reference behavior to preserve. Some encoder tests currently accept multiple frames; the final still-only contract deliberately supersedes those expectations. Retain useful still-image coverage.
+
+Local preflight evidence on macOS ARM64:
+
+| Check | Result | Wall time |
+| --- | --- | --- |
+| Parser: `cargo test --locked --all-features --bin rimage cli::command::tests` before SVG removal | 5 passed | 0.32 s warm |
+| `cargo test --locked --all-features --test cli` after removal | 5 passed, including unsupported-vector safety | 5.57 s including compilation |
+| `make test` after removal | 247 passed: 127 library, 106 binary, 14 integration | 9.64 s including compilation |
+| `cargo check --locked --no-default-features --features build-binary` | Passed; existing unused-anyhow warning | 4.96 s including build-lock wait |
+| Isolated AVIF and metric probe, published `zenavif 0.1.6` with only `encode`, `fast-ssim2 0.9.1` | AVIF 48×80 decode/encode/decode; identity 100, changed pixels lower | 5.40 s including compilation |
+
+These are loop observations, not speed comparisons. The isolated probe proves a basic published API path on the pinned nightly, not independent decode, licenses of the final graph, alpha, color, losslessness, or absence of native build tools on every host. Recreate these probes as durable tests during their slices; scratch is not acceptance evidence.
+
+Use `66fc0fc` for the original codec benchmark only. Its build script imports undeclared winresource even on non-Windows hosts. In a disposable worktree, remove that script and its manifest entry, record the exact patch and commands, and make no other baseline changes. Use `2708512` as the retained-behavior oracle. Do not restore SVG for parity. The current README asserts MIT/Apache licensing, but no license files are checked in; verify upstream notices and provenance at S0.
+
+The Alpine Dockerfile provides a native-dependency test environment, not a static release proof. It sets `-crt-static`, links system dav1d, and installs native toolchains. Do not use its installed tools as evidence that the final build needs none. No current Linux proof is claimed by this preflight.
 
 ## Sequence
 
-All slices below own their named paths plus the relevant manifest, lockfile, and focused tests. Shared paths make the slices serial. Each command is the minimum local acceptance check for that slice; create the named test target with the implementation rather than adding a test that only checks existence. Record real failing cases before fixing them. Commit each passing slice with a Conventional Commit; put the slice ID in the body.
+All items run serially. Each owns its named files, relevant manifest/lock entries, and focused tests. Sizes S/M describe an intended small/medium end-to-end slice; split any item whose focused command cannot finish within 180 seconds warm. S0 adds only the first behavior pilot, not a full evaluator as an entry fee.
 
-| ID | Size | Prerequisite and owned paths | Deliverable and acceptance command |
+| ID | Size | Prerequisites; ownership | Deliverable; local acceptance |
 | --- | --- | --- | --- |
-| S0 | S | Baseline; `tests/`, `benches/` | Capture the retained behavior matrix for parsing, file safety, metadata, color, alpha, precision, and exit codes. Pin the runnable baseline and its fixtures. Add the smallest representative benchmark pilot and a `make baseline-check` target that executes its correctness checks and the retained behavior matrix. `make baseline-check` |
-| S1 | M | S0; `src/cli/`, `src/runtime.rs`, `src/codecs/` | Establish a typed still-image boundary, resource limits, and one path for publication. Preserve retained behavior before removing unsupported formats. `cargo test --all-features --test codec_boundary` |
-| S2 | M | S1; `src/codecs/`, `src/cli/pipeline.rs` | Integrate pure-Rust JPEG decode and encode. Test progressive, grayscale, alpha rejection, metadata, and independent decode. `cargo test --all-features --test jpeg_codec` |
-| S3 | M | S1; `src/codecs/`, `src/cli/pipeline.rs` | Integrate pure-Rust WebP lossless and lossy paths. Verify decoded samples for lossless and alpha for both. `cargo test --all-features --test webp_codec` |
-| S4 | M | S1; `src/codecs/`, `src/cli/pipeline.rs` | Integrate PNG and strict sample-equality paths. Keep OxiPNG until S10 establishes whether its measured advantage earns it. `cargo test --all-features --test png_codec` |
-| S5 | M | S1; `src/codecs/`, `src/cli/pipeline.rs` | Integrate AVIF decode and encode without native decoder or encoder libraries. Verify unsupported precision and animation fail explicitly. `cargo test --all-features --test avif_codec` |
-| S6 | M | S2–S5; `src/operations/`, `src/codecs/` | Replace native color management; preserve or reject ICC, CICP, orientation, alpha, grayscale, and bit depth as the product contract requires. `cargo test --all-features --test color_fidelity` |
-| S7 | M | S6; `src/` scoring code | Implement cached-reference scoring and independent-oracle comparison with the declared tolerance. Test mismatched dimensions, alpha policy, small images, and color conversion. `cargo test --all-features --test perceptual_score` |
-| S8 | M | S7; `src/` optimizer | Implement bounded candidate evaluation over actual encoded-and-decoded bytes. Test non-monotonic scores, no qualifying candidate, deterministic selection, strict lossless, never-bigger, and publication failure. `cargo test --all-features --test optimizer` |
-| S9 | M | S8; `src/cli/`, `src/runtime.rs`, `README.md` | Deliver operation-first commands, explicit paths, batch and stream behavior, documented JSON stdout, exit codes, and metadata policy. Remove the retired codec-first surface. `cargo test --all-features --test cli` |
-| S10 | M | S9; `benches/`, `BENCHMARKS.md` | Measure matched-quality codec candidates and real workflows. Audit native production dependencies, duplicated codecs, binary size, build time, CPU, allocations, peak RSS, and concurrency. Retain or remove OxiPNG based on the measured Pareto tradeoff. `make benchmark-verify` |
-| S11 | M | S10; all affected source and docs | Remove retired implementations and unused dependencies. Exercise the final suite, license audit, supported hosts, and independent decoding. Run the ultrareview procedure and fix supported P1/P2 findings before close. `make test` |
+| S0 | S | Baseline; `tests/`, `benches/`, `Makefile`, licensing docs | Pin oracle, capture retained behavior pilot and goldens, establish provenance, add one real benchmark workload. `make baseline-check` |
+| S1 | M | S0; `src/codecs/`, `src/cli/pipeline.rs`, `src/runtime.rs`, `src/limits.rs`, `src/error.rs`, `src/exit.rs` | Typed still-image boundary, mandatory resource bounds, one publication path. Tests exercise actual no-clobber and replacement behavior. `cargo test --locked --all-features --test codec_boundary` |
+| S2 | M | S1; JPEG adapter, pipeline | Pure-Rust JPEG encode/decode; progressive and grayscale, metadata, corrupt input, alpha rejection, independent decode. `cargo test --locked --all-features --test jpeg_codec` |
+| S3 | M | S2; WebP adapter, pipeline | Pure-Rust lossy/lossless WebP; exact samples and hidden RGB in lossless, exact alpha in both, animation rejection. `cargo test --locked --all-features --test webp_codec` |
+| S4 | M | S3; PNG adapter, pipeline | PNG exact samples, indexed, grayscale, alpha, 16-bit and explicit palette-lossy path. Keep OxiPNG pending S10. `cargo test --locked --all-features --test png_codec` |
+| S5 | M | S4; AVIF adapter, pipeline | Pure-Rust AVIF decode/encode; explicit precision, grid, animation, alpha, and color support/refusal. `cargo test --locked --all-features --test avif_codec`; milestone `make test` |
+| S6 | M | S5; `src/operations/`, codec metadata paths | Replace lcms2; execute metadata/color/orientation/alpha/gray/depth matrix, including resize. `cargo test --locked --all-features --test color_fidelity` |
+| S7 | M | S6; scoring module | Cached-reference metric, black/white alpha policy, dimensions and tiny-image behavior, fixed pixel oracle fixtures where available. `cargo test --locked --all-features --test perceptual_score` |
+| S8 | M | S7; optimizer module | Deterministic bounded search over actual encoded bytes, direct quality and strict lossless modes, auto selection, compliant fallback, publication failures. `cargo test --locked --all-features --test optimizer`; milestone `make test` |
+| S9 | M | S8; CLI, runtime, README, library docs | Complete operation-first commands, batch/streams, JSON, exit codes, signals, metadata policy. Delete old commands, aliases, unsupported formats and feature paths. `cargo test --locked --all-features --test cli` |
+| S10 | M | S9; `benches/`, `BENCHMARKS.md`, dependencies as justified | Matched-quality workflow tuning, graph audit, size/build/RSS/CPU/allocation/copy costs, OxiPNG decision. `make benchmark-verify` validates outputs and saved measurements without requiring unavailable external tools |
+| S11 | M | S10; affected source, tests and docs | Remove dead implementations/dependencies, complete license and native-graph audits, update docs, run installed ultrareview procedure and fix demonstrated P1/P2 issues. `make test`; final checks below |
+
+S0's `make baseline-check` must run an end-to-end PNG encode with independently checked dimensions/samples, parser failure and backup-safety pilot, and the benchmark workload's correctness path. Add the parity matrix incrementally in `tests/parity.md`: each behavior is retained, intentionally changed with a reason, or open, with its fixture and test. Cover parsing, errors, side effects, traversal/globs/file lists, metadata, color, alpha, precision, exit aggregation, timestamps, and resource limits. Run reference and port on the same corpus. Normalize only genuine nondeterminism. No open retained behavior at close.
+
+Codec and optimizer tests share small checked fixtures rather than one test per private helper. If a named independent decoder is unavailable, preserve locally executable sample/property tests and move only external verification to Needs environment. Never relabel self-round-tripping as independent proof.
 
 ## Acceptance
 
-The work is complete locally only when every S0–S11 proof passes on the integrated tree and all of these conditions hold. Full release readiness additionally requires the applicable proofs in **Needs environment**:
+### CLI contract and proof at S9
 
-- JPEG, PNG, WebP, and AVIF decode and encode on the selected pure-Rust production graph. Verify enabled features and native build scripts, not just direct dependencies. JPEG XL, TIFF, SVG, animated images, and the other out-of-scope formats are rejected or removed as described below.
-- The requested CLI commands and examples work. Inputs are never overwritten without `--in-place`. Batch partial failures, paths with whitespace and non-UTF-8 bytes, symlinks, permissions, output collisions, stdin/stdout, and interruption have behavior tests.
-- Lossless means decoded sample equality under the documented representation and metadata policy. Unsupported lossless output fails. JPEG lossless optimization preserves original bytes unless a genuinely coefficient-preserving implementation is proven.
-- Every lossy winner is decoded from its actual encoded bytes and meets the target when compared to the correctly prepared reference. The selection is the smallest qualifying evaluated candidate. Alpha, orientation, ICC/CICP, transfer function, bit depth, and dimensions are handled explicitly.
-- The benchmark harness covers the corpus and measurements in **Benchmarks** at matched dimensions and quality, with at least three practical score bands. `BENCHMARKS.md` includes reproducible commands, versions, results, spread, and limitations. Compare a real improvement, a real regression, and an unchanged consumer before treating a gate as meaningful.
-- The parser, codec, path, and optimizer boundaries have bounded fuzzing or property tests for malformed inputs and arithmetic limits. Confirm the new reference-parity tests fail when a representative port behavior is intentionally broken.
-- `make test` passes. Run relevant local compiler and lint checks without running a formatter or modifying CI. Report the repository, branch, final commit, architecture, removed dependencies and features, selected codec versions, CLI examples, exact checks, benchmark and binary-size results, production graph and licenses, supported host proofs, open environment needs, and deliberate contract changes. Do not call the work complete while a local acceptance item is parked.
+`cargo test --locked --all-features --test cli` must spawn the real binary and check these behaviors:
+
+- `rimage optimize photo.jpg` writes `photo.optimized.jpg`. `--in-place` alone authorizes replacing the source; it conflicts with explicit output and out-dir.
+- `rimage optimize photo.jpg --format auto --score 90` chooses a compatible winner and writes `photo.optimized.<winner-extension>`. Auto conflicts with explicit `-o` and in-place. Batch out-dir is allowed and preserves the source extension in the stem, e.g. `photo.jpg.optimized.webp`, to avoid cross-format stem collisions.
+- `rimage convert photo.png -o photo.webp` infers format. Explicit format must agree with the destination extension. Convert without explicit output uses `<stem>.converted.<format>` and requires format. `--format auto` is rejected by convert.
+- `rimage convert photo.jpg --max-dimension 2048 -o photo.webp` preserves aspect ratio, never enlarges, and compares against the canonical resized reference. Reject zero or overflowing dimensions. No implicit resize elsewhere.
+- `rimage optimize diagram.png --lossless`, `--score 95`, direct `--quality`, and `--effort fast|balanced|best` obey the decisions above. Direct quality is finite [0,100] and maps to documented per-codec settings, not equivalent cross-codec fidelity. Reject direct quality for lossless-only paths.
+- `rimage optimize ./images --recursive --out-dir ./out --jobs 8` traverses regular supported files in stable native-path order. Require out-dir or in-place for directory or multiple-file inputs. Without recursive, visit only immediate files. Exclude the output subtree. Unsupported explicit files fail; unrelated extensions discovered in directories are skipped, recognized animations fail. Empty input sets are usage errors.
+- Support explicit file lists and shell-expanded paths. Retain tested glob/file-list behavior until its matrix entries are deliberately resolved. Do not introduce shell command evaluation.
+- Support `-o/--output`, `--out-dir`, `-j/--jobs`, `--format`, `--lossless`, `--score`, `--quality`, `--effort`, `--recursive`, `--quiet`, `--verbose`, `--json`, and `--strip-metadata`. Keep `--preserve-timestamps` on file outputs. Quiet and verbose conflict. Good command help and invalid-combination tests are required.
+- Sniff stdin input bytes. Accept `-` for one input and `-o -` for binary stdout only with a concrete explicit format. Reject batch stdout, in-place stdin, JSON plus binary stdout, auto stdout, and output/out-dir conflicts. Diagnostics and progress use stderr. Buffer stdout candidates before emitting a verified winner; downstream broken pipes are output failures.
+- `inspect` reads dimensions, format, precision, alpha, profiles, orientation and animation flags without changing files. `compare original.png optimized.webp` scores matched dimensions using the same canonical preparation and alpha policy; mismatches and unsupported scoring representations fail.
+- JSON is one stdout object: `schemaVersion: 1`, `results`, `failures`. No implicit report file. Results have `input`, nullable `output`, `format`, `inputBytes`, nullable `outputBytes`, nullable `score`, `elapsedMs`, `status` (written, unchanged, inspected, compared), and `warnings`. Inspect adds `image` details; compare adds `reference`. Failures have input, nullable output, stable kind, message, and numeric exitCode. Use null only for inapplicable fields. Arrays follow input order, including concurrent execution. Document one example per command. Reject non-UTF-8 paths in JSON mode before any writes, preserve them in ordinary mode. Consumers may ignore unknown fields; changing existing meanings requires a schema version change.
+
+### Image, file, and metric proof
+
+The S1–S8 commands must cover every supported codec for decode, encode, dimensions, orientation, grayscale, alpha, metadata, precision, corrupt/truncated data, unsupported modes, and resource bounds. Exercise boundary sizes and checked arithmetic with fixed-seed property cases; no new elaborate fuzzing framework. Use independent decoders for output validity where available.
+
+The scoring corpus includes tiny images, gradients, text, photos, transparent edges, unusual profiles, and explicit resizing. Define tiny-image handling from the metric's verified minimum dimensions: exact equality returns identity; reject unsupported nonidentical sizes instead of inventing padding. Score the actual decoded candidate. No NaN acceptance, mismatched dimensions, premultiplication artifacts, double orientation, or unrequested HDR conversion.
+
+Independent SSIMULACRA2 validation uses a separately implemented reference on identical prepared SDR pixels. Pin version, input conversion, and fixed goldens. Maximum absolute difference is 0.05 across the controlled corpus. Investigate failures; do not widen tolerance to get green. Separate score-only validation from image-preparation tests. If the oracle is unavailable, local metric behavior can pass but independent validation remains listed as unproven.
+
+Optimizer proof includes non-monotonic quality, cap exhaustion, no winner, deterministic ties, smallest qualifying evaluated output, strict lossless, never-bigger, identity fallback, incompatible strip fallback, and publication failures. Candidate codec quality alone is never evidence of fidelity.
+
+Filesystem proof uses real directories under `.work/tmp`: spaces, punctuation, Unicode, non-UTF-8 bytes, symlinks, hard-link aliases, preexisting destinations and backups, competing destination creation, read-only output directories, short writes, interrupted workers, and source changes before replacement. Permission tests must actually run without privileges that bypass permissions. Completed files survive cancellation; unpublished files do not appear as successes.
+
+Spot-check that parity tests fail on representative wrong output, dropped errors, and off-by-one resource bounds, then restore implementation. Preserve the correct tests.
+
+### Final optimization and close
+
+S10 expands the S0 pilot to a small licensed redistributable corpus: photos, skin/gradients, foliage/textures, screenshots/UI, text/diagrams, line art, flat colors, transparency, grayscale, existing compressed images, large images, ICC profiles, and supported high-bit-depth samples. Generated fixtures are valid for robustness but do not establish photographic compression competitiveness.
+
+Compare original rimage and available MozJPEG, jpegli, cwebp, OxiPNG, and one AVIF encoder as development tools. Never link benchmark tools into production. Compare equal dimensions at actual scores 80, 90, and 95, and verify exact sample equality for lossless. Record source/output bytes and dimensions, actual scores, encode/decode time, peak RSS, parameters, threads, architecture, versions, and failures. Use release/dist binaries only for final measurements.
+
+Use the installed `make-it-fast` and `benchmark-checklist` procedures. Rust benchmark targets use rustybench as a dev dependency with harness disabled. Capture raw machine-readable results plus concise `BENCHMARKS.md` reproduction commands, spread, limitations, wins and regressions. Interleave at least five runs per side; report median and spread and profile the limiting work separately. Include startup, end-to-end optimize, batch throughput, scoring/search overhead, allocation/copy costs, artifact size, and clean versus cached build costs.
+
+There is no owner-specified absolute performance budget. For dependency and optional implementation choices, accept only reproducible benefit beyond observed spread. Reject over 10% median runtime/build regression or over 10% release-size/RSS growth against the same pre-change workflow unless required for a stated correctness capability; document such required costs rather than hiding them. These prescribed comparison gates do not require the new optimizer to match one legacy encode's runtime. Compare equal workloads. Keep OxiPNG only if it improves median PNG bytes by at least 1% at equal exact samples or reduces median runtime by at least 10% without larger outputs, beyond spread; otherwise remove it. Do not retain redundant encoders on branding grounds.
+
+`make benchmark-verify` checks corpus validity, quality/sample constraints, matched dimensions, completed-work counts, saved-result schema and gate arithmetic. Test it against improvement, regression, newly exposed baseline debt, and unchanged consumers. Timed runs are separate from this minutes-long correctness command. Unavailable licensed real corpus, external tools, or quiet hosts go to Needs environment, not a fabricated comparison.
+
+S11 removes native MozJPEG, webp/dav1d bindings, lcms2, JPEG XL, TIFF, peripheral formats, redundant encoders/conversions, unused features/macros/progress dependencies, and dead tests/docs once their retained behaviors are covered. Search source, tests, exports, manifests, scripts and docs for consumers. No compatibility tombstones. Keep one package with a library and binary; no architecture rewrite for aesthetics.
+
+Final local checks: `make test`, `cargo check --locked --no-default-features`, `cargo check --locked --no-default-features --features build-binary`, and `cargo clippy --locked --all-features --all-targets`. Audit `cargo tree --locked -e features`, resolved production licenses, duplicate codecs, native build scripts, and actual binary linkage. Run a build in a clean supported environment without third-party native build tools when available. Do not infer native independence solely from crate names.
+
+Use the installed ultrareview procedure at close. Review boundaries, types, config, effects, errors, concurrency, persisted outputs, input limits, tests, and navigability. Fix demonstrated P1/P2 defects before closing.
+
+Finish with repository, branch, commit, architecture, removed features/dependencies, selected codec versions and licenses, breaking contracts, CLI examples, exact checks, benchmark/size results, limitations, and Needs environment. Local completion requires every local slice green. Release/performance readiness requires its external proofs too.
 
 ## Needs environment
 
-Run and record the final test suite and representative binary-size, peak-RSS, and quiet-host performance checks on Linux x86-64 and macOS ARM64. Linux ARM64 is available through the provided Docker image, but rerun after codec changes. Test static musl release artifacts on each Linux architecture separately and inspect their native linkage. If hardware, an independent score oracle, redistributable corpus images, or a named reference encoder is unavailable, record the exact missing command and continue other slices; do not claim that proof passed.
+These proofs do not hold local implementation open. Record the unavailable prerequisite, exact revision, command, expected result, and retry condition. Turn future commands below into runnable targets in the owning slices.
+
+| Proof | Command and expected result |
+| --- | --- |
+| Final macOS ARM64, Linux x86-64, Linux ARM64 behavior | `make test` on each host; all pass at final revision. Use repo Dockerfile for Linux baseline reproduction. |
+| Pure-Rust normal production build | `cargo build --locked --profile dist --features build-binary` on clean supported hosts without native codec packages/build tools; inspect linkage and build logs. Current Alpine image cannot prove this. |
+| Independent metric | S7 adds `make metric-reference-check` with pinned external oracle; every corpus score within 0.05. Saved goldens keep ordinary local tests offline. |
+| Independent output decoding | S2–S6 add `make decoder-reference-check`; independent dimensions, samples/alpha, and color matrix agree. |
+| Corpus or dedicated encoder unavailable | S10 adds `make benchmark-run` with documented pinned tools and corpus acquisition; actual equal-quality outputs and completed work verified. |
+| Quiet-host performance | `perf-gate-ready && make benchmark-run && perf-gate-ready -1`; interleaved results plus binary size/RSS on supported hosts. Busy host means deferred. |
+| Optional static musl artifacts | `cargo build --locked --profile dist --features build-binary --target x86_64-unknown-linux-musl`, and aarch64 equivalent, using kache/mold and static CRT. Run each artifact and inspect ELF linkage on its target; no dynamic interpreter or shared codec dependencies. |
+
+Independent metric and decoder proof block fidelity claims for unverified cases. Static musl remains best effort. Keep any unsupported target or representation explicit; an environment label cannot excuse a reproducible local implementation failure.
 
 ## Execution boundary and non-goals
 
-Execution is confined to repository files, local tests, local commits, and bounded downloads of source dependencies and benchmark tools. No pushes, release tags, publication, deployment, purchases, external messages, or CI edits are authorized by this document. Document every breaking CLI, API, output schema, license, and format-support change in its slice.
+The campaign, once separately requested, permits repository edits, local commits, bounded dependency/tool downloads, generated test fixtures, and disposable test outputs. It permits replacement only within isolated tests or an explicitly requested runtime `--in-place` invocation. Never process or overwrite the owner's image collection as a test. No external messages or remote state changes.
 
-The product excludes animation, TIFF, SVG, HEIC, JPEG XL, RAW, a GUI, network services, plugins, persistent caches, machine learning, and broad image-processing framework features. Explicitly reject unsupported inputs instead of silently decoding a first frame. Keep the scope and quality invariants below; use them as the detailed reference for the sequence and acceptance above.
+Intentional breaking changes are the operation-first CLI and removal of old aliases/options, Windows support, unsupported format/codec modules and features, corrected precision/color refusals, distribution licensing, and the new JSON schema. Preserve unrelated public library behavior; no speculative broad API redesign. The SVG removal is already authorized and complete.
 
-## Product reference
+Exclude animation, TIFF, SVG, HEIC, JPEG XL, RAW, watermarking, GUI, HTTP server, daemon, plugins, WASM demonstrations, persistent caches/databases, machine learning, new codecs/metrics/resizers, multi-crate frameworks, and generalized DAG execution. Do not confuse palette quantization with strict lossless compression. Favor simplicity, correctness, compression efficiency, performance, and maintainability in that order.
 
-## Product vision
+## Reference
 
-Build the image optimization tool I wish existed:
+Verify resolved versions rather than assuming repository HEAD APIs are compatible:
 
-- One small, fast native CLI.
-- Pure Rust runtime codec stack, with no C/C++ codec dependencies.
-- State-of-the-art JPEG, PNG, WebP, and AVIF support.
-- Both lossless and perceptually optimized lossy compression.
-- Intelligent conversion between formats.
-- Ability to select the smallest output satisfying a measurable perceptual-quality target.
-- Fast startup, efficient memory usage, and strong batch throughput.
-- Reliable, non-destructive file handling.
-- Excellent ergonomics for interactive shell use and automated scripts.
-- No excessive abstraction, framework machinery, or unnecessary dependencies.
-
-The goal is not to implement another ImageMagick, libvips, or generic image-processing framework.
-
-**Optimize for simplicity, correctness, compression efficiency, performance, and maintainability—in that order, without sacrificing substantial performance unnecessarily.**
-
-
-## Dependency and codec strategy
-
-Evaluate and integrate the following Imazen projects.
-
-| Format | Preferred implementation | Requirements |
-|---|---|---|
-| JPEG | https://github.com/imazen/zenjpeg | Encode and decode; progressive JPEG; strong rate–distortion efficiency |
-| WebP | https://github.com/imazen/zenwebp | Lossy VP8 and lossless VP8L encoding/decoding |
-| PNG | https://github.com/imazen/zenpng | Efficient truecolor and indexed PNG; high-effort lossless compression |
-| AVIF | https://github.com/imazen/zenavif | Pure-Rust decode and encode; avoid dav1d/libaom FFI |
-| Perceptual scoring | https://github.com/imazen/fast-ssim2 | SSIMULACRA2, SIMD, cached-reference support |
-| Shared codec types | https://github.com/imazen/zencodec | Use where it actually reduces integration complexity |
-
-Additional dependencies may be used where justified:
-
-- `moxcms` for pure-Rust color management.
-- `fast_image_resize` for resampling.
-- `zenpixels` and `zenpixels-convert` where necessary for efficient codec interoperability.
-- Imazen's `zenquant` or another proven pure-Rust quantizer for indexed PNG.
-- `rayon` for parallel batch processing, if justified by benchmarks.
-
-### Important: Imazen dependency compatibility
-
-The Imazen ecosystem is evolving quickly. Its repositories may contain newer unpublished APIs, pinned cross-repository dependencies, and `zencodec` or `zenpixels` version transitions.
-
-Do not assume that the latest commits across every repository build together.
-
-Instead:
-
-- Prefer compatible published crate releases when suitable.
-- Otherwise use a coherent, tested set of Git revisions.
-- Pin exact revisions and commit `Cargo.lock`.
-- Audit transitive dependencies and duplicate crate versions.
-- Avoid blindly copying entire upstream workspace patch tables.
-- Document each intentionally pinned Git SHA and why it is needed.
-- Avoid vendoring these repositories wholesale unless there is a compelling reproducibility requirement.
-- Keep updating the codecs straightforward.
-
-Do not pull in `zenpipe`, `zenpicker`, `zenanalyze`, or a larger Imazen framework merely because it exists. Evaluate their incremental value first.
-
-Use `zencodec` directly only where its stable abstractions materially simplify the pipeline.
-
-### Licensing policy
-
-The current Imazen codec implementations are generally AGPL-3.0/commercial dual-licensed.
-
-For this implementation, choose the **AGPL-3.0 open-source distribution path**, without assuming that a commercial license has been acquired.
-
-Preserve all original rimage MIT/Apache-2.0 copyright notices and applicable licenses. Do not claim that upstream files have been relicensed or that the combined distribution remains MIT/Apache-only.
-
-Add an accurate licensing explanation and verify the license of every selected dependency.
-
-Do not purchase or subscribe to anything.
-
-## Audit and simplify rimage
-
-rimage is the foundation, not a sacred architecture.
-
-It already has useful separation between codecs and operations, but its CLI and orchestration contain substantial complexity.
-
-Pay particular attention to:
-
-- `src/main.rs` and `src/runtime.rs`
-- `src/cli/pipeline.rs`
-- `src/cli/command.rs`
-- `src/codecs/`
-- `src/operations/`
-- Existing input/output, limits, error, and metadata handling.
-
-Identify code worth retaining versus code that should be removed.
-
-### Keep where useful
-
-- Mature file traversal and glob handling.
-- Unicode-safe path handling.
-- Atomic output writing.
-- File-size and resource-limit safeguards.
-- Existing structured errors and exit-code conventions.
-- Resize operations.
-- Quantization infrastructure where appropriate.
-- Useful tests.
-- Parallel batch processing.
-- Metadata handling that preserves correctness.
-
-### Remove or consolidate
-
-- Native MozJPEG bindings.
-- Native libwebp bindings.
-- Native dav1d integration.
-- lcms2, replacing it with a pure-Rust alternative.
-- Duplicated or redundant encoders.
-- JPEG XL functionality for now.
-- Unnecessary peripheral formats and transformations.
-- Unneeded SVG/font machinery.
-- Redundant CLI commands and aliases.
-- Excessive logging/progress dependencies.
-- Redundant image-buffer conversions.
-- Unnecessary crate features, build dependencies, and macros.
-- Framework-style structures that add indirection without value.
-
-Initial product scope is still-image JPEG, PNG, WebP, and AVIF.
-
-GIF animation, animated WebP, APNG, animated AVIF, TIFF, SVG, HEIC, JPEG XL, RAW development, watermarking, a GUI, HTTP serving, and a persistent daemon are outside scope.
-
-Never silently convert an animation to its first frame. Unsupported animated inputs should fail explicitly.
-
-Audit actual feature utilization before deleting code. Simplicity must come from understanding the implementation, not indiscriminate removal.
-
-## Architecture
-
-Aim for a small number of cohesive subsystems:
-
-```text
-CLI / argument parsing
-         |
-File I/O and batch executor
-         |
-Image processing pipeline
-         |
-Optimization / candidate search
-         |
-Codec adapters + quality metric
-         |
-Pure-Rust codecs and pixel infrastructure
-```
-
-These are conceptual boundaries, not a mandate to create one crate or module per box.
-
-Prefer one Cargo package with a library and a binary unless measurements justify additional crates.
-
-### Codec boundary
-
-Define a small, typed interface representing:
-
-- Supported input/output formats.
-- Lossless and lossy capabilities.
-- Alpha support.
-- Pixel precision and color requirements.
-- Codec-specific quality and effort controls.
-- Encode and decode operations.
-- Resource requirements and errors.
-
-Use enums and concrete types where practical. Avoid unnecessary trait-object hierarchies or runtime registries.
-
-The optimization engine should not know the internal details of JPEG, WebP, AVIF, or PNG.
-
-Where Imazen's `zencodec` already expresses the needed contracts cleanly, use those instead of creating duplicates.
-
-### Pixel representation
-
-Initially preserve the most useful parts of rimage's `zune-image` integration.
-
-Measure whether interoperability with `zenpixels` introduces expensive conversions or copies.
-
-If a `zenpixels`-based representation measurably simplifies the application and reduces memory movement, migrate carefully.
-
-Do not conduct a wholesale pixel-engine rewrite based on aesthetics alone.
-
-Requirements:
-
-- Prefer borrowed pixel views over copying.
-- Avoid unconditional RGBA expansion where unnecessary.
-- Preserve alpha semantics.
-- Preserve grayscale where supported.
-- Preserve higher bit depths instead of silently truncating them.
-- Treat image dimensions and stride calculations as checked operations.
-- Keep lifetime and ownership contracts simple.
-
-Use static dispatch and concrete types where practical; do not pursue zero-copy designs that make ordinary code excessively complicated.
-
-## Perceptual optimization engine
-
-This is the primary new capability.
-
-Use **SSIMULACRA2**, preferably Imazen's accelerated `fast-ssim2` implementation.
-
-The optimizer must search for a compact representation satisfying a perceptual quality threshold.
-
-### Fundamental invariant
-
-Every lossy candidate must be evaluated by decoding its actual encoded bytes and comparing the result against the correct reference image.
-
-Do not estimate quality from encoder settings.
-
-Do not compare numeric JPEG, WebP, and AVIF quality settings directly.
-
-Do not claim that a higher encoder quality setting guarantees a monotonic SSIMULACRA2 score.
-
-### Basic algorithm
-
-1. Decode and validate the source.
-2. Construct a canonical, color-correct reference.
-3. Identify compatible candidate formats and encoder configurations.
-4. Encode candidates.
-5. Decode each candidate.
-6. Measure SSIMULACRA2.
-7. Reject candidates below the requested score.
-8. Retain Pareto-efficient candidates by bytes, score, and effort.
-9. Refine promising quality settings with bounded search.
-10. Select the smallest qualifying output.
-11. Verify the final result and write it safely.
-
-Use fast bracket/binary-style search where appropriate, but allow for non-monotonic quality curves and local refinement.
-
-Avoid exhaustive sweeps over huge parameter spaces.
-
-Cache expensive reference-image preparation across candidate evaluations.
-
-Avoid unnecessarily decoding the original source multiple times.
-
-### Search policy
-
-Implement three effort presets:
-
-- `fast`: few candidates, minimal quality search.
-- `balanced`: strong compression without excessive CPU usage.
-- `best`: more comprehensive search, optimized for output size rather than runtime.
-
-Default to `balanced`.
-
-The user-facing effort setting should map to **computational effort**, not a misleading cross-codec quality number.
-
-Provide an explicit way to cap candidate evaluations or execution budget if useful.
-
-Record the selected codec, quality, effort, score, size, and encode time.
-
-Do not introduce ML models, training pipelines, or complicated image classifiers in v1.
-
-### Perceptual-score correctness
-
-- Score against the source's decoded pixel content in a consistent color space.
-- Honor ICC/CICP metadata and orientation.
-- Never score mismatched dimensions.
-- When resizing is explicitly requested, compare against a canonical resized reference.
-- Handle alpha consistently rather than accidentally scoring arbitrary hidden RGB values.
-- Do not silently flatten alpha-bearing images onto an invented background.
-- Use the metric's documented color and luminance semantics.
-- Validate scoring behavior on small images, gradients, text, photographic detail, and unusual color profiles.
-- Never claim that a numerical score guarantees human-perceived indistinguishability.
-
-Verify `fast-ssim2` against a reference implementation on a controlled corpus, with documented tolerances.
-
-If HDR or unusual bit-depth comparisons are not correctly supported, reject or explicitly restrict those paths until validated.
-
-## Lossless optimization
-
-Lossless must have a strict, testable meaning.
-
-A `--lossless` operation must preserve decoded image samples exactly, subject to the explicitly documented pixel representation and metadata policy.
-
-It must never silently turn into high-quality lossy encoding.
-
-### PNG
-
-Use zenpng as the default candidate.
-
-Explore its high-effort compression modes, filter selection, color-type reduction, indexed encoding, and related lossless optimizations.
-
-Benchmark against OxiPNG, including high-effort modes.
-
-Do not remove OxiPNG merely to achieve uniform branding if it retains a meaningful Pareto advantage. It is already Rust-based.
-
-However, avoid retaining two PNG encoders without a measurable reason. Choose the smallest maintainable implementation that achieves competitive results.
-
-Lossy palette quantization must be an explicit perceptually optimized operation, not part of strict lossless mode.
-
-### WebP
-
-Support both lossless and lossy output using zenwebp.
-
-Benchmark its effort settings.
-
-Preserve transparency.
-
-### JPEG
-
-Ordinary JPEG decode/re-encode is not lossless.
-
-Investigate whether the chosen codec stack supports a genuine DCT-coefficient-preserving JPEG optimization operation.
-
-Only implement it if supported and correctly tested.
-
-Otherwise, strict lossless optimization of an existing JPEG should preserve the original bytes rather than secretly recompressing its pixels.
-
-### AVIF
-
-Support the actual lossless capabilities of the selected pure-Rust encoder, if available and verified.
-
-Do not infer losslessness from a quality setting of 100.
-
-Unsupported lossless modes must fail clearly rather than silently degrade.
-
-## CLI redesign
-
-Replace the codec-first interface with an ergonomic, operation-first interface.
-
-The primary commands should be:
-
-```text
-rimage optimize
-rimage convert
-rimage inspect
-rimage compare
-```
-
-Avoid an explosion of subcommands.
-
-### Desired interface
-
-```bash
-# Optimize in the original format
-rimage optimize photo.jpg
-
-# Explicitly optimize in place
-rimage optimize photo.jpg --in-place
-
-# Strictly lossless optimization
-rimage optimize diagram.png --lossless
-
-# Perceptual quality targeting
-rimage optimize photo.jpg --score 95
-
-# Convert between formats
-rimage convert photo.png -o photo.webp
-
-# Explicit output format
-rimage convert photo.jpg --format avif -o photo.avif
-
-# Find the smallest suitable format
-rimage optimize photo.jpg --format auto --score 90
-
-# Spend more CPU searching for smaller output
-rimage optimize photo.jpg --effort best
-
-# Resize explicitly
-rimage convert photo.jpg --max-dimension 2048 -o photo.webp
-
-# Batch processing
-rimage optimize ./images --recursive --out-dir ./out --jobs 8
-
-# Inspect metadata and dimensions
-rimage inspect photo.avif
-
-# Compare perceptual fidelity
-rimage compare original.png optimized.webp
-
-# Machine-readable output
-rimage optimize photo.jpg --json
-```
-
-These are desired interface contracts, not necessarily the exact internal argument structures.
-
-Implement them consistently, with excellent `--help` output.
-
-### Default behavior
-
-Choose conservative, predictable defaults:
-
-- No implicit resizing.
-- Same-format output unless conversion is requested.
-- Use a high-fidelity SSIMULACRA2 target, initially 95, for lossy optimization.
-- Strictly lossless treatment when `--lossless` is specified.
-- No silent conversion between lossy and lossless semantics.
-- Do not overwrite source files without `--in-place`.
-- For a single-file operation with no output specified, use a predictable `.optimized` filename.
-- For batch operations, require an output directory or explicit in-place mode.
-- Ordinary same-format optimization must not produce a larger output than the original; retain the source when no qualifying smaller candidate exists.
-- `convert` should honor the requested output format even if the result grows.
-- Resolve conflicts between file extensions and explicit format arguments clearly.
-- Preserve color correctness and meaningful metadata by default.
-- Never silently downconvert bit depth or flatten transparency.
-
-A default perceptual score of 95 is a starting contract, not proof that the result is visually lossless. Document the distinction.
-
-### Metadata
-
-Provide straightforward `keep` and `strip` policies.
-
-Preserve ICC/CICP information and orientation semantics by default.
-
-Preserve EXIF/XMP where supported. When cross-format metadata cannot be represented faithfully, report what is being discarded rather than claiming perfect preservation.
-
-Do not confuse privacy-related metadata removal with image-quality optimization.
-
-### Shell ergonomics
-
-Support:
-
-- `-o` / `--output`
-- `--out-dir`
-- `-j` / `--jobs`
-- `--in-place`
-- `--format`
-- `--score`
-- `--quality` for explicit direct encoder control
-- `--lossless`
-- `--effort`
-- `--recursive`
-- `--quiet`
-- `--verbose`
-- `--json`
-- `--strip-metadata`
-
-Keep argument meanings consistent between commands.
-
-Make incompatible option combinations explicit usage errors.
-
-Support stdin/stdout via `-` where sensible, keeping stdout free of progress messages or diagnostics.
-
-Report per-image size changes, quality scores, selected formats, and elapsed time without excessive noise.
-
-Use stable, meaningful exit codes and a documented JSON schema.
-
-## Color fidelity and image correctness
-
-Treat color handling as part of codec correctness, not an optional enhancement.
-
-Research and integrate moxcms or an equivalent pure-Rust color-management stack.
-
-Key requirements:
-
-- Correct sRGB behavior.
-- ICC profile handling.
-- Display P3 and wider-gamut images where supported.
-- Correct transfer functions.
-- Correct range and matrix handling for AVIF/WebP.
-- No accidental premultiplied-alpha artifacts.
-- No silent gamut clipping or gamma mistakes.
-- No accidental bit-depth truncation.
-- No double application of EXIF orientation.
-- No unrequested HDR-to-SDR conversion.
-
-Do not promise universal high-bit-depth/HDR support if the selected codecs or pipeline cannot actually preserve it.
-
-Unsupported combinations should produce explicit errors.
-
-Build targeted tests for profiles, orientation, alpha, grayscale, bit depth, and chroma subsampling.
-
-Compare outputs with independent decoder oracles when practical.
-
-## Performance engineering
-
-This is a performance-sensitive CLI.
-
-Optimize actual measured costs:
-
-- Process startup time.
-- Binary size.
-- Build time.
-- Decode throughput.
-- Encode throughput.
-- Peak RSS.
-- Intermediate buffer allocations.
-- Memory-copy overhead.
-- Quality-score calculation time.
-- Candidate-search overhead.
-- Batch throughput.
-
-Prefer eliminating work to adding caching complexity.
-
-Avoid duplicate image buffers unless genuinely necessary.
-
-Make candidate evaluation memory-bounded.
-
-Batch processing should parallelize independent images using a bounded worker count and a reasonable memory budget.
-
-Avoid nested oversubscription when codec internals already use parallelism.
-
-Use Rust SIMD support from upstream codecs rather than adding architecture-specific handwritten assembly.
-
-### Target environments
-
-Prioritize:
-
-1. macOS ARM64.
-2. Linux x86-64.
-3. Linux ARM64.
-4. Static Linux musl builds where practical.
-
-Native SIMD must remain portable, with correct fallback behavior.
-
-Do not introduce dependencies requiring external codec libraries, system package managers, libclang, CMake, NASM, C++ toolchains, or pkg-config for the normal production build.
-
-Rust platform-runtime dependencies are acceptable. The objective is no third-party native codec dependency, not an impossible absence of all operating-system interfaces.
-
-Disable optional codec assembly/FFI features where necessary to satisfy the pure-Rust requirement.
-
-Audit the **resolved production dependency graph**, not merely the direct Cargo dependencies.
-
-## Benchmarks
-
-Build a reproducible benchmark suite before major implementation changes.
-
-Use the original rimage as the baseline, with its version and commit pinned.
-
-Also compare against relevant dedicated encoders where available:
-
-- MozJPEG.
-- jpegli where available.
-- libwebp / cwebp.
-- OxiPNG.
-- A representative AVIF encoder.
-
-Benchmark dependencies may exist as external development tools; they must not be linked into the production binary.
-
-### Corpus
-
-Use a small, redistributable, representative image corpus covering:
-
-- Photographs.
-- High-detail foliage and textures.
-- Human skin and smooth gradients.
-- Screenshots and UI.
-- Text and diagrams.
-- Line art and graphics.
-- Transparent images.
-- Flat-color images.
-- Grayscale.
-- Existing compressed images.
-- Large source images.
-- ICC-profiled images.
-- High-bit-depth sources where supported.
-
-Keep the committed test corpus reasonably small.
-
-Document each corpus source and its license.
-
-### Metrics
-
-For every candidate and format, record:
-
-- Source dimensions.
-- Output dimensions.
-- Input bytes.
-- Output bytes.
-- Actual SSIMULACRA2 score.
-- Encode time.
-- Decode time where relevant.
-- Peak memory.
-- Encoder parameters.
-- CPU/thread configuration.
-- Host architecture.
-
-Compare **at matched dimensions and matched perceptual quality**.
-
-Include at least three target quality bands where feasible, such as 80, 90, and 95.
-
-Report both compression efficiency and compute cost.
-
-Do not claim an encoder is superior because its quality parameter happens to produce a smaller image.
-
-For lossless comparisons, verify decoded sample equality rather than relying on a perceptual score.
-
-### Reporting
-
-Create a concise `BENCHMARKS.md` containing:
-
-- Reproduction instructions.
-- Exact versions and commands.
-- Results tables.
-- Compression-size comparisons.
-- Encode speed and memory comparisons.
-- Known weaknesses and regressions.
-
-Retain raw machine-readable results and an automated harness.
-
-Benchmark findings should drive architecture and default-setting choices.
-
-Do not manipulate benchmark methodology to make the fork look better.
-
-## Tests and regression prevention
-
-Preserve useful upstream rimage tests and add a rigorous focused suite.
-
-### Codec tests
-
-Test all supported formats for:
-
-- Decode correctness.
-- Encode correctness.
-- Round trips.
-- Dimensions and orientation.
-- Alpha.
-- Grayscale.
-- Metadata preservation.
-- Resource limits.
-- Truncated/corrupt inputs.
-- Unsupported modes.
-- Boundary dimensions.
-- Output validity using independent decoders.
-
-### Optimization tests
-
-Verify:
-
-- Never-bigger behavior for same-format optimization.
-- True losslessness when requested.
-- Candidate outputs meet the requested score.
-- Auto-format selects the smallest *qualifying* candidate among the evaluated set.
-- Search handles non-monotonic quality curves.
-- Fallbacks do not destroy input.
-- Deterministic selection for fixed inputs and settings.
-- Explicit resizing produces the expected dimensions.
-- No mismatched-dimension quality comparisons.
-- Failed encoding does not leave corrupt output.
-
-### CLI tests
-
-Verify:
-
-- Argument parsing.
-- Format inference.
-- Conflicting arguments.
-- Safe overwrite behavior.
-- Atomic file publication.
-- Unicode filenames.
-- Paths with whitespace and special characters.
-- Recursive traversal.
-- Batch partial failure handling.
-- stdin/stdout.
-- JSON output.
-- Exit codes.
-- File permission errors.
-- Symlinks and destination-path safety.
-
-### Robustness
-
-Use reasonable decoding and pixel-count limits.
-
-Avoid unchecked integer overflow, excessive allocation, panics on malformed inputs, and unbounded candidate searches.
-
-Use fuzzing or property-based tests for selected dangerous input boundaries.
-
-Do not add an elaborate fuzzing framework if a smaller existing setup is sufficient.
-
-## Scope and simplification discipline
-
-This project is especially vulnerable to scope creep.
-
-Explicitly avoid:
-
-- Building a new codec.
-- Reimplementing SSIMULACRA2.
-- Writing a new image-resizing engine.
-- Creating a plugin system.
-- Adding an image server.
-- Adding a GUI or browser UI.
-- Adding WASM support solely for demonstration.
-- Adding generalized DAG/workflow execution.
-- Creating a multi-crate framework without justification.
-- Introducing machine-learning model downloads.
-- Adding persistent caches or databases.
-- Supporting every possible image format.
-- Creating enormous generated documentation or speculative roadmaps.
-
-Prefer direct, understandable Rust code.
-
-Code should use strong types, explicit invariants, and well-bounded state.
-
-Avoid unnecessary dynamic dispatch, stringly typed codec configuration, and layers of command-routing indirection.
-
-Keep the number of production dependencies as low as reasonably possible.
-
-Reduce code size where doing so improves correctness or maintainability. Do not fetishize line count at the expense of clarity.
-
+- [zenjpeg](https://github.com/imazen/zenjpeg), [zenwebp](https://github.com/imazen/zenwebp), [zenpng](https://github.com/imazen/zenpng), [zenavif](https://github.com/imazen/zenavif).
+- [fast-ssim2](https://github.com/imazen/fast-ssim2) and optional [zencodec](https://github.com/imazen/zencodec).
+- Current local owners: `src/cli/command.rs` (lexopt/schema), `src/cli/pipeline.rs` (decode/operations/encode), `src/runtime.rs` (batch/publication/metadata), `src/limits.rs` (budgets), `src/error.rs` and `src/exit.rs` (errors/status), `src/codecs/`, and `src/operations/`.
+- Regression foundations: `tests/cli.rs`, `tests/deadlock.rs`, `tests/timestamps.rs`, and codec/operation tests.
