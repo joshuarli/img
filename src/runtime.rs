@@ -13,21 +13,17 @@ impl Failure {
 }
 struct Job {input:PathBuf,relative:PathBuf,format:Option<Format>,id:Option<(u64,u64)>,failure:Option<Failure>,destinations:Vec<(Format,PathBuf)>}
 struct Completed {value:Value,input:PathBuf,output:Option<PathBuf>,status:&'static str}
-fn absolute(path:&Path)->io::Result<PathBuf> {
-    let path=if path.is_absolute() {path.to_owned()} else {std::env::current_dir()?.join(path)};
-    let mut result=PathBuf::new();for part in path.components() {match part {std::path::Component::ParentDir=>{result.pop();},other=>result.push(other.as_os_str())}}
-    Ok(result)
-}
-fn discover(path:&Path,relative:&Path,args:&Arguments,output_root:Option<&Path>,jobs:&mut Vec<Job>)->Result<bool,String> {
+fn discover(path:&Path,relative:&Path,args:&Arguments,output_root:Option<(u64,u64)>,jobs:&mut Vec<Job>)->Result<bool,String> {
     if jobs.len()>=MAX_FILES {return Err("input file count exceeds 100000".into());}
-    if output_root.is_some_and(|root|absolute(path).is_ok_and(|p|p.starts_with(root))) {return Ok(false);}
     match fs::symlink_metadata(path) {
         Ok(meta) if meta.is_dir()=>{
+            if output_root.is_some() && publication::directory_file_id(path).ok()==output_root {return Ok(true);}
+
             match publication::read_directory(path) {
                 Err(error)=>jobs.push(Job {input:path.to_owned(),relative:relative.to_owned(),format:None,id:None,failure:Some(Failure::new(path,None,"input.io",error,3)),destinations:vec![]}),
                 Ok(entries)=>for entry in entries {
                     let child=path.join(&entry.name);let rel=relative.join(&entry.name);
-                    if output_root.is_some_and(|root|absolute(&child).is_ok_and(|p|p.starts_with(root))) {continue;}
+                    if entry.directory && Some(entry.file_id)==output_root {continue;}
                     if entry.symlink {jobs.push(Job {input:child.clone(),relative:rel,format:None,id:None,failure:Some(Failure::new(&child,None,"input.symlink","symlink traversal entries are refused",3)),destinations:vec![]});}
                     else if entry.directory && args.recursive {discover(&child,&rel,args,output_root,jobs)?;}
                     else if entry.file && child.extension().and_then(Format::from_extension).is_some() {jobs.push(Job {input:child,relative:rel,format:None,id:None,failure:None,destinations:vec![]});}
@@ -50,7 +46,7 @@ fn expand(args:&Arguments)->Result<(Vec<Job>,bool),String> {
         let parent=list.parent().unwrap_or(Path::new("."));
         for line in contents.lines().filter(|s|!s.is_empty()) {let path=Path::new(line);inputs.push(if path.is_absolute() {path.to_owned()} else {parent.join(path)});}
     }
-    let output_root=args.out_dir.as_deref().map(absolute).transpose().map_err(|e|e.to_string())?;
+    let output_root=args.out_dir.as_deref().and_then(|path|publication::directory_file_id(path).ok());
     let mut jobs=vec![];let mut directory=false;
     for input in inputs {
         let mut expanded=vec![];
@@ -63,7 +59,7 @@ fn expand(args:&Arguments)->Result<(Vec<Job>,bool),String> {
         for path in expanded {
             let name=path.file_name().unwrap_or(path.as_os_str());
             let relative=if fs::symlink_metadata(&path).is_ok_and(|m|m.is_dir()) {Path::new("")} else {Path::new(name)};
-            directory|=discover(&path,relative,args,output_root.as_deref(),&mut jobs)?;
+            directory|=discover(&path,relative,args,output_root,&mut jobs)?;
         }
     }
     if jobs.is_empty() {return Err("input set is empty".into());}
@@ -210,7 +206,7 @@ fn report(args:&Arguments,completed:Vec<Result<Completed,Failure>>)->u8 {
             Ok(result)=>{
                 successes+=1;
                 if !args.json {
-                    if !args.quiet {
+                    if !args.quiet || matches!(args.command,Command::Inspect|Command::Compare) {
                     if result.status=="compared" {if writeln!(io::stdout(),"{}",result.value["score"]).is_err() {return 4;}}
                     else if result.status=="inspected" {if writeln!(io::stdout(),"{}: {} {}",result.input.display(),result.value["format"],result.value["image"]).is_err() {return 4;}}
                     else {eprintln!("{}: {} {}",result.input.display(),result.status,result.output.as_deref().unwrap_or(Path::new("-")).display());}

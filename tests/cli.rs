@@ -104,3 +104,16 @@ fn equivalent_case_and_unicode_destinations_fail_before_any_publication() {
         assert_eq!(output.status.code(),Some(4),"{}",String::from_utf8_lossy(&output.stdout));assert!(!out.exists(),"colliding outputs must all fail during preflight");
     }
 }
+
+#[test]
+fn quiet_suppresses_diagnostics_but_keeps_comparison_data() {
+    let scratch=common::Scratch::new("quiet-data");let input=scratch.0.join("source.png");common::write_png(&input,16,16);
+    let output=success(run(&["compare".as_ref(),input.as_os_str(),input.as_os_str(),"--quiet".as_ref()]));assert_eq!(std::str::from_utf8(&output.stdout).unwrap().trim().parse::<f64>().unwrap(),100.0);assert!(output.stderr.is_empty());
+}
+#[cfg(target_os="macos")]
+#[test]
+fn case_variant_output_subtree_is_excluded_from_traversal() {
+    let scratch=common::Scratch::new("output-subtree");let input=scratch.0.join("input");let out=input.join("out");fs::create_dir_all(&out).unwrap();if !input.join("OUT").exists() {return;}
+    common::write_png(&input.join("source.png"),16,16);common::write_png(&out.join("previous.png"),16,16);
+    let output=json(run(&["convert".as_ref(),input.as_os_str(),"--out-dir".as_ref(),input.join("OUT").as_os_str(),"--recursive".as_ref(),"--lossless".as_ref(),"--format".as_ref(),"png".as_ref(),"--json".as_ref()]));assert_eq!(output["results"].as_array().unwrap().len(),1);assert!(!out.join("out").exists());
+}

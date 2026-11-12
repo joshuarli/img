@@ -228,6 +228,8 @@ pub fn create_parent(path: &Path) -> io::Result<()> {
 pub struct DirectoryEntry {
     /// Entry name relative to its directory.
     pub name: std::ffi::OsString,
+    /// Device and inode from the no-follow directory entry.
+    pub file_id: (u64,u64),
     /// Entry is a directory.
     pub directory: bool,
     /// Entry is a regular file.
@@ -262,7 +264,7 @@ pub fn read_directory(path:&Path)->io::Result<Vec<DirectoryEntry>> {
         // SAFETY: live directory descriptor, entry name and output pointer; no link following.
         if unsafe {libc::fstatat(fd,name.as_ptr(),&mut stat,libc::AT_SYMLINK_NOFOLLOW)}<0 {return Err(io::Error::last_os_error());}
         let kind=stat.st_mode & libc::S_IFMT;
-        output.push(DirectoryEntry {name:OsStr::from_bytes(name.to_bytes()).to_owned(),directory:kind==libc::S_IFDIR,file:kind==libc::S_IFREG,symlink:kind==libc::S_IFLNK});
+        output.push(DirectoryEntry {file_id:(stat.st_dev as u64,stat.st_ino as u64),name:OsStr::from_bytes(name.to_bytes()).to_owned(),directory:kind==libc::S_IFDIR,file:kind==libc::S_IFREG,symlink:kind==libc::S_IFLNK});
     }
     output.sort_by(|a,b|a.name.cmp(&b.name));Ok(output)
 }
@@ -279,3 +281,8 @@ fn errno_pointer()->*mut libc::c_int { // SAFETY: OS accessor returns this threa
 fn collision_name(directory:&File,name:&OsStr)->io::Result<std::ffi::OsString> {macos::name(directory,name)}
 #[cfg(not(target_os="macos"))]
 fn collision_name(_directory:&File,name:&OsStr)->io::Result<std::ffi::OsString> {Ok(name.to_owned())}
+
+/// Resolve a regular directory's device and inode without following any symlinks.
+pub fn directory_file_id(path:&Path)->io::Result<(u64,u64)> {
+    let metadata=directory(path)?.metadata()?;Ok((metadata.dev(),metadata.ino()))
+}
