@@ -24,6 +24,7 @@ pub(super) fn decode(bytes: &[u8],stop: &crate::cancellation::Cancellation) -> R
     super::check_dimensions(header.max_frame_width.get(), header.max_frame_height.get())?;
     if !header.still_picture { return Err(Error::new(ErrorKind::Unsupported, "AVIF requires a still AV1 bitstream")); }
     let data = parser.primary_data().map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+    if bitstream_hdr(&data)? {return Err(Error::new(ErrorKind::Unsupported,"AVIF HDR metadata requires independently validated processing"));}
     let primary = frame(&data)?;
     if primary.content_light().is_some() || primary.mastering_display().is_some() {
         return Err(Error::new(ErrorKind::Unsupported,"AVIF HDR metadata requires independently validated processing"));
