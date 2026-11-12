@@ -31,7 +31,7 @@ fn stage(dir: &str) -> (String, String, FileTime) {
     fs::create_dir_all(&outputs).unwrap();
 
     let input = format!("{inputs}/img.png");
-    fs::copy(format!("{manifest}/tests/files/png/f1t.png"), &input).unwrap();
+    fs::copy(format!("{manifest}/tests/files/generated/rgb.png"), &input).unwrap();
     set_file_mtime(&input, stamp()).unwrap();
     let stored = modification_time(Path::new(&input));
 

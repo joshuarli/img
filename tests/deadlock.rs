@@ -19,7 +19,7 @@ use std::{
 fn multiple_files_with_single_thread_do_not_deadlock() {
     let exe = env!("CARGO_BIN_EXE_rimage");
     let manifest = env!("CARGO_MANIFEST_DIR");
-    let source = format!("{manifest}/tests/files/jpg/f1t.jpg");
+    let source = format!("{manifest}/tests/files/generated/rgb.png");
     let input_dir = format!("{manifest}/target/tmp-deadlock-input");
     let img = format!("{input_dir}/f1t.jpg");
     let second = format!("{input_dir}/f2t.jpg");
@@ -66,7 +66,7 @@ fn multiple_files_with_single_thread_do_not_deadlock() {
 fn single_file_recursive_stays_under_output_directory() {
     let exe = env!("CARGO_BIN_EXE_rimage");
     let manifest = env!("CARGO_MANIFEST_DIR");
-    let img = format!("{manifest}/tests/files/jpg/f1t.jpg");
+    let img = format!("{manifest}/tests/files/generated/rgb.png");
     let out = format!("{manifest}/target/tmp-recursive-test");
     let _ = std::fs::remove_dir_all(&out);
     std::fs::create_dir_all(&out).unwrap();
@@ -80,8 +80,8 @@ fn single_file_recursive_stays_under_output_directory() {
 
     assert!(status.success(), "rimage exited with {status}");
     assert!(
-        std::path::Path::new(&out).join("f1t.png").exists(),
-        "expected output under {out}/f1t.png"
+        std::path::Path::new(&out).join("rgb.png").exists(),
+        "expected output under {out}/rgb.png"
     );
     let _ = std::fs::remove_dir_all(&out);
 }
@@ -234,7 +234,7 @@ fn exit_code_is_nonzero_when_a_file_fails() {
 fn file_list_expands_to_its_listed_inputs() {
     let exe = env!("CARGO_BIN_EXE_rimage");
     let manifest = env!("CARGO_MANIFEST_DIR");
-    let source = format!("{manifest}/tests/files/jpg/f1t.jpg");
+    let source = format!("{manifest}/tests/files/generated/rgb.png");
     let input_dir = format!("{manifest}/target/tmp-file-list-input");
     let first = format!("{input_dir}/first.jpg");
     let second = format!("{input_dir}/second.jpg");
