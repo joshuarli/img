@@ -129,6 +129,34 @@ pub struct Arguments {
 
 pub enum Outcome { Run(Arguments), Help(Option<&'static str>), Version }
 
+#[derive(Debug)]
+pub enum ParseError {
+    UnknownCommand(String),
+    UnknownOption(String),
+    InvalidValue(String),
+    Constraint(String),
+    Syntax(lexopt::Error),
+}
+
+impl std::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnknownCommand(name) => write!(f, "unknown command {name:?}"),
+            Self::UnknownOption(name) => write!(f, "unknown option {name}"),
+            Self::InvalidValue(message) | Self::Constraint(message) => f.write_str(message),
+            Self::Syntax(error) => error.fmt(f),
+        }
+    }
+}
+
+impl From<String> for ParseError {
+    fn from(message: String) -> Self { Self::InvalidValue(message) }
+}
+
+impl From<&str> for ParseError {
+    fn from(message: &str) -> Self { Self::Constraint(message.into()) }
+}
+
 fn text(value: OsString, option: &str) -> Result<String, String> {
     value.into_string().map_err(|_| format!("--{option} requires UTF-8"))
 }
@@ -140,7 +168,7 @@ fn number<T: std::str::FromStr + PartialOrd>(value: OsString, option: &str, min:
     Ok(parsed)
 }
 
-pub fn parse<I, T>(args: I) -> Result<Outcome, String>
+pub fn parse<I, T>(args: I) -> Result<Outcome, ParseError>
 where I: IntoIterator<Item = T>, T: Into<OsString> {
     let mut parser = Parser::from_args(args);
     let mut result = Arguments {
@@ -150,42 +178,42 @@ where I: IntoIterator<Item = T>, T: Into<OsString> {
     };
     let mut seen = Vec::new();
     let mut index = 0;
-    while let Some(arg) = parser.next().map_err(|e| e.to_string())? {
+    while let Some(arg) = parser.next().map_err(ParseError::Syntax)? {
         index += 1;
         let spec = match arg {
             Arg::Value(value) if result.command.is_empty() => {
                 let name = text(value, "command")?;
                 if name == "help" {
-                    return match parser.next().map_err(|e| e.to_string())? {
+                    return match parser.next().map_err(ParseError::Syntax)? {
                         None => Ok(Outcome::Help(None)),
                         Some(Arg::Value(value)) => {
                             let name = text(value, "command")?;
                             let command = COMMANDS.iter().find(|c| c.name == name || c.alias == Some(name.as_str()))
-                                .ok_or_else(|| format!("unknown command {name:?}"))?;
-                            if parser.next().map_err(|e| e.to_string())?.is_some() { return Err("unexpected argument after help command".into()); }
+                                .ok_or_else(|| ParseError::UnknownCommand(name.clone()))?;
+                            if parser.next().map_err(ParseError::Syntax)?.is_some() { return Err("unexpected argument after help command".into()); }
                             Ok(Outcome::Help(Some(command.name)))
                         }
                         Some(_) => Err("expected a command after help".into()),
                     };
                 }
                 let command = COMMANDS.iter().find(|c| c.name == name || c.alias == Some(name.as_str()))
-                    .ok_or_else(|| format!("unknown command {name:?}"))?;
+                    .ok_or_else(|| ParseError::UnknownCommand(name.clone()))?;
                 result.command = command.name;
                 continue;
             }
             Arg::Value(value) => { result.files.push(value.into()); continue; }
-            Arg::Long(name) => OPTIONS.iter().find(|s| s.long == name || s.alias == Some(name)).ok_or_else(|| format!("unknown option --{name}"))?,
-            Arg::Short(name) => OPTIONS.iter().find(|s| s.short == Some(name) || (s.key == Key::Version && name == 'v')).ok_or_else(|| format!("unknown option -{name}"))?,
+            Arg::Long(name) => OPTIONS.iter().find(|s| s.long == name || s.alias == Some(name)).ok_or_else(|| ParseError::UnknownOption(format!("--{name}")))?,
+            Arg::Short(name) => OPTIONS.iter().find(|s| s.short == Some(name) || (s.key == Key::Version && name == 'v')).ok_or_else(|| ParseError::UnknownOption(format!("-{name}")))?,
         };
-        if !spec.commands.is_empty() && !spec.commands.contains(&result.command) { return Err(format!("--{} is not valid for {}", spec.long, result.command)); }
+        if !spec.commands.is_empty() && !spec.commands.contains(&result.command) { return Err((format!("--{} is not valid for {}", spec.long, result.command)).into()); }
         if spec.key == Key::Help { return Ok(Outcome::Help((!result.command.is_empty()).then_some(result.command))); }
         if spec.key == Key::Version { return Ok(Outcome::Version); }
-        if result.command.is_empty() { return Err(format!("--{} requires a command", spec.long)); }
-        if !spec.repeatable && seen.contains(&spec.key) { return Err(format!("--{} may not be repeated", spec.long)); }
+        if result.command.is_empty() { return Err((format!("--{} requires a command", spec.long)).into()); }
+        if !spec.repeatable && seen.contains(&spec.key) { return Err((format!("--{} may not be repeated", spec.long)).into()); }
         seen.push(spec.key);
         let value = match spec.value {
             ValueMode::Flag => None,
-            ValueMode::Required(_) => { index += 1; Some(parser.value().map_err(|e| e.to_string())?) },
+            ValueMode::Required(_) => { index += 1; Some(parser.value().map_err(ParseError::Syntax)?) },
             ValueMode::Optional(_) => {
                 let value = parser.optional_value().or_else(|| parser.values().ok().and_then(|mut v| v.next()));
                 index += 1;
@@ -258,13 +286,13 @@ where I: IntoIterator<Item = T>, T: Into<OsString> {
     if result.command == "webp" && result.lossless && result.quality.is_some() { return Err("--lossless conflicts with --quality".into()); }
     if (result.slight_loss.is_some() || result.discrete) && !result.lossless { return Err("--slight_loss and --discrete require --lossless".into()); }
     if let Some(ref c) = result.colorspace {
-        if !["ycbcr", "rgb"].contains(&c.as_str()) && !(result.command == "mozjpeg" && c == "grayscale") { return Err(format!("invalid --colorspace value {c:?}")); }
+        if !["ycbcr", "rgb"].contains(&c.as_str()) && !(result.command == "mozjpeg" && c == "grayscale") { return Err((format!("invalid --colorspace value {c:?}")).into()); }
     }
     if let Some(ref c) = result.alpha_mode {
-        if !["UnassociatedDirty", "UnassociatedClean", "Premultiplied"].contains(&c.as_str()) { return Err(format!("invalid --alpha_mode value {c:?}")); }
+        if !["UnassociatedDirty", "UnassociatedClean", "Premultiplied"].contains(&c.as_str()) { return Err((format!("invalid --alpha_mode value {c:?}")).into()); }
     }
     if let Some(ref c) = result.qtable {
-        if !["AhumadaWatsonPeterson", "AnnexK", "Flat", "KleinSilversteinCarney", "MSSSIM", "NRobidoux", "PSNRHVS", "PetersonAhumadaWatson", "WatsonTaylorBorthwick"].contains(&c.as_str()) { return Err(format!("invalid --qtable value {c:?}")); }
+        if !["AhumadaWatsonPeterson", "AnnexK", "Flat", "KleinSilversteinCarney", "MSSSIM", "NRobidoux", "PSNRHVS", "PetersonAhumadaWatson", "WatsonTaylorBorthwick"].contains(&c.as_str()) { return Err((format!("invalid --qtable value {c:?}")).into()); }
     }
     if result.command == "mozjpeg" && result.qtable.is_none() { result.qtable = Some("NRobidoux".into()); }
     #[cfg(feature = "resize")]
@@ -275,7 +303,7 @@ where I: IntoIterator<Item = T>, T: Into<OsString> {
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
-    use super::{parse, Key, Outcome, Step, COMMANDS, OPTIONS};
+    use super::{parse, Key, Outcome, ParseError, Step, COMMANDS, OPTIONS};
 
     #[test]
     fn schema_names_are_unique_in_each_command() {
@@ -314,6 +342,15 @@ mod tests {
         assert!(parse(["png", "--quiet", "--quiet", "file.png"]).is_err());
         assert!(parse(["png", "--resize", "1x1", "--resize", "2x2", "file.png"]).is_ok());
         assert!(OPTIONS.iter().any(|option| option.key == Key::Help));
+    }
+
+    #[test]
+    fn parser_classifies_errors() {
+        assert!(matches!(parse(["bad"]), Err(ParseError::UnknownCommand(_))));
+        assert!(matches!(parse(["png", "--bad"]), Err(ParseError::UnknownOption(_))));
+        assert!(matches!(parse(["jpeg", "--quality", "101", "image.jpg"]), Err(ParseError::InvalidValue(_))));
+        assert!(matches!(parse(["png", "--recursive", "image.png"]), Err(ParseError::Constraint(_))));
+        assert!(matches!(parse(["png", "--directory"]), Err(ParseError::Syntax(_))));
     }
 
     #[cfg(unix)]
