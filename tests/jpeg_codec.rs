@@ -79,3 +79,12 @@ fn fixed_seed_dimension_cases_stay_within_the_boundary() {
         assert_eq!(StillImage::decode(&bytes).unwrap().dimensions(), (w, h));
     }
 }
+
+#[test]
+fn four_component_jpeg_is_refused_before_implicit_cmyk_conversion() {
+    let image=StillImage::from_rgb8(8,8,common::pixels(8,8)).unwrap();let mut bytes=image.encode(Format::Jpeg,mode(80.0),Effort::Fast).unwrap();
+    let at=bytes.windows(2).position(|p|p==[255,194]).unwrap();let length=u16::from_be_bytes([bytes[at+2],bytes[at+3]]) as usize;
+    bytes[at+9]=4;bytes[at+2..at+4].copy_from_slice(&((length+3) as u16).to_be_bytes());bytes.splice(at+2+length..at+2+length,[4,17,0]);
+    assert_eq!(zenjpeg::decoder::DecodeConfig::new().read_info(&bytes).unwrap().num_components,4);
+    let error=StillImage::decode(&bytes).err().unwrap();assert_eq!(error.kind(),ErrorKind::Unsupported);assert!(error.to_string().contains("components"));
+}

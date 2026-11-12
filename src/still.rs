@@ -251,6 +251,7 @@ impl StillImage {
             Format::Jpeg => {
                 let mut config = zenjpeg::JpegDecoderConfig::new();
                 let header = config.inner().read_info(bytes).map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+                if !matches!(header.num_components,1|3) {return Err(Error::new(ErrorKind::Unsupported,"JPEG requires one or three components; CMYK/YCCK conversion is unsupported"));}
                 if header.num_components == 1 { config.inner_mut().output_format = Some(zenjpeg::decoder::PixelFormat::Gray); }
                 decode(config, bytes, format, stop)
             },
