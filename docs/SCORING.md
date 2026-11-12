@@ -23,7 +23,7 @@ pixels. Lossless float JPEG XL supplies the original linear values directly.
 The tool is a development oracle and is never linked into production.
 
 Goldens were captured on macOS ARM64 with Homebrew jpeg-xl 0.12.0_1.
-The ss imulacra2 executable SHA-256 was
+The ssimulacra2 executable SHA-256 was
 `3186139b975c9e0ca429c3a7c93053887d6a804f707507eec2a36024220959fa`.
 Four controlled cases cover the eight-pixel floor, noise, text-like edges,
 non-power-of-two dimensions, and gradients. Their maximum observed absolute

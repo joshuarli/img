@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "sourceRevision": "7f1b45b",
+  "macos": {
+    "target": "aarch64-apple-darwin",
+    "profile": "dist",
+    "binarySha256": "7e887b530b151b5dd5ec6f02c6949f55fff3ef8c9d67bfe08f878d4e6f3de186",
+    "binaryBytes": 7232432,
+    "baselineBinaryBytes": 6547968,
+    "binaryGrowthPercent": 10.453074908124172,
+    "peakRssBytes": 11075584,
+    "baselinePeakRssBytes": 4685824,
+    "rssGrowthPercent": 136.36363636363637,
+    "workload": "256x192 RGB PNG file conversion, lossless, one worker; same source samples as S0",
+    "sampleProof": "decoded comparison identity 100; independent PNG workload and mutation rejection pass",
+    "fullTestsPassed": 163,
+    "fullTestsIgnored": 1,
+    "repeatedOracleMedianPeakRssBytes": 4751360,
+    "repeatedCurrentMedianPeakRssBytes": 11075584,
+    "repeatedRssGrowthPercent": 133.1034482758621,
+    "resourceFixture": "benchmarks/resource-rgb.png",
+    "resourceInputBytes": 147942,
+    "resourceOutputBytes": 2607,
+    "resourceRangeWidthBytes": 49152,
+    "linkage": [
+      "CoreFoundation",
+      "libobjc",
+      "IOKit",
+      "libiconv",
+      "libSystem"
+    ]
+  },
+  "linux": {
+    "target": "aarch64-unknown-linux-musl",
+    "fullTestsPassed": 161,
+    "fullTestsIgnored": 1,
+    "permissionProof": "full suite runs as unprivileged verifier user on ext4 scratch volume",
+    "staticBinarySha256": "68f6a12a0c334d35dc9adf0851888bb1c8e04ad417d88a2f66e29b4068910dc8",
+    "staticBinaryBytes": 7493616,
+    "elf": "no INTERP program header; no dynamic section",
+    "smoke": "exact gray PNG to WebP plus actual-byte identity score 100"
+  },
+  "checks": {
+    "minimalLibrary": "passed",
+    "minimalBinary": "passed",
+    "clippyAllFeaturesAllTargets": "passed with warnings",
+    "independentMetric": "passed JPEG XL 0.12.0 goldens within 0.05",
+    "independentDecoders": "passed",
+    "benchmarkVerification": "passed corrected 196-case capture and 980-case five-run archive",
+    "nativeToolMaskedBuilds": [
+      "macOS ARM64 normal dist",
+      "Linux ARM64 static dist"
+    ],
+    "productionGraph": "137 normal/build packages; see production-dependencies.json",
+    "faultInjections": {
+      "wrongPngOutput": "assertion failed as expected",
+      "droppedExitError": "assertion failed as expected",
+      "offByOneDimension": "assertion failed as expected",
+      "restoration": "byte-for-byte, before final full suites"
+    },
+    "cleanLinuxArm64": "passed after removing clang22, cmake, nasm, pkgconf and dav1d-dev; normal linkage musl/libgcc",
+    "shortWorkflows": "five warmed interleaved samples, immutable binaries; broad ranges, inconclusive",
+    "buildCost": "20 completed builds, clean/cached targets, shared warm kache, jobs 1; differences within spread",
+    "finalJpegRegressions": "passed MPF auxiliary payload, HDR signaling, trailing bytes, late metadata, precision and strip-fallback regressions on all three targets",
+    "historicalPerformanceSource": "0e4a4a2; corrected benchmark harness 6535c42; final JPEG guards are correctness changes, timing archives are not reattributed",
+    "finalArtifactBuilds": "fresh guarded macOS normal build; ARM64/x86-64 static root rebuilds reuse previously guarded dependency targets; x86-64 native-tool packages removed again before build; all artifacts at 7f1b45b"
+  },
+  "limitations": [
+    "native Linux x86-64 hardware timing unproven; execution proof is emulated",
+    "physical clean macOS host build unproven; masked native-tool build passed",
+    "allocation/copy counts unproven: Instruments failed to attach",
+    "required size/RSS costs exceed 10 percent; capability cost, no improvement claim"
+  ],
+  "linuxX64": {
+    "target": "x86_64-unknown-linux-musl",
+    "execution": "Docker linux/amd64 under emulation on macOS ARM64",
+    "fullTestsPassed": 161,
+    "fullTestsIgnored": 1,
+    "staticBinarySha256": "7ecc8457c36a94387c65529d7772e8326a0bda9fda1322129f7b061a26056e24",
+    "staticBinaryBytes": 10406032,
+    "elf": "static PIE; relocation dynamic section but no PT_INTERP or DT_NEEDED",
+    "cleanBuild": "clang22/cmake/nasm/pkgconf/dav1d removed before fresh guarded static build",
+    "smoke": "exact gray PNG to WebP and actual-byte score 100"
+  }
+}

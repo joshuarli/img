@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+from pathlib import Path
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+
+if len(sys.argv) != 3:
+    raise SystemExit('usage: benchmark-workflows ORACLE_BINARY CURRENT_BINARY')
+root = Path(__file__).resolve().parent.parent
+scratch = Path(tempfile.mkdtemp(prefix='workflow-final-', dir=root / '.work/tmp'))
+binaries = {}
+for side, source in zip(['oracle', 'current'], sys.argv[1:]):
+    binary = scratch / f'{side}-rimage'
+    shutil.copy2(Path(source).resolve(), binary)
+    binaries[side] = binary
+environment = dict(os.environ, TMPDIR=str(root / '.work/tmp'), RUSTC_WRAPPER='kache', RAYON_NUM_THREADS='1')
+environment.pop('RIMAGE_ORACLE_BIN', None)
+environment.pop('RIMAGE_BENCH_LEGACY', None)
+
+def run(side, group, label, warm=False):
+    child = dict(environment, RIMAGE_BENCH_BIN=str(binaries[side]))
+    if side == 'oracle':
+        child['RIMAGE_BENCH_LEGACY'] = '1'
+    names = ['workflow::png_file_conversion', 'workflow::startup_version'] if group == 'paired' else ['workflow::lossless_batch', 'workflow::optimize_scored_file']
+    options = ['--test'] if warm else ['--sample-count', '1', '--sample-size', '1', '--min-time', '0', '--max-time', '1', '--format', 'json']
+    output = scratch / f'{group}-{side}-{label}.json'
+    with output.open('wb') as stdout, output.with_suffix('.stderr').open('wb') as stderr:
+        subprocess.run(['cargo', 'bench', '--locked', '--profile', 'dist', '--all-features', '--bench', 'workflow', '--', *names, '--exact', *options], cwd=root, env=child, stdout=stdout, stderr=stderr, check=True)
+    if not warm:
+        subprocess.run(['jaq', '-e', '.benchmarks|length==2', str(output)], stdout=subprocess.DEVNULL, check=True)
+
+subprocess.run(['perf-gate-ready'], check=True)
+for side in ['oracle', 'current']:
+    run(side, 'paired', 'warm', True)
+for iteration in range(5):
+    for side in (['oracle', 'current'] if iteration % 2 == 0 else ['current', 'oracle']):
+        run(side, 'paired', iteration)
+run('current', 'other', 'warm', True)
+for iteration in range(5):
+    run('current', 'other', iteration)
+subprocess.run(['perf-gate-ready', '-1'], check=True)
+print('30 completed workflow samples; pre/post gates passed; immutable production binaries')
+print(scratch)

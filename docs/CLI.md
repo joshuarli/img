@@ -16,8 +16,9 @@ Auto requires optimize, conflicts with explicit output and in-place, and uses
 Multiple inputs and directories require out-dir or in-place for transformations.
 Directory children are sorted by native filenames, recursively when requested.
 Each input root's relative directory layout is retained under out-dir.
-The output subtree is excluded. Unrelated discovered extensions are skipped.
+The output subtree is excluded by directory identity, including case variants. Unrelated discovered extensions are skipped.
 Symlinks, including traversal entries and destination ancestors, are rejected.
+On macOS, destination collision checks honor APFS case/Unicode collation. Linux verification uses case-sensitive ext4.
 Duplicate sources, hard-link source aliases, duplicate planned destinations and
 preexisting destinations fail before image publication for those jobs.
 All possible auto destinations are reserved during planning.
@@ -42,16 +43,17 @@ Keep is the metadata default. Strip retains required color signaling and
 normalizes orientation once. Lossless refuses a strip that must reorder samples.
 Transformations that cannot preserve precision, alpha or color semantics fail.
 Inspect reads headers without decoding planes, including declared unsupported
-precision and animation. Compare returns a measured score without a threshold.
+precision and animation/multiple-image signals, including JPEG MPF and gain-map declarations. JPEG trailing payloads and late application metadata are unsupported for pixel processing. Compare returns a measured score without a threshold.
 
 A single `-` input reads bounded stdin. Binary `-o -` requires one input and a
 concrete explicit format. Batch stdout, auto stdout, JSON plus binary stdout,
 and in-place stdin are refused. Winners are verified and buffered before stdout.
 Broken pipes are output errors. Diagnostics and progress go to stderr.
-`--quiet` suppresses success diagnostics. `--verbose` prints admission, publication
+`--quiet` suppresses success diagnostics; inspect and compare still print their data. `--verbose` prints admission, publication
 and evaluated candidate settings. Quiet and verbose conflict.
 
 `--preserve-timestamps` copies source modification time on file outputs.
+Published files use mode 0600, including in-place replacements.
 New destinations use exclusive destination-directory staging, atomic no-clobber
 publication, file sync and parent sync. In-place requires the opened source's
 identity to remain unchanged. A post-publication durability failure has kind
@@ -62,7 +64,7 @@ and work count. Admission reserves 256 bytes per pixel plus compressed input and
 candidate buffers. Unknown memory uses the retained conservative fallback.
 No decoded images are queued. One candidate runs per image.
 Codec adapters receive cooperative cancellation where their APIs support it.
-The AV1 plane decoder and gray-alpha PNG fallback have no cooperative stop API;
+The AV1 plane decoder and PNG layout-preserving writer have no cooperative stop API;
 shutdown waits for bounded active calls. INT, TERM, HUP and QUIT stop admission,
 join workers, clean unpublished temporary files, then terminate by the signal.
 Fatal handlers restore disposition and re-raise without cleanup allocation.
@@ -81,7 +83,8 @@ Results contain `input`, nullable `output`, `format`, `inputBytes`, nullable
 `outputBytes`, nullable `score`, `elapsedMs`, `status` and `warnings`.
 Statuses are `written`, `unchanged`, `inspected` and `compared`.
 Inspect adds `image` with width, height, bitDepth, alpha, grayscale, ICC/CICP,
-orientation, animation, EXIF and XMP header details.
+orientation, animation, grid, rotationCcwDegrees, mirrorAxis, pixelAspectRatio,
+hdrMetadata, EXIF and XMP header details.
 Compare adds `reference`. Null denotes an inapplicable or unknown header field.
 Source identity has a score only when its representation supports scoring.
 

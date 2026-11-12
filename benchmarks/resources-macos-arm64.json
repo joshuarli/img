@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "architecture": "aarch64-apple-darwin",
+  "sourceRevision": "7f1b45b",
+  "fixture": "benchmarks/resource-rgb.png",
+  "fixtureSha256": "6971479d423a51888726bfd411e62ca983db180b62653b796b899594731282df",
+  "inputBytes": 147942,
+  "decodedRgbSha256": "6faaa1419760839afe67b6e568d7c9b58fcfe9845deff35bf3d13c28be221e70",
+  "workload": "generated RGB PNG256x192, exact file conversion, one worker; common::pixels samples",
+  "method": "five interleaved runs per side; /usr/bin/time -l child peak RSS, incidental timings unaccepted",
+  "completed": 10,
+  "failures": 0,
+  "oracleRevision": "2708512",
+  "candidateBinarySha256": "7e887b530b151b5dd5ec6f02c6949f55fff3ef8c9d67bfe08f878d4e6f3de186",
+  "results": [
+    {
+      "side": "current",
+      "measurement": {
+        "samples": [
+          {
+            "side": "current",
+            "run": 0,
+            "peakRssBytes": 11059200,
+            "outputBytes": 2607
+          },
+          {
+            "side": "current",
+            "run": 1,
+            "peakRssBytes": 11075584,
+            "outputBytes": 2607
+          },
+          {
+            "side": "current",
+            "run": 2,
+            "peakRssBytes": 11108352,
+            "outputBytes": 2607
+          },
+          {
+            "side": "current",
+            "run": 3,
+            "peakRssBytes": 11075584,
+            "outputBytes": 2607
+          },
+          {
+            "side": "current",
+            "run": 4,
+            "peakRssBytes": 11075584,
+            "outputBytes": 2607
+          }
+        ],
+        "medianPeakRssBytes": 11075584,
+        "spreadPeakRssBytes": 49152
+      }
+    },
+    {
+      "side": "oracle",
+      "measurement": {
+        "samples": [
+          {
+            "side": "oracle",
+            "run": 0,
+            "peakRssBytes": 4751360,
+            "outputBytes": 147942
+          },
+          {
+            "side": "oracle",
+            "run": 1,
+            "peakRssBytes": 4751360,
+            "outputBytes": 147942
+          },
+          {
+            "side": "oracle",
+            "run": 2,
+            "peakRssBytes": 4751360,
+            "outputBytes": 147942
+          },
+          {
+            "side": "oracle",
+            "run": 3,
+            "peakRssBytes": 4767744,
+            "outputBytes": 147942
+          },
+          {
+            "side": "oracle",
+            "run": 4,
+            "peakRssBytes": 4767744,
+            "outputBytes": 147942
+          }
+        ],
+        "medianPeakRssBytes": 4751360,
+        "spreadPeakRssBytes": 16384
+      }
+    }
+  ]
+}

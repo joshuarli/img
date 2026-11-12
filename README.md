@@ -58,17 +58,7 @@ Run `rimage --help` for flags. See [CLI contracts and JSON](docs/CLI.md),
 [AVIF limitations](docs/AVIF.md), and [independent scoring](docs/SCORING.md).
 [Benchmark evidence](BENCHMARKS.md) distinguishes measured results from deferred gates.
 
-Run the local checks:
-
-```sh
-make test
-make decoder-reference-check
-make metric-reference-check
-```
-
-The metric reference check needs JPEG XL 0.12.0 tools. Native reference decoders
-are development dependencies and are not part of the production executable.
-Linux host behavior and clean builds are separate acceptance proofs in [plan.md](plan.md).
+Supported hosts are macOS ARM64 and Linux ARM64/x86-64. See [development checks](docs/CODEC-BOUNDARY.md#development-checks) and [verification status](plan.md).
 
 The combined distribution selects **AGPL-3.0-only** for Imazen components.
 Original Rimage code retains its MIT and Apache-2.0 notices.

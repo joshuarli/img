@@ -1,0 +1,234 @@
+{
+  "schemaVersion": 1,
+  "architecture": "aarch64-apple-darwin",
+  "sourceRevision": "6535c42",
+  "timingGate": "accepted: pre/post perf-gate-ready passed",
+  "completed": 20,
+  "failures": 0,
+  "configuration": "pinned nightly, dist, default plus build-binary, kache shared compiler cache warm, CARGO_BUILD_JOBS=1; fresh target then cached no-op target per side/round",
+  "cpu": "not attributed: kache backend work is outside cargo child rusage",
+  "method": "five interleaved rounds, reversing pair order on alternate rounds; cargo process start through successful exit; built version and hash checked afterward",
+  "results": [
+    {
+      "side": "current",
+      "state": "cachedTarget",
+      "measurement": {
+        "samples": [
+          {
+            "run": 0,
+            "side": "current",
+            "state": "cachedTarget",
+            "elapsedNs": 131462167,
+            "binaryBytes": 7232432,
+            "binarySha256": "9c8c46187a454435affb9b852a65c1802452e40778b034f5e4c41baaf62595d7",
+            "revision": "6535c42d95173af017ca35ba1dfd4f7db4749e17"
+          },
+          {
+            "run": 1,
+            "side": "current",
+            "state": "cachedTarget",
+            "elapsedNs": 134761667,
+            "binaryBytes": 7232432,
+            "binarySha256": "9c8c46187a454435affb9b852a65c1802452e40778b034f5e4c41baaf62595d7",
+            "revision": "6535c42d95173af017ca35ba1dfd4f7db4749e17"
+          },
+          {
+            "run": 2,
+            "side": "current",
+            "state": "cachedTarget",
+            "elapsedNs": 171123375,
+            "binaryBytes": 7232432,
+            "binarySha256": "9c8c46187a454435affb9b852a65c1802452e40778b034f5e4c41baaf62595d7",
+            "revision": "6535c42d95173af017ca35ba1dfd4f7db4749e17"
+          },
+          {
+            "run": 3,
+            "side": "current",
+            "state": "cachedTarget",
+            "elapsedNs": 151319417,
+            "binaryBytes": 7232432,
+            "binarySha256": "9c8c46187a454435affb9b852a65c1802452e40778b034f5e4c41baaf62595d7",
+            "revision": "6535c42d95173af017ca35ba1dfd4f7db4749e17"
+          },
+          {
+            "run": 4,
+            "side": "current",
+            "state": "cachedTarget",
+            "elapsedNs": 929048625,
+            "binaryBytes": 7232432,
+            "binarySha256": "9c8c46187a454435affb9b852a65c1802452e40778b034f5e4c41baaf62595d7",
+            "revision": "6535c42d95173af017ca35ba1dfd4f7db4749e17"
+          }
+        ],
+        "medianElapsedNs": 151319417,
+        "spreadElapsedNs": 797586458
+      }
+    },
+    {
+      "side": "current",
+      "state": "cleanTarget",
+      "measurement": {
+        "samples": [
+          {
+            "run": 0,
+            "side": "current",
+            "state": "cleanTarget",
+            "elapsedNs": 25219235542,
+            "binaryBytes": 7232432,
+            "binarySha256": "9c8c46187a454435affb9b852a65c1802452e40778b034f5e4c41baaf62595d7",
+            "revision": "6535c42d95173af017ca35ba1dfd4f7db4749e17"
+          },
+          {
+            "run": 1,
+            "side": "current",
+            "state": "cleanTarget",
+            "elapsedNs": 23602141333,
+            "binaryBytes": 7232432,
+            "binarySha256": "9c8c46187a454435affb9b852a65c1802452e40778b034f5e4c41baaf62595d7",
+            "revision": "6535c42d95173af017ca35ba1dfd4f7db4749e17"
+          },
+          {
+            "run": 2,
+            "side": "current",
+            "state": "cleanTarget",
+            "elapsedNs": 24096393208,
+            "binaryBytes": 7232432,
+            "binarySha256": "9c8c46187a454435affb9b852a65c1802452e40778b034f5e4c41baaf62595d7",
+            "revision": "6535c42d95173af017ca35ba1dfd4f7db4749e17"
+          },
+          {
+            "run": 3,
+            "side": "current",
+            "state": "cleanTarget",
+            "elapsedNs": 23036837709,
+            "binaryBytes": 7232432,
+            "binarySha256": "9c8c46187a454435affb9b852a65c1802452e40778b034f5e4c41baaf62595d7",
+            "revision": "6535c42d95173af017ca35ba1dfd4f7db4749e17"
+          },
+          {
+            "run": 4,
+            "side": "current",
+            "state": "cleanTarget",
+            "elapsedNs": 31133331708,
+            "binaryBytes": 7232432,
+            "binarySha256": "9c8c46187a454435affb9b852a65c1802452e40778b034f5e4c41baaf62595d7",
+            "revision": "6535c42d95173af017ca35ba1dfd4f7db4749e17"
+          }
+        ],
+        "medianElapsedNs": 24096393208,
+        "spreadElapsedNs": 8096493999
+      }
+    },
+    {
+      "side": "oracle",
+      "state": "cachedTarget",
+      "measurement": {
+        "samples": [
+          {
+            "run": 0,
+            "side": "oracle",
+            "state": "cachedTarget",
+            "elapsedNs": 177210708,
+            "binaryBytes": 6547968,
+            "binarySha256": "939e48a22b4376d7898cc42cb91c6b7fe0a6edf18b266669b260161810ceaf31",
+            "revision": "27085123d5251f31f0d8ddcbedfd4483b94dfd14"
+          },
+          {
+            "run": 1,
+            "side": "oracle",
+            "state": "cachedTarget",
+            "elapsedNs": 150782792,
+            "binaryBytes": 6547968,
+            "binarySha256": "939e48a22b4376d7898cc42cb91c6b7fe0a6edf18b266669b260161810ceaf31",
+            "revision": "27085123d5251f31f0d8ddcbedfd4483b94dfd14"
+          },
+          {
+            "run": 2,
+            "side": "oracle",
+            "state": "cachedTarget",
+            "elapsedNs": 186584625,
+            "binaryBytes": 6547968,
+            "binarySha256": "939e48a22b4376d7898cc42cb91c6b7fe0a6edf18b266669b260161810ceaf31",
+            "revision": "27085123d5251f31f0d8ddcbedfd4483b94dfd14"
+          },
+          {
+            "run": 3,
+            "side": "oracle",
+            "state": "cachedTarget",
+            "elapsedNs": 163167416,
+            "binaryBytes": 6547968,
+            "binarySha256": "939e48a22b4376d7898cc42cb91c6b7fe0a6edf18b266669b260161810ceaf31",
+            "revision": "27085123d5251f31f0d8ddcbedfd4483b94dfd14"
+          },
+          {
+            "run": 4,
+            "side": "oracle",
+            "state": "cachedTarget",
+            "elapsedNs": 170616584,
+            "binaryBytes": 6547968,
+            "binarySha256": "939e48a22b4376d7898cc42cb91c6b7fe0a6edf18b266669b260161810ceaf31",
+            "revision": "27085123d5251f31f0d8ddcbedfd4483b94dfd14"
+          }
+        ],
+        "medianElapsedNs": 170616584,
+        "spreadElapsedNs": 35801833
+      }
+    },
+    {
+      "side": "oracle",
+      "state": "cleanTarget",
+      "measurement": {
+        "samples": [
+          {
+            "run": 0,
+            "side": "oracle",
+            "state": "cleanTarget",
+            "elapsedNs": 28964160042,
+            "binaryBytes": 6547968,
+            "binarySha256": "939e48a22b4376d7898cc42cb91c6b7fe0a6edf18b266669b260161810ceaf31",
+            "revision": "27085123d5251f31f0d8ddcbedfd4483b94dfd14"
+          },
+          {
+            "run": 1,
+            "side": "oracle",
+            "state": "cleanTarget",
+            "elapsedNs": 28618262542,
+            "binaryBytes": 6547968,
+            "binarySha256": "939e48a22b4376d7898cc42cb91c6b7fe0a6edf18b266669b260161810ceaf31",
+            "revision": "27085123d5251f31f0d8ddcbedfd4483b94dfd14"
+          },
+          {
+            "run": 2,
+            "side": "oracle",
+            "state": "cleanTarget",
+            "elapsedNs": 28802999917,
+            "binaryBytes": 6547968,
+            "binarySha256": "939e48a22b4376d7898cc42cb91c6b7fe0a6edf18b266669b260161810ceaf31",
+            "revision": "27085123d5251f31f0d8ddcbedfd4483b94dfd14"
+          },
+          {
+            "run": 3,
+            "side": "oracle",
+            "state": "cleanTarget",
+            "elapsedNs": 29534952792,
+            "binaryBytes": 6547968,
+            "binarySha256": "939e48a22b4376d7898cc42cb91c6b7fe0a6edf18b266669b260161810ceaf31",
+            "revision": "27085123d5251f31f0d8ddcbedfd4483b94dfd14"
+          },
+          {
+            "run": 4,
+            "side": "oracle",
+            "state": "cleanTarget",
+            "elapsedNs": 29153301000,
+            "binaryBytes": 6547968,
+            "binarySha256": "939e48a22b4376d7898cc42cb91c6b7fe0a6edf18b266669b260161810ceaf31",
+            "revision": "27085123d5251f31f0d8ddcbedfd4483b94dfd14"
+          }
+        ],
+        "medianElapsedNs": 28964160042,
+        "spreadElapsedNs": 916690250
+      }
+    }
+  ],
+  "verdict": "inconclusive: median differences are within observed spread; warm shared compiler cache, not a cold compiler-cache claim"
+}

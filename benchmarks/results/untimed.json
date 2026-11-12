@@ -17850,12 +17850,13 @@
       "timingGate": "deferred"
     }
   },
-  "timingGate": "deferred: host busy",
+  "timingGate": "not measured: capture mode",
   "tools": {
     "cwebp": "1.6.0, single-threaded",
     "dedicatedAvif": "standalone unavailable; original ravif 0.13.0 included but emits unsupported 10-bit",
     "jpegli": "unavailable",
     "original": "66fc0fc plus docs/original-build.patch, release; mozjpeg 0.10.13 (mozjpeg-sys 2.2.3), oxipng 10.2.1, ravif 0.13.0",
     "rimage": "locked repository dist"
-  }
+  },
+  "timingGateAnnotation": "capture-mode label corrected after recording; no timing fields or output measurements changed"
 }

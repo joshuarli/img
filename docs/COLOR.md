@@ -1,6 +1,6 @@
 # Color, alpha, orientation and precision
 
-Scored processing accepts eight-bit SDR samples. Untagged RGB and gray are interpreted as sRGB. PNG sRGB and supported CICP signals are honored. PNG gAMA without a stronger signal uses its declared power transfer function. Unrecognized chromaticities, HDR signaling, unsupported profiles, and high precision are refused for scoring and resizing.
+Scored processing accepts eight-bit SDR samples. Untagged RGB and gray are interpreted as sRGB. PNG sRGB and supported CICP signals are honored. Valid CICP takes precedence over ICC, preventing an inactive profile from becoming active during conversion. Exact equality includes required PNG color signaling; formats unable to carry it are refused. PNG gAMA without a stronger signal uses its declared power transfer function. Unrecognized chromaticities, HDR signaling, unsupported profiles, and high precision are refused for scoring and resizing.
 
 ICC processing uses moxcms 0.8.1 (BSD-3-Clause OR Apache-2.0). Verified paths are RGB matrix profiles and gray profiles. Float transforms disable fixed-point preference and enable extended range. Out-of-sRGB-gamut results fail. Only numerical endpoint error within 0.00001 is rounded into the unit interval. Display P3 preparation is checked against independent LittleCMS float transforms on controlled in-gamut pixels. Saturated out-of-gamut P3 input is refused. Exact PNG paths retain 16-bit samples and color profiles without requiring scored conversion.
 
@@ -20,3 +20,7 @@ rather than clipped. The pinned astronaut photograph exercises this case:
 independent LittleCMS also produces values outside the supported interval.
 Exact sample-preserving paths can retain that profile. Its refusal is recorded
 as incomplete work in benchmark results, never as a fast successful encode.
+
+Canonical sRGB and gamma transfer functions use libm 0.2.16, already present transitively. Platform powf differed by one float ULP for some eight-bit codes and moved a saved photographic score by 0.0117. Fixed float-bit cases and byte-identical prepared source/candidate dumps on macOS and Linux ARM64 verify the repair. Saved-score tolerance remains 0.0001; metric-oracle tolerance remains 0.05.
+
+Unprofiled eight-bit sRGB preparation computes a 256-entry transfer table per image. It uses the same libm values without interpolation; all input codes and captured prepared pixels stay bit-identical. ICC and gamma transforms retain their floating-point paths. See [measured tuning](../BENCHMARKS.md#transfer-table-tuning).
