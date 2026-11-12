@@ -77,3 +77,10 @@ fn direct_quality_is_refused_for_a_lossless_only_png_representation() {
     let gray=StillImage::from_samples(16,16,SampleLayout::Gray8,vec![80;256]).unwrap().encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
     assert!(optimizer::process(&gray,Request {fidelity:Fidelity::Quality(Quality::new(80.0).unwrap()),..Request::default()}).is_err());
 }
+
+#[test]
+fn lossless_cross_format_cannot_discard_hdr_color_signaling() {
+    let image=StillImage::from_rgb8(16,16,common::pixels(16,16)).unwrap();let mut bytes=image.encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
+    let mut chunk=4u32.to_be_bytes().to_vec();chunk.extend_from_slice(b"cICP");chunk.extend_from_slice(&[9,16,0,1]);let crc=crc32fast::hash(&chunk[4..]);chunk.extend_from_slice(&crc.to_be_bytes());bytes.splice(33..33,chunk);
+    assert!(optimizer::process(&bytes,Request {operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Lossless,..Request::default()}).is_err(),"destination has no representation of the source HDR transfer");
+}

@@ -98,11 +98,21 @@ fn expanded(image: &StillImage) -> Vec<[u16; 4]> {
         [rgb[0],rgb[1],rgb[2],if image.has_alpha() { p[channels-1] } else { opaque }]
     }).collect()
 }
-/// Exact expanded sample equality, including hidden RGB, depth, orientation and ICC.
+fn required_png_color(image:&StillImage)->Vec<&[u8]> {
+    let mut facts:Vec<_>=image.png_metadata.iter().filter(|chunk|match &chunk[4..8] {
+        b"cLLi"|b"mDCV"=>true,
+        b"cICP"=>chunk.get(8..12)!=Some(&[1,13,0,1]),
+        b"gAMA"|b"cHRM"=>image.metadata.icc_profile.is_none(),
+        _=>false,
+    }).map(Vec::as_slice).collect();
+    facts.sort_by(|a,b|a[4..8].cmp(&b[4..8]));facts
+}
+/// Exact expanded samples, precision, hidden RGB, orientation and required color facts.
 pub fn samples_equal(first: &StillImage, second: &StillImage) -> bool {
     first.dimensions() == second.dimensions() && first.bit_depth() == second.bit_depth()
         && first.metadata.orientation == second.metadata.orientation
         && first.metadata.icc_profile == second.metadata.icc_profile
+        && required_png_color(first)==required_png_color(second)
         && expanded(first) == expanded(second)
 }
 fn compatible(image: &StillImage, format: Format, fidelity: Fidelity) -> bool {
@@ -174,7 +184,7 @@ fn validate_metadata(source: &StillImage, candidate: &StillImage, format: Format
         || source.metadata.exif != candidate.metadata.exif || source.metadata.xmp != candidate.metadata.xmp {
         return Err(Error::new(ErrorKind::Unsupported, "destination cannot preserve ICC, orientation, EXIF or XMP semantics"));
     }
-    if format != Format::Png && source.png_metadata.iter().any(|p| matches!(&p[4..8], b"gAMA"|b"cHRM"|b"cLLi"|b"mDCV") && source.metadata.icc_profile.is_none()) {
+    if format != Format::Png && !required_png_color(source).is_empty() {
         return Err(Error::new(ErrorKind::Unsupported, "cross-format conversion cannot preserve PNG color signaling without ICC"));
     }
     Ok(())
