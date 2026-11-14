@@ -19,4 +19,4 @@ Use libwebp, cwebp/dwebp, and zenwebp only as **development-only independent beh
 
 libwebp's `COPYING` and `PATENTS` should be reviewed before incorporating any of its source. A C->Rust translation of libwebp would be a derivative port **not** a clean-room rewrite. Prefer a spec-first enhancement of Webpkit; port specific verified permissive routines only where evidence justifies them.
 
-This import **does not yet replace** `zenwebp` in `rimage`. The current `Cargo.toml` and `Cargo.lock` are intentionally untouched, and the current binaries continue carrying AGPL/GPL dependencies. Consult `docs/WEBP-HILLCLIMB.md` for replacement gates.
+This import **did not replace** `zenwebp` in `rimage` when it landed on master; master's `Cargo.toml` and `Cargo.lock` remain untouched and its binaries continue carrying AGPL/GPL dependencies. The `experiment/permissive-codecs` branch wires the snapshot in as a path dependency of the production WebP encoder; master's distribution statement stays in effect until the gates in [WEBP-HILLCLIMB.md](WEBP-HILLCLIMB.md) pass and the branch is accepted. Consult `docs/WEBP-HILLCLIMB.md` for replacement gates.
