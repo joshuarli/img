@@ -30,7 +30,7 @@ Do not distribute them as a newly licensed photographic corpus without establish
 | png (PNG) | 0.18.1 | MIT OR Apache-2.0 |
 | quantette (palette quantization) | 0.6.0 | MIT OR Apache-2.0 |
 | image-webp (WebP decode) | 0.2.4 | MIT OR Apache-2.0 |
-| webpkit (WebP encode) | 0.1.0 | MIT OR Apache-2.0 |
+| webpkit (WebP encode, vendored path dependency, experimental) | `cc1311ebf` | MIT OR Apache-2.0 |
 | rav1d (AV1 decode) | 1.1.0 | BSD-2-Clause |
 | ravif (AVIF encode) | 0.13.0 | BSD-3-Clause |
 | zenavif-parse (AVIF container) | 0.6.2 | MPL-2.0 |
@@ -39,4 +39,10 @@ Do not distribute them as a newly licensed photographic corpus without establish
 
 No AGPL, GPL or LGPL package is in the default or build-binary graph; the LGPL entries in the lockfile graph are wasi-only disjunctive arms never selected on supported targets. zenavif-serialize 0.1.4 (BSD-3-Clause) is a development-only fixture tool. Native dav1d, libwebp and LittleCMS references remain development-only and never enter the production graph. The MPL-2.0 text is preserved locally ([licenses/MPL-2.0](../licenses/MPL-2.0)) as required by zenavif-parse. zenpixels and zencodec are Apache-2.0 OR MIT and are required as metadata/descriptor types shared with fast-ssim2 and ravif.
 
-unicode-ident also requires Unicode-3.0. No package has an unknown declared license. Published locked releases are used without upstream workspace patches, vendoring or Git dependencies.
+unicode-ident also requires Unicode-3.0. No package has an unknown declared license. Published locked releases are used without upstream workspace patches, and no Git dependencies are selected except the in-tree vendored path dependency documented below.
+
+`png` 0.18.1 also independently verifies test samples. `rustybench` 0.5.0 (MIT) is development-only. Native dav1d/libwebp/LittleCMS references remain development-only and never enter the production graph. The [release source archive](RELEASE.md) contains the exact source tree, lockfile and vendored dependencies with their upstream notices.
+
+## Permissive WebP candidate (experimental on this branch)
+
+A source-only Webpkit snapshot (MIT OR Apache-2.0), with upstream authorship and license notices preserved, was imported under `codecs/webpkit/` from [P4suta/webpkit](https://github.com/P4suta/webpkit) at commit `cc1311ebf5a7b287b22f8ae2efb22aae90da49ef`. The imported source blobs were SHA-matched against the pinned upstream tree; the standalone manifest is locally reconstructed. This branch wires the snapshot in as a path dependency of the production WebP encoder through `src/still/webp.rs`, replacing zenwebp pending parity evidence from the [unattended campaign](WEBP-HILLCLIMB.md); master keeps zenwebp and the prior distribution statement until those gates pass and this branch is reviewed. See [WEBP-IMPORT.md](WEBP-IMPORT.md) and [WEBP-HILLCLIMB.md](WEBP-HILLCLIMB.md).

@@ -1,0 +1,85 @@
+# Unattended WebP correctness + Pareto hillclimb
+
+## Mission and authority
+
+You are running an autonomous engineering campaign in **`joshuarli/img`**, branch `master`. Your job is to bring the permissively licensed pure-Rust codec under `codecs/webpkit/` to **at least the practical correctness and speed–size–quality performance frontier of zenwebp**, then replace the current WebP production backend without breaking `rimage`'s still-image contracts. **Do the work, don't just write a plan.** Implement, test, measure, compare, bisect, simplify, and commit small independent improvements. You may commit and push to the repo's current default branch once gates pass; keep worktrees/branches separate for concurrent agents and land changes in tested sequence. Do not wait for approval to do routine engineering. Report actual commits, measured metrics, blockers and remaining deltas, never unverified wins.
+
+Do not mistake the imported source snapshot for a completed codec migration. The target is eventually zero AGPL/GPL runtime dependency closures; eliminating zenwebp alone cannot achieve that because `rimage` currently uses other AGPL/GPL components. Keep unrelated codec migrations independent.
+
+Read first: `docs/CODEC-BOUNDARY.md`, `docs/COLOR.md`, `docs/OPTIMIZATION.md`, `docs/SCORING.md`, `docs/PROVENANCE.md`, `BENCHMARKS.md`, `tests/webp_codec.rs`, `src/still.rs`, `src/optimizer.rs`, and `docs/WEBP-IMPORT.md`. Follow the existing `usr` agent/handoff/todo conventions if present, but prefer executable checks and typed source of truth over duplicative Markdown.
+
+## Hard constraints
+
+- **License:** product WebP backend is MIT OR Apache-2.0 compatible (use Apache-2.0 for our modifications). Retain Webpkit and any permissive third-party notices. **Never incorporate AGPL zenwebp source or recognizable implementation details** into the target. Zenwebp can only be a separately compiled behavior/performance oracle. libwebp is BSD-style and can be ported with correct attribution, but that is a derivative port, not clean room; avoid whole-tree c2rust as unnecessary bulk and potential unsafety.
+- **Runtime:** pure Rust codec, no C/FFI/build-time C execution, no system codec/color runtime; default scalar path stable Rust and `no_std + alloc` where viable. Never add a license-encumbered transitive runtime dependency. `#![forbid(unsafe_code)]` remains unless a separately reviewed, proven SIMD-specific exception has extraordinary value; prefer safe SIMD or autovectorization. Optional Rayon cannot be mandatory.
+- **Product boundary:** still images only; animation support is a codec correctness feature, but do not expose animation through `rimage`'s still CLI, which must reject it. Preserve existing `Format`, `StillImage`, `EncodingMode`, `Effort`, `optimizer`, cancellation, metadata, atomic publication, size/memory caps and CLI behavior. Do not add a new global plugin registry or server.
+- **Correctness over speed:** do not silently drop ICC, EXIF, XMP, orientation, full-range/color conventions, transparency, alpha precision, hidden RGB (including RGB under fully transparent pixels), required metadata, or exact bit depth. No undeclared downconversion, no fabricated fidelity pass, no skipped unsupported tests masquerading as success.
+- **Reproducibility:** pin every oracle version, toolchain, workload manifest, input hash, pixel layout, configuration and CPU; isolate performance runs from build/startup and test shell. Record results in machine-readable JSON/CSV, retain baseline, and use stable independent decoders/scorers. Use original test fixtures only with their valid provenance/redistribution rights.
+- **Security:** strict RIFF bounds; overflow-checked allocations; dimensions/frames/pixels/memory budget before allocation; robust truncation/overlap/invalid chunk cases; no panics/UB on hostile input; bounded work or cancellation for decompress bombs. Fuzz with `cargo-fuzz` and minimize/crystallize all discovered failures.
+
+## Stage 0 — Restore independently testable baseline
+
+1. Verify the imported Webpkit source matches upstream `cc1311ebf5a7b287b22f8ae2efb22aae90da49ef`. Verify both original license texts are intact and `codecs/webpkit/Cargo.toml` is the only intentional manifest reconstruction.
+2. Restore the upstream project's **own** binary test fixtures, test harness, deterministic corpus/metrics ledgers and necessary small tooling crates into a well-defined test-only subtree; do not import its release automation/secrets. Keep the product codec self-contained. The initial import intentionally includes source but omits upstream binary fixture files, so **no full-test claim until this is done**.
+3. Make `cargo check --manifest-path codecs/webpkit/Cargo.toml --all-features` and the codec's **actual tests** pass on target macOS ARM64 and Linux musl ARM64/x86-64. Track every failure, don't weaken/skip cases.
+4. Build independently pinned oracles: Google libwebp (C, development only); zenwebp (AGPL, separate binary/reference only); image-rs/image-webp, mith-mmk/webp-rust, and OxideAV/oxideav-webp as additional permissive sanity checks where useful. Store a concise registry of versions/licenses and invocation interfaces, not source of the AGPL oracle.
+5. Archive initial **before** benchmark and correctness matrix with source SHA, compiler flags, CPU model, `RUSTFLAGS`, corpus revision, oracle version, repeat count, distributions, and explicit unsupported cases. Verify media corpus attribution and prepare procedurally generated CC0 images (real photos only if licensed).
+
+## Stage 1 — Correctness and feature closure (parallelizable)
+
+Make a machine-readable feature matrix covering RIFF/VP8X, VP8, VP8L, ALPH (all filters/compression modes), ICCP/EXIF/XMP, alpha and transparent RGB, animation ANIM/ANMF dispose/blend/offset/loop, corruption and malformed containers, still encode, lossless/lossy encode, incremental decode, and output pixel layouts. Require conformance to WebP RFC 9649 and VP8 RFC 6386 rather than an implementation accident.
+
+Run a four-way differential matrix: `rimage` current zenwebp path, candidate Webpkit, libwebp, and independent pure-Rust decoder; compare both accept/reject outcomes and decoded results.
+- For lossless VP8L: **exact RGBA8**, including hidden RGB, alpha, dimensions and metadata where the comparator exposes them; exact roundtrip for generated and real images.
+- For lossy VP8: compare reconstructed Y/U/V and macroblock/loop-filter stages bit-exact where observable; compare final RGBA by explicit documented YUV-to-RGB and upsampling modes; when different implementations choose legitimate resampling, report maximum/channel and structured difference, not a blanket pass.
+- For alpha: every byte exact; animation: frame count, timing, blend/disposal, composited RGBA and loops exact; metadata: all payload bytes, exact container semantics, unsupported chunk dispositions and orientation.
+- For encoder: validate output with **both** libwebp and an independent Rust decoder (not solely our own). Lossless requires expanded-pixel identity; lossy alpha exact, and the produced bitstream must be well-formed. No expectation of exact compressed bytes across different encoders.
+- For resource failures: construct arithmetic overflow, enormous declared dimensions, short header, zero-sized chunks, pad-byte, duplicate/overlapping/extensible chunk, truncated entropy, absurd frame count and decompression-bomb cases. Explicitly check cancellation and allocation refusal.
+- Fuzz parser, decoder, encode/decode, incremental split, animation and metadata roundtrip with seeded corpus; zero crashes/panics. Every mismatch gets a minimal checked-in deterministic regression.
+
+Parallel workstreams with disjoint ownership: A container/metadata/security; B VP8 decode/chroma; C VP8L/alpha/animation; D encoder VP8 search/quality; E benchmark/CI/corpus; F `rimage` compatibility adapter. No parallel writes to the same files; coordinate via isolated worktrees and merge validated changes serially. Never allow workload generation or a permissive oracle dependency to accidentally contaminate the production dependency tree.
+
+## Stage 2 — Build an honest Pareto measurement system
+
+Measure the codec **in isolation** and separately the full `rimage` convert/optimize workflows. Workloads: 64/256/1024/4K dimensions; photos, grain/noise, text/UI, line art, solid/gradient, high-detail texture, transparency, paletted graphics, grayscale, alpha fringes, tiny images and high-entropy adversarial content. Include odd dimensions, metadata and representative production images. Record hashes and licenses.
+
+Compare at matched quality, NOT merely equal `quality=80` parameter:
+- Lossy: output bytes, decode-verified SSIMULACRA2 or another independently approved perceptual metric, PSNR/SSIM as diagnostic, encode median/p95, decode median/p95, allocations, peak RSS, temporary bytes and selected effort/method.
+- Lossless: exactness first, then bytes, encode/decode latency, p95, allocations/RSS by matched effort budget.
+- Record CPU throughput in MPix/s, byte-size and perceptual quality; construct non-dominated frontiers `{encode time, file bytes, fidelity}`, plus decode/RSS separately. Avoid a single scalar leaderboard concealing severe regressions.
+- Benchmark scalar and optional optimized paths on Apple Silicon and Linux x86-64 (and ARM64 where available). Do not compare emulated timing to native. Use warmed code, alternated A/B order, repeated samples, pinned CPU and sampled system load. Never confuse cold process startup with an encoder kernel.
+- A candidate improvement is only accepted when the change is beyond measurement spread and does not violate correctness, lossless accuracy, security or materially regress important workload strata. As a starting guardrail, reject >5% regressions in median/p95 encode/decode or >10% peak-RSS/size unless an explicitly documented larger Pareto gain justifies them.
+
+**Destination target:** achieve a competitive frontier with pinned zenwebp: matched-score lossy output ≤ zenwebp bytes with comparable or lower encode time on representative workload groups, and decode time/RSS at least competitive for VP8 and VP8L. File-level exceptions are acceptable **only if named, explained and bounded**; never assert blanket parity on synthetic-only tests. Aim to beat both zenwebp and libwebp where possible; no fixed optimization end date or arbitrary number of iterations.
+
+## Stage 3 — Iterative hillclimb loop (repeat autonomously)
+
+For each cycle:
+
+1. From the saved baseline select the **largest high-impact measured gap** (p95 latency, Pareto loss, memory hotspot, correctness deficit, or size quality regression), not the most amusing microbenchmark.
+2. Profile in release mode: `samply`/Instruments/perf/callgrind as available; add isolated counter/criterion measurements. Form a *single falsifiable hypothesis* and predict workload impact.
+3. Implement one focused patch behind a local experiment branch or worktree. Techniques to explore conditionally (not dogma): VP8L Huffman fast tables, backward-copy specialization, LZ77 matchfinder/DP pruning, entropy histograms/palette selection, transform choices, VP8 boolean coding and probability cost, predictor/IDCT/FDCT/loop filter, YUV conversion/chroma upsampling, trellis search budgets and early exit, cache-efficient tile/row buffers, bounded parallelism, safe vectorization and fast paths for opaque alpha. Reject complexity without measured gain.
+4. Run local target tests, independent differential decoding, fuzz regression and side-by-side measurements on representative + adversarial cases. For known changing outputs, assess matched-fidelity not bitstream identity; lossless output remains pixel exact. Record before and after with variance; if inconclusive, revert and preserve only a brief experimental note.
+5. Keep a patch only when measurements justify it and all hard gates pass. Commit a scoped change with a before/after evidence pointer, update the live Pareto ledger and next-priority queue. Clean dead experiments; never accumulate feature flags or two permanent kernels for trivial gains.
+6. Recalculate priorities and repeat, allowing bounded independent experiments in parallel. If an upstream fix is applicable under MIT/Apache, import selectively with attribution and remeasure. Don't periodically rebase wholesale and lose our calibration. Treat real performance as a changing frontier, not a promise.
+
+Use a fast local edit/check loop followed by **immutable, release-built artifacts** for accepted benchmarks. Once a variant reaches performance parity, intensify fuzzing, cross-platform runs, mutation/property tests, release-linkage audit, and CLI end-to-end proofs.
+
+## Stage 4 — Integrate in `rimage` without a behavioral regression
+
+Only after a trustworthy candidate exists, introduce a *private* `src/still/webp.rs` adapter and a path dependency on the codec. Do not disrupt `src/still.rs` public interfaces. Convert safely between `zenpixels::PixelBuffer`/`zencodec::Metadata` and Webpkit's pixel/metadata model: preserve RGB, RGBA, grayscale semantics, 8-bit precision, exact alpha, hidden RGB, ICC/EXIF/XMP and orientation. Respect `zencodec` resource limits, cancellation and strict decoder policy even when the codec has different native controls. If a capability is missing, implement it inside the codec or return the *same* explicit refusal rather than a lossy fallback.
+
+Test the direct WebP encoder and decoder inside `StillImage`, optimizer candidate selection, batch/stream CLI, inspect/probe, metadata keep/strip, source unchanged/fallback, output caps and publication invariants. Re-run current `tests/webp_codec.rs`, `tests/color_fidelity.rs`, `tests/codec_boundary.rs`, `tests/optimizer.rs`, `tests/cli.rs`, `make decoder-reference-check`, `make benchmark-verify`, `make pure-rust-build-check` and the documented target matrix. Preserve or improve measured decode fidelity and time. Avoid broad `zencodec` refactoring; keep the boundary local and typed. Do not change global optimization candidate cap, scoring thresholds, or color-management policy to make the new encoder seem better.
+
+When all compatibility gates pass, switch production WebP, **remove zenwebp from normal/build dependencies**, regenerate `Cargo.lock`, verify `cargo tree -e normal,build` and source/binary SBOM, benchmark immutable dist binaries on macOS ARM64 and Linux musl target hosts, and update `docs/PROVENANCE.md`, `docs/CODEC-BOUNDARY.md`, `BENCHMARKS.md` and `README.md`. Update actual AGPL disclosure only if the **whole** locked runtime closure has no AGPL. Existing other zen* and imagequant dependencies still carry their own licenses.
+
+## Reporting and stopping rules
+
+Store a concise, continuously updated scoreboard, open blocker list and source/provenance ledger, in machine-readable forms where possible. At the end of each unattended run or after substantial commits, report:
+- newly verified correctness cases and still-missing features;
+- the worst remaining Pareto gaps by workload and oracle;
+- median/p95 encode/decode and output-size delta at matched actual fidelity, with hardware/compiler/workload metadata;
+- which hypotheses were accepted or rejected, and why;
+- resulting commit IDs, changed production dependencies and exact remaining hard blockers.
+
+Do not ask the owner to approve routine choices. Work until the finite current campaign goals are verified or a **real** external blocker arises (access, build environment, test fixtures, licensing uncertainty); surface the blocker precisely while completing independent work. A clean status means independent oracles, provenance, correctness, security, memory and performance evidence all pass. Never claim zenwebp is removed simply because the new source was imported.

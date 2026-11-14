@@ -62,8 +62,14 @@ contributing, see [development checks](docs/CODEC-BOUNDARY.md#development-checks
 Open defects are tracked in [TODO.md](TODO.md).
 
 Rimage's source is licensed under **Apache-2.0**; the upstream MIT notice is
-preserved. Every production dependency is permissively licensed (MIT,
-Apache-2.0, Zlib, BSD-2/3-Clause, ISC, Unicode-3.0 or a permissive dual
-license), so binary distributions carry no copyleft obligations; no
-commercial codec license is assumed. See [license provenance](docs/PROVENANCE.md) and the
+preserved. On this branch every production dependency is permissively licensed
+(MIT, Apache-2.0, Zlib, BSD-2/3-Clause, ISC, Unicode-3.0 or a permissive dual
+license), so binary distributions carry no copyleft obligations; no commercial
+codec license is assumed. The switch is experimental until the benchmark
+evidence lands; master still carries the prior AGPL/GPL-linked stack and the
+distribution statement that comes with it. See [license provenance](docs/PROVENANCE.md) and the
 license files.
+
+## Permissive WebP replacement campaign
+
+An isolated snapshot of the MIT/Apache-2.0 [Webpkit](https://github.com/P4suta/webpkit) codec now lives in [`codecs/webpkit/`](codecs/webpkit/). The executable unattended correctness/performance campaign is [`docs/WEBP-HILLCLIMB.md`](docs/WEBP-HILLCLIMB.md) and its exact import provenance is [`docs/WEBP-IMPORT.md`](docs/WEBP-IMPORT.md). On this branch the snapshot is wired in as the WebP encoder through a path dependency, replacing zenwebp pending parity validation; it is not accepted for master until the campaign gates and the benchmark evidence pass.
