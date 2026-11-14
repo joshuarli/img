@@ -57,10 +57,20 @@ pub(crate) const MAX_COPY_LENGTH: u32 = 4096;
 /// matches rarely beat coding the pixels as literals once the length + distance
 /// symbols and their extra bits are paid for.
 pub(crate) const MIN_MATCH: u32 = 4;
-/// Upper bound on hash-chain hops per match search. A cap trades a little
-/// compression for bounded time; it never affects correctness (a shorter or
-/// missed match is still a valid, decodable choice).
+/// Upper bound on hash-chain hops per match search in the greedy finder. A cap
+/// trades a little compression for bounded time; it never affects correctness
+/// (a shorter or missed match is still a valid, decodable choice). The optimal-
+/// parse DP is allowed a deeper walk — see [`MAX_CHAIN_OPTIMAL`].
 pub(crate) const MAX_CHAIN: u32 = 64;
+/// Upper bound on hash-chain hops in the optimal-parse DP's staircase finder
+/// ([`crate::lossless::vp8l::backref::HashChain::find_candidates`]). Raising
+/// this lets the cost-model DP take cheaper long-copy parses; it buys real bytes
+/// on highly repetitive content (a 2048×1024 smooth gradient, 12,682 → 4,854 at
+/// level 1, against a 4.5× lossless wall on exactly that content); photographic
+/// chains exhaust long before the cap, so their wall is unchanged. The greedy
+/// seed stays at [`MAX_CHAIN`], so the floor streams — and every synthetic-cell
+/// byte an ordinary image emits — are unchanged.
+pub(crate) const MAX_CHAIN_OPTIMAL: u32 = 256;
 /// Maximum bit width of the LZ77 pixel-pair hash table (libwebp `HASH_BITS`).
 /// The match finder uses `min(HASH_BITS_LZ77, ceil_log2(pixels))` so small
 /// images do not allocate the full `1 << 18` table.
