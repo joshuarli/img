@@ -48,7 +48,7 @@ pub fn png_workflow(binary: &Path) {
     let output = scratch.0.join("out");
     fs::create_dir(&output).unwrap();
     let samples = write_png(&input, 256, 192);
-    let legacy=std::env::var_os("RIMAGE_ORACLE_BIN").is_some()||std::env::var_os("RIMAGE_BENCH_LEGACY").is_some();
+    let legacy=std::env::var_os("IMG_ORACLE_BIN").is_some()||std::env::var_os("IMG_BENCH_LEGACY").is_some();
     let mut command=Command::new(binary);
     let target=if legacy {command.arg("png").arg(&input).arg("-d").arg(&output);output.join("generated.png")}
         else {let target=output.join("generated.png");command.arg("convert").arg(&input).args(["--lossless","-o"]).arg(&target);target};

@@ -1,7 +1,7 @@
 # Retained behavior matrix
 
 Oracle: `2708512`. Original codec benchmark: `66fc0fc`, with only its broken build script removed.
-Generated fixture samples are defined by `tests/common/mod.rs::pixels`. Tests may run against the oracle with `RIMAGE_ORACLE_BIN`.
+Generated fixture samples are defined by `tests/common/mod.rs::pixels`. Tests may run against the oracle with `IMG_ORACLE_BIN`.
 
 | Behavior | Disposition | Fixture and proof |
 | --- | --- | --- |

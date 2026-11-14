@@ -5,8 +5,8 @@ mod common;
 use std::{fs, path::Path, process::Command};
 
 fn binary() -> std::path::PathBuf {
-    std::env::var_os("RIMAGE_ORACLE_BIN").map(Into::into)
-        .unwrap_or_else(|| env!("CARGO_BIN_EXE_rimage").into())
+    std::env::var_os("IMG_ORACLE_BIN").map(Into::into)
+        .unwrap_or_else(|| env!("CARGO_BIN_EXE_img").into())
 }
 
 #[test]
@@ -20,7 +20,7 @@ fn invalid_parser_and_backup_collision_preserve_inputs() {
     let input = scratch.0.join("image.png");
     common::write_png(&input, 32, 24);
     let original = fs::read(&input).unwrap();
-    let legacy=std::env::var_os("RIMAGE_ORACLE_BIN").is_some();
+    let legacy=std::env::var_os("IMG_ORACLE_BIN").is_some();
     let result = Command::new(binary()).arg(if legacy {"png"} else {"convert"}).arg("--unknown").arg(&input).output().unwrap();
     assert_eq!(result.status.code(), Some(2));
     let mut command=Command::new(binary());

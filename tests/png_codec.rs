@@ -1,7 +1,7 @@
 mod common;
 
 use std::{io::Cursor, fs};
-use rimage::still::{Effort, EncodingMode, Format, Quality, SampleLayout, StillImage};
+use img::still::{Effort, EncodingMode, Format, Quality, SampleLayout, StillImage};
 
 #[test]
 fn exact_png_matrix_preserves_precision_alpha_gray_and_hidden_samples() {
@@ -98,7 +98,7 @@ fn png_private_metadata_and_color_chunks_survive_exact_encoding() {
 
 #[test]
 fn lossless_png_strip_preserves_final_content_light_metadata() {
-    use rimage::optimizer::{self,Fidelity,MetadataPolicy,Operation,Request};
+    use img::optimizer::{self,Fidelity,MetadataPolicy,Operation,Request};
     let mut base=Vec::new();let mut encoder=png::Encoder::new(&mut base,1,1);
     encoder.set_color(png::ColorType::Rgb);encoder.set_depth(png::BitDepth::Sixteen);
     encoder.write_header().unwrap().write_image_data(&[0x2e,0xe0,0x55,0xf0,0x7d,0x00]).unwrap();
@@ -128,10 +128,10 @@ fn compressed_text_counts_toward_the_cumulative_metadata_limit() {
         encoder.write_header().unwrap().write_image_data(&[128,128,128]).unwrap();bytes
     };
     for international in [false,true] {
-        let allowed=fixture(2,international);rimage::still::describe(&allowed).unwrap();StillImage::decode(&allowed).unwrap();
+        let allowed=fixture(2,international);img::still::describe(&allowed).unwrap();StillImage::decode(&allowed).unwrap();
         let oversized=fixture(16,international);assert!(oversized.len()<100_000);
-        assert_eq!(rimage::still::describe(&oversized).unwrap_err().kind(),rimage::still::ErrorKind::Limit);
-        assert_eq!(StillImage::decode(&oversized).err().unwrap().kind(),rimage::still::ErrorKind::Limit);
+        assert_eq!(img::still::describe(&oversized).unwrap_err().kind(),img::still::ErrorKind::Limit);
+        assert_eq!(StillImage::decode(&oversized).err().unwrap().kind(),img::still::ErrorKind::Limit);
     }
 }
 
@@ -147,7 +147,7 @@ fn layout_sensitive_png_metadata_is_never_silently_discarded() {
         let crc = crc32fast::hash(&chunk[4..]); chunk.extend_from_slice(&crc.to_be_bytes()); bytes.splice(33..33, chunk);
         let source = StillImage::decode(&bytes).unwrap();
         assert!(source.encode(Format::Png, EncodingMode::Lossless, Effort::Fast).is_err(), "must not discard or misapply {kind:?}");
-        let stripped = source.strip_metadata(rimage::still::SamplePreservation::Exact).unwrap();
+        let stripped = source.strip_metadata(img::still::SamplePreservation::Exact).unwrap();
         assert_eq!(StillImage::decode(&stripped.encode(Format::Png, EncodingMode::Lossless, Effort::Fast).unwrap()).unwrap().samples(), source.samples());
     }
 }

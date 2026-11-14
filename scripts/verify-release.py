@@ -12,7 +12,7 @@ root = Path(__file__).resolve().parent.parent
 def output(*args):
     return subprocess.check_output(args, text=True)
 
-assert output(str(binary), '--version').startswith('rimage ')
+assert output(str(binary), '--version').startswith('img ')
 if target.endswith('-linux-musl'):
     header = output('readelf', '-hW', str(binary))
     expected = 'AArch64' if target.startswith('aarch64-') else 'Advanced Micro Devices X86-64'

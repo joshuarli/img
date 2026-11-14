@@ -156,7 +156,7 @@ impl Drop for Pending {
 impl Pending {
     fn create(dir: File) -> io::Result<Self> {
         for _ in 0..100 {
-            let name = CString::new(format!(".rimage-tmp-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed))).unwrap();
+            let name = CString::new(format!(".img-tmp-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed))).unwrap();
             match open_at(&dir, OsStr::from_bytes(name.as_bytes()), libc::O_RDWR | libc::O_CREAT | libc::O_EXCL) {
                 Ok(file) => return Ok(Self { dir, name, file }),
                 Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {},

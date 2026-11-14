@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 use std::{fs,path::{Path,PathBuf}};
-use rimage::still::{Effort,EncodingMode,Format,SampleLayout,StillImage};
+use img::still::{Effort,EncodingMode,Format,SampleLayout,StillImage};
 use serde_json::{Value,json};
 use sha2::{Digest,Sha256};
 pub fn root()->PathBuf {Path::new(env!("CARGO_MANIFEST_DIR")).join("benchmarks")}
@@ -54,7 +54,7 @@ pub fn gate(baseline:Option<(f64,f64)>,candidate:Option<(f64,f64)>,baseline_comp
 pub fn validate_record(value:&Value)->Result<(),String> {
     let fail=||Err("invalid saved benchmark record".into());
     if value["schemaVersion"]!=1 || !value["tool"].is_string()||!value["fixture"].is_string()||!value["revision"].is_string() {return fail();}
-    let expected_command=match value["tool"].as_str() {Some("original-mozjpeg")=>Some("mozjpeg"),Some("original-oxipng")=>Some("oxipng"),Some("original-ravif")=>Some("avif"),Some("rimage"|"rimage-png")=>Some("convert"),_=>None};
+    let expected_command=match value["tool"].as_str() {Some("original-mozjpeg")=>Some("mozjpeg"),Some("original-oxipng")=>Some("oxipng"),Some("original-ravif")=>Some("avif"),Some("img"|"img-png"|"rimage"|"rimage-png")=>Some("convert"),_=>None};
     if let Some(expected)=expected_command {let attempts=value["attempts"].as_array().ok_or("missing tool invocations")?;if attempts.iter().any(|attempt|attempt["command"][1]!=expected) {return Err("benchmark tool label does not match invoked command".into());}}
     if value["completed"]!=true {return if value["failure"].is_string() {Ok(())} else {fail()};}
     let width=value["width"].as_u64().ok_or("missing width")?;let height=value["height"].as_u64().ok_or("missing height")?;
@@ -76,7 +76,7 @@ pub fn verify_saved(directory:&Path)->usize {
 }
 fn verify_record(record:&Value) {
     validate_record(record).unwrap();
-    if record["completed"]==true {let input=root().join(record["sourcePath"].as_str().unwrap());let output=root().join(record["outputPath"].as_str().unwrap());let source_bytes=fs::read(input).unwrap();assert_eq!(source_bytes.len() as u64,record["inputBytes"].as_u64().unwrap());let a=StillImage::decode(&source_bytes).unwrap();let bytes=fs::read(output).unwrap();let b=StillImage::decode(&bytes).unwrap();assert_eq!(a.dimensions(),b.dimensions());assert_eq!(a.dimensions(),(record["width"].as_u64().unwrap() as u32,record["height"].as_u64().unwrap() as u32));assert_eq!(bytes.len() as u64,record["outputBytes"].as_u64().unwrap());if record["lossless"]==true {assert!(rimage::optimizer::samples_equal(&a,&b));}else {let actual=rimage::perceptual::PerceptualReference::new(&a).unwrap().score_encoded(&bytes).unwrap();assert!(actual>=record["target"].as_f64().unwrap());assert!((actual-record["score"].as_f64().unwrap()).abs()<0.0001,"{} {}: actual={actual} saved={}",record["fixture"],record["tool"],record["score"]);}}
+    if record["completed"]==true {let input=root().join(record["sourcePath"].as_str().unwrap());let output=root().join(record["outputPath"].as_str().unwrap());let source_bytes=fs::read(input).unwrap();assert_eq!(source_bytes.len() as u64,record["inputBytes"].as_u64().unwrap());let a=StillImage::decode(&source_bytes).unwrap();let bytes=fs::read(output).unwrap();let b=StillImage::decode(&bytes).unwrap();assert_eq!(a.dimensions(),b.dimensions());assert_eq!(a.dimensions(),(record["width"].as_u64().unwrap() as u32,record["height"].as_u64().unwrap() as u32));assert_eq!(bytes.len() as u64,record["outputBytes"].as_u64().unwrap());if record["lossless"]==true {assert!(img::optimizer::samples_equal(&a,&b));}else {let actual=img::perceptual::PerceptualReference::new(&a).unwrap().score_encoded(&bytes).unwrap();assert!(actual>=record["target"].as_f64().unwrap());assert!((actual-record["score"].as_f64().unwrap()).abs()<0.0001,"{} {}: actual={actual} saved={}",record["fixture"],record["tool"],record["score"]);}}
 }
 pub fn record_base(tool:&str,name:&str,revision:&str)->Value {json!({"schemaVersion":1,"tool":tool,"fixture":name,"revision":revision,"threads":1,"architecture":std::env::consts::ARCH,"timingAccepted":false,"elapsedMs":null,"completed":false})}
 pub fn summarize(records:&[Value])->Value {

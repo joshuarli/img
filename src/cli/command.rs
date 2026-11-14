@@ -1,5 +1,5 @@
 use std::{ffi::OsString, num::NonZeroU32, path::PathBuf};
-use rimage::{optimizer::{Fidelity,MetadataPolicy},perceptual::ScoreTarget,still::{Effort,Format,Quality}};
+use img::{optimizer::{Fidelity,MetadataPolicy},perceptual::ScoreTarget,still::{Effort,Format,Quality}};
 #[derive(Clone,Copy,Debug,PartialEq,Eq)]
 pub(crate) enum Command { Optimize,Convert,Inspect,Compare }
 #[derive(Clone)]

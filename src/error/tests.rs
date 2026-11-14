@@ -180,7 +180,7 @@ fn output_io_error_storage_full_has_a_hint() {
 
 #[test]
 fn a_size_limit_violation_explains_which_ceiling_bound() {
-    let error = RimageError::Input(InputError::SizeLimit {
+    let error = ImgError::Input(InputError::SizeLimit {
         path: PathBuf::from("panorama.png"),
         format: ImageFormatId::Png,
         dimensions: Some((65_500, 65_500)),
@@ -203,7 +203,7 @@ fn every_violation_kind_is_described() {
         ViolationKind::Height,
         ViolationKind::Pixels,
     ] {
-        let error = RimageError::Input(InputError::SizeLimit {
+        let error = ImgError::Input(InputError::SizeLimit {
             path: PathBuf::from("x.png"),
             format: ImageFormatId::Png,
             dimensions: None,
@@ -225,7 +225,7 @@ fn every_violation_kind_is_described() {
 
 #[test]
 fn out_of_space_names_both_figures() {
-    let error = RimageError::Output(OutputError::OutOfSpace {
+    let error = ImgError::Output(OutputError::OutOfSpace {
         path: PathBuf::from("out.png"),
         format: ImageFormatId::Png,
         needed: 3 * 1024 * 1024 * 1024,
@@ -242,7 +242,7 @@ fn out_of_space_names_both_figures() {
 
 #[test]
 fn io_errors_report_the_path_that_failed() {
-    let error = RimageError::Output(OutputError::Io {
+    let error = ImgError::Output(OutputError::Io {
         path: PathBuf::from("readonly/out.png"),
         cause: std::io::Error::new(std::io::ErrorKind::PermissionDenied, "access denied"),
     });
@@ -255,7 +255,7 @@ fn io_errors_report_the_path_that_failed() {
 
 #[test]
 fn a_missing_input_points_at_the_path() {
-    let error = RimageError::Input(InputError::Open {
+    let error = ImgError::Input(InputError::Open {
         path: PathBuf::from("gone.jpg"),
         cause: std::io::Error::new(std::io::ErrorKind::NotFound, "no such file"),
     });
@@ -267,50 +267,50 @@ fn a_missing_input_points_at_the_path() {
 #[test]
 fn err_kinds_are_unique_per_variant() {
     let errors = [
-        RimageError::Input(InputError::Open {
+        ImgError::Input(InputError::Open {
             path: PathBuf::from("a"),
             cause: std::io::Error::other("x"),
         }),
-        RimageError::Input(InputError::Decode {
+        ImgError::Input(InputError::Decode {
             path: PathBuf::from("a"),
             format: ImageFormatId::Png,
             cause: decode_failure(),
         }),
-        RimageError::Input(InputError::UnsupportedFormat {
+        ImgError::Input(InputError::UnsupportedFormat {
             path: PathBuf::from("a"),
             format: ImageFormatId::Png,
             reason: UnsupportedReason::NotImplemented,
         }),
-        RimageError::Input(InputError::SizeLimit {
+        ImgError::Input(InputError::SizeLimit {
             path: PathBuf::from("a"),
             format: ImageFormatId::Png,
             dimensions: None,
             violation: limit_violation(),
         }),
-        RimageError::Input(InputError::InvalidResize {
+        ImgError::Input(InputError::InvalidResize {
             requested: (1, 1),
             reason: "x",
         }),
-        RimageError::Input(InputError::Configuration {
+        ImgError::Input(InputError::Configuration {
             path: PathBuf::from("a"),
             format: ImageFormatId::Jpeg,
             cause: decode_failure(),
         }),
-        RimageError::Output(OutputError::Io {
+        ImgError::Output(OutputError::Io {
             path: PathBuf::from("a"),
             cause: std::io::Error::other("x"),
         }),
-        RimageError::Output(OutputError::Encode {
+        ImgError::Output(OutputError::Encode {
             path: PathBuf::from("a"),
             format: ImageFormatId::Png,
             cause: decode_failure(),
         }),
-        RimageError::Output(OutputError::SizeLimit {
+        ImgError::Output(OutputError::SizeLimit {
             path: PathBuf::from("a"),
             format: ImageFormatId::Png,
             violation: limit_violation(),
         }),
-        RimageError::Output(OutputError::OutOfSpace {
+        ImgError::Output(OutputError::OutOfSpace {
             path: PathBuf::from("a"),
             format: ImageFormatId::Png,
             needed: 1,
@@ -327,7 +327,7 @@ fn err_kinds_are_unique_per_variant() {
 
 #[test]
 fn source_preserves_the_upstream_error() {
-    let error = RimageError::Input(InputError::Decode {
+    let error = ImgError::Input(InputError::Decode {
         path: jpeg_path(),
         format: ImageFormatId::Jpeg,
         cause: decode_failure(),
@@ -338,7 +338,7 @@ fn source_preserves_the_upstream_error() {
     assert!(std::error::Error::source(&error).is_some());
 
     // Errors with no underlying OS or decoder cause report none.
-    let error = RimageError::Output(OutputError::OutOfSpace {
+    let error = ImgError::Output(OutputError::OutOfSpace {
         path: PathBuf::from("a"),
         format: ImageFormatId::Png,
         needed: 1,
@@ -357,13 +357,13 @@ fn display_matches_what_displaying_the_inner_variants_produces() {
 
     assert_eq!(
         error.to_string(),
-        RimageError::Input(clone_input(&error)).to_string()
+        ImgError::Input(clone_input(&error)).to_string()
     );
 }
 
 #[test]
 fn hints_are_absent_when_there_is_nothing_actionable() {
-    let error = RimageError::Output(OutputError::Io {
+    let error = ImgError::Output(OutputError::Io {
         path: PathBuf::from("out.png"),
         cause: std::io::Error::other("disk on fire"),
     });
@@ -448,7 +448,7 @@ fn every_error_renders_its_hint_on_a_following_line() {
 
 #[test]
 fn an_error_without_a_hint_still_formats() {
-    let error = RimageError::Output(OutputError::Io {
+    let error = ImgError::Output(OutputError::Io {
         path: PathBuf::from("out.png"),
         cause: std::io::Error::other("disk on fire"),
     });

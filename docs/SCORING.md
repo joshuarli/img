@@ -1,6 +1,6 @@
 # Perceptual comparison
 
-Rimage compares actual decoded candidate bytes with an orientation-correct,
+img compares actual decoded candidate bytes with an orientation-correct,
 eight-bit SDR reference. Color preparation uses floating-point linear sRGB.
 Alpha must match exactly; transparent content is scored over black and white
 in linear light, and the lower score wins. Hidden RGB remains relevant to

@@ -1,7 +1,7 @@
 mod common;
 
 use std::{fs, io::{self, Read}, os::unix::{ffi::OsStringExt, fs::symlink}, path::Path, sync::{Arc, Barrier}};
-use rimage::{publication::{publish, Destination, ReplacementSource, Source}, still::{StillImage, ErrorKind, MAX_DIMENSION, MAX_INPUT_BYTES, Format, EncodingMode, Effort}};
+use img::{publication::{publish, Destination, ReplacementSource, Source}, still::{StillImage, ErrorKind, MAX_DIMENSION, MAX_INPUT_BYTES, Format, EncodingMode, Effort}};
 
 #[test]
 fn bounded_still_adapter_checks_actual_samples() {
@@ -54,9 +54,9 @@ fn unwritable_destination_fails_without_residue() {
 
 #[test]
 fn input_cap_is_mandatory_for_streams() {
-    let error = rimage::still::read_bounded(io::repeat(0).take(MAX_INPUT_BYTES + 1)).unwrap_err();
+    let error = img::still::read_bounded(io::repeat(0).take(MAX_INPUT_BYTES + 1)).unwrap_err();
     assert_eq!(error.kind(), ErrorKind::Limit);
-    assert_eq!(rimage::still::read_bounded(&b"abc"[..]).unwrap(), b"abc");
+    assert_eq!(img::still::read_bounded(&b"abc"[..]).unwrap(), b"abc");
 }
 
 #[test]
@@ -97,7 +97,7 @@ fn replacement_requires_unchanged_open_source() {
 #[test]
 fn replacement_lock_is_released_when_its_process_exits() {
     use std::{io::{BufRead,BufReader},process::{Command,Stdio}};
-    const OWNER_PATH:&str="RIMAGE_TEST_REPLACEMENT_OWNER_PATH";
+    const OWNER_PATH:&str="IMG_TEST_REPLACEMENT_OWNER_PATH";
     if let Some(path)=std::env::var_os(OWNER_PATH) {
         let _owner=ReplacementSource::open(Path::new(&path)).unwrap();
         println!("replacement-owner-ready");
@@ -152,7 +152,7 @@ fn symlinks_directories_aliases_and_native_names_are_safe() {
 #[test]
 fn cancelled_publication_has_no_visible_destination() {
     let scratch=common::Scratch::new("cancel-publication");let output=scratch.0.join("output.png");
-    let cancellation=rimage::cancellation::Cancellation::default();cancellation.cancel();
-    let error=rimage::publication::publish_cancellable(b"complete bytes",rimage::publication::Destination::New(&output),None,&cancellation).unwrap_err();
+    let cancellation=img::cancellation::Cancellation::default();cancellation.cancel();
+    let error=img::publication::publish_cancellable(b"complete bytes",img::publication::Destination::New(&output),None,&cancellation).unwrap_err();
     assert!(!error.committed());assert!(!output.exists());assert_eq!(std::fs::read_dir(&scratch.0).unwrap().count(),0);
 }

@@ -1,6 +1,6 @@
 mod common;
 
-use rimage::{perceptual::{PerceptualReference, ScoreTarget, compare}, still::{Effort, EncodingMode, Format, Quality, SampleLayout, StillImage}};
+use img::{perceptual::{PerceptualReference, ScoreTarget, compare}, still::{Effort, EncodingMode, Format, Quality, SampleLayout, StillImage}};
 
 fn png(image: &StillImage) -> Vec<u8> { image.encode(Format::Png, EncodingMode::Lossless, Effort::Fast).unwrap() }
 
@@ -51,7 +51,7 @@ fn score_uses_the_lower_of_black_and_white_linear_composites() {
     assert!(measured.is_finite() && measured < 100.0);
     let prepared_source = source.prepare().unwrap(); let prepared_candidate = StillImage::decode(&candidate).unwrap().prepare().unwrap();
     let score = |background: f32| {
-        let composite = |prepared: &rimage::still::PreparedImage| -> Vec<[f32; 3]> {
+        let composite = |prepared: &img::still::PreparedImage| -> Vec<[f32; 3]> {
             prepared.linear_rgb().iter().zip(prepared.alpha()).map(|(p, &a)| p.map(|v| v * (a as f32 / 255.0) + background * (1.0 - a as f32 / 255.0))).collect()
         };
         let a = composite(&prepared_source); let b = composite(&prepared_candidate);

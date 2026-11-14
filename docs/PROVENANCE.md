@@ -11,7 +11,7 @@ Original notices are preserved in `LICENSE-MIT` and `LICENSE-APACHE`, retrieved 
 Upstream HEAD at retrieval: `978a87075ad60fbbd033ba851036fbe84e9e0f47`.
 SHA-256: MIT `cd5681828f9fe1cd224e817fb50be47d0fa16d6414a15c5f530910c276a8e50d`, Apache `4ec8872ad1b5ac7de77fc46235e2a4a97201c5c56decef`.
 
-This fork modifies the upstream source. Rimage's source, including the upstream material and its modifications, is licensed under Apache-2.0, selected from the upstream `MIT OR Apache-2.0`; the upstream MIT notice remains applicable to the original material.
+This fork modifies the upstream source. img's source, including the upstream material and its modifications, is licensed under Apache-2.0, selected from the upstream `MIT OR Apache-2.0`; the upstream MIT notice remains applicable to the original material.
 
 Binary distributions carry no AGPL, GPL or MPL obligations: the production closure contains none of those licenses, so the published packages ship only the permissive notices (`LICENSE-MIT`, `LICENSE-APACHE`) and this provenance.
 

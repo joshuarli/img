@@ -1,5 +1,5 @@
 use std::{collections::{BTreeMap,BTreeSet},ffi::OsString,fs,io,os::unix::fs::MetadataExt,path::{Path,PathBuf},sync::{Condvar,Mutex,OnceLock,atomic::{AtomicBool,AtomicI32,AtomicUsize,Ordering}},time::{Duration,Instant}};
-use rimage::{cancellation::Cancellation,optimizer::{self,FormatSelection,Operation,Request},publication::{self,Destination,ReplacementSource,Source},still::{self,Format}};
+use img::{cancellation::Cancellation,optimizer::{self,FormatSelection,Operation,Request},publication::{self,Destination,ReplacementSource,Source},still::{self,Format}};
 use serde_json::{Value,json};
 use crate::cli::{Arguments,Command};
 static CANCELLED:AtomicBool=AtomicBool::new(false);
@@ -275,7 +275,7 @@ fn compare(jobs:&[Job],budget:u64)->Result<Completed,Failure> {
     if reservation>budget {return Err(Failure::new(&candidate.input,None,"input.limit","comparison exceeds memory budget",3));}
     let dimensions=|header:&still::Description|if header.orientation>=5 {(header.height,header.width)} else {(header.width,header.height)};
     if dimensions(&reference_header)!=dimensions(&candidate_header) {return Err(Failure::new(&candidate.input,None,"input.score","score dimensions differ",3));}
-    let score=rimage::perceptual::compare(&original,&encoded).map_err(|e|Failure::new(&candidate.input,None,"input.score",e,3))?;
+    let score=img::perceptual::compare(&original,&encoded).map_err(|e|Failure::new(&candidate.input,None,"input.score",e,3))?;
     let format=Format::sniff(&encoded).map_err(|e|Failure::new(&candidate.input,None,"input.format",e,3))?;
     Ok(Completed {input:candidate.input.clone(),output:None,status:"compared",value:json!({"input":candidate.input.to_str(),"output":null,"format":format.extension(),"inputBytes":encoded.len(),"outputBytes":null,"score":score,"elapsedMs":start.elapsed().as_secs_f64()*1000.0,"status":"compared","warnings":[],"reference":reference.input.to_str()})})
 }
@@ -344,7 +344,7 @@ pub(crate) fn run(args:Arguments)->u8 {
     let result=(|| {
         let jobs=match plan(&args) {Ok(jobs)=>jobs,Err(error)=>{eprintln!("error: {error}");return 2;}};
         let cpu=std::thread::available_parallelism().map(usize::from).unwrap_or(1);
-        let memory=rimage::limits::SystemBudget::probe(1).per_image_bytes();
+        let memory=img::limits::SystemBudget::probe(1).per_image_bytes();
         let workers=args.jobs.min(cpu).min((memory/still::IMAGE_MEMORY_BYTES).max(1) as usize).min(jobs.len()).max(1);
         let budget=memory/workers as u64;
         if args.verbose {eprintln!("workers={workers} requested={} perWorkerMemoryBytes={budget} decodedQueue=0",args.jobs);}
@@ -363,7 +363,7 @@ pub(crate) fn run(args:Arguments)->u8 {
                         slots.lock().unwrap_or_else(|e|e.into_inner())[index]=Some(result);
                     }
                 };
-                match std::thread::Builder::new().name("rimage-image".into()).spawn_scoped(scope,work) {
+                match std::thread::Builder::new().name("img-image".into()).spawn_scoped(scope,work) {
                     Ok(handle)=>handles.push(handle),Err(error)=>{eprintln!("cannot start image worker: {error}");break;},
                 }
             }

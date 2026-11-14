@@ -191,7 +191,7 @@ impl ImageFormatId {
 ///
 /// `available_memory()` reports memory the kernel could hand out *right now*.
 /// It is not a promise: other processes compete for it, the page cache is
-/// reclaimable but not instant, and rimage's own peak is a short spike that
+/// reclaimable but not instant, and img's own peak is a short spike that
 /// arrives after several allocations have already succeeded. Spending all of it
 /// invites the OOM killer instead of a clean
 /// error, so claim at most half by default.

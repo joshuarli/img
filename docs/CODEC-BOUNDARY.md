@@ -16,7 +16,7 @@ The product scope is a still-image CLI for JPEG, PNG, WebP and AVIF on macOS ARM
 | Regression fixtures and measurement | `tests/`, `benches/`, `examples/benchmark.rs` | [Behavior matrix](../tests/parity.md), [benchmarks](../BENCHMARKS.md) |
 | Packaging and distribution | `scripts/package-source`, `scripts/package-release.py` | [Release](RELEASE.md), [provenance](PROVENANCE.md) |
 
-The CLI uses `SystemBudget` for admission. The retained `LimitSet`, `RimageError` and `RunState` APIs serve library callers; they do not define the current CLI's fixed still-image limits or reporting path.
+The CLI uses `SystemBudget` for admission. The retained `LimitSet`, `ImgError` and `RunState` APIs serve library callers; they do not define the current CLI's fixed still-image limits or reporting path.
 
 zenpixels and zencodec retain the shared pixel-descriptor, metadata and resource-limit types. A local format enum keeps implementation traits out of the public API. PixelBuffer carries native interleaved 16-bit samples. No registry or generalized pipeline is needed.
 

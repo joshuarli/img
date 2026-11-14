@@ -13,7 +13,7 @@ validation evidence and known validation gaps.
 
 #![warn(missing_docs)]
 #[cfg(not(any(all(target_os="macos",target_arch="aarch64"),all(target_os="linux",any(target_arch="x86_64",target_arch="aarch64")))))]
-compile_error!("rimage supports macOS ARM64 and Linux x86-64/ARM64");
+compile_error!("img supports macOS ARM64 and Linux x86-64/ARM64");
 
 /// All additional operations for the zune_image
 pub mod operations;
@@ -29,7 +29,7 @@ pub mod limits;
 ///
 /// Wraps [`zune_image::errors::ImageErrors`] so a failure can say whether it
 /// happened reading the input or writing the output, and which format was
-/// involved. See [`error::RimageError`].
+/// involved. See [`error::ImgError`].
 pub mod error;
 
 /// Exit-code categories and an outcome accumulator for library callers.

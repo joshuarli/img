@@ -1,7 +1,7 @@
 mod common;
 
 use std::{borrow::Cow, io::Cursor, num::NonZeroU32};
-use rimage::still::{Effort, EncodingMode, Format, SampleLayout, SamplePreservation, StillImage};
+use img::still::{Effort, EncodingMode, Format, SampleLayout, SamplePreservation, StillImage};
 
 fn png_image(width: u32, height: u32, samples: &[u8], color: png::ColorType, icc: Option<Vec<u8>>, orientation: Option<u8>) -> StillImage {
     let mut info = png::Info::default(); info.width = width; info.height = height;
@@ -161,5 +161,5 @@ fn png_cicp_authority_is_preserved_when_an_icc_profile_is_also_present() {
     let tagged=StillImage::decode(&bytes).unwrap();let reference=StillImage::from_rgb8(16,16,samples).unwrap().prepare().unwrap();
     assert!((ordinary.linear_rgb()[0][0]-reference.linear_rgb()[0][0]).abs()>0.001);
     assert_eq!(tagged.prepare().unwrap().linear_rgb(),reference.linear_rgb(),"PNG CICP supersedes ICC for preparation");
-    assert!(rimage::optimizer::process(&bytes,rimage::optimizer::Request {operation:rimage::optimizer::Operation::Convert(Format::Webp),fidelity:rimage::optimizer::Fidelity::Lossless,..Default::default()}).is_err(),"conversion must not drop authoritative CICP and activate a different ICC interpretation");
+    assert!(img::optimizer::process(&bytes,img::optimizer::Request {operation:img::optimizer::Operation::Convert(Format::Webp),fidelity:img::optimizer::Fidelity::Lossless,..Default::default()}).is_err(),"conversion must not drop authoritative CICP and activate a different ICC interpretation");
 }

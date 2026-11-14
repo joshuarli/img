@@ -2,7 +2,7 @@ mod common;
 #[path="support/native_avif.rs"] mod native_avif;
 #[path="support/avif_raw.rs"] mod avif_raw;
 
-use rimage::still::{Effort, EncodingMode, Format, Quality, SampleLayout, StillImage};
+use img::still::{Effort, EncodingMode, Format, Quality, SampleLayout, StillImage};
 
 fn mode() -> EncodingMode { EncodingMode::Quality(Quality::new(80.0).unwrap()) }
 
@@ -16,7 +16,7 @@ fn avif_still_is_eight_bit_and_has_independent_native_decoder_proof() {
 }
 
 fn check_native(bytes: &[u8]) {
-    let header = rimage::still::describe(bytes).unwrap();
+    let header = img::still::describe(bytes).unwrap();
     assert_eq!(header.bit_depth, Some(8));
     assert!(!header.grid); assert!(!header.animation);
     let decoded = StillImage::decode(bytes).unwrap();
@@ -35,7 +35,7 @@ fn film_grain_is_in_displayed_samples_and_lossless_output() {
     assert!(displayed.iter().zip(&ungrained).filter(|(a,b)|a!=b).count()>1000);
     let decoded=StillImage::decode(bytes).unwrap().samples();
     assert!(displayed.iter().zip(&decoded).all(|(a,b)|a.abs_diff(*b)<=3));
-    let output=rimage::optimizer::process(bytes,rimage::optimizer::Request {operation:rimage::optimizer::Operation::Convert(Format::Webp),fidelity:rimage::optimizer::Fidelity::Lossless,effort:Effort::Fast,..Default::default()}).unwrap();
+    let output=img::optimizer::process(bytes,img::optimizer::Request {operation:img::optimizer::Operation::Convert(Format::Webp),fidelity:img::optimizer::Fidelity::Lossless,effort:Effort::Fast,..Default::default()}).unwrap();
     assert_eq!(StillImage::decode(&output.bytes).unwrap().samples(),decoded);
 }
 
@@ -43,8 +43,8 @@ fn film_grain_is_in_displayed_samples_and_lossless_output() {
 fn yuv_avif_to_png_signals_full_range_rgb() {
     let bytes=include_bytes!("files/generated/film-grain.avif");
     let source=StillImage::decode(bytes).unwrap();
-    let output=rimage::optimizer::process(bytes,rimage::optimizer::Request {operation:rimage::optimizer::Operation::Convert(Format::Png),fidelity:rimage::optimizer::Fidelity::Lossless,effort:Effort::Fast,..Default::default()}).unwrap();
-    let header=rimage::still::describe(&output.bytes).unwrap();assert_eq!(header.cicp,Some([1,13,0,1]));
+    let output=img::optimizer::process(bytes,img::optimizer::Request {operation:img::optimizer::Operation::Convert(Format::Png),fidelity:img::optimizer::Fidelity::Lossless,effort:Effort::Fast,..Default::default()}).unwrap();
+    let header=img::still::describe(&output.bytes).unwrap();assert_eq!(header.cicp,Some([1,13,0,1]));
     let decoded=StillImage::decode(&output.bytes).unwrap();assert_eq!(decoded.samples(),source.samples());decoded.prepare().unwrap();
 }
 
@@ -85,7 +85,7 @@ fn real_grid_container_is_refused_without_decoding_tiles() {
     grid.set_color_config(config);
     let bytes = grid.serialize(1, 2, 32, 16, 16, 16, &[&tile, &tile], None).unwrap();
     assert!(StillImage::decode(&bytes).err().unwrap().to_string().contains("grid"));
-    let header=rimage::still::describe(&bytes).unwrap();assert_eq!((header.width,header.height),(32,16));
+    let header=img::still::describe(&bytes).unwrap();assert_eq!((header.width,header.height),(32,16));
 }
 
 #[test]
@@ -93,7 +93,7 @@ fn multiple_still_temporal_units_are_not_silently_truncated() {
     let image=StillImage::from_rgb8(16,16,common::pixels(16,16)).unwrap();let bytes=image.encode(Format::Avif,mode(),Effort::Fast).unwrap();let data=avif_raw::primary_data(&bytes);
     let mut combined=data.clone();combined.extend_from_slice(&data);let config=avif_raw::av1c_fields(&bytes);
     let mut serializer=zenavif_serialize::Aviffy::new();serializer.set_chroma_subsampling((config.chroma_subsampling_x,config.chroma_subsampling_y)).set_seq_profile(config.profile);
-    let bytes=serializer.to_vec(&combined,None,16,16,8);let header=rimage::still::describe(&bytes).unwrap();assert!(!header.animation);assert!(avif_raw::still_picture(&bytes));
+    let bytes=serializer.to_vec(&combined,None,16,16,8);let header=img::still::describe(&bytes).unwrap();assert!(!header.animation);assert!(avif_raw::still_picture(&bytes));
     assert!(StillImage::decode(&bytes).is_err(),"multiple temporal units must not return only the first frame");
 }
 
@@ -105,7 +105,7 @@ fn header_inspection_exposes_transforms_and_unvalidated_hdr_is_refused() {
         if kind==0 {serializer.set_content_light_level(1000,400);} else if kind==1 {serializer.set_pixel_aspect_ratio(2,1);} else {serializer.set_rotation(1).set_mirror(1);}
         let bytes=serializer.to_vec(&data,None,16,16,8);
         assert!(StillImage::decode(&bytes).is_err(),"unvalidated HDR, nonsquare pixels or container transforms must not lose their interpretation");
-        let header=rimage::still::describe(&bytes).unwrap();
+        let header=img::still::describe(&bytes).unwrap();
         match kind {0=>assert!(header.hdr_metadata),1=>assert_eq!(header.pixel_aspect_ratio,Some([2,1])),_=>{assert_eq!(header.rotation_ccw_degrees,Some(90));assert_eq!(header.mirror_axis,Some(1));}}
     }
 }
@@ -128,7 +128,7 @@ fn bitstream_and_container_hdr_metadata_are_reported_and_refused() {
         let mut serializer=zenavif_serialize::Aviffy::new();serializer.set_chroma_subsampling((config.chroma_subsampling_x,config.chroma_subsampling_y)).set_seq_profile(config.profile);
         if kind==2 {serializer.set_content_light_level(1000,400);} else if kind==3 {serializer.set_mastering_display([(100,200);3],(100,200),10000,1);}
         let bytes=serializer.to_vec(&stream,None,16,16,8);
-        assert!(rimage::still::describe(&bytes).unwrap().hdr_metadata,"kind {kind}");
+        assert!(img::still::describe(&bytes).unwrap().hdr_metadata,"kind {kind}");
         let error=StillImage::decode(&bytes).err().unwrap();assert!(error.to_string().contains("HDR"),"kind {kind}: {error}");
     }
 }

@@ -81,9 +81,9 @@ jobs:
           file: Dockerfile
           platforms: ${{ matrix.docker_platform }}
           load: true
-          tags: rimage-builder:${{ matrix.target }}
-          cache-from: type=gha,scope=rimage-${{ matrix.target }}
-          cache-to: type=gha,mode=max,scope=rimage-${{ matrix.target }}
+          tags: img-builder:${{ matrix.target }}
+          cache-from: type=gha,scope=img-${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=img-${{ matrix.target }}
       - name: Install macOS development references
         if: matrix.docker_platform == ''
         run: brew install cmake dav1d webp little-cms2 pkgconf
@@ -105,25 +105,25 @@ jobs:
         run: make release TARGET="${{ matrix.target }}"
       - name: Save macOS release
         if: matrix.docker_platform == ''
-        run: cp "target/${{ matrix.target }}/dist/rimage" "rimage-${{ matrix.target }}"
+        run: cp "target/${{ matrix.target }}/dist/img" "img-${{ matrix.target }}"
       - name: Build and verify Linux releases
         if: matrix.docker_platform != ''
         run: |
           docker run --rm --init \
             --platform "${{ matrix.docker_platform }}" \
             -e CI \
-            -v "$GITHUB_WORKSPACE:/rimage" \
-            -w /rimage \
-            rimage-builder:${{ matrix.target }} \
+            -v "$GITHUB_WORKSPACE:/img" \
+            -w /img \
+            img-builder:${{ matrix.target }} \
             sh -ec '
               make ci
               make release TARGET=${{ matrix.target }}
-              cp target/${{ matrix.target }}/dist/rimage rimage-${{ matrix.target }}-static
+              cp target/${{ matrix.target }}/dist/img img-${{ matrix.target }}-static
             '
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: rimage-${{ matrix.target }}
-          path: rimage-${{ matrix.target }}*
+          name: img-${{ matrix.target }}
+          path: img-${{ matrix.target }}*
           if-no-files-found: error
 
   source:
@@ -141,11 +141,11 @@ jobs:
       - name: Bundle locked source and dependency notices
         run: |
           rustup show active-toolchain
-          scripts/package-source rimage-source.tar.gz
+          scripts/package-source img-source.tar.gz
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: rimage-source
-          path: rimage-source.tar.gz
+          name: img-source
+          path: img-source.tar.gz
           if-no-files-found: error
 
   release:
@@ -186,7 +186,7 @@ jobs:
           ref: ${{ github.sha }}
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: rimage-*
+          pattern: img-*
           path: dist
 
       - name: Verify Linux ELF artifacts are fully static

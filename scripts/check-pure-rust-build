@@ -5,11 +5,11 @@ cd "$campaign_root"
 export TMPDIR="$campaign_root/.work/tmp"
 mkdir -p "$TMPDIR"
 proof_dir="$(mktemp -d "$TMPDIR/native-tool-guard.XXXXXX")"
-export RIMAGE_NATIVE_TOOL_LOG="$proof_dir/invocations.txt"
-: > "$RIMAGE_NATIVE_TOOL_LOG"
+export IMG_NATIVE_TOOL_LOG="$proof_dir/invocations.txt"
+: > "$IMG_NATIVE_TOOL_LOG"
 cat > "$proof_dir/denied" <<'GUARD'
 #!/bin/sh
-printf '%s\n' "$0 $*" >> "$RIMAGE_NATIVE_TOOL_LOG"
+printf '%s\n' "$0 $*" >> "$IMG_NATIVE_TOOL_LOG"
 exit 97
 GUARD
 chmod +x "$proof_dir/denied"
@@ -18,7 +18,7 @@ export CC="$proof_dir/denied" CXX="$proof_dir/denied"
 export CMAKE="$proof_dir/cmake" NASM="$proof_dir/nasm" PKG_CONFIG="$proof_dir/pkg-config"
 export LIBCLANG_PATH="$proof_dir/no-libclang"
 export PATH="$proof_dir:$PATH" RUSTC_WRAPPER=kache
-export CARGO_TARGET_DIR="${RIMAGE_PURE_TARGET:-$proof_dir/target}"
+export CARGO_TARGET_DIR="${IMG_PURE_TARGET:-$proof_dir/target}"
 case "$CARGO_TARGET_DIR" in "$TMPDIR"/*) ;; *) echo 'proof target must be in repository .work/tmp' >&2; exit 2 ;; esac
 if test -e "$CARGO_TARGET_DIR"; then echo 'proof requires a fresh target directory' >&2; exit 2; fi
 if test "$#" -gt 1; then echo "usage: $0 [target-triple]" >&2; exit 2; fi
@@ -29,6 +29,6 @@ if test "$#" -eq 1; then
 else
     cargo build --locked --profile dist --features build-binary
 fi
-if test -s "$RIMAGE_NATIVE_TOOL_LOG"; then cat "$RIMAGE_NATIVE_TOOL_LOG" >&2; exit 1; fi
-printf 'binary=%s/dist/rimage\nguard=%s\n' "$CARGO_TARGET_DIR$target_subdir" "$proof_dir"
-"$CARGO_TARGET_DIR$target_subdir/dist/rimage" --version
+if test -s "$IMG_NATIVE_TOOL_LOG"; then cat "$IMG_NATIVE_TOOL_LOG" >&2; exit 1; fi
+printf 'binary=%s/dist/img\nguard=%s\n' "$CARGO_TARGET_DIR$target_subdir" "$proof_dir"
+"$CARGO_TARGET_DIR$target_subdir/dist/img" --version

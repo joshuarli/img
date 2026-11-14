@@ -29,9 +29,9 @@ with (scratch / 'samples.tsv').open('w') as samples:
                     started = time.perf_counter_ns()
                     subprocess.run(command, env=child_environment, stdout=log, stderr=subprocess.STDOUT, check=True)
                     elapsed = time.perf_counter_ns() - started
-                binary = target / 'dist/rimage'
+                binary = target / 'dist/img'
                 version = subprocess.check_output([str(binary), '--version'])
-                if not version.startswith(b'rimage '):
+                if not version.startswith(b'img '):
                     raise RuntimeError('built artifact did not run')
                 digest = hashlib.sha256(binary.read_bytes()).hexdigest()
                 samples.write('\t'.join(map(str, [run, side, state, elapsed, binary.stat().st_size, digest, revision])) + '\n')

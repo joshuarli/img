@@ -8,10 +8,10 @@ from pathlib import Path
 root = Path(__file__).resolve().parent.parent
 dist = Path(sys.argv[1])
 artifacts = {
-    'rimage-aarch64-apple-darwin': 'rimage-aarch64-apple-darwin',
-    'rimage-aarch64-unknown-linux-musl': 'rimage-aarch64-unknown-linux-musl-static',
-    'rimage-x86_64-unknown-linux-musl': 'rimage-x86_64-unknown-linux-musl-static',
-    'rimage-source': 'rimage-source.tar.gz',
+    'img-aarch64-apple-darwin': 'img-aarch64-apple-darwin',
+    'img-aarch64-unknown-linux-musl': 'img-aarch64-unknown-linux-musl-static',
+    'img-x86_64-unknown-linux-musl': 'img-x86_64-unknown-linux-musl-static',
+    'img-source': 'img-source.tar.gz',
 }
 if {path.name for path in dist.iterdir()} != set(artifacts):
     raise SystemExit('release must contain exactly the three binary artifacts and corresponding source')
@@ -25,7 +25,7 @@ packages.mkdir()
 notices = ['LICENSE-MIT', 'LICENSE-APACHE', 'docs/PROVENANCE.md']
 for directory, filename in artifacts.items():
     source = dist / directory / filename
-    if directory == 'rimage-source':
+    if directory == 'img-source':
         shutil.copyfile(source, packages / filename)
         continue
     with zipfile.ZipFile(packages / f'{filename}.zip', 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:

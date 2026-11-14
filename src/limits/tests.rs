@@ -337,7 +337,7 @@ fn binding_descriptions_are_not_empty() {
 #[test]
 fn free_space_is_found_for_a_not_yet_created_output() {
     let missing_output = std::env::temp_dir().join(format!(
-        "rimage-limits-{}-not-created-yet/out.png",
+        "img-limits-{}-not-created-yet/out.png",
         std::process::id()
     ));
 
@@ -355,7 +355,7 @@ fn free_space_is_found_for_a_not_yet_created_output() {
 #[test]
 fn free_space_walks_up_past_missing_directories() {
     let deep = std::env::temp_dir().join(format!(
-        "rimage-limits-{}/missing/deeper/out.png",
+        "img-limits-{}/missing/deeper/out.png",
         std::process::id()
     ));
 

@@ -29,8 +29,8 @@ include license notices. Source includes the exact tree, Cargo.lock and vendored
 locked dependencies with their upstream notices; it builds without a registry:
 
 ```sh
-tar -xzf rimage-source.tar.gz
-cd rimage
+tar -xzf img-source.tar.gz
+cd img
 cargo build --offline --locked --profile dist --features build-binary
 ```
 

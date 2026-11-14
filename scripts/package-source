@@ -10,8 +10,8 @@ cd "$root"
 git diff --quiet HEAD -- || { echo 'source packaging requires a clean tracked tree' >&2; exit 1; }
 mkdir -p .work/tmp
 scratch=$(mktemp -d "$root/.work/tmp/release-source.XXXXXX")
-mkdir "$scratch/rimage"
-git archive HEAD | tar -x -C "$scratch/rimage"
-(cd "$scratch/rimage" && cargo vendor --locked --versioned-dirs vendor >> .cargo/config.toml)
-tar -czf "$output" -C "$scratch" rimage
-printf 'source revision: %s\nsource directory: %s/rimage\n' "$(git rev-parse HEAD)" "$scratch"
+mkdir "$scratch/img"
+git archive HEAD | tar -x -C "$scratch/img"
+(cd "$scratch/img" && cargo vendor --locked --versioned-dirs vendor >> .cargo/config.toml)
+tar -czf "$output" -C "$scratch" img
+printf 'source revision: %s\nsource directory: %s/img\n' "$(git rev-parse HEAD)" "$scratch"

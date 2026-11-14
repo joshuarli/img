@@ -10,7 +10,7 @@ Performance captures use production source `0e4a4a2`; corrected comparison comma
 
 [Untimed capture](benchmarks/results/untimed.json) has 196 records, 100 completed and 96 explicit failures/refusals. [Five-run capture](benchmarks/results/timed.json) has 980 records and 500 completed. Every completed output is retained and reverified. Summaries group by tool, fixture and target; different completion sets are never pooled into a cross-tool win. Failed work contributes no successful timing or size result.
 
-The astronaut's nominal sRGB profile leaves the supported gamut under both independent LittleCMS and Rimage; scored processing refuses it. Required precision/color facts and unsafe PNG ancillary metadata also cause named refusals. The original ravif 0.13.0 command emits ten-bit AVIF, outside the independently verified eight-bit scoring matrix. These are recorded failures, not zero-cost successes. Synthetic cases do not establish photographic competitiveness.
+The astronaut's nominal sRGB profile leaves the supported gamut under both independent LittleCMS and img; scored processing refuses it. Required precision/color facts and unsafe PNG ancillary metadata also cause named refusals. The original ravif 0.13.0 command emits ten-bit AVIF, outside the independently verified eight-bit scoring matrix. These are recorded failures, not zero-cost successes. Synthetic cases do not establish photographic competitiveness.
 
 Targets are minimum actual SSIMULACRA2 scores 80, 90 and 95. `matchedWithinHalfPoint` flags proximity to the requested score, not proximity between arbitrary outputs. Overshoot is not an equal-quality win. Exact PNG compares expanded samples, depth, alpha, ICC, orientation and required color signaling. Transfer preparation is platform-stable; saved scores retain their 0.0001 tolerance. Development JSON parsing enables float_roundtrip so saved timing summaries recompute exactly.
 
@@ -29,7 +29,7 @@ The compared configurations use one image worker and RAYON_NUM_THREADS=1:
 
 | Tool | Configuration |
 | --- | --- |
-| new rimage | fast effort, eight total candidates, exact WebP eligible before lossy search |
+| new img | fast effort, eight total candidates, exact WebP eligible before lossy search |
 | new exact PNG | fast effort, lossless |
 | original MozJPEG | mozjpeg 0.10.13 / mozjpeg-sys 2.2.3; native quality grid 1,25,50,75,95,100; progressive, NRobidoux tables |
 | original OxiPNG | oxipng 10.2.1, native preset 2 |
@@ -38,7 +38,7 @@ The compared configurations use one image worker and RAYON_NUM_THREADS=1:
 
 These grids and effort settings are not equally tuned implementations. In particular cwebp's grid does not try lossless. JPEGli and an externally configurable eight-bit AVIF encoder were unavailable. The generic historical jpeg/png commands select zune encoders; earlier results mislabeled as MozJPEG/OxiPNG were discarded and replaced. The verifier now rejects that label/command mismatch.
 
-The corrected data exposes tradeoffs. For procedural UI, exact new PNG is 142 bytes versus OxiPNG's 120; for 16-bit gradient, 520 versus 147. Both preserve the checked samples. This is not a reason to retain native production code. On coffee at minimum score 80, the evaluated WebP outputs are 93,198 bytes at score 85.62 for rimage and 87,502 at 85.82 for cwebp. This one close-score case favors cwebp bytes; it does not establish corpus-wide ordering. Read raw scores and failures before comparing configurations.
+The corrected data exposes tradeoffs. For procedural UI, exact new PNG is 142 bytes versus OxiPNG's 120; for 16-bit gradient, 520 versus 147. Both preserve the checked samples. This is not a reason to retain native production code. On coffee at minimum score 80, the evaluated WebP outputs are 93,198 bytes at score 85.62 for img and 87,502 at 85.82 for cwebp. This one close-score case favors cwebp bytes; it does not establish corpus-wide ordering. Read raw scores and failures before comparing configurations.
 
 ## Original and retained baselines
 
@@ -48,7 +48,7 @@ The retained-behavior oracle is `2708512`; the original comparison source is `66
 git worktree add .work/wt/original 66fc0fc
 git -C .work/wt/original apply ../../../docs/original-build.patch
 cd .work/wt/original
-TMPDIR=/absolute/path/to/rimage/.work/tmp RUSTC_WRAPPER=kache cargo build --locked --release --features build-binary
+TMPDIR=/absolute/path/to/img/.work/tmp RUSTC_WRAPPER=kache cargo build --locked --release --features build-binary
 ```
 
 The original has no dist profile. Its release binary is used for runtime configurations, never directly as a stripped/LTO size comparison. SVG remains excluded from parity. The initial file workload is the historical generic PNG command, with independent dimensions and every RGB sample checked; it is not an OxiPNG-specific workload.
@@ -91,7 +91,7 @@ Allocation/copy counts remain unproven: xctrace Allocations failed to attach eve
 
 ## Standalone workflows and build costs
 
-[Workflow samples](benchmarks/workflows-macos-arm64.json) warm each binary once and interleave five samples per side for startup and the independently checked 256×192 file conversion. Current scored optimize and eight-file batch also receive five samples each. The production executables are immutable snapshots: Cargo can rebuild a CLI with development features while preparing benches, so measuring a mutable target/dist/rimage path misidentifies the artifact. Those earlier runs were discarded.
+[Workflow samples](benchmarks/workflows-macos-arm64.json) warm each binary once and interleave five samples per side for startup and the independently checked 256×192 file conversion. Current scored optimize and eight-file batch also receive five samples each. The production executables are immutable snapshots: Cargo can rebuild a CLI with development features while preparing benches, so measuring a mutable target/dist/img path misidentifies the artifact. Those earlier runs were discarded.
 
 The final short-workflow ranges are broad (startup medians about 97–103 ms with 71–115 ms range widths; exact file medians 131–164 ms with 126–133 ms range widths). No runtime/startup ordering is claimed. Scored optimize is 152 ms median with 233 ms range width; batch is 120 ms with 123 ms range width. These are harness workflow observations under background system load, not stable production latency budgets. Retry on a stable quiet host.
 
@@ -100,7 +100,7 @@ The final short-workflow ranges are broad (startup medians about 97–103 ms wit
 ```sh
 scripts/benchmark-workflows ORACLE_BINARY CURRENT_PRODUCTION_BINARY
 scripts/benchmark-build-cost ORACLE_CHECKOUT
-/usr/bin/time -l target/dist/rimage convert benchmarks/resource-rgb.png --lossless -o RESULT.png --quiet
+/usr/bin/time -l target/dist/img convert benchmarks/resource-rgb.png --lossless -o RESULT.png --quiet
 ```
 
 ## Permissive codec stack comparison (merged to master 2026-11-13)
@@ -194,6 +194,6 @@ Optional implementation and dependency changes need a reproducible benefit beyon
 | Stable startup, file and batch comparisons | Resolved 2026-11-14 on a quiet host with immutable binaries: `scripts/benchmark-workflows` with the retained `2708512` oracle and current master `1424358` (30 samples; pre/post `perf-gate-ready` passed). Results in [workflows-macos-arm64.json](benchmarks/workflows-macos-arm64.json): `startup_version` 3.75 ms vs oracle 3.13 ms (+20%, spreads 58/167 µs), `png_file_conversion` 20.2 ms vs 6.95 ms (+190%, spreads 1.0/0.1 ms), `optimize_scored_file` 24.3 ms, `lossless_batch` 87.7 ms (spread 3.3 ms). The PNG file-conversion gap is the pure-Rust PNG stack's cost vs the pre-rewrite closure; it is an honest tradeoff of the migration, not a regression introduced by these iterations. |
 | Physical clean macOS build | macOS ARM64 without third-party native build tools. Run `make pure-rust-build-check`, inspect its empty native-tool log and `otool -L`; require OS-only linkage. |
 | JPEGli and external eight-bit AVIF comparisons | Install those tools and validate command adapters before extending `examples/benchmark.rs`. `make benchmark-run` does not discover new tools automatically. Rerun verification and retain failures alongside actual decoded scores and dimensions. |
-| Allocation and copy totals | An environment where Instruments can attach. Run `xcrun xctrace record --template Allocations --no-prompt --time-limit 30s --output .work/tmp/allocations.trace --launch -- target/dist/rimage convert benchmarks/corpus/generated/large.png --score 95 --effort fast -o .work/tmp/profile.webp --quiet` with fresh output names. Require an attached trace and attributed counts for completed work; unsupported zero counters are not measurements. |
+| Allocation and copy totals | An environment where Instruments can attach. Run `xcrun xctrace record --template Allocations --no-prompt --time-limit 30s --output .work/tmp/allocations.trace --launch -- target/dist/img convert benchmarks/corpus/generated/large.png --score 95 --effort fast -o .work/tmp/profile.webp --quiet` with fresh output names. Require an attached trace and attributed counts for completed work; unsupported zero counters are not measurements. |
 
 AVIF alpha, monochrome, high depth/HDR, grids and unsupported display transforms are product refusals, not deferred environment proofs. Their retry conditions belong in [AVIF support](docs/AVIF.md). Open implementation defects belong in [TODO.md](TODO.md).

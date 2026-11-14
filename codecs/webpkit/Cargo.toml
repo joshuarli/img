@@ -8,7 +8,7 @@ description = "Pure-Rust WebP VP8/VP8L codec, imported from P4suta/webpkit"
 repository = "https://github.com/P4suta/webpkit"
 readme = "README.md"
 
-# Deliberately isolate the imported codec from rimage's production Cargo.lock.
+# Deliberately isolate the imported codec from img's production Cargo.lock.
 # Do not join the root workspace or add a production path dependency until
 # the campaign's correctness and performance gates pass.
 [workspace]

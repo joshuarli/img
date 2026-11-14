@@ -19,7 +19,7 @@ release:
 	$(MAKE) verify-release TARGET=$(TARGET)
 
 verify-release:
-	python3 scripts/verify-release.py "$(CARGO_TARGET_DIR)/$(TARGET)/dist/rimage" $(TARGET)
+	python3 scripts/verify-release.py "$(CARGO_TARGET_DIR)/$(TARGET)/dist/img" $(TARGET)
 
 baseline-check:
 	cargo test --locked --all-features --test baseline

@@ -1,13 +1,13 @@
 //! Structured input/output errors for retained zune_image library operations.
 //!
-//! [`RimageError`] wraps [`zune_image::errors::ImageErrors`] with a direction,
-//! path, format and optional hint. [`RimageError::source`] exposes the stored
+//! [`ImgError`] wraps [`zune_image::errors::ImageErrors`] with a direction,
+//! path, format and optional hint. [`ImgError::source`] exposes the stored
 //! cause, and [`Display`] renders its chain.
 //!
 //! Output helpers can infer a format from the destination extension. Callers
 //! that know the encoder use [`output_encode_error`] to supply its name.
 //! [`output_io_error`] handles direct filesystem errors, and
-//! [`RimageError::log`] prints the error with its optional hint.
+//! [`ImgError::log`] prints the error with its optional hint.
 //!
 //! The still-image CLI uses its own failure and JSON reporting path. These
 //! helpers remain available to library callers.
@@ -193,19 +193,19 @@ pub enum OutputError {
 
 /// A failure anywhere in the pipeline, tagged with the side it happened on.
 #[derive(Debug)]
-pub enum RimageError {
+pub enum ImgError {
     /// A file could not be read, parsed, or accepted.
     Input(InputError),
     /// A result could not be produced or written.
     Output(OutputError),
 }
 
-impl RimageError {
+impl ImgError {
     /// Which side of the pipeline failed.
     pub const fn direction(&self) -> Direction {
         match self {
-            RimageError::Input(_) => Direction::Input,
-            RimageError::Output(_) => Direction::Output,
+            ImgError::Input(_) => Direction::Input,
+            ImgError::Output(_) => Direction::Output,
         }
     }
 
@@ -215,32 +215,32 @@ impl RimageError {
     /// [`Display`](std::fmt::Display).
     pub const fn kind(&self) -> &'static str {
         match self {
-            RimageError::Input(InputError::Open { .. }) => "input.open",
-            RimageError::Input(InputError::Decode { .. }) => "input.decode",
-            RimageError::Input(InputError::UnsupportedFormat { .. }) => "input.unsupported-format",
-            RimageError::Input(InputError::SizeLimit { .. }) => "input.size-limit",
-            RimageError::Input(InputError::InvalidResize { .. }) => "input.invalid-resize",
-            RimageError::Input(InputError::Configuration { .. }) => "input.configuration",
-            RimageError::Output(OutputError::Io { .. }) => "output.io",
-            RimageError::Output(OutputError::Encode { .. }) => "output.encode",
-            RimageError::Output(OutputError::SizeLimit { .. }) => "output.size-limit",
-            RimageError::Output(OutputError::OutOfSpace { .. }) => "output.out-of-space",
+            ImgError::Input(InputError::Open { .. }) => "input.open",
+            ImgError::Input(InputError::Decode { .. }) => "input.decode",
+            ImgError::Input(InputError::UnsupportedFormat { .. }) => "input.unsupported-format",
+            ImgError::Input(InputError::SizeLimit { .. }) => "input.size-limit",
+            ImgError::Input(InputError::InvalidResize { .. }) => "input.invalid-resize",
+            ImgError::Input(InputError::Configuration { .. }) => "input.configuration",
+            ImgError::Output(OutputError::Io { .. }) => "output.io",
+            ImgError::Output(OutputError::Encode { .. }) => "output.encode",
+            ImgError::Output(OutputError::SizeLimit { .. }) => "output.size-limit",
+            ImgError::Output(OutputError::OutOfSpace { .. }) => "output.out-of-space",
         }
     }
 
     /// The file this failure concerns.
     pub fn path(&self) -> &Path {
         match self {
-            RimageError::Input(InputError::Open { path, .. })
-            | RimageError::Input(InputError::Decode { path, .. })
-            | RimageError::Input(InputError::UnsupportedFormat { path, .. })
-            | RimageError::Input(InputError::SizeLimit { path, .. })
-            | RimageError::Input(InputError::Configuration { path, .. }) => path,
-            RimageError::Input(InputError::InvalidResize { .. }) => Path::new(""),
-            RimageError::Output(OutputError::Io { path, .. })
-            | RimageError::Output(OutputError::Encode { path, .. })
-            | RimageError::Output(OutputError::SizeLimit { path, .. })
-            | RimageError::Output(OutputError::OutOfSpace { path, .. }) => path,
+            ImgError::Input(InputError::Open { path, .. })
+            | ImgError::Input(InputError::Decode { path, .. })
+            | ImgError::Input(InputError::UnsupportedFormat { path, .. })
+            | ImgError::Input(InputError::SizeLimit { path, .. })
+            | ImgError::Input(InputError::Configuration { path, .. }) => path,
+            ImgError::Input(InputError::InvalidResize { .. }) => Path::new(""),
+            ImgError::Output(OutputError::Io { path, .. })
+            | ImgError::Output(OutputError::Encode { path, .. })
+            | ImgError::Output(OutputError::SizeLimit { path, .. })
+            | ImgError::Output(OutputError::OutOfSpace { path, .. }) => path,
         }
     }
 
@@ -250,7 +250,7 @@ impl RimageError {
     /// so callers can omit an empty "hint:" line.
     pub fn hint(&self) -> Option<String> {
         match self {
-            RimageError::Input(InputError::UnsupportedFormat { format, reason, .. }) => {
+            ImgError::Input(InputError::UnsupportedFormat { format, reason, .. }) => {
                 Some(match reason {
                     UnsupportedReason::FeatureNotEnabled => format!(
                         "rebuild with the feature that provides the {} decoder",
@@ -262,19 +262,19 @@ impl RimageError {
                     }
                 })
             }
-            RimageError::Input(InputError::SizeLimit {
+            ImgError::Input(InputError::SizeLimit {
                 dimensions,
                 violation,
                 ..
             }) => Some(size_limit_hint(*dimensions, violation, "shrink")),
-            RimageError::Input(InputError::InvalidResize { requested, .. }) => Some(format!(
+            ImgError::Input(InputError::InvalidResize { requested, .. }) => Some(format!(
                 "choose a --resize value that fits in {}x{} pixels",
                 requested.0, requested.1
             )),
-            RimageError::Output(OutputError::SizeLimit { violation, .. }) => {
+            ImgError::Output(OutputError::SizeLimit { violation, .. }) => {
                 Some(size_limit_hint(None, violation, "shrink"))
             }
-            RimageError::Output(OutputError::OutOfSpace {
+            ImgError::Output(OutputError::OutOfSpace {
                 needed, available, ..
             }) => Some(format!(
                 // `-t` is a concurrency, so fewer images at once means a
@@ -284,7 +284,7 @@ impl RimageError {
                      images at once, or lower --speed",
                 human_bytes(needed.saturating_sub(*available))
             )),
-            RimageError::Output(OutputError::Io { cause, .. }) => match cause.kind() {
+            ImgError::Output(OutputError::Io { cause, .. }) => match cause.kind() {
                 std::io::ErrorKind::PermissionDenied => {
                     Some("check write permissions on the output directory".to_string())
                 }
@@ -293,7 +293,7 @@ impl RimageError {
                 }
                 _ => None,
             },
-            RimageError::Input(InputError::Open { cause, .. }) => match cause.kind() {
+            ImgError::Input(InputError::Open { cause, .. }) => match cause.kind() {
                 std::io::ErrorKind::NotFound => {
                     Some("check that the path exists and the spelling is correct".to_string())
                 }
@@ -302,10 +302,10 @@ impl RimageError {
                 }
                 _ => None,
             },
-            RimageError::Input(InputError::Decode { .. }) => {
+            ImgError::Input(InputError::Decode { .. }) => {
                 Some("check that the file is not truncated or corrupt".to_string())
             }
-            RimageError::Input(InputError::Configuration { cause, .. }) => {
+            ImgError::Input(InputError::Configuration { cause, .. }) => {
                 // The cause text already names the invalid value and the
                 // constraint (e.g. "Unsupported JPEG colorspace: foo"),
                 // so there is nothing actionable to add beyond restating it.
@@ -314,7 +314,7 @@ impl RimageError {
                 let _ = cause;
                 None
             }
-            RimageError::Output(OutputError::Encode { cause, .. }) => match cause {
+            ImgError::Output(OutputError::Encode { cause, .. }) => match cause {
                 ImageErrors::EncodeErrors(ImgEncodeErrors::UnsupportedColorspace(..)) => {
                     Some("choose an output format that accepts this image's colorspace".to_string())
                 }
@@ -338,7 +338,7 @@ impl RimageError {
     /// printing the path twice. (A leading `path: ` prefix also produced a
     /// bare `": "` for the path-less `InvalidResize`.) The hint follows on its
     /// own `hint: ` line because it names a different thing to do rather than
-    /// more context about what broke. The [`kind`](RimageError::kind) slug is
+    /// more context about what broke. The [`kind`](ImgError::kind) slug is
     /// included so a log capture can be filtered by failure class without
     /// matching prose.
     ///
@@ -364,8 +364,8 @@ pub fn input_size_limit(
     format: ImageFormatId,
     dimensions: Option<(u64, u64)>,
     violation: LimitViolation,
-) -> RimageError {
-    RimageError::Input(InputError::SizeLimit {
+) -> ImgError {
+    ImgError::Input(InputError::SizeLimit {
         path: path.to_path_buf(),
         format,
         dimensions,
@@ -378,8 +378,8 @@ pub fn output_size_limit(
     path: &Path,
     format: ImageFormatId,
     violation: LimitViolation,
-) -> RimageError {
-    RimageError::Output(OutputError::SizeLimit {
+) -> ImgError {
+    ImgError::Output(OutputError::SizeLimit {
         path: path.to_path_buf(),
         format,
         violation,
@@ -391,8 +391,8 @@ pub fn output_size_limit(
 /// Used at call sites that produce `io::Error` while reading the input file,
 /// such as `Path::metadata()`, so they are reported with the same structured
 /// form as decode failures.
-pub fn input_open_error(path: &Path, error: &std::io::Error) -> RimageError {
-    RimageError::Input(InputError::Open {
+pub fn input_open_error(path: &Path, error: &std::io::Error) -> ImgError {
+    ImgError::Input(InputError::Open {
         path: path.to_path_buf(),
         cause: std::io::Error::new(error.kind(), error.to_string()),
     })
@@ -404,8 +404,8 @@ pub fn input_open_error(path: &Path, error: &std::io::Error) -> RimageError {
 /// `--colorspace`). The file was read successfully — the failure is in
 /// matching the user's configuration to the encoder's capabilities, which is
 /// why it has its own variant rather than being labelled a decode error.
-pub fn input_config_error(path: &Path, encoder_name: &str, error: &ImageErrors) -> RimageError {
-    RimageError::Input(InputError::Configuration {
+pub fn input_config_error(path: &Path, encoder_name: &str, error: &ImageErrors) -> ImgError {
+    ImgError::Input(InputError::Configuration {
         path: path.to_path_buf(),
         format: ImageFormatId::from_encoder_name(encoder_name),
         cause: clone_image_errors(error),
@@ -418,7 +418,7 @@ pub fn input_config_error(path: &Path, encoder_name: &str, error: &ImageErrors) 
 /// format tag and hint. Operations like resize and quantize fail when the
 /// image's bit depth or colorspace does not match the operation's
 /// requirements; `classify_input` already handles the resize-specific case.
-pub fn input_operation_error(path: &Path, error: &ImageErrors) -> RimageError {
+pub fn input_operation_error(path: &Path, error: &ImageErrors) -> ImgError {
     classify_input(path, error, None)
 }
 
@@ -487,13 +487,13 @@ pub fn human_count(count: u64) -> String {
     }
 }
 
-impl Display for RimageError {
+impl Display for ImgError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            RimageError::Input(InputError::Open { path, cause }) => {
+            ImgError::Input(InputError::Open { path, cause }) => {
                 write!(f, "input: cannot open {}: {cause}", path.display())
             }
-            RimageError::Input(InputError::Decode {
+            ImgError::Input(InputError::Decode {
                 path,
                 format,
                 cause,
@@ -504,7 +504,7 @@ impl Display for RimageError {
                 format.name(),
                 flatten(cause)
             ),
-            RimageError::Input(InputError::UnsupportedFormat {
+            ImgError::Input(InputError::UnsupportedFormat {
                 path,
                 format,
                 reason,
@@ -515,7 +515,7 @@ impl Display for RimageError {
                 format.name(),
                 reason.as_str()
             ),
-            RimageError::Input(InputError::SizeLimit {
+            ImgError::Input(InputError::SizeLimit {
                 path,
                 format,
                 dimensions,
@@ -533,12 +533,12 @@ impl Display for RimageError {
                 }
                 Ok(())
             }
-            RimageError::Input(InputError::InvalidResize { requested, reason }) => write!(
+            ImgError::Input(InputError::InvalidResize { requested, reason }) => write!(
                 f,
                 "input: cannot resize to {}x{}: {reason}",
                 requested.0, requested.1
             ),
-            RimageError::Input(InputError::Configuration {
+            ImgError::Input(InputError::Configuration {
                 path,
                 format,
                 cause,
@@ -549,10 +549,10 @@ impl Display for RimageError {
                 path.display(),
                 flatten(cause)
             ),
-            RimageError::Output(OutputError::Io { path, cause }) => {
+            ImgError::Output(OutputError::Io { path, cause }) => {
                 write!(f, "output: cannot write {}: {cause}", path.display())
             }
-            RimageError::Output(OutputError::Encode {
+            ImgError::Output(OutputError::Encode {
                 path,
                 format,
                 cause,
@@ -563,7 +563,7 @@ impl Display for RimageError {
                 format.name(),
                 flatten(cause)
             ),
-            RimageError::Output(OutputError::SizeLimit {
+            ImgError::Output(OutputError::SizeLimit {
                 path,
                 format,
                 violation,
@@ -576,7 +576,7 @@ impl Display for RimageError {
                 )?;
                 write_violation(f, violation)
             }
-            RimageError::Output(OutputError::OutOfSpace {
+            ImgError::Output(OutputError::OutOfSpace {
                 path,
                 format,
                 needed,
@@ -639,30 +639,30 @@ fn flatten(error: &ImageErrors) -> String {
 
 impl Display for InputError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        Display::fmt(&RimageError::Input(clone_input(self)), f)
+        Display::fmt(&ImgError::Input(clone_input(self)), f)
     }
 }
 
 impl Display for OutputError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        Display::fmt(&RimageError::Output(clone_output(self)), f)
+        Display::fmt(&ImgError::Output(clone_output(self)), f)
     }
 }
 
-impl std::error::Error for RimageError {
+impl std::error::Error for ImgError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            RimageError::Input(InputError::Open { cause, .. }) => Some(cause),
-            RimageError::Input(InputError::Decode { cause, .. }) => Some(cause),
-            RimageError::Input(
+            ImgError::Input(InputError::Open { cause, .. }) => Some(cause),
+            ImgError::Input(InputError::Decode { cause, .. }) => Some(cause),
+            ImgError::Input(
                 InputError::UnsupportedFormat { .. }
                 | InputError::SizeLimit { .. }
                 | InputError::InvalidResize { .. },
             ) => None,
-            RimageError::Input(InputError::Configuration { cause, .. }) => Some(cause),
-            RimageError::Output(OutputError::Io { cause, .. }) => Some(cause),
-            RimageError::Output(OutputError::Encode { cause, .. }) => Some(cause),
-            RimageError::Output(OutputError::SizeLimit { .. } | OutputError::OutOfSpace { .. }) => {
+            ImgError::Input(InputError::Configuration { cause, .. }) => Some(cause),
+            ImgError::Output(OutputError::Io { cause, .. }) => Some(cause),
+            ImgError::Output(OutputError::Encode { cause, .. }) => Some(cause),
+            ImgError::Output(OutputError::SizeLimit { .. } | OutputError::OutOfSpace { .. }) => {
                 None
             }
         }
@@ -680,7 +680,7 @@ pub fn classify_input(
     path: &Path,
     error: &ImageErrors,
     resize: Option<(&'static str, (u64, u64))>,
-) -> RimageError {
+) -> ImgError {
     let format = path
         .extension()
         .and_then(|ext| ext.to_str())
@@ -689,14 +689,14 @@ pub fn classify_input(
 
     match error {
         ImageErrors::ImageDecoderNotImplemented(_) => {
-            RimageError::Input(InputError::UnsupportedFormat {
+            ImgError::Input(InputError::UnsupportedFormat {
                 path: path.to_path_buf(),
                 format,
                 reason: UnsupportedReason::NotImplemented,
             })
         }
         ImageErrors::ImageDecoderNotIncluded(_) => {
-            RimageError::Input(InputError::UnsupportedFormat {
+            ImgError::Input(InputError::UnsupportedFormat {
                 path: path.to_path_buf(),
                 format,
                 reason: UnsupportedReason::FeatureNotEnabled,
@@ -708,16 +708,16 @@ pub fn classify_input(
             // dropping the failure's format tag and hint.
             match resize {
                 Some((reason, requested)) => {
-                    RimageError::Input(InputError::InvalidResize { requested, reason })
+                    ImgError::Input(InputError::InvalidResize { requested, reason })
                 }
-                None => RimageError::Input(InputError::Decode {
+                None => ImgError::Input(InputError::Decode {
                     path: path.to_path_buf(),
                     format,
                     cause: clone_image_errors(error),
                 }),
             }
         }
-        other => RimageError::Input(InputError::Decode {
+        other => ImgError::Input(InputError::Decode {
             path: path.to_path_buf(),
             format,
             cause: clone_image_errors(other),
@@ -736,7 +736,7 @@ pub fn classify_input(
 /// creation, temp-file allocation, or publish/rename failures that happened
 /// during encoding. Everything else is an encoder failure →
 /// [`OutputError::Encode`].
-pub fn classify_output(path: &Path, error: &ImageErrors) -> Option<RimageError> {
+pub fn classify_output(path: &Path, error: &ImageErrors) -> Option<ImgError> {
     let format = path
         .extension()
         .and_then(|ext| ext.to_str())
@@ -744,11 +744,11 @@ pub fn classify_output(path: &Path, error: &ImageErrors) -> Option<RimageError> 
         .unwrap_or(ImageFormatId::Other);
 
     let error_val = match error {
-        ImageErrors::IoError(io) => RimageError::Output(OutputError::Io {
+        ImageErrors::IoError(io) => ImgError::Output(OutputError::Io {
             path: path.to_path_buf(),
             cause: std::io::Error::new(io.kind(), io.to_string()),
         }),
-        _ => RimageError::Output(OutputError::Encode {
+        _ => ImgError::Output(OutputError::Encode {
             path: path.to_path_buf(),
             format,
             cause: clone_image_errors(error),
@@ -765,8 +765,8 @@ pub fn classify_output(path: &Path, error: &ImageErrors) -> Option<RimageError> 
 /// extension. The path extension and the encoder name usually agree, but
 /// Supported encoder names identify the format independently of the path and
 /// is the more direct source.
-pub fn output_encode_error(path: &Path, encoder_name: &str, error: &ImageErrors) -> RimageError {
-    RimageError::Output(OutputError::Encode {
+pub fn output_encode_error(path: &Path, encoder_name: &str, error: &ImageErrors) -> ImgError {
+    ImgError::Output(OutputError::Encode {
         path: path.to_path_buf(),
         format: ImageFormatId::from_encoder_name(encoder_name),
         cause: clone_image_errors(error),
@@ -779,8 +779,8 @@ pub fn output_encode_error(path: &Path, encoder_name: &str, error: &ImageErrors)
 /// temp-file allocation, file publishing, metadata writing), so they are
 /// reported with the same structured form as encoder failures. The path is the
 /// file that was being written when the IO failed.
-pub fn output_io_error(path: &Path, error: &std::io::Error) -> RimageError {
-    RimageError::Output(OutputError::Io {
+pub fn output_io_error(path: &Path, error: &std::io::Error) -> ImgError {
+    ImgError::Output(OutputError::Io {
         path: path.to_path_buf(),
         cause: std::io::Error::new(error.kind(), error.to_string()),
     })
@@ -890,15 +890,15 @@ fn clone_image_errors(error: &ImageErrors) -> ImageErrors {
 }
 
 /// Bridge for the format-agnostic wrappers that only carry a message.
-impl From<InputError> for RimageError {
+impl From<InputError> for ImgError {
     fn from(error: InputError) -> Self {
-        RimageError::Input(error)
+        ImgError::Input(error)
     }
 }
 
-impl From<OutputError> for RimageError {
+impl From<OutputError> for ImgError {
     fn from(error: OutputError) -> Self {
-        RimageError::Output(error)
+        ImgError::Output(error)
     }
 }
 

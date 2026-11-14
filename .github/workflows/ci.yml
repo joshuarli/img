@@ -68,14 +68,14 @@ jobs:
           context: .
           platforms: ${{ matrix.platform }}
           load: true
-          tags: rimage-builder:${{ matrix.target }}
-          cache-from: type=gha,scope=rimage-${{ matrix.target }}
-          cache-to: type=gha,mode=max,scope=rimage-${{ matrix.target }}
+          tags: img-builder:${{ matrix.target }}
+          cache-from: type=gha,scope=img-${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=img-${{ matrix.target }}
       - name: Check and test as an unprivileged user
         env:
           PLATFORM: ${{ matrix.platform }}
           TARGET: ${{ matrix.target }}
         run: |
           docker run --rm --init --platform "$PLATFORM" \
-            -v "$GITHUB_WORKSPACE:/rimage" -w /rimage \
-            "rimage-builder:$TARGET" make ci
+            -v "$GITHUB_WORKSPACE:/img" -w /img \
+            "img-builder:$TARGET" make ci

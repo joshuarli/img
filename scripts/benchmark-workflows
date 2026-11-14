@@ -12,17 +12,17 @@ root = Path(__file__).resolve().parent.parent
 scratch = Path(tempfile.mkdtemp(prefix='workflow-final-', dir=root / '.work/tmp'))
 binaries = {}
 for side, source in zip(['oracle', 'current'], sys.argv[1:]):
-    binary = scratch / f'{side}-rimage'
+    binary = scratch / f'{side}-img'
     shutil.copy2(Path(source).resolve(), binary)
     binaries[side] = binary
 environment = dict(os.environ, TMPDIR=str(root / '.work/tmp'), RUSTC_WRAPPER='kache', RAYON_NUM_THREADS='1')
-environment.pop('RIMAGE_ORACLE_BIN', None)
-environment.pop('RIMAGE_BENCH_LEGACY', None)
+environment.pop('IMG_ORACLE_BIN', None)
+environment.pop('IMG_BENCH_LEGACY', None)
 
 def run(side, group, label, warm=False):
-    child = dict(environment, RIMAGE_BENCH_BIN=str(binaries[side]))
+    child = dict(environment, IMG_BENCH_BIN=str(binaries[side]))
     if side == 'oracle':
-        child['RIMAGE_BENCH_LEGACY'] = '1'
+        child['IMG_BENCH_LEGACY'] = '1'
     names = ['workflow::png_file_conversion', 'workflow::startup_version'] if group == 'paired' else ['workflow::lossless_batch', 'workflow::optimize_scored_file']
     options = ['--test'] if warm else ['--sample-count', '1', '--sample-size', '1', '--min-time', '0', '--max-time', '1', '--format', 'json']
     output = scratch / f'{group}-{side}-{label}.json'

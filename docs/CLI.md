@@ -23,7 +23,7 @@ Duplicate sources, hard-link source aliases, duplicate planned destinations and
 preexisting destinations fail before image publication for those jobs.
 All possible auto destinations are reserved during planning.
 
-Quote glob arguments for expansion by Rimage. Existing positional paths are
+Quote glob arguments for expansion by img. Existing positional paths are
 treated literally, including paths containing glob characters.
 `--file-list PATH` reads UTF-8 paths, one per line, relative to the list.
 A positional `file.list` retains the earlier selection behavior: it supplies
@@ -58,7 +58,7 @@ and evaluated candidate settings. Quiet and verbose conflict.
 New files use mode 0600. In-place replacements copy the source's permissions.
 New destinations use exclusive destination-directory staging, atomic no-clobber
 publication, file sync and parent sync. In-place work requires exclusive writer
-ownership of the source until the job finishes. Cooperating Rimage writers lock
+ownership of the source until the job finishes. Cooperating img writers lock
 the source's parent directory before opening it and hold that lock through
 publication. Another process using the same protocol fails with `input.conflict`
 when that directory is locked, including when it selects a different file in
@@ -66,7 +66,7 @@ the directory. Jobs in one batch wait for each other without holding a second
 directory lock. Process exit releases the lock and leaves no lock file.
 
 The identity check before renaming detects many external edits but is not atomic
-with the rename. External editors, older Rimage versions, and other writers that
+with the rename. External editors, older img versions, and other writers that
 ignore the lock must not modify or replace the source while the job runs; their
 changes can otherwise be overwritten.
 A post-publication durability failure has kind
@@ -111,7 +111,7 @@ not benchmark measurements.
 {"schemaVersion":1,"results":[{"input":"diagram.png","output":"diagram.webp","format":"webp","inputBytes":1200,"outputBytes":900,"score":null,"elapsedMs":4.2,"status":"written","warnings":[]}],"failures":[]}
 ```
 
-Examples: `rimage optimize diagram.png --lossless --json`,
-`rimage convert diagram.png -o diagram.webp --lossless --json`,
-`rimage inspect diagram.png --json`, and
-`rimage compare diagram.png diagram.webp --json`.
+Examples: `img optimize diagram.png --lossless --json`,
+`img convert diagram.png -o diagram.webp --lossless --json`,
+`img inspect diagram.png --json`, and
+`img compare diagram.png diagram.webp --json`.

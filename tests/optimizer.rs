@@ -1,5 +1,5 @@
 mod common;
-use rimage::{optimizer::{self, Fidelity, FormatSelection, MetadataPolicy, Operation, Request}, perceptual::ScoreTarget, still::{Effort, EncodingMode, Format, Quality, SampleLayout, StillImage}};
+use img::{optimizer::{self, Fidelity, FormatSelection, MetadataPolicy, Operation, Request}, perceptual::ScoreTarget, still::{Effort, EncodingMode, Format, Quality, SampleLayout, StillImage}};
 fn source() -> Vec<u8> { StillImage::from_rgb8(48,32,common::pixels(48,32)).unwrap().encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap() }
 #[test]
 fn global_budget_smallest_evaluated_winner_and_repeatability() {
@@ -51,7 +51,7 @@ fn original_fallback_is_explicit_and_cannot_bypass_stripping() {
     let stripped=optimizer::process(&tagged,Request {metadata:MetadataPolicy::Strip,..request}).unwrap();
     assert!(!stripped.unchanged); assert!(stripped.bytes.len()<tagged.len()); assert!(!stripped.bytes.windows(4).any(|p|p==b"tEXt"));
     let scratch=common::Scratch::new("optimizer-publication");let path=scratch.0.join("existing.png");std::fs::write(&path,b"owner bytes").unwrap();
-    assert!(rimage::publication::publish(&stripped.bytes,rimage::publication::Destination::New(&path),None).is_err());
+    assert!(img::publication::publish(&stripped.bytes,img::publication::Destination::New(&path),None).is_err());
     assert_eq!(std::fs::read(path).unwrap(),b"owner bytes");
 }
 #[test]
@@ -68,7 +68,7 @@ fn direct_quality_converts_even_when_larger_and_cancellation_prevents_work() {
     let bytes=source();
     let result=optimizer::process(&bytes,Request {operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Quality(Quality::new(100.0).unwrap()),..Request::default()}).unwrap();
     assert_eq!(result.format,Format::Webp); assert_eq!(result.evaluations.len(),1); assert!(!result.unchanged);
-    assert!(optimizer::process_cancellable(&bytes,Request::default(),&{ let c=rimage::cancellation::Cancellation::default(); c.cancel(); c }).is_err());
+    assert!(optimizer::process_cancellable(&bytes,Request::default(),&{ let c=img::cancellation::Cancellation::default(); c.cancel(); c }).is_err());
 }
 
 #[test]

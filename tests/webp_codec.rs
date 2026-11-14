@@ -1,6 +1,6 @@
 mod common;
 
-use rimage::still::{Effort, EncodingMode, Format, Quality, SampleLayout, StillImage};
+use img::still::{Effort, EncodingMode, Format, Quality, SampleLayout, StillImage};
 
 fn transparent() -> Vec<u8> {
     (0..32 * 24).flat_map(|i| [(i * 13) as u8, (i * 7) as u8, (i * 3) as u8, (i % 256) as u8]).collect()
