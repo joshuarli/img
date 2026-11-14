@@ -22,7 +22,7 @@ defaults:
 jobs:
   macos:
     name: Check and test (macOS ARM64)
-    runs-on: macos-latest
+    runs-on: xcode-27
     timeout-minutes: 30
     permissions:
       contents: read
