@@ -13,7 +13,7 @@ SHA-256: MIT `cd5681828f9fe1cd224e817fb50be47d0fa16d6414a15c5f530910c276a8e50d`,
 
 This fork modifies the upstream source. Rimage's source, including the upstream material and its modifications, is licensed under Apache-2.0, selected from the upstream `MIT OR Apache-2.0`; the upstream MIT notice remains applicable to the original material.
 
-Binaries built from this tree link only permissively licensed production dependencies, so they carry no copyleft obligations. `LICENSE-AGPL3` applies to binaries published from before the permissive codec swap; it is retained for those distributions and for history, and binds nothing built today. [RELEASE.md](RELEASE.md) and `scripts/package-release.py` ship it as a notice for that reason.
+Binaries built from this tree link no AGPL or GPL dependencies. Every production dependency is permissively licensed except `zenavif-parse` 0.6.2 (MPL-2.0, file-level weak copyleft, unmodified; its license text is preserved in `licenses/MPL-2.0` and its sources ship with this repository), so the only copyleft obligation on binaries built from this tree is to offer the MPL-2.0 component's source under MPL-2.0 — which this repository satisfies. `LICENSE-AGPL3` applies to binaries published from before the permissive codec swap; it is retained for those distributions and for history, and binds nothing built today. [RELEASE.md](RELEASE.md) and `scripts/package-release.py` ship it as a notice for that reason.
 
 `tests/common/mod.rs` creates procedural RGB samples. These generated samples are offered under CC0-1.0.
 Existing `tests/files` arrived in the source history without per-file photographic provenance. They remain regression inputs and do not establish a redistributable benchmark corpus.

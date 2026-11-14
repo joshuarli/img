@@ -62,10 +62,15 @@ contributing, see [development checks](docs/CODEC-BOUNDARY.md#development-checks
 Open defects are tracked in [TODO.md](TODO.md).
 
 Rimage's source is licensed under **Apache-2.0**; the upstream MIT notice is
-preserved. On this branch every production dependency is permissively licensed
-(MIT, Apache-2.0, Zlib, BSD-2/3-Clause, ISC, Unicode-3.0 or a permissive dual
-license), so binary distributions carry no copyleft obligations; no commercial
-codec license is assumed. The switch is experimental until the benchmark
+preserved. On this branch the production dependency closure contains no AGPL or
+GPL code: every production dependency is permissively licensed (MIT,
+Apache-2.0, Zlib, BSD-2/3-Clause, ISC, Unicode-3.0 or a permissive dual
+license) except `zenavif-parse` 0.6.2 (MPL-2.0, file-level weak copyleft,
+unmodified; its text is preserved in `licenses/MPL-2.0` and its sources ship
+with this repository). Binary distributions carry no AGPL/GPL obligations; the
+only copyleft obligation is offering the MPL-2.0 component's source under
+MPL-2.0, which this repository satisfies. No commercial codec license is
+assumed. The switch is experimental until the benchmark
 evidence lands; master still carries the prior AGPL/GPL-linked stack and the
 distribution statement that comes with it. See [license provenance](docs/PROVENANCE.md) and the
 license files.
