@@ -61,6 +61,20 @@ fn rgb_and_explicit_gray_conversion_are_exact() {
 }
 
 #[test]
+fn gray_alpha_webp_expands_luminance_and_preserves_every_alpha_value() {
+    let samples: Vec<u8> = (0..=255u8).flat_map(|alpha| [alpha.wrapping_mul(7), alpha]).collect();
+    let expected: Vec<u8> = samples.chunks_exact(2).flat_map(|px| [px[0], px[0], px[0], px[1]]).collect();
+    let image = StillImage::from_samples(16, 16, SampleLayout::GrayAlpha8, samples.clone()).unwrap();
+    for mode in [EncodingMode::Lossless, EncodingMode::Quality(Quality::new(85.0).unwrap())] {
+        let bytes = image.encode(Format::Webp, mode, Effort::Fast).unwrap();
+        let decoded = webp::Decoder::new(&bytes).decode().unwrap();
+        assert_eq!((decoded.width(), decoded.height()), (16, 16));
+        assert_eq!(decoded.chunks_exact(4).map(|px| px[3]).collect::<Vec<_>>(), (0..=255u8).collect::<Vec<_>>());
+        if matches!(mode, EncodingMode::Lossless) { assert_eq!(decoded.to_vec(), expected); }
+    }
+}
+
+#[test]
 fn decoded_untagged_png_samples_can_be_encoded_without_color_conversion() {
     let samples=transparent();
     let image=StillImage::from_samples(32,24,SampleLayout::Rgba8,samples.clone()).unwrap();

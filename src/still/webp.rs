@@ -39,10 +39,15 @@ pub(super) fn decode(bytes: &[u8], stop: &crate::cancellation::Cancellation) -> 
 }
 
 fn rgba(image: &StillImage) -> Vec<u8> {
-    if image.has_alpha() { return image.samples(); }
     let samples = image.samples();
     if image.is_grayscale() {
-        samples.iter().flat_map(|&g| [g, g, g, 255]).collect()
+        if image.has_alpha() {
+            samples.chunks_exact(2).flat_map(|px| [px[0], px[0], px[0], px[1]]).collect()
+        } else {
+            samples.iter().flat_map(|&g| [g, g, g, 255]).collect()
+        }
+    } else if image.has_alpha() {
+        samples
     } else {
         samples.chunks_exact(3).flat_map(|px| [px[0], px[1], px[2], 255]).collect()
     }
