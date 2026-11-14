@@ -11,8 +11,8 @@ Original notices are preserved in `LICENSE-MIT` and `LICENSE-APACHE`, retrieved 
 Upstream HEAD at retrieval: `978a87075ad60fbbd033ba851036fbe84e9e0f47`.
 SHA-256: MIT `cd5681828f9fe1cd224e817fb50be47d0fa16d6414a15c5f530910c276a8e50d`, Apache `4ec8872ad1b5ac7de77fc46235e2a4a97201c5c55426f2635764b0f5c56decef`.
 
-This fork modifies the upstream source. Its additions follow the selected AGPL-3.0 distribution path with the integrated Imazen dependencies.
-Upstream notices remain applicable to the original material. The resolved production audit is recorded below.
+This fork modifies the upstream source. Rimage's source, including the upstream material and its modifications, is licensed under Apache-2.0, selected from the upstream `MIT OR Apache-2.0`; the upstream MIT notice remains applicable to the original material.
+Built binaries link the AGPL-3.0-only Imazen codecs below, so a binary distribution is the combined work described under the audit and follows AGPL-3.0-only. The resolved production audit is recorded below.
 
 `tests/common/mod.rs` creates procedural RGB samples. These generated samples are offered under CC0-1.0.
 Existing `tests/files` arrived in the source history without per-file photographic provenance. They remain regression inputs and do not establish a redistributable benchmark corpus.
@@ -32,7 +32,7 @@ Do not distribute them as a newly licensed photographic corpus without establish
 | moxcms / png / libm | 0.8.1 / 0.18.1 / 0.2.16 | Apache-2.0 / MIT / MIT |
 | retained imagequant operation | 4.4.1 | GPL-3.0-or-later |
 
-The combined work follows AGPL-3.0-only; dependency files keep their own licenses and notices. This does not relabel MPL, GPL or permissive dependency source as AGPL. GPLv3 section 13 permits combination with AGPLv3 under its stated conditions. MPL 2.0 section 3.3 permits a larger work while retaining its covered-source obligations. Preserve notices and supply corresponding source under the applicable terms when distributing; no commercial grant or publication is assumed. Primary terms: [AGPL text](../LICENSE-AGPL3), [MPL 2.0](https://www.mozilla.org/en-US/MPL/2.0/). zenrav1e's [upstream PATENTS](../licenses/PATENTS-zenrav1e) remains applicable; the [MPL text](../licenses/MPL-2.0) is preserved locally.
+The combined binary work follows AGPL-3.0-only; Rimage source stays Apache-2.0, and dependency files keep their own licenses and notices. This does not relabel MPL, GPL or permissive dependency source as AGPL. GPLv3 section 13 permits combination with AGPLv3 under its stated conditions. MPL 2.0 section 3.3 permits a larger work while retaining its covered-source obligations. Preserve notices and supply corresponding source under the applicable terms when distributing; no commercial grant or publication is assumed. Primary terms: [AGPL text](../LICENSE-AGPL3), [MPL 2.0](https://www.mozilla.org/en-US/MPL/2.0/). zenrav1e's [upstream PATENTS](../licenses/PATENTS-zenrav1e) remains applicable; the [MPL text](../licenses/MPL-2.0) is preserved locally.
 
 Permissive alternatives are selected in the inventory; self_cell chooses Apache-2.0, avoiding its GPL-2.0-only alternative. unicode-ident also requires Unicode-3.0. No package has an unknown declared license. Published locked releases are used without upstream workspace patches, vendoring or Git dependencies. The actively maintained Imazen stack supplies the required pure-Rust codecs; adapters and removal conditions are documented at [the boundary](CODEC-BOUNDARY.md). The png adapter is required for precision/profile correctness. libm was already resolved and now supplies platform-stable transfer math. Their required artifact/RSS costs are reported in [benchmarks](../BENCHMARKS.md).
 

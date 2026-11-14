@@ -61,7 +61,8 @@ Supported hosts are macOS ARM64 and Linux ARM64/x86-64. For source builds and
 contributing, see [development checks](docs/CODEC-BOUNDARY.md#development-checks).
 Open defects are tracked in [TODO.md](TODO.md).
 
-The combined distribution selects **AGPL-3.0-only** for Imazen components.
-Original Rimage code retains its MIT and Apache-2.0 notices.
-See [license provenance](docs/PROVENANCE.md) and the license files.
-No commercial license is assumed; prereleases retain these license obligations.
+Rimage's source is licensed under **Apache-2.0**; the upstream MIT notice is
+preserved. Built binaries link Imazen codecs licensed AGPL-3.0-only and
+imagequant licensed GPL-3.0-or-later, so binary distributions follow
+**AGPL-3.0-only**. See [license provenance](docs/PROVENANCE.md) and the
+license files. No commercial codec license is assumed.
