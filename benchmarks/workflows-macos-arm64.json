@@ -5,6 +5,7 @@
   "timingGate": "accepted: pre/post perf-gate-ready passed",
   "method": "immutable binary snapshots; both paired workflows warmed once; five interleaved one-iteration samples per side with reversed pair order in rounds 2 and 4; other current workflows warmed once and sampled five times",
   "oracleRevision": "2708512",
+  "oracleBinarySha256": "30ad1ced83f7849a317e7a7a54b2475d1f4487324ecd32bad563f9eef694514a",
   "candidateBinarySha256": "3adae6b674f14ae78a74450697f1a50c270df3babcf8bb714434bca9407c6b5c",
   "configuration": "dist, normal production binary, default CLI workers; RAYON_NUM_THREADS=1; includes setup/verification/cleanup except version-only workload",
   "allocationCounters": "unsupported; zero counters are not zero allocations",
