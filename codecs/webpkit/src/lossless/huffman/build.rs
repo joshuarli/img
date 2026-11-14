@@ -15,6 +15,9 @@
 //! which is well within both limits for our alphabets (`n <= 280`), so the loop is
 //! guaranteed to terminate.
 
+use alloc::collections::BinaryHeap;
+use core::cmp::Reverse;
+
 use crate::lossless::prelude::*;
 
 /// Sentinel child/marker for a leaf node (a real symbol index is always small).
@@ -35,30 +38,6 @@ struct Node {
     symbol: usize,
 }
 
-/// Locate the two smallest active nodes, returning their *positions in `active`*.
-///
-/// Ordering is by `(count, pool index)`, so ties break deterministically on the
-/// creation order of nodes (leaves precede internal nodes). `active` must hold at
-/// least two entries.
-fn two_minima(active: &[usize], pool: &[Node]) -> (usize, usize) {
-    let cost = |idx: usize| (pool[idx].count, idx);
-    let (mut min1, mut min2) = if cost(active[1]) < cost(active[0]) {
-        (1usize, 0usize)
-    } else {
-        (0usize, 1usize)
-    };
-    for (pos, &idx) in active.iter().enumerate().skip(2) {
-        let key = cost(idx);
-        if key < cost(active[min1]) {
-            min2 = min1;
-            min1 = pos;
-        } else if key < cost(active[min2]) {
-            min2 = pos;
-        }
-    }
-    (min1, min2)
-}
-
 /// Walk the tree rooted at `root` and record each leaf's depth as its code length.
 ///
 /// Returns a vector of length `alphabet_size` (0 for symbols not in the tree).
@@ -77,13 +56,19 @@ fn assign_depths(pool: &[Node], root: usize, alphabet_size: usize) -> Vec<u32> {
     lengths
 }
 
+
+/// The number of used symbols, upper-bounding the leaf count for capacity sizing.
+fn pool_hint(histogram: &[u32]) -> usize {
+    histogram.iter().filter(|&&freq| freq != 0).count()
+}
+
 /// Build an optimal Huffman tree over the used symbols with every weight floored
 /// at `count_min`, and return per-symbol depths (code lengths).
 ///
 /// Requires at least two used symbols (the caller handles the 0/1 cases); with
 /// fewer, no meaningful tree exists.
 fn huffman_code_lengths(histogram: &[u32], count_min: u64) -> Vec<u32> {
-    let mut pool: Vec<Node> = Vec::new();
+    let mut pool: Vec<Node> = Vec::with_capacity(2 * pool_hint(histogram) - 1);
     for (symbol, &freq) in histogram.iter().enumerate() {
         if freq != 0 {
             pool.push(Node {
@@ -96,27 +81,28 @@ fn huffman_code_lengths(histogram: &[u32], count_min: u64) -> Vec<u32> {
     }
     debug_assert!(pool.len() >= 2, "caller must handle the 0/1-symbol cases");
 
-    let mut active: Vec<usize> = (0..pool.len()).collect();
-    while active.len() > 1 {
-        let (pos_a, pos_b) = two_minima(&active, &pool);
-        let (a, b) = (active[pos_a], active[pos_b]);
+    // Min-heap on `(count, pool index)`; the two smallest entries are unique at
+    // every step, so the merge sequence — and the resulting lengths — are exactly
+    // the ones the quadratic scan selected, at O(n log n) instead of O(n^2).
+    let mut heap: BinaryHeap<Reverse<(u64, usize)>> = pool
+        .iter()
+        .enumerate()
+        .map(|(idx, node)| Reverse((node.count, idx)))
+        .collect();
+    while heap.len() > 1 {
+        let Reverse(a) = heap.pop().expect("heap has at least two");
+        let Reverse(b) = heap.pop().expect("heap has at least two");
         let parent = pool.len();
         pool.push(Node {
-            count: pool[a].count + pool[b].count,
-            left: a,
-            right: b,
+            count: pool[a.1].count + pool[b.1].count,
+            left: a.1,
+            right: b.1,
             symbol: NONE,
         });
-        // Drop both merged roots (highest position first to keep the other valid)
-        // and add the parent. Selection is order-independent, so `swap_remove`'s
-        // reshuffling does not affect determinism.
-        let (hi, lo) = (pos_a.max(pos_b), pos_a.min(pos_b));
-        active.swap_remove(hi);
-        active.swap_remove(lo);
-        active.push(parent);
+        heap.push(Reverse((pool[parent].count, parent)));
     }
 
-    assign_depths(&pool, active[0], histogram.len())
+    assign_depths(&pool, heap.pop().expect("one tree remains").0.1, histogram.len())
 }
 
 /// Assign length-limited canonical code lengths for `histogram`.
