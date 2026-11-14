@@ -16,7 +16,7 @@ impl Quantize {
     ///
     /// # Arguments
     /// - quality: resulting quality of the palette; maps to at most `2 + quality * 254 / 100` colors
-    /// - dithering: when `Some`, apply Floyd-Steinberg dithering; the value is otherwise ignored
+    /// - dithering: Floyd-Steinberg dithering level between 0.0 and 1.0; `None` keeps the library default (full dithering)
     #[must_use]
     pub fn new(quality: u8, dithering: Option<f32>) -> Self {
         Self { quality, dithering }
@@ -37,39 +37,34 @@ impl OperationsTrait for Quantize {
                     "Image dimensions overflow during quantization",
                 ))?;
 
-        let colors = 2 + (f32::from(self.quality) * 254.0 / 100.0).round() as usize;
-        let size = quantette::PaletteSize::from_usize_clamped(colors);
+        let colors = 2 + (f32::from(self.quality) * 254.0 / 100.0).round() as i32;
+        let mut options = quantizr::Options::default();
+        options
+            .set_max_colors(colors)
+            .map_err(|_| ImageOperationsErrors::Generic("palette color count is outside 2..=256"))?;
 
         for frame in image.frames_mut() {
             let pixels = frame.flatten::<u8>();
-            if pixels.chunks_exact(4).any(|px| px[3] != 255) {
-                return Err(ImageOperationsErrors::Generic(
-                    "palette quantization requires fully opaque samples",
-                )
-                .into());
-            }
-            let rgb: Vec<quantette::deps::palette::Srgb<u8>> = pixels
-                .chunks_exact(4)
-                .map(|px| quantette::deps::palette::Srgb::new(px[0], px[1], px[2]))
-                .collect();
-            let width = u32::try_from(src_width)
-                .map_err(|_| ImageOperationsErrors::Generic("image width exceeds u32"))?;
-            let height = u32::try_from(src_height)
-                .map_err(|_| ImageOperationsErrors::Generic("image height exceeds u32"))?;
-            let reference = quantette::ImageRef::new(width, height, &rgb)
+            let qimage = quantizr::Image::new(&pixels, src_width, src_height)
                 .map_err(|_| ImageOperationsErrors::Generic("palette quantization input rejected"))?;
-            let quantized = quantette::Pipeline::new()
-                .palette_size(size)
-                .ditherer(self.dithering.map(|_| quantette::dither::FloydSteinberg::new()))
-                .input_image(reference)
-                .output_srgb8_indexed_image();
-            let palette = quantized.palette();
-            let channels = quantized.indices().iter().enumerate().map(|(idx, &index)| {
-                let px = &palette[index as usize];
-                (idx, px.red, px.green, px.blue)
+            let mut quantized = quantizr::QuantizeResult::quantize(&qimage, &options);
+            if let Some(level) = self.dithering {
+                quantized.set_dithering_level(level.clamp(0.0, 1.0)).map_err(|_| {
+                    ImageOperationsErrors::Generic("palette dithering level is outside 0.0..=1.0")
+                })?;
+            }
+            let mut indices = vec![0u8; channel_len];
+            quantized
+                .remap_image(&qimage, &mut indices)
+                .map_err(|_| ImageOperationsErrors::Generic("palette remapping failed"))?;
+            let palette = quantized.get_palette();
+            let entries = &palette.entries[..palette.count as usize];
+            let channels = indices.iter().enumerate().map(|(idx, &index)| {
+                let color = &entries[index as usize];
+                (idx, color.r, color.g, color.b, color.a)
             }).fold(
                 vec![Channel::new_with_bit_type(channel_len, BitType::U8); 4],
-                |mut acc, (idx, r, g, b)| {
+                |mut acc, (idx, r, g, b, a)| {
                     // SAFETY: idx is bounded by indices().len() which equals
                     // src_width * src_height, and channels are pre-allocated
                     // with channel_len (= src_width * src_height) bytes of U8.
@@ -79,7 +74,7 @@ impl OperationsTrait for Quantize {
                         acc[0].alias_mut()[idx] = r;
                         acc[1].alias_mut()[idx] = g;
                         acc[2].alias_mut()[idx] = b;
-                        acc[3].alias_mut()[idx] = 255;
+                        acc[3].alias_mut()[idx] = a;
                     }
 
                     acc

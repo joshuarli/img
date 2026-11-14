@@ -53,6 +53,7 @@ zune-core = { version = "=0.5.1", features = ["std"] }
 zune-image = { version = "0.5.0", default-features = false, features = ["simd"] }
 fast_image_resize = { version = "6.1", optional = true }
 quantette = { version = "=0.6.0", default-features = false, features = ["std", "kmeans"] }
+quantizr = { version = "=1.4.3" }
 # System resource probing for dynamic image size limits
 sysinfo = { version = "0.39.6", default-features = false, features = ["disk", "system"], optional = true }
 

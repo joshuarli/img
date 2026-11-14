@@ -16,15 +16,15 @@ fn quantize_u8() {
 }
 
 #[test]
-fn quantize_refuses_varying_alpha() {
-    let quantize = Quantize::new(75, None);
+fn quantize_preserves_varying_alpha_regions() {
+    let quantize = Quantize::new(75, Some(0.75));
     let mut image = Image::from_fn(4, 4, ColorSpace::RGBA, |x, y, px: &mut [u8; 4]| {
         px[0] = x as u8; px[1] = y as u8; px[2] = 55; px[3] = if x == 0 { 128 } else { 255 };
     });
 
     let result = quantize.execute(&mut image);
 
-    assert!(result.is_err());
+    assert!(result.is_ok());
 }
 
 #[test]

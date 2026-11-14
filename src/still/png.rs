@@ -157,13 +157,29 @@ fn palette_path(image: &StillImage, quality: super::Quality, effort: Effort) -> 
     if image.bit_depth() != 8 || image.is_grayscale() { return Err(Error::new(ErrorKind::Unsupported, "palette quality requires eight-bit RGB or RGBA samples")); }
     let channels = image.pixels.descriptor().channels();
     let samples = image.samples();
+    let colors = (2.0 + quality.value() * 254.0 / 100.0).round().clamp(2.0, 256.0) as usize;
+    let (width, height) = image.dimensions();
     if channels == 4 && samples.chunks_exact(4).any(|p| p[3] != 255) {
-        return Err(Error::new(ErrorKind::Unsupported, "palette quality requires fully opaque samples in this build"));
+        let qimage = quantizr::Image::new(&samples, width as usize, height as usize)
+            .map_err(|_| Error::new(ErrorKind::Invalid, "palette quantization input rejected"))?;
+        let mut options = quantizr::Options::default();
+        options.set_max_colors(colors as i32)
+            .map_err(|_| Error::new(ErrorKind::Invalid, "palette color count is outside 2..=256"))?;
+        let mut quantized = quantizr::QuantizeResult::quantize(&qimage, &options);
+        quantized.set_dithering_level(1.0)
+            .map_err(|_| Error::new(ErrorKind::Invalid, "palette dithering level is outside 0.0..=1.0"))?;
+        let mut indices = vec![0u8; samples.len() / 4];
+        quantized.remap_image(&qimage, &mut indices)
+            .map_err(|_| Error::new(ErrorKind::Invalid, "palette remapping failed"))?;
+        let palette = quantized.get_palette();
+        let entries = &palette.entries[..palette.count as usize];
+        let palette_bytes: Vec<u8> = entries.iter().flat_map(|c| [c.r, c.g, c.b]).collect();
+        let alpha_bytes: Vec<u8> = entries.iter().map(|c| c.a).collect();
+        let trns = alpha_bytes.iter().any(|&a| a != 255).then_some(alpha_bytes);
+        return png_encode(image, effort, &indices, Some(palette_bytes), trns);
     }
-    let colors = (2.0 + quality.value() * 254.0 / 100.0).round() as usize;
     let size = quantette::PaletteSize::from_usize_clamped(colors);
     let rgb: Vec<quantette::deps::palette::Srgb<u8>> = samples.chunks_exact(channels).map(|p| quantette::deps::palette::Srgb::new(p[0], p[1], p[2])).collect();
-    let (width, height) = image.dimensions();
     let reference = quantette::ImageRef::new(width, height, &rgb)
         .map_err(|_| Error::new(ErrorKind::Invalid, "palette quantization input rejected"))?;
     let quantized = quantette::Pipeline::new()
