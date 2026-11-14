@@ -36,8 +36,8 @@ Default fidelity is measured score 95 and effort balanced. Requested scores
 and direct quality must be finite in [0,100]. Quality conflicts with score.
 Lossless conflicts with either explicit control and with resizing.
 Direct quality selects native encoder controls, not equivalent visual quality:
-JPEG uses jpegli-style quality, WebP uses lossy quality with alpha quality 100,
-PNG selects 2–256 palette colors, and AVIF maps the interval to native 1–99.
+JPEG uses progressive mozjpeg quality, WebP uses lossy quality with lossless
+alpha, PNG selects 2–256 palette colors, and AVIF maps the interval to native 1–100.
 Scored search may evaluate exact PNG and WebP as well as lossy candidates.
 Fast, balanced and best permit 8, 24 and 64 total encode attempts respectively.
 

@@ -10,7 +10,7 @@ Identity is 100; nonidentical images with either side below eight pixels fail.
 
 `fast-ssim2` 0.9.1 supplies owned reference pyramids reused across candidates.
 Its BSD-2-Clause AND BSD-3-Clause AND MIT license is compatible with the
-AGPL-3.0-only distribution. Default features are disabled; no native runtime
+permissive distribution. Default features are disabled; no native runtime
 or codec threads are introduced.
 
 Run `make metric-reference-check` with JPEG XL 0.12.0 `cjxl` and `ssimulacra2`

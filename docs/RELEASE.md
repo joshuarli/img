@@ -37,7 +37,7 @@ cargo build --offline --locked --profile dist --features build-binary
 Use Python 3.11+ for release helpers. Toolchain/linker installation is separate
 from vendored crate availability. Linux release builds require the repository's
 musl/mold environment. See [license provenance](PROVENANCE.md) before distributing
-or modifying the combined AGPL work.
+or modifying the permissively licensed work.
 
 The private repository requires authenticated GitHub access. `~/usr` installs
 the latest published SHA-named prerelease using `gh`; it checks the selected ZIP

@@ -62,7 +62,8 @@ contributing, see [development checks](docs/CODEC-BOUNDARY.md#development-checks
 Open defects are tracked in [TODO.md](TODO.md).
 
 Rimage's source is licensed under **Apache-2.0**; the upstream MIT notice is
-preserved. Built binaries link Imazen codecs licensed AGPL-3.0-only and
-imagequant licensed GPL-3.0-or-later, so binary distributions follow
-**AGPL-3.0-only**. See [license provenance](docs/PROVENANCE.md) and the
-license files. No commercial codec license is assumed.
+preserved. Every production dependency is permissively licensed (MIT,
+Apache-2.0, Zlib, BSD-2/3-Clause, ISC, Unicode-3.0 or a permissive dual
+license), so binary distributions carry no copyleft obligations; no
+commercial codec license is assumed. See [license provenance](docs/PROVENANCE.md) and the
+license files.
