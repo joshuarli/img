@@ -117,6 +117,16 @@ WebP is bimodal. Synthetic and flat content improves 5–37% (`line.png` −37.3
 
 Timing medians (process startup included; host shared with background load; ranges dominated by the large AVIF encodes at ≈7–8 s; ordered as observations, not orderings): WebP ≈49.8–52.6 ms permissive vs ≈36.5–36.7 ms master, consistent across 70 samples per target; AVIF and JPEG within ~1 ms of master. The WebP delta is not a verified ordering under the busy-host protocol — re-measure on a quiet host before drawing conclusions. Binary size falls from 7,265,712 to 4,523,200 bytes (−37.8%).
 
+Peak RSS (`/usr/bin/time -l`, startup included, three interleaved repetitions per side, `--score 80 --effort fast -j 1`, one worker, `RAYON_NUM_THREADS=1`; medians; macOS ARM64; shared host):
+
+| Fixture | JPEG master → permissive | WebP master → permissive | AVIF master → permissive |
+| --- | --- | --- | --- |
+| resource-rgb.png (256×192) | 16.7 → 15.6 MB (−6.4%) | 16.3 → 16.8 MB (+3.0%) | 24.3 → 25.1 MB (+3.3%) |
+| coffee.png | 61.1 → 51.2 MB (−16.2%) | 52.4 → 62.0 MB (+18.4%) | 58.9 → 60.1 MB (+2.0%) |
+| large.png (2048×1024) | 400.5 → 391.6 MB (−2.2%) | 388.3 → 422.9 MB (+8.9%) | 422.1 → 418.1 MB (−1.0%) |
+
+JPEG is modestly better, AVIF is within ±4 MB (≈±1–3%), and WebP is consistently higher (+0.5 / +9.6 / +34.6 MB across the fixture range), i.e. the webpkit encoder carries a working-memory cost that scales with image size. These are startup-inclusive process peaks on one host, not a Linux measurement; re-measure on a quiet host alongside the parity campaign.
+
 The normal/build [license inventory](benchmarks/production-dependencies.json) was regenerated at `c088ac8`: 149 packages across `aarch64-apple-darwin`, `aarch64-unknown-linux-musl` and `x86_64-unknown-linux-musl`, zero declared AGPL/GPL/LGPL entries, zero build scripts. `quantizr` 1.4.3 declares no SPDX expression (recorded as `license-file: LICENSE`); its shipped license text is verbatim MIT and is recorded as the selected license. `webpkit` is a vendored path dependency pinned at `cc1311ebf`, not a registry artifact. The 137-package inventory earlier in this file records the pre-merge production closure.
 
 This benchmark is the evidence for the 2026-11-13 merge to master. The WebP backend remains experimental and its photographic size regressions plus the AVIF color-description change ([docs/AVIF.md](docs/AVIF.md)) are recorded limitations; gating them is the job of the unattended parity campaign, and any claim of WebP parity requires its gates to pass.
