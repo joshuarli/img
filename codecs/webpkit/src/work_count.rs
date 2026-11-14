@@ -192,27 +192,25 @@ pub const fn field_names() -> [&'static str; N] {
 
 #[cfg(test)]
 mod tests {
-    use super::{Counter, N, field_names, reset, snapshot};
+    use super::{Counter, N, field_names, snapshot};
 
     #[test]
     fn field_names_align_with_slot_count() {
         assert_eq!(field_names().len(), N);
     }
 
-    // A single test owns the process-global `SLOTS`, since cargo runs test
-    // functions on parallel threads and separate tests would race on it.
+    // The counters are process-global and codec tests on parallel threads bump
+    // the same slots, so no absolute value is assertable here; the direction of
+    // bump/add is. `reset` cannot be observed from a parallel test either — it
+    // is exercised by the work-count driver before each measured encode.
     #[test]
-    fn bump_add_and_reset_hit_the_right_slots() {
-        reset();
+    fn bump_and_add_hit_the_right_slots() {
+        let before = snapshot();
         Counter::HistogramPass.bump();
         Counter::HistogramPass.bump();
         Counter::MatchCompare.add(40);
         let snap = snapshot();
-        assert_eq!(snap[Counter::HistogramPass as usize], 2);
-        assert_eq!(snap[Counter::MatchCompare as usize], 40);
-        assert_eq!(snap[Counter::TokenPartitionWalk as usize], 0);
-
-        reset();
-        assert_eq!(snapshot(), [0u64; N]);
+        assert!(snap[Counter::HistogramPass as usize] >= before[Counter::HistogramPass as usize] + 2);
+        assert!(snap[Counter::MatchCompare as usize] >= before[Counter::MatchCompare as usize] + 40);
     }
 }
