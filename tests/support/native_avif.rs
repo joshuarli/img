@@ -1,6 +1,7 @@
 use dav1d::{Decoder,Error,PixelLayout,PlanarImageComponent,pixel::YUVRange as NativeRange};
+#[path="avif_raw.rs"] mod avif_raw;
 pub fn decode(bytes:&[u8])->Vec<u8> {
-    let parser=zenavif_parse::AvifParser::from_bytes(bytes).unwrap();let data=parser.primary_data().unwrap();
+    let data=avif_raw::primary_data(bytes);
     let mut settings=dav1d::Settings::new();settings.set_max_frame_delay(1);
     let mut decoder=Decoder::with_settings(&settings).unwrap();
     assert!(matches!(decoder.send_data(data.to_vec(),None,None,None),Ok(())|Err(Error::Again)));
@@ -19,7 +20,7 @@ pub fn decode(bytes:&[u8])->Vec<u8> {
 }
 
 pub fn grain_fixture(bytes:&[u8],apply_grain:bool)->Vec<u8> {
-    let parser=zenavif_parse::AvifParser::from_bytes(bytes).unwrap();let data=parser.primary_data().unwrap();
+    let data=avif_raw::primary_data(bytes);
     let mut settings=dav1d::Settings::new();settings.set_max_frame_delay(1);settings.set_apply_grain(apply_grain);
     let mut decoder=Decoder::with_settings(&settings).unwrap();decoder.send_data(data.to_vec(),None,None,None).unwrap();
     let picture=decoder.get_picture().unwrap();assert_eq!((picture.width(),picture.height()),(64,64));assert_eq!(picture.pixel_layout(),PixelLayout::I444);

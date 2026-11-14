@@ -36,7 +36,6 @@ image-webp = "=0.2.4"
 # Upstream memorysafety.org Rust port of dav1d, BSD-2-Clause. The assembler
 # feature stays off; decoding is pure Rust.
 rav1d = { version = "=1.1.0", default-features = false, features = ["bitdepth_8"] }
-zenavif-parse = { version = "=0.6.2", default-features = false }
 ravif = { version = "=0.13.0", default-features = false }
 yuv = { version = "=0.8.20", default-features = false }
 moxcms = { version = "=0.8.1", features = ["extended_range"] }

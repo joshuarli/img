@@ -1,10 +1,9 @@
 use super::{Effort, EncodingMode, Error, ErrorKind, Format, SampleLayout, StillImage};
 use super::av1::Chroma;
+use super::avif_container;
 
 pub(super) fn decode(bytes: &[u8], stop: &crate::cancellation::Cancellation) -> Result<StillImage, Error> {
-    let config = zenavif_parse::DecodeConfig::default().with_peak_memory_limit(super::IMAGE_MEMORY_BYTES);
-    let parser = zenavif_parse::AvifParser::from_bytes_with_config(bytes, &config, stop)
-        .map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+    let parser = avif_container::read(bytes, stop)?;
     if parser.content_light_level().is_some()||parser.mastering_display().is_some()||parser.gain_map_metadata().is_some() {
         return Err(Error::new(ErrorKind::Unsupported,"AVIF HDR metadata or gain maps require independently validated processing"));
     }
@@ -20,16 +19,16 @@ pub(super) fn decode(bytes: &[u8], stop: &crate::cancellation::Cancellation) -> 
     if parser.rotation().is_some() || parser.mirror().is_some() || parser.clean_aperture().is_some() || parser.premultiplied_alpha() {
         return Err(Error::new(ErrorKind::Unsupported, "AVIF container transforms or premultiplied alpha are unsupported"));
     }
-    let header = parser.primary_metadata().map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+    let header = parser.primary_metadata()?;
     super::check_dimensions(header.max_frame_width.get(), header.max_frame_height.get())?;
     if !header.still_picture { return Err(Error::new(ErrorKind::Unsupported, "AVIF requires a still AV1 bitstream")); }
-    let data = parser.primary_data().map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+    let data = parser.primary_data()?;
     if bitstream_hdr(&data)? {return Err(Error::new(ErrorKind::Unsupported,"AVIF HDR metadata requires independently validated processing"));}
     let frame = super::av1::decode_still(&data, stop)?;
     let (width, height) = (frame.width, frame.height);
     let (matrix, full_range) = match parser.color_info() {
-        Some(zenavif_parse::ColorInformation::Nclx { color_primaries: 1, transfer_characteristics: 13, matrix_coefficients, full_range }) => (*matrix_coefficients as u8, *full_range),
-        Some(zenavif_parse::ColorInformation::IccProfile(_)) | None => (frame.matrix, frame.full_range),
+        Some(avif_container::ColorInformation::Nclx { color_primaries: 1, transfer_characteristics: 13, matrix_coefficients, full_range }) => (matrix_coefficients as u8, full_range),
+        Some(avif_container::ColorInformation::IccProfile(_)) | None => (frame.matrix, frame.full_range),
         _ => return Err(Error::new(ErrorKind::Unsupported, "AVIF container requires validated SDR sRGB color signaling")),
     };
     let pixels = if matrix == 0 {
@@ -65,15 +64,15 @@ pub(super) fn decode(bytes: &[u8], stop: &crate::cancellation::Cancellation) -> 
     image.format = Format::Avif;
     image.info.format = zencodec::ImageFormat::Avif;
     image.metadata.cicp = Some(zencodec::Cicp::new(1, 13, 0, true));
-    if let Some(zenavif_parse::ColorInformation::IccProfile(icc)) = parser.color_info() { image.metadata = image.metadata.with_icc(icc.clone()); }
-    if let Some(exif) = parser.exif() { image.metadata = image.metadata.with_exif(exif.map_err(|e| Error::caused(ErrorKind::Invalid, e))?.into_owned()); }
-    if let Some(xmp) = parser.xmp() { image.metadata = image.metadata.with_xmp(xmp.map_err(|e| Error::caused(ErrorKind::Invalid, e))?.into_owned()); }
+    if let Some(avif_container::ColorInformation::IccProfile(icc)) = parser.color_info() { image.metadata = image.metadata.with_icc(icc.clone()); }
+    if let Some(exif) = parser.exif() { image.metadata = image.metadata.with_exif(exif?.into_owned()); }
+    if let Some(xmp) = parser.xmp() { image.metadata = image.metadata.with_xmp(xmp?.into_owned()); }
     let total = [&image.metadata.icc_profile, &image.metadata.exif, &image.metadata.xmp].into_iter().flatten()
         .try_fold(0usize, |size, bytes| size.checked_add(bytes.len()));
     if total.is_none_or(|size| size > super::MAX_METADATA_BYTES) { return Err(Error::new(ErrorKind::Limit, "decoded metadata exceeds 8 MiB")); }
     image.info.orientation = image.metadata.orientation;
     image.info.source_color.cicp = image.metadata.cicp;
-    if matches!(parser.color_info(),Some(zenavif_parse::ColorInformation::Nclx {..})) {image.info.source_color.color_authority=zencodec::ColorAuthority::Cicp;}
+    if matches!(parser.color_info(),Some(avif_container::ColorInformation::Nclx {..})) {image.info.source_color.color_authority=zencodec::ColorAuthority::Cicp;}
     Ok(image)
 }
 
