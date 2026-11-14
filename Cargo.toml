@@ -17,7 +17,7 @@ default = ["resize", "quantization", "metadata"]
 build-binary = ["dep:serde_json", "limits", "dep:lexopt", "dep:glob", "icc"]
 metadata = ["zune-image/metadata"]
 resize = ["dep:fast_image_resize"]
-quantization = ["dep:imagequant"]
+quantization = []
 icc = ["metadata"]
 limits = ["dep:sysinfo"]
 
@@ -26,20 +26,25 @@ png = "=0.18.1"
 fdeflate = "=0.3.7"
 libc = "0.2"
 libm = "=0.2.16"
-zenpng = { version = "=0.1.4", default-features = false, features = ["quantize"] }
 crc32fast = "1.5"
-zenjpeg = { version = "=0.8.4", default-features = false, features = ["decoder", "zencodec", "yuv"] }
-zenwebp = { version = "=0.4.6", default-features = false, features = ["std", "fast-yuv", "zencodec"] }
-zenavif = { version = "=0.1.6", default-features = false, features = ["encode", "zencodec"] }
+zune-jpeg = "=0.5.15"
+mozjpeg-rs = "=0.9.2"
+# Permissive pure-Rust WebP: decode via image-webp (image-rs), encode via the
+# vendored webpkit snapshot staged for the parity campaign (MIT OR Apache-2.0).
+webpkit = { path = "codecs/webpkit", version = "0.1.0" }
+image-webp = "=0.2.4"
+# Upstream memorysafety.org Rust port of dav1d, BSD-2-Clause. The assembler
+# feature stays off; decoding is pure Rust.
+rav1d = { version = "=1.1.0", default-features = false, features = ["bitdepth_8"] }
 zenavif-parse = { version = "=0.6.2", default-features = false }
-rav1d-safe = { version = "=0.5.7", default-features = false, features = ["bitdepth_8"] }
+ravif = { version = "=0.13.0", default-features = false }
 yuv = { version = "=0.8.20", default-features = false }
 moxcms = { version = "=0.8.1", features = ["extended_range"] }
 fast-ssim2 = { version = "=0.9.1", default-features = false }
 bytemuck = "1.25"
 zencodec = "=0.1.26"
 imgref = "1"
-zenpixels = { version = "=0.2.16", default-features = false }
+zenpixels = { version = "=0.2.16", default-features = false, features = ["std", "icc"] }
 rgb = { version = "0.8" }
 log = "0.4"
 # zune-core 0.5.3 would cause build error.
@@ -47,7 +52,8 @@ log = "0.4"
 zune-core = { version = "=0.5.1", features = ["std"] }
 zune-image = { version = "0.5.0", default-features = false, features = ["simd"] }
 fast_image_resize = { version = "6.1", optional = true }
-imagequant = { version = "4.4", default-features = false, optional = true }
+quantette = { version = "=0.6.0", default-features = false, features = ["std", "kmeans"] }
+quantizr = { version = "=1.4.3" }
 # System resource probing for dynamic image size limits
 sysinfo = { version = "0.39.6", default-features = false, features = ["disk", "system"], optional = true }
 

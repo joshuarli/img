@@ -160,7 +160,10 @@ fn warnings(image: &StillImage, format: Format, policy: MetadataPolicy) -> Vec<S
     } else { vec![] }
 }
 fn validate_metadata(source: &StillImage, candidate: &StillImage, format: Format) -> Result<(), Error> {
-    if source.metadata.icc_profile != candidate.metadata.icc_profile || source.metadata.orientation != candidate.metadata.orientation
+    let icc_equal = source.metadata.icc_profile == candidate.metadata.icc_profile
+        || (format == Format::Avif && candidate.metadata.icc_profile.is_none()
+            && source.metadata.icc_profile.as_deref().is_some_and(zenpixels::icc::is_common_srgb));
+    if !icc_equal || source.metadata.orientation != candidate.metadata.orientation
         || source.metadata.exif != candidate.metadata.exif || source.metadata.xmp != candidate.metadata.xmp {
         return Err(Error::new(ErrorKind::Unsupported, "destination cannot preserve ICC, orientation, EXIF or XMP semantics"));
     }

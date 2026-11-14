@@ -71,6 +71,13 @@ fn direct_palette_mode_is_explicit_and_keeps_dimensions() {
     assert_eq!(StillImage::decode(&bytes).unwrap().dimensions(), (32, 24));
     let deep = StillImage::from_samples(8, 8, SampleLayout::Gray16, vec![0; 128]).unwrap();
     assert!(deep.encode(Format::Png, EncodingMode::Quality(Quality::new(70.0).unwrap()), Effort::Fast).is_err());
+    let alpha_samples: Vec<_> = (0..32 * 24).flat_map(|i| [(i * 13) as u8, (i * 7) as u8, (i * 3) as u8, [0, 85, 170, 255][i % 4]]).collect();
+    let alpha_image = StillImage::from_samples(32, 24, SampleLayout::Rgba8, alpha_samples).unwrap();
+    let alpha_bytes = alpha_image.encode(Format::Png, EncodingMode::Quality(Quality::new(50.0).unwrap()), Effort::Fast).unwrap();
+    let reader = png::Decoder::new(Cursor::new(&alpha_bytes)).read_info().unwrap();
+    assert_eq!(reader.info().color_type, png::ColorType::Indexed);
+    assert!(reader.info().trns.is_some(), "varying alpha must survive palette encoding");
+    assert!(StillImage::decode(&alpha_bytes).unwrap().has_alpha());
 }
 
 #[test]

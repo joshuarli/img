@@ -14,7 +14,9 @@ fn progressive_rgb_and_gray_have_independent_decode_proof() {
         let bytes = image.encode(Format::Jpeg, mode(90.0), Effort::Fast).unwrap();
         assert!(bytes.windows(2).any(|pair| pair == [0xff, 0xc2]));
         if layout == SampleLayout::Gray8 {
-            assert_eq!(zenjpeg::decoder::DecodeConfig::new().read_info(&bytes).unwrap().num_components, 1);
+            let mut probe = zune_jpeg::JpegDecoder::new(ZCursor::new(&bytes));
+            probe.decode_headers().unwrap();
+            assert_eq!(probe.info().unwrap().components, 1);
         }
         let decoded = StillImage::decode(&bytes).unwrap();
         assert_eq!(decoded.dimensions(), (48, 32));
@@ -85,21 +87,23 @@ fn four_component_jpeg_is_refused_before_implicit_cmyk_conversion() {
     let image=StillImage::from_rgb8(8,8,common::pixels(8,8)).unwrap();let mut bytes=image.encode(Format::Jpeg,mode(80.0),Effort::Fast).unwrap();
     let at=bytes.windows(2).position(|p|p==[255,194]).unwrap();let length=u16::from_be_bytes([bytes[at+2],bytes[at+3]]) as usize;
     bytes[at+9]=4;bytes[at+2..at+4].copy_from_slice(&((length+3) as u16).to_be_bytes());bytes.splice(at+2+length..at+2+length,[4,17,0]);
-    assert_eq!(zenjpeg::decoder::DecodeConfig::new().read_info(&bytes).unwrap().num_components,4);
+    let mut probe=zune_jpeg::JpegDecoder::new(ZCursor::new(&bytes));probe.decode_headers().unwrap();
+    assert_eq!(probe.info().unwrap().components,4);
     let error=StillImage::decode(&bytes).err().unwrap();assert_eq!(error.kind(),ErrorKind::Unsupported);assert!(error.to_string().contains("components"));
 }
 
 #[test]
 fn jpeg_auxiliary_images_cannot_be_silently_extracted_as_a_single_frame() {
     let pixels=common::pixels(24,16);
-    let config=zenjpeg::encoder::EncoderConfig::ycbcr(80.0,zenjpeg::encoder::ChromaSubsampling::Quarter);
-    let secondary=config.encode_bytes(&pixels,24,16,zenjpeg::encoder::PixelLayout::Rgb8Srgb).unwrap();
-    let mut concatenated=secondary.clone();concatenated.extend_from_slice(&secondary);
+    let base=StillImage::from_rgb8(24,16,pixels).unwrap().encode(Format::Jpeg,mode(80.0),Effort::Fast).unwrap();
+    let mut concatenated=base.clone();concatenated.extend_from_slice(&base);
     assert_eq!(StillImage::decode(&concatenated).err().unwrap().kind(),ErrorKind::Unsupported);
-    let config=config.add_segment(0xFE,b"fixture".to_vec());
-    let segments=config.get_segments().unwrap().clone().add_gainmap(secondary);
-    let jpeg=config.with_segments(segments)
-        .encode_bytes(&pixels,24,16,zenjpeg::encoder::PixelLayout::Rgb8Srgb).unwrap();
+    let payload=b"MPF\0fixture";
+    let mut jpeg=base[..2].to_vec();
+    jpeg.extend_from_slice(&[0xff,0xe2]);
+    jpeg.extend_from_slice(&((payload.len()+2) as u16).to_be_bytes());
+    jpeg.extend_from_slice(payload);
+    jpeg.extend_from_slice(&base[2..]);
     assert!(jpeg.windows(4).any(|value|value==b"MPF\0"));
     let header=rimage::still::describe(&jpeg).unwrap();assert_eq!((header.width,header.height),(24,16));assert!(header.animation);
     assert!(StillImage::decode(&jpeg).is_err(),"MPF auxiliary payloads must not disappear through base-image decoding");

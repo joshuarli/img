@@ -62,19 +62,12 @@ fn unverified_alpha_lossless_precision_and_gray_are_explicitly_refused() {
 
 #[test]
 fn high_depth_and_animation_are_refused_from_real_containers() {
-    use zencodec::encode::{EncodeJob, Encoder, EncoderConfig};
-    let pixels: Vec<_> = common::pixels(16, 16).chunks_exact(3).map(|p| rgb::RGB8::new(p[0], p[1], p[2])).collect();
-    let image = imgref::Img::new(pixels, 16, 16);
-    let mut config = zenavif::AvifEncoderConfig::new().with_effort_u32(10);
-    *config.inner_mut() = config.inner().clone().bit_depth(zenavif::EncodeBitDepth::Ten).threads(Some(1));
-    let bytes = config.job().encoder().unwrap().encode(zenpixels::PixelSlice::from(image.as_ref()).erase()).unwrap().into_vec();
-    let error = StillImage::decode(&bytes).err().unwrap();
+    let ten_bit = include_bytes!("files/generated/ten-bit.avif");
+    let error = StillImage::decode(ten_bit).err().unwrap();
     assert!(error.to_string().contains("eight-bit"), "{error}");
-    let frame = zenavif::AnimationFrame { pixels: image.clone(), duration_ms: 100 };
-    let animation = zenavif::encode_animation_rgb8(&[frame.clone(), frame],
-        &zenavif::EncoderConfig::new().speed(10).threads(Some(1)).bit_depth(zenavif::EncodeBitDepth::Eight),
-        zencodec::StopToken::new(zencodec::Unstoppable)).unwrap();
-    assert!(StillImage::decode(&animation.avif_file).err().unwrap().to_string().contains("animation"));
+    let animation = include_bytes!("files/generated/animation.avif");
+    let error = StillImage::decode(animation).err().unwrap();
+    assert!(error.to_string().contains("animation"), "{error}");
 }
 
 #[test]
