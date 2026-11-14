@@ -49,15 +49,14 @@ fn rgba(image: &StillImage) -> Vec<u8> {
 }
 
 fn webkit_metadata(image: &StillImage) -> webpkit::Metadata {
-    webpkit::Metadata {
-        icc_profile: image.metadata.icc_profile.as_deref().map(<[u8]>::to_vec),
-        exif: image.metadata.exif.as_deref().map(<[u8]>::to_vec),
-        xmp: image.metadata.xmp.as_deref().map(<[u8]>::to_vec),
-    }
+    webpkit::Metadata::none()
+        .with_icc_profile(image.metadata.icc_profile.as_deref().map(<[u8]>::to_vec))
+        .with_exif(image.metadata.exif.as_deref().map(<[u8]>::to_vec))
+        .with_xmp(image.metadata.xmp.as_deref().map(<[u8]>::to_vec))
 }
 
 fn webkit_effort(effort: Effort) -> webpkit::Effort {
-    match effort { Effort::Fast => webpkit::Effort::Fast, Effort::Balanced => webpkit::Effort::Balanced, Effort::Best => webpkit::Effort::Best }
+    match effort { Effort::Fast => webpkit::Effort::level(1), Effort::Balanced => webpkit::Effort::AUTO, Effort::Best => webpkit::Effort::level(9) }
 }
 
 pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
@@ -68,7 +67,7 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, sto
     let dims = webpkit::Dimensions::new(width, height)
         .map_err(|_| Error::new(ErrorKind::Limit, "WebP dimensions are outside 1..=16384"))?;
     let reference = webpkit::ImageRef::new(dims, webpkit::PixelLayout::Rgba8, &samples)
-        .map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+        .map_err(|e| Error::new(ErrorKind::Invalid, e.to_string()))?;
     let metadata = webkit_metadata(image);
     let result = match mode {
         EncodingMode::Lossless => webpkit::Encoder::lossless()
@@ -81,7 +80,7 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, sto
             .metadata(metadata)
             .encode_ref(reference),
     };
-    let bytes = result.map_err(|e| Error::caused(ErrorKind::Encode, e))?;
+    let bytes = result.map_err(|e| Error::new(ErrorKind::Encode, e.to_string()))?;
     super::limits().check_output_size(bytes.len() as u64).map_err(|e| Error::caused(ErrorKind::Limit, e))?;
     Ok(bytes)
 }
