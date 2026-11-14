@@ -4,7 +4,7 @@ Performance captures use production source `0e4a4a2`; corrected comparison comma
 
 2026-11-14: retained `original-mozjpeg` outputs were rescored under the merged permissive JPEG decoder without re-encoding; outputs, byte sizes, timings, completions and the 0.0001 tolerance are unchanged, and `gravel_png-original-mozjpeg-95-0` now reads `matchedWithinHalfPoint`.
 
-2026-11-15: a fresh matched-score WebP capture under the handoff's planned `2026-11-15-` output prefix (single run, tools `img,cwebp`, quiet host, made 2026-11-14; the prefix does not denote the calendar day) lands as `untimed-2026-11-15.json` with prefixed `2026-11-15-*.webp` outputs; the large.png lossless cells move 12,682 → 4,846 B after the optimal-parse DP chain walk deepened to 256 (`MAX_CHAIN_OPTIMAL`; `5a0c65e`). Refusal set and cwebp cells are unchanged; the backend remains experimental.
+2026-11-15: a fresh matched-score WebP capture under the handoff's planned `2026-11-15-` output prefix (single run, tools `img,cwebp`, quiet host, made 2026-11-14; the prefix does not denote the calendar day) lands as `untimed-2026-11-15.json` with prefixed `2026-11-15-*.webp` outputs; the large.png lossless cells move 12,682 → 4,846 B after the optimal-parse DP chain walk deepened to 256 (`MAX_CHAIN_OPTIMAL`; `5a0c65e`). Refusal set and cwebp cells are unchanged; the backend remains experimental. A fresh timed capture records the honest wall cost of that landing (`timed-2026-11-15.json`: large.png 8640 → 40,385 ms, line/text ≈2.9×, ui/compressed ≈+33%/+2 B, gravel +11.8%, grass +3%, photos otherwise flat). A full-matrix re-score (`2026-11-15-full-` prefix; 196 records / 100 completed, tools all six) and the never-before-measured withdrawn zenwebp t90/t95 matched-score baselines are committed in the sections below; the destination gate is **not** met (lossy RD-efficiency and wall), and it is not claimed.
 
 ## Correctness and corpus
 
@@ -182,6 +182,8 @@ Where both stacks pass at the target gate, rimage wins coffee, gravel, large and
 
 Fresh timed WebP cells (committed as [timed-2026-11-14.json](benchmarks/results/timed-2026-11-14.json) with prefixed outputs `2026-11-14-timed-*.webp`; quiet host, `perf-gate-ready` 0 pre/post, `RAYON_NUM_THREADS=1`, five interleaved repetitions, 420 records / 280 completed, revision `9542c98`, `timingGate: accepted`). Encode medians in ms, startup-inclusive process walls measured exactly as in the retained 2026-11-13 timed records (source decode + convert + candidate decode + harness scoring included for both tools): coffee t80 1029 vs 288 (≈3.6×; cwebp refuses t90/t95); grass t80/t90/t95 1461/1482/1445 vs 372/371/372 (≈3.9×); gravel 1540/1558/1537 vs 343/343/342 (≈4.5×); large.png t80 8640 vs 1506 (≈5.7×); flat/gray ≈27–28 vs 24 (≈1.1×), line/text ≈46–47/43 vs 28/27 (≈1.6×), transparent ≈81–82 vs 32 (≈2.6×); `ui.png`/`compressed.webp` rimage-only ≈34–38. Encoding this ladder costs what the retained records showed: the wall verdict is unchanged at ≈3.6–5.7× the `cwebp` process wall on photographic inputs, consistent with the 3.3–4.4× workflow comparison against the withdrawn closure (coffee 1002 ms there). One corpus, one host, fast effort; not a release claim. `cargo test --locked --all-features --test benchmark_verify` passes with the fresh records.
 
+Post-deep-DP timed refresh (committed as [timed-2026-11-15.json](benchmarks/results/timed-2026-11-15.json) with prefixed `2026-11-15-timed-*.webp` outputs; identical protocol, quiet host, `perf-gate-ready` 0 pre/post, 5 interleaved repetitions, tools `img,cwebp`, revision `f043b4f`, `sourceDirty: false`, `timingGate: accepted`, 420 records / 280 completed; refusal set identical to 2026-11-14). Encode medians in ms vs the same measurement one iteration earlier ([timed-2026-11-14](benchmarks/results/timed-2026-11-14.json), pre-DP binary): coffee t80 1032 (flat), grass 1501/1525/1484 (+3%), gravel 1717/1743/1718 (**+11.8%**), large.png **40,385/40,401/40,379 ms vs 8640** (≈4.7× — the documented cost of closing the large.png byte gap to 4,846 B), line 132/133/134 (≈+185%), text 127/127/128 (≈+190%), transparent 90/91/91 (+11%), ui 53/49/50 (+35–45%; +2 B output too — a documented net negative on this cell), compressed 51/50/49 (≈+33%; +2 B), flat/gray ≈28 (flat). The synthetic cells that regressed carry the deep-DP's wall cost on saturated chains; photographic cells are flat-to-+12%. `ui.png`/`compressed.webp` +2 B and the line/text/gravel wall costs are accepted as part of the documented `MAX_CHAIN_OPTIMAL=256` Pareto trade (offsetting a −62% byte result on large.png); if the wall matters more for those cells, the cap can be tier-gated by level or image size — a user decision, not changed silently. `cargo test --locked --all-features --test benchmark_verify` passes against all retained and fresh records.
+
 These are one corpus (14 fixtures), one host, fast effort, startup-inclusive process walls and medians of five interleaved repetitions; they are not a release claim. The lossy size regressions at the t80 gate are materially closed; the backend remains experimental pending the best-effort and Linux measurements and a full matrix re-score.
 
 ## WebP parity iteration — 2026-11-15 capture (made 2026-11-14, quiet host)
@@ -229,6 +231,33 @@ Decode-side competitiveness vs `dwebp` 1.6.0 (one interleaved warm-host comparis
 img decodes 2.8–4.0× fewer instructions on real files with equal footprint on large.png and +0.2–0.9 MB on small ones (smaller-file cells are startup-tied). dwebp writes a file sink and img decodes to memory then drops, so this is directional evidence that img's decoder is competitive, not a release claim.
 
 Lossy t90/t95 cells still fall back to lossless on grass/gravel (cwebp passes lossy there at 92–96); the lossy encoder's RD efficiency is the open gap, with SNS and the trellis lambda already refuted/measured-and-rejected. `cargo test --locked --all-features --test benchmark_verify` passes.
+
+## WebP matched-score baseline vs the withdrawn zenwebp stack (harness-direct, 2026-11-14)
+
+The withdrawn matched-score baselines beyond t80 had never been captured. This session rebuilt the pre-merge master (`5424df8`, zenwebp `=0.4.6`) in `.work/wt/withdrawn` (built via kache, 26 s; its t80 cells reproduce the recorded `5424df8` column byte-for-byte — coffee 93,198 @ 85.62, grass 81,068 @ 82.42, gravel 65,226 @ 83.34, large.png 7,014 @ 100, transparent 118 @ 100) and ran `convert --score T --effort fast --quiet` per fixture per target, scored with the same PerceptualReference. Outputs are in `.work/tmp/withdrawn-cells/` (scratch, not committed; reproduce with the worktree). t80 matched-score cells match the 2026-11-13 iteration table exactly; t90/t95 are new evidence:
+
+| Fixture | Withdrawn t80 @ score | t90 @ score | t95 @ score | img t80 | img t90 | img t95 |
+| --- | --- | --- | --- | --- | --- | --- |
+| coffee.png | 93,198 @ 85.6 | 359,054 @ 100 (lossless fb) | 359,054 @ 100 (lossless fb) | 62,224 @ 80.6 (−33.2%) | 386,788 @ 100 (+7.7%) | 386,788 @ 100 (+7.7%) |
+| grass.png | 81,068 @ 82.4 | 143,080 @ 93.75 | 177,586 @ 95.53 | 84,652 @ 83.1 (+4.4%) | 155,570 @ 90.9 (+8.7%) | 212,590 @ 100 fb (+19.7%) |
+| gravel.png | 65,226 @ 83.3 | 127,486 @ 93.83 | 157,330 @ 95.41 | 49,966 @ 80.7 (−23.4%) | 130,144 @ 92.7 (+2.1%) | 188,642 @ 100 fb (+19.9%) |
+| large.png | 7,014 @ 100 | 7,014 @ 100 | 7,014 @ 100 | 4,846 @ 100 (−30.9%) | 4,846 @ 100 (−30.9%) | 4,846 @ 100 (−30.9%) |
+| transparent.png | 118 @ 100 | 118 @ 100 | 118 @ 100 | 194 @ 100 (+64.4%) | 194 @ 100 (+64.4%) | 194 @ 100 (+64.4%) |
+| flat.png | 44 @ 100 | 44 @ 100 | 44 @ 100 | 32 (−27.3%) | 32 (−27.3%) | 32 (−27.3%) |
+| gray.png | 62 @ 100 | 62 @ 100 | 62 @ 100 | 56 (−9.7%) | 56 (−9.7%) | 56 (−9.7%) |
+| line.png | 102 @ 100 | 102 @ 100 | 102 @ 100 | 62 (−39.2%) | 62 (−39.2%) | 62 (−39.2%) |
+| text.png | 76 @ 100 | 76 @ 100 | 76 @ 100 | 58 (−23.7%) | 58 (−23.7%) | 58 (−23.7%) |
+| ui.png | 82 @ 100 | 82 @ 100 | 82 @ 100 | 68 (−17.1%) | 68 (−17.1%) | 68 (−17.1%) |
+| compressed.webp | 82 @ 100 | 82 @ 100 | 82 @ 100 | 68 (−17.1%) | 68 (−17.1%) | 68 (−17.1%) |
+| astronaut.png | refused (exit 3) | refused | refused | refused | refused | refused |
+| icc.png | refused (exit 1) | refused | refused | refused | refused | refused |
+| deep.png | refused (exit 1) | refused | refused | refused | refused | refused |
+
+Verdict: the withdrawn stack also falls back to lossless on coffee t90/t95 (score 100), and its lossless output there is smaller than ours (359,054 vs 386,788, −7.2% — the same VP8L entropy-stage gap that made our old large.png 12,682 vs their 7,014; ours now beats them only on large.png-class repetitive content). The destination gate vs the withdrawn stack: t80 wins 9 of 11 completing cells (losses grass +4.4%, transparent +64%); t90/t95 complete 11 cells each and lose coffee (+7.7% lossless-to-lossless), grass (+8.7% / +19.7% fallback), gravel (+2.1% / +19.9% fallback), transparent (+64%). Decode is competitive; encode wall remains multiple times the withdrawn stack. **The destination gate is NOT met and is not claimed.**
+
+## Full-matrix re-score vs the original toolchain (2026-11-15 prefix, quiet host)
+
+Committed as [untimed-full-2026-11-15.json](benchmarks/results/untimed-full-2026-11-15.json) with prefixed `2026-11-15-full-*` outputs: flags `IMG_BENCH_TOOLS` unset (all six tools), `IMG_ORIGINAL_BIN=.work/wt/original/target/release/rimage`. 196 records, 100 completed; `perf-gate-ready` 0 pre/post not required (capture mode records no timings); revision `f043b4f`, `sourceDirty: false`. Refusal set identical to the retained 2026-11-13 records (astronaut/icc/deep both stacks; img-png astronaut/coffee t80; cwebp coffee/large t90/t95 and ui/compressed; original-ravif completes zero cells, ten-bit refusal). img-WebP beats original-mozjpeg on **17 of 18** matched-score cells where both pass (mozjpeg takes gravel t90: 110,756 @ 90.7 vs 130,144 @ 92.7) — a WebP-vs-JPEGCLI-level comparison, not a like-for-like container claim. The fresh capture re-covers cwebp byte-identically. `cargo test --locked --all-features --test benchmark_verify` re-verifies every retained and fresh record (sizes, scores, exact samples).
 
 ## Remaining proofs
 
