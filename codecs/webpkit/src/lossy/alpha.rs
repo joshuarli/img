@@ -246,6 +246,27 @@ pub(crate) fn alph_chunk(
     })
 }
 
+/// The `Rgba8` counterpart of [`alph_chunk`]: `rgba` holds four bytes per pixel
+/// with the alpha byte last. Probes without allocating and only materializes the
+/// plane when a non-opaque pixel means an `ALPH` chunk will actually be written.
+/// Emits the same bytes as [`alph_chunk`] over the corresponding ARGB pixels.
+#[must_use]
+pub(crate) fn alph_chunk_rgba(
+    rgba: &[u8],
+    dims: crate::Dimensions,
+    tuning: AlphaTuning,
+) -> Option<Vec<u8>> {
+    rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .any(|px| px[3] != 0xff)
+        .then(|| {
+            let alpha: Vec<u8> = rgba.as_chunks::<4>().0.iter().map(|px| px[3]).collect();
+            compress_alpha(&alpha, dims.width(), dims.height(), tuning)
+        })
+}
+
 /// Build one `ALPH` payload: the 1-byte header (`compression`, `filter`,
 /// pre-processing = 0) followed by the stored `data`.
 fn assemble(compression: AlphaCompression, filter: AlphaFilter, data: &[u8]) -> Vec<u8> {

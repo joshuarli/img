@@ -274,6 +274,16 @@ impl LossyConfig {
     }
 }
 
+/// Borrow the source bytes as the VP8 RGBA input directly when nothing in the
+/// pipeline will modify them: an `Rgba8` source whose fully-transparent pixels
+/// need no hidden-RGB flattening. The frame encoder consumes RGBA bytes, so
+/// the unpack → pack round trip would reproduce these bytes exactly.
+fn rgba8_direct<'a>(layout: PixelLayout, bytes: &'a [u8], tuning: LossyTuning) -> Option<&'a [u8]> {
+    (layout == PixelLayout::Rgba8
+        && (tuning.exact() || !bytes.as_chunks::<4>().0.iter().any(|px| px[3] == 0)))
+    .then_some(bytes)
+}
+
 /// Encode `image` into a complete lossy WebP file.
 ///
 /// A fully-opaque image with no embedded metadata produces a bare
@@ -295,9 +305,12 @@ impl LossyConfig {
 pub fn encode(image: ImageRef<'_>, config: &LossyConfig) -> Result<Vec<u8>> {
     let dims = image.dimensions();
     check_dimensions(dims)?;
-    let argb = image::unpack_pixels(image.layout(), image.as_bytes());
     // No source image to inherit from: only an explicit config override applies.
     let metadata = config.resolve_metadata(&Metadata::none());
+    if let Some(rgba) = rgba8_direct(image.layout(), image.as_bytes(), *config.tuning()) {
+        return Ok(assemble_rgba(rgba, dims, config, &metadata));
+    }
+    let argb = image::unpack_pixels(image.layout(), image.as_bytes());
     Ok(assemble(&argb, dims, config, &metadata))
 }
 
@@ -321,8 +334,11 @@ pub fn encode(image: ImageRef<'_>, config: &LossyConfig) -> Result<Vec<u8>> {
 pub fn encode_image(image: &Image, config: &LossyConfig) -> Result<Vec<u8>> {
     let dims = image.dimensions();
     check_dimensions(dims)?;
-    let argb = image::unpack_pixels(image.layout(), image.as_bytes());
     let metadata = config.resolve_metadata(image.metadata());
+    if let Some(rgba) = rgba8_direct(image.layout(), image.as_bytes(), *config.tuning()) {
+        return Ok(assemble_rgba(rgba, dims, config, &metadata));
+    }
+    let argb = image::unpack_pixels(image.layout(), image.as_bytes());
     Ok(assemble(&argb, dims, config, &metadata))
 }
 
@@ -338,11 +354,31 @@ fn assemble(argb: &[u32], dims: Dimensions, config: &LossyConfig, metadata: &Met
     // ALPH chunk. `alph_chunk` probes without allocating and only materializes the
     // plane when a non-opaque pixel means an ALPH chunk will actually be written.
     let alph = crate::lossy::alpha::alph_chunk(argb, dims, alpha_tuning(*config.tuning()));
+    finish(&vp8, alph, dims, metadata)
+}
+
+/// Assemble the container directly from an `Rgba8` buffer for which
+/// [`rgba8_direct`] proved nothing will modify it. Byte-identical to the
+/// [`assemble`] path it replaces (same VP8 payload, same ALPH bytes).
+fn assemble_rgba(
+    rgba: &[u8],
+    dims: Dimensions,
+    config: &LossyConfig,
+    metadata: &Metadata,
+) -> Vec<u8> {
+    let vp8 = frame_encode(rgba, dims, config);
+    let alph = crate::lossy::alpha::alph_chunk_rgba(rgba, dims, alpha_tuning(*config.tuning()));
+    finish(&vp8, alph, dims, metadata)
+}
+
+/// The shared container tail: a bare `VP8 ` file for an opaque frame with empty
+/// metadata, the extended `VP8X` form otherwise.
+fn finish(vp8: &[u8], alph: Option<Vec<u8>>, dims: Dimensions, metadata: &Metadata) -> Vec<u8> {
     // The byte-identical fast path: nothing to carry beyond the opaque image.
     if alph.is_none() && metadata.is_empty() {
-        return wrap_vp8(&vp8);
+        return wrap_vp8(vp8);
     }
-    wrap_vp8_extended(&vp8, alph.as_deref(), dims, metadata)
+    wrap_vp8_extended(vp8, alph.as_deref(), dims, metadata)
 }
 
 /// Encode `image` into a raw `VP8 ` key-frame payload (no container), returning it
@@ -357,6 +393,9 @@ fn assemble(argb: &[u32], dims: Dimensions, config: &LossyConfig, metadata: &Met
 pub fn encode_vp8(image: ImageRef<'_>, config: &LossyConfig) -> Result<(Dimensions, Vec<u8>)> {
     let dims = image.dimensions();
     check_dimensions(dims)?;
+    if let Some(rgba) = rgba8_direct(image.layout(), image.as_bytes(), *config.tuning()) {
+        return Ok((dims, frame_encode(rgba, dims, config)));
+    }
     let argb = image::unpack_pixels(image.layout(), image.as_bytes());
     Ok((dims, encode_vp8_argb(&argb, dims, config)))
 }
@@ -368,21 +407,26 @@ pub fn encode_vp8(image: ImageRef<'_>, config: &LossyConfig) -> Result<(Dimensio
 /// to encode a lossy `ANMF` frame's `VP8 ` sub-chunk.
 pub(crate) fn encode_vp8_argb(argb: &[u32], dims: Dimensions, config: &LossyConfig) -> Vec<u8> {
     let tuning = *config.tuning();
-    // `-exact` off (the default) preserves the RGB under fully-transparent pixels;
+    // `-exact` on (the default) preserves the RGB under fully-transparent pixels;
     // clearing it flattens those macroblocks for a smaller file. Borrow the source
-    // untouched on the default path so the byte output is unchanged.
-    let cleaned: Vec<u32>;
-    let argb = if tuning.exact() {
-        argb
+    // untouched when no pixel is fully transparent so the byte output is unchanged.
+    let cleaned: alloc::borrow::Cow<'_, [u32]> = if tuning.exact() {
+        alloc::borrow::Cow::Borrowed(argb)
     } else {
-        cleaned = clear_hidden_rgb(argb);
-        &cleaned
+        clear_hidden_rgb(argb)
     };
-    let rgba = image::pack_pixels(PixelLayout::Rgba8, argb);
+    let rgba = image::pack_pixels(PixelLayout::Rgba8, &cleaned);
+    frame_encode(&rgba, dims, config)
+}
+
+/// Encode `rgba` (4 bytes/pixel, row-major) into a raw `VP8 ` key-frame payload.
+/// The shared tail of the ARGB and borrowed-`Rgba8` encode paths.
+fn frame_encode(rgba: &[u8], dims: Dimensions, config: &LossyConfig) -> Vec<u8> {
+    let tuning = *config.tuning();
     let base_q = biased_base_q(quality_to_base_q(config.quality.get()), tuning);
     let pixels = u64::from(dims.width()) * u64::from(dims.height());
     frame::encode_frame_tuned(
-        &rgba,
+        rgba,
         dims.width() as usize,
         dims.height() as usize,
         base_q,
@@ -416,13 +460,21 @@ fn biased_base_q(base_q: i32, tuning: LossyTuning) -> i32 {
     q.clamp(0, MAX_BASE_Q)
 }
 
-/// Clear the RGB channels of fully-transparent (`alpha == 0`) pixels, leaving opaque
-/// and partially-transparent pixels untouched (`-exact` off). Flattening the hidden
-/// RGB lets those macroblocks compress smaller; the alpha plane is unaffected.
-fn clear_hidden_rgb(argb: &[u32]) -> Vec<u32> {
-    argb.iter()
-        .map(|&p| if p >> 24 == 0 { 0 } else { p })
-        .collect()
+/// Clear the RGB channels of fully-transparent (`alpha == 0`) pixels, leaving
+/// opaque and partially-transparent pixels untouched (`-exact` off). Flattening
+/// the hidden RGB lets those macroblocks compress smaller; the alpha plane is
+/// unaffected. Borrows the input when no pixel is fully transparent, so the
+/// common opaque case pays a scan but not a copy.
+fn clear_hidden_rgb(argb: &[u32]) -> alloc::borrow::Cow<'_, [u32]> {
+    if argb.iter().any(|&p| p >> 24 == 0) {
+        alloc::borrow::Cow::Owned(
+            argb.iter()
+                .map(|&p| if p >> 24 == 0 { 0 } else { p })
+                .collect(),
+        )
+    } else {
+        alloc::borrow::Cow::Borrowed(argb)
+    }
 }
 
 /// Project the public [`LossyTuning`] onto the internal [`frame::FrameTuning`] the
