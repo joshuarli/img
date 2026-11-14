@@ -4,6 +4,8 @@ Performance captures use production source `0e4a4a2`; corrected comparison comma
 
 2026-11-14: retained `original-mozjpeg` outputs were rescored under the merged permissive JPEG decoder without re-encoding; outputs, byte sizes, timings, completions and the 0.0001 tolerance are unchanged, and `gravel_png-original-mozjpeg-95-0` now reads `matchedWithinHalfPoint`.
 
+2026-11-15: a fresh matched-score WebP capture under the handoff's planned `2026-11-15-` output prefix (single run, tools `img,cwebp`, quiet host, made 2026-11-14; the prefix does not denote the calendar day) lands as `untimed-2026-11-15.json` with prefixed `2026-11-15-*.webp` outputs; the large.png lossless cells move 12,682 → 4,846 B after the optimal-parse DP chain walk deepened to 256 (`MAX_CHAIN_OPTIMAL`; `5a0c65e`). Refusal set and cwebp cells are unchanged; the backend remains experimental.
+
 ## Correctness and corpus
 
 `make benchmark-verify` verifies four pinned licensed photographs and ten CC0 procedural representations, actual decoded output samples/scores, dimensions, source/output bytes, saved schema, completion counts, tool commands and gate arithmetic. [Corpus provenance](benchmarks/corpus/README.md) pins attribution, licenses and hashes. Cases cover photos, texture, UI/text/lines, transparency, grayscale, ICC, 16-bit, existing WebP and a 2048×1024 gradient.
@@ -180,7 +182,53 @@ Where both stacks pass at the target gate, rimage wins coffee, gravel, large and
 
 Fresh timed WebP cells (committed as [timed-2026-11-14.json](benchmarks/results/timed-2026-11-14.json) with prefixed outputs `2026-11-14-timed-*.webp`; quiet host, `perf-gate-ready` 0 pre/post, `RAYON_NUM_THREADS=1`, five interleaved repetitions, 420 records / 280 completed, revision `9542c98`, `timingGate: accepted`). Encode medians in ms, startup-inclusive process walls measured exactly as in the retained 2026-11-13 timed records (source decode + convert + candidate decode + harness scoring included for both tools): coffee t80 1029 vs 288 (≈3.6×; cwebp refuses t90/t95); grass t80/t90/t95 1461/1482/1445 vs 372/371/372 (≈3.9×); gravel 1540/1558/1537 vs 343/343/342 (≈4.5×); large.png t80 8640 vs 1506 (≈5.7×); flat/gray ≈27–28 vs 24 (≈1.1×), line/text ≈46–47/43 vs 28/27 (≈1.6×), transparent ≈81–82 vs 32 (≈2.6×); `ui.png`/`compressed.webp` rimage-only ≈34–38. Encoding this ladder costs what the retained records showed: the wall verdict is unchanged at ≈3.6–5.7× the `cwebp` process wall on photographic inputs, consistent with the 3.3–4.4× workflow comparison against the withdrawn closure (coffee 1002 ms there). One corpus, one host, fast effort; not a release claim. `cargo test --locked --all-features --test benchmark_verify` passes with the fresh records.
 
-These are one corpus (14 fixtures), one host, fast effort, startup-inclusive process walls and medians of five interleaved repetitions; they are not a release claim. The lossy size regressions at the t80 gate are materially closed; the backend remains experimental pending the best-effort and Linux measurements, the lossless gradient gap, and a full matrix re-score.
+These are one corpus (14 fixtures), one host, fast effort, startup-inclusive process walls and medians of five interleaved repetitions; they are not a release claim. The lossy size regressions at the t80 gate are materially closed; the backend remains experimental pending the best-effort and Linux measurements and a full matrix re-score.
+
+## WebP parity iteration — 2026-11-15 capture (made 2026-11-14, quiet host)
+
+The largest remaining lossless gap closed: the optimal-parse DP's monotonically improving hash-chain staircase walk now probes up to 256 hops instead of 64 (`MAX_CHAIN_OPTIMAL`, `5a0c65e`), while the greedy seed keeps the 64-hop cap so floor streams and ordinary-photo walls are unchanged. `large.png` at level 1 goes 12,682 → **4,846 B** (−61.8%), beating the withdrawn closure's 7,014 by −30.9%; `text.png` 72 → 58, `line.png` 64 → 62, `transparent.png` 196 → 194, `astronaut.png` −142, coffee −14; `ui.png`/`compressed.webp` +2 B (the DP candidate is self-floored against greedy, never against the previous DP). Photographic chains exhaust long before the cap, so the lossy wall is unchanged (coffee ≈460 ms, grass 0.82 s, gravel 1.08 s at level 1); the 2048×1024 smooth gradient is the worst case and rises ~4.5× on the lossless path (≈25 s), the case this landing targets. `ui.png`/`compressed.webp` parity note: both remain lossless-exact and two bytes above the 2026-11-14 capture; named and bounded.
+
+A fresh matched-score single-run capture is committed as [untimed-2026-11-15.json](benchmarks/results/untimed-2026-11-15.json) with prefixed `2026-11-15-*.webp` outputs (tools `img,cwebp`; 84 records, 56 completed; refusal set byte-identical to 2026-11-14; cwebp cells byte-identical). Tool label is `img` post-rename. Scores by the same PerceptualReference; cwebp passes the same gate independently.
+
+| Fixture | Target | img bytes @ score | cwebp bytes @ score | img Δ vs cwebp |
+| --- | --- | --- | --- | --- |
+| coffee.png | 80 | 62,224 @ 80.6 | 87,502 @ 85.8 | −28.9% |
+| grass.png | 80 | 84,652 @ 83.1 | 82,802 @ 84.2 | +2.2% |
+| gravel.png | 80 | 49,966 @ 80.7 | 59,728 @ 83.5 | −16.3% |
+| large.png | 80 | 4,846 @ 100.0 (lossless) | 42,032 @ 84.1 | −88.5% |
+| transparent.png | 80 | 194 @ 100.0 (lossless) | 168 @ 81.3 | +15.5% |
+| flat.png | 80 | 32 @ 100.0 (lossless) | 82 @ 90.2 | −61.0% |
+| gray.png | 80 | 56 @ 100.0 (lossless) | 88 @ 80.3 | −36.4% |
+| line.png | 80 | 62 @ 100.0 (lossless) | 1,308 @ 88.2 | −95.3% |
+| text.png | 80 | 58 @ 100.0 (lossless) | 490 @ 81.2 | −88.2% |
+| ui.png | 80 | 68 @ 100.0 (lossless) | refused | — |
+| compressed.webp | 80 | 68 @ 100.0 (lossless) | refused | — |
+| grass.png | 90 | 155,570 @ 90.9 | 146,582 @ 94.4 | +6.1% |
+| gravel.png | 90 | 130,144 @ 92.7 | 124,510 @ 94.2 | +4.5% |
+| coffee.png | 90 | 386,788 @ 100.0 (lossless fallback) | refused | — |
+| transparent.png | 90 | 194 @ 100.0 (lossless) | 254 @ 92.0 | −23.6% |
+| large.png | 90 | 4,846 @ 100.0 (lossless) | refused | — |
+| grass.png | 95 | 212,590 @ 100.0 (lossless fallback) | 176,330 @ 95.7 | +20.6% |
+| gravel.png | 95 | 188,642 @ 100.0 (lossless fallback) | 152,426 @ 95.6 | +23.7% |
+| coffee.png | 95 | 386,788 @ 100.0 (lossless fallback) | refused | — |
+| transparent.png | 95 | 194 @ 100.0 (lossless) | 770 @ 95.2 | −74.8% |
+| large.png | 95 | 4,846 @ 100.0 (lossless) | refused | — |
+
+vs the withdrawn baseline `5424df8` (t80): coffee 62,224 vs 93,198, gravel 49,966 vs 65,226, large.png 4,846 vs 7,014 (all better); grass 84,652 vs 81,068 (+4.4%), transparent 194 vs 118 (+64%). The lossy t80 winners are unchanged (coffee stays 62,224 @ 80.6; perf gates `perf-gate-ready` 0 pre/post; `cargo test --locked --all-features --test benchmark_verify` passes against the fresh records; the retained 2026-11-13 and 2026-11-14 records are untouched).
+
+Decode-side competitiveness vs `dwebp` 1.6.0 (one interleaved warm-host comparison; process walls and `instructions retired`, both sides incl. startup; decode to a sink, no I/O of the decoded pixels):
+
+| Fixture | kind | img user / instr / footprint | dwebp user / instr / footprint |
+| --- | --- | --- | --- |
+| large_png (2048×1024) | lossless VP8L | 0.02 s / 197,577,345 / 16.50 MB | 0.05 s / 783,185,285 / 16.52 MB |
+| grass_png (512×512) | lossy VP8 | 0.00 s / 94,871,104 / 3.34 MB | 0.05 s / 379,771,270 / 2.49 MB |
+| coffee_png (600×400) | lossy VP8 | 0.00 s / 71,447,183 / 3.18 MB | 0.05 s / 332,261,753 / 2.39 MB |
+| transparent_png (96×64) | lossy VP8 | 0.00 s / 28,364,623 / 1.77 MB | 0.00 s / 27,952,588 / 1.56 MB |
+| flat_png (96×64) | lossless VP8L | 0.00 s / 28,016,982 / 1.80 MB | 0.00 s / 26,746,227 / 1.54 MB |
+
+img decodes 2.8–4.0× fewer instructions on real files with equal footprint on large.png and +0.2–0.9 MB on small ones (smaller-file cells are startup-tied). dwebp writes a file sink and img decodes to memory then drops, so this is directional evidence that img's decoder is competitive, not a release claim.
+
+Lossy t90/t95 cells still fall back to lossless on grass/gravel (cwebp passes lossy there at 92–96); the lossy encoder's RD efficiency is the open gap, with SNS and the trellis lambda already refuted/measured-and-rejected. `cargo test --locked --all-features --test benchmark_verify` passes.
 
 ## Remaining proofs
 

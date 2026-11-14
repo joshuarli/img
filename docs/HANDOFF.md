@@ -1,5 +1,7 @@
 # Session handoff — WebP hillclimb (2026-11-14, post-rename)
 
+> **Superseded in part by the 2026-11-14 (later) hillclimb entries.** The `MAX_CHAIN` arm was landed as `5a0c65e` in a strictly dominant shape (greedy stays at 64; the DP's staircase walk `find_candidates` probes up to 256 via `MAX_CHAIN_OPTIMAL`), the fresh prefixed capture (`2026-11-15-`) is committed, decode is measured competitive vs `dwebp`, and large.png is now 4,846 B (below the withdrawn 7,014). See `docs/WEBP-HILLCLIMB.md` (2026-11-14 later entries), `BENCHMARKS.md` (2026-11-15 capture section) and commit `04ada41`. The rest of this document, including the destination-gate status (NOT met) and the blocked items, still applies.
+
 Written at wind-down per owner's request. Read `docs/WEBP-HILLCLIMB.md` for the full campaign ledger and `BENCHMARKS.md` for the recorded matched-score tables. The destination gate (permissive WebP backend at `≤` withdrawn-zenwebp matched-score bytes, comparable or lower encode time) is **NOT met and is not claimed anywhere**.
 
 ## Identity note: the project was renamed upstream mid-session
