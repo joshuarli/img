@@ -101,6 +101,26 @@ scripts/benchmark-build-cost ORACLE_CHECKOUT
 /usr/bin/time -l target/dist/rimage convert benchmarks/resource-rgb.png --lossless -o RESULT.png --quiet
 ```
 
+## Permissive codec stack comparison (experiment branch)
+
+This experiment measures the branch `experiment/permissive-codecs` (unmerged), which swaps the production AGPL/GPL codec closure (zenjpeg, zenwebp, zenpng, zenavif, zenravif/zenrav1e, rav1d-safe, zenflate, zenquant and GPLv3 imagequant) for permissive pure-Rust implementations: zune-jpeg + mozjpeg-rs (JPEG), png 0.18 with quantette/quantizr (PNG), image-webp + vendored Webpkit (WebP) and rav1d/rav1e via ravif (AVIF). Both sides are `--profile dist --features build-binary` builds; the master baseline was built 2026-11-13 from `5424df8` (`7edc6ed` is docs-only). The protocol mirrors the production matrix: fast effort, eight-candidate cap, score targets 80/90/95, five interleaved rounds with alternating binary order, one worker and `RAYON_NUM_THREADS=1`, scored by the same PerceptualReference matrix. No record landed below its score target. Results are one corpus (14 fixtures, `benchmarks/corpus/generated` and photographs) on one shared host; they are comparison observations, not a release claim.
+
+| Format | target 80 median ratio / range | target 90 median ratio / range | target 95 median ratio / range |
+| --- | --- | --- | --- |
+| WebP | −5.3% / [−37.3%, +80.8%] | −5.3% / [−37.3%, +80.8%] | −5.3% / [−37.3%, +80.8%] |
+| AVIF | +15.5% / [−7.3%, +212.5%] | −1.9% / [−3.2%, −0.7%] | +18.2% / [−0.7%, +37.0%] |
+| JPEG | +5.7% / [−42.2%, +67.2%] | +3.7% / [−15.4%, +96.0%] | +12.0% / [−7.1%, +26.8%] |
+
+Completion sets: master completed 310/630 records and permissive completed 340/630; every cell master completed also completes on permissive (JPEG and WebP completion sets are identical). Permissive additionally completes six AVIF cells master refuses — coffee t80/t90 (116,027-byte outputs) and `ui.png`/`compressed.webp` at t90/t95 (1,314/1,436-byte outputs). The 290 both-refused records are identical cases: astronaut and icc (gamut), deep and ten-bit (precision), transparent/ui/grass JPEG (alpha), astronaut and most photographic AVIF cells at t90/t95, and coffee JPEG at t90/t95.
+
+WebP is bimodal. Synthetic and flat content improves 5–37% (`line.png` −37.3%, `flat.png` −27.3%, `ui.png` −19.5%, `text.png` −5.3%), but photographic captures regress heavily: coffee +77.1% at t80, grass +61.2% at t80, gravel +48.3%, transparent +69.5% (both t80/t90/t95 bytes equal across targets), large +80.8%, coffee t90/t95 +7.7%. The vendored Webpkit snapshot at `codecs/webpkit/` is pre-1.0 and unmodified from its pinned import; closing this gap is the subject of the unattended parity campaign in [WEBP-HILLCLIMB](docs/WEBP-HILLCLIMB.md). AVIF's worst case is `large.png` t80 at +212.5% (39,202 vs 12,544 bytes); most photographic AVIF cells at t90/t95 still refuse on both stacks. JPEG is mixed (best case `line.png` t80 −42.2%; `grass.png` t80 +67.2%).
+
+Timing medians (process startup included; host shared with background load; ranges dominated by the large AVIF encodes at ≈7–8 s; ordered as observations, not orderings): WebP ≈49.8–52.6 ms permissive vs ≈36.5–36.7 ms master, consistent across 70 samples per target; AVIF and JPEG within ~1 ms of master. The WebP delta is not a verified ordering under the busy-host protocol — re-measure on a quiet host before drawing conclusions. Binary size falls from 7,265,712 to 4,523,200 bytes (−37.8%).
+
+The normal/build [license inventory](benchmarks/production-dependencies.json) is regenerated for the branch at `c088ac8`: 149 packages across `aarch64-apple-darwin`, `aarch64-unknown-linux-musl` and `x86_64-unknown-linux-musl`, zero declared AGPL/GPL/LGPL entries, zero build scripts. `quantizr` 1.4.3 declares no SPDX expression (recorded as `license-file: LICENSE`); its shipped license text is verbatim MIT and is recorded as the selected license. `webpkit` is a vendored path dependency pinned at `cc1311ebf`, not a registry artifact. The 137-package inventory earlier in this file records master's production closure, not this branch's.
+
+This benchmark is evidence for review, not a merge decision. The branch is unmerged and unpushed; accepting the WebP backend, the AVIF color-description change ([docs/AVIF.md](docs/AVIF.md)) and the score/size tradeoffs requires the parity campaign gates and owner sign-off.
+
 ## Remaining proofs
 
 These measurements need the stated environments. Existing results apply to their recorded source and supported fixtures; they do not establish correctness for every accepted image representation.
