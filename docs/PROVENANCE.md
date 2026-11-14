@@ -28,7 +28,8 @@ Do not distribute them as a newly licensed photographic corpus without establish
 | zune-jpeg (JPEG decode) | 0.5.15 | MIT OR Apache-2.0 |
 | mozjpeg-rs (JPEG encode) | 0.9.2 | BSD-3-Clause |
 | png (PNG) | 0.18.1 | MIT OR Apache-2.0 |
-| quantette (palette quantization) | 0.6.0 | MIT OR Apache-2.0 |
+| quantette (opaque-RGB palette quantization) | 0.6.0 | MIT OR Apache-2.0 |
+| quantizr (RGBA palette quantization) | 1.4.3 | MIT (via unmodified LICENSE file) |
 | image-webp (WebP decode) | 0.2.4 | MIT OR Apache-2.0 |
 | webpkit (WebP encode, vendored path dependency, experimental) | `cc1311ebf` | MIT OR Apache-2.0 |
 | rav1d (AV1 decode) | 1.1.0 | BSD-2-Clause |
