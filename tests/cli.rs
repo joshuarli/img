@@ -10,6 +10,7 @@ fn json(output:Output)->Value {serde_json::from_slice(&success(output).stdout).u
 fn command_help_invalid_combinations_and_removed_surface() {
     for command in ["optimize","convert","inspect","compare"] {assert!(String::from_utf8(success(args(&[command,"--help"])).stdout).unwrap().contains("--score"));}
     for argument in ["--help","-h","help","--version"] {success(args(&[argument]));}
+    for argument in ["--help","-h","help"] {assert!(String::from_utf8(success(args(&[argument])).stdout).unwrap().ends_with("\n\nMaintained by Joshua Li: https://github.com/joshuarli/img\n"));}
     for invalid in [
         vec!["png","file.png"],vec!["jpg","--help"],vec!["optimize","x","--unknown"],
         vec!["optimize","x","--score","NaN"],vec!["optimize","x","--score","101"],vec!["convert","x","--quality","inf"],
