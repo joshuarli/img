@@ -233,10 +233,19 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
             for &f in &formats {
                 let mut qualities: Vec<f32> = evaluations.iter().filter(|e: &&Evaluation| e.format == f).filter_map(|e|e.quality).collect();
                 qualities.sort_by(f32::total_cmp); qualities.dedup();
+                let pass = |q: f32| evaluations.iter().any(|e| e.format == f && e.quality == Some(q) && e.failure.is_none());
                 let center = evaluations.iter().filter(|e|e.format==f && e.failure.is_none()).min_by_key(|e|e.bytes.unwrap_or(usize::MAX)).and_then(|e|e.quality).unwrap_or(75.0);
-                let mut gaps: Vec<_> = qualities.windows(2).filter(|p|p[1]-p[0]>=0.5).map(|p|((p[0]+p[1])*0.5,((p[0]+p[1])*0.5-center).abs())).collect();
-                gaps.sort_by(|a,b|a.1.total_cmp(&b.1).then(a.0.total_cmp(&b.0)));
-                if let Some(&(q,_))=gaps.first() { settings.push((f,Some(q))); refined=true; }
+                let mut straddle: Vec<(f32,f32)> = qualities.windows(2).filter(|p|p[1]-p[0]>=0.5 && pass(p[0]) != pass(p[1])).map(|p|(p[0],p[1])).collect();
+                if straddle.is_empty() {
+                    let mut gaps: Vec<_> = qualities.windows(2).filter(|p|p[1]-p[0]>=0.5).map(|p|((p[0]+p[1])*0.5,((p[0]+p[1])*0.5-center).abs())).collect();
+                    gaps.sort_by(|a,b|a.1.total_cmp(&b.1).then(a.0.total_cmp(&b.0)));
+                    if let Some(&(q,_))=gaps.first() { settings.push((f,Some(q))); refined=true; }
+                } else {
+                    straddle.sort_by(|a,b|(b.1-b.0).total_cmp(&(a.1-a.0)).then(((a.0+a.1)*0.5-center).abs().total_cmp(&((b.0+b.1)*0.5-center).abs())));
+                    let (lo,hi)=straddle[0];
+                    settings.push((f,Some((lo+hi)*0.5)));
+                    refined=true;
+                }
             }
             if !refined { break; }
         }
