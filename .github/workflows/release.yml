@@ -265,7 +265,7 @@ jobs:
             --json tagName --jq '.[0].tagName // ""')
           if [[ -z "$previous" ]]; then
             printf 'Initial release at %s.\n' "$GITHUB_SHA" > "$notes"
-            printf '\nIncludes corresponding source with locked dependencies and notices. See docs/PROVENANCE.md for AGPL and other license obligations.\n' >> "$notes"
+            printf '\nIncludes corresponding source with locked dependencies and notices. See docs/PROVENANCE.md for license obligations.\n' >> "$notes"
             exit 0
           fi
           compare="repos/$GITHUB_REPOSITORY/compare/$previous...$GITHUB_SHA"

@@ -13,7 +13,7 @@ SHA-256: MIT `cd5681828f9fe1cd224e817fb50be47d0fa16d6414a15c5f530910c276a8e50d`,
 
 This fork modifies the upstream source. Rimage's source, including the upstream material and its modifications, is licensed under Apache-2.0, selected from the upstream `MIT OR Apache-2.0`; the upstream MIT notice remains applicable to the original material.
 
-Binaries built from this tree link only permissively licensed production dependencies — there is no AGPL, GPL or MPL code in the normal or build-binary closure, so binary distributions carry no copyleft obligations. `LICENSE-AGPL3` applies to binaries published from before the permissive codec swap; it is retained for those distributions and for history, and binds nothing built today. [RELEASE.md](RELEASE.md) and `scripts/package-release.py` ship it as a notice for that reason.
+Binary distributions carry no AGPL, GPL or MPL obligations: the production closure contains none of those licenses, so the published packages ship only the permissive notices (`LICENSE-MIT`, `LICENSE-APACHE`) and this provenance.
 
 `tests/common/mod.rs` creates procedural RGB samples. These generated samples are offered under CC0-1.0.
 Existing `tests/files` arrived in the source history without per-file photographic provenance. They remain regression inputs and do not establish a redistributable benchmark corpus.

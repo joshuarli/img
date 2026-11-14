@@ -22,7 +22,7 @@ for directory, filename in artifacts.items():
 
 packages = dist / 'packages'
 packages.mkdir()
-notices = ['LICENSE-AGPL3', 'LICENSE-MIT', 'LICENSE-APACHE', 'docs/PROVENANCE.md']
+notices = ['LICENSE-MIT', 'LICENSE-APACHE', 'docs/PROVENANCE.md']
 for directory, filename in artifacts.items():
     source = dist / directory / filename
     if directory == 'rimage-source':
