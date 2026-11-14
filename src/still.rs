@@ -6,6 +6,7 @@ use zenpixels::{PixelBuffer, PixelDescriptor};
 pub(crate) mod png;
 mod jpeg;
 mod avif;
+mod avif_container;
 mod av1;
 mod webp;
 pub(crate) mod color;
@@ -348,16 +349,15 @@ pub fn describe(bytes: &[u8]) -> Result<Description, Error> {
             Ok(Description {format,width,height,bit_depth:Some(8),alpha:decoder.has_alpha(),grayscale:None,icc:icc.is_some(),cicp:None,orientation,animation:decoder.is_animated(),grid:false,rotation_ccw_degrees:None,mirror_axis:None,pixel_aspect_ratio:None,hdr_metadata:false,exif:exif.is_some(),xmp:xmp.is_some()})
         },
         Format::Avif => {
-            let config=zenavif_parse::DecodeConfig::default().with_peak_memory_limit(IMAGE_MEMORY_BYTES);
-            let parser=zenavif_parse::AvifParser::from_bytes_with_config(bytes,&config,&zencodec::Unstoppable).map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
+            let parser=avif_container::read(bytes,&crate::cancellation::Cancellation::default())?;
             let (width,height)=if let Some(grid)=parser.grid_config() {
                 if grid.output_width==0||grid.output_height==0 {return Err(Error::new(ErrorKind::Unsupported,"grid inspection requires declared canvas dimensions"));}
                 (grid.output_width,grid.output_height)
-            } else {let header=parser.primary_metadata().map_err(|e|Error::caused(ErrorKind::Invalid,e))?;(header.max_frame_width.get(),header.max_frame_height.get())};
-            let exif=parser.exif().transpose().map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
-            let cicp=match parser.color_info() { Some(zenavif_parse::ColorInformation::Nclx {color_primaries,transfer_characteristics,matrix_coefficients,full_range})=>Some([*color_primaries,*transfer_characteristics,*matrix_coefficients,*full_range as u16]), _=>None };
-            let bitstream_hdr=if parser.grid_config().is_none() {avif::bitstream_hdr(&parser.primary_data().map_err(|e|Error::caused(ErrorKind::Invalid,e))?)?} else {false};
-            Ok(Description {format,width,height,bit_depth:parser.av1_config().map(|c|c.bit_depth),alpha:parser.alpha_metadata().is_some(),grayscale:parser.av1_config().map(|c|c.monochrome),icc:matches!(parser.color_info(),Some(zenavif_parse::ColorInformation::IccProfile(_))),cicp,orientation:exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation).map(|o|o as u8).unwrap_or(1),animation:parser.animation_info().is_some(),grid:parser.grid_config().is_some(),rotation_ccw_degrees:parser.rotation().map(|r|r.angle),mirror_axis:parser.mirror().map(|m|m.axis),pixel_aspect_ratio:parser.pixel_aspect_ratio().map(|p|[p.h_spacing,p.v_spacing]),hdr_metadata:parser.content_light_level().is_some()||parser.mastering_display().is_some()||parser.gain_map_metadata().is_some()||bitstream_hdr||cicp.is_some_and(|c|matches!(c[1],16|18)),exif:exif.is_some(),xmp:parser.xmp().is_some()})
+            } else {let header=parser.primary_metadata()?;(header.max_frame_width.get(),header.max_frame_height.get())};
+            let exif=parser.exif().transpose()?;
+            let cicp=match parser.color_info() { Some(avif_container::ColorInformation::Nclx {color_primaries,transfer_characteristics,matrix_coefficients,full_range})=>Some([color_primaries,transfer_characteristics,matrix_coefficients,full_range as u16]), _=>None };
+            let bitstream_hdr=if parser.grid_config().is_none() {avif::bitstream_hdr(&parser.primary_data()?)?} else {false};
+            Ok(Description {format,width,height,bit_depth:parser.av1_config().map(|c|c.bit_depth),alpha:parser.alpha_metadata().is_some(),grayscale:parser.av1_config().map(|c|c.monochrome),icc:matches!(parser.color_info(),Some(avif_container::ColorInformation::IccProfile(_))),cicp,orientation:exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation).map(|o|o as u8).unwrap_or(1),animation:parser.animation_info().is_some(),grid:parser.grid_config().is_some(),rotation_ccw_degrees:parser.rotation().map(|r|r.angle),mirror_axis:parser.mirror().map(|m|m.axis),pixel_aspect_ratio:parser.pixel_aspect_ratio().map(|p|[p.h_spacing,p.v_spacing]),hdr_metadata:parser.content_light_level().is_some()||parser.mastering_display().is_some()||parser.gain_map_metadata().is_some()||bitstream_hdr||cicp.is_some_and(|c|matches!(c[1],16|18)),exif:exif.is_some(),xmp:parser.xmp().is_some()})
         },
     }
 }
