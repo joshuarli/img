@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "b2caffc",
+  "sourceRevision": "1424358",
   "architecture": "aarch64-apple-darwin",
   "timingGate": "accepted: pre/post perf-gate-ready passed",
   "method": "immutable binary snapshots; both paired workflows warmed once; five interleaved one-iteration samples per side with reversed pair order in rounds 2 and 4; other current workflows warmed once and sampled five times",
   "oracleRevision": "2708512",
   "oracleBinarySha256": "30ad1ced83f7849a317e7a7a54b2475d1f4487324ecd32bad563f9eef694514a",
-  "candidateBinarySha256": "3adae6b674f14ae78a74450697f1a50c270df3babcf8bb714434bca9407c6b5c",
+  "candidateBinarySha256": "561e149e3846064446fdd9729ed22141884c4a773a5253e7b006308e62ab42c0",
   "configuration": "dist, normal production binary, default CLI workers; RAYON_NUM_THREADS=1; includes setup/verification/cleanup except version-only workload",
   "allocationCounters": "unsupported; zero counters are not zero allocations",
   "results": [
@@ -19,30 +19,7 @@
             "samples": [
               {
                 "name": "workflow::lossless_batch",
-                "median_ns": 87761292,
-                "alloc_count": 0,
-                "alloc_bytes": 0,
-                "max_alloc_count": 0,
-                "max_alloc_bytes": 0,
-                "sample_count": 1,
-                "iter_count": 1,
-                "process_resources": {
-                  "status": "unsupported",
-                  "user_cpu_ns": null,
-                  "system_cpu_ns": null,
-                  "voluntary_context_switches": null,
-                  "involuntary_context_switches": null,
-                  "minor_page_faults": null,
-                  "major_page_faults": null,
-                  "memory_status": "supported",
-                  "rss_bytes": 6537216,
-                  "pss_bytes": null
-                },
-                "side": "current"
-              },
-              {
-                "name": "workflow::lossless_batch",
-                "median_ns": 87233709,
+                "median_ns": 89669583,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -65,7 +42,76 @@
               },
               {
                 "name": "workflow::lossless_batch",
-                "median_ns": 87737417,
+                "median_ns": 88789292,
+                "alloc_count": 0,
+                "alloc_bytes": 0,
+                "max_alloc_count": 0,
+                "max_alloc_bytes": 0,
+                "sample_count": 1,
+                "iter_count": 1,
+                "process_resources": {
+                  "status": "unsupported",
+                  "user_cpu_ns": null,
+                  "system_cpu_ns": null,
+                  "voluntary_context_switches": null,
+                  "involuntary_context_switches": null,
+                  "minor_page_faults": null,
+                  "major_page_faults": null,
+                  "memory_status": "supported",
+                  "rss_bytes": 6537216,
+                  "pss_bytes": null
+                },
+                "side": "current"
+              },
+              {
+                "name": "workflow::lossless_batch",
+                "median_ns": 86666458,
+                "alloc_count": 0,
+                "alloc_bytes": 0,
+                "max_alloc_count": 0,
+                "max_alloc_bytes": 0,
+                "sample_count": 1,
+                "iter_count": 1,
+                "process_resources": {
+                  "status": "unsupported",
+                  "user_cpu_ns": null,
+                  "system_cpu_ns": null,
+                  "voluntary_context_switches": null,
+                  "involuntary_context_switches": null,
+                  "minor_page_faults": null,
+                  "major_page_faults": null,
+                  "memory_status": "supported",
+                  "rss_bytes": 6520832,
+                  "pss_bytes": null
+                },
+                "side": "current"
+              },
+              {
+                "name": "workflow::lossless_batch",
+                "median_ns": 87719833,
+                "alloc_count": 0,
+                "alloc_bytes": 0,
+                "max_alloc_count": 0,
+                "max_alloc_bytes": 0,
+                "sample_count": 1,
+                "iter_count": 1,
+                "process_resources": {
+                  "status": "unsupported",
+                  "user_cpu_ns": null,
+                  "system_cpu_ns": null,
+                  "voluntary_context_switches": null,
+                  "involuntary_context_switches": null,
+                  "minor_page_faults": null,
+                  "major_page_faults": null,
+                  "memory_status": "supported",
+                  "rss_bytes": 6537216,
+                  "pss_bytes": null
+                },
+                "side": "current"
+              },
+              {
+                "name": "workflow::lossless_batch",
+                "median_ns": 86413459,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -82,59 +128,13 @@
                   "major_page_faults": null,
                   "memory_status": "supported",
                   "rss_bytes": 6553600,
-                  "pss_bytes": null
-                },
-                "side": "current"
-              },
-              {
-                "name": "workflow::lossless_batch",
-                "median_ns": 86175375,
-                "alloc_count": 0,
-                "alloc_bytes": 0,
-                "max_alloc_count": 0,
-                "max_alloc_bytes": 0,
-                "sample_count": 1,
-                "iter_count": 1,
-                "process_resources": {
-                  "status": "unsupported",
-                  "user_cpu_ns": null,
-                  "system_cpu_ns": null,
-                  "voluntary_context_switches": null,
-                  "involuntary_context_switches": null,
-                  "minor_page_faults": null,
-                  "major_page_faults": null,
-                  "memory_status": "supported",
-                  "rss_bytes": 6537216,
-                  "pss_bytes": null
-                },
-                "side": "current"
-              },
-              {
-                "name": "workflow::lossless_batch",
-                "median_ns": 90824542,
-                "alloc_count": 0,
-                "alloc_bytes": 0,
-                "max_alloc_count": 0,
-                "max_alloc_bytes": 0,
-                "sample_count": 1,
-                "iter_count": 1,
-                "process_resources": {
-                  "status": "unsupported",
-                  "user_cpu_ns": null,
-                  "system_cpu_ns": null,
-                  "voluntary_context_switches": null,
-                  "involuntary_context_switches": null,
-                  "minor_page_faults": null,
-                  "major_page_faults": null,
-                  "memory_status": "supported",
-                  "rss_bytes": 6537216,
                   "pss_bytes": null
                 },
                 "side": "current"
               }
             ],
-            "medianNs": 87737417,
-            "spreadNs": 4649167
+            "medianNs": 87719833,
+            "spreadNs": 3256124
           }
         }
       ]
@@ -148,7 +148,99 @@
             "samples": [
               {
                 "name": "workflow::optimize_scored_file",
-                "median_ns": 23145250,
+                "median_ns": 24704834,
+                "alloc_count": 0,
+                "alloc_bytes": 0,
+                "max_alloc_count": 0,
+                "max_alloc_bytes": 0,
+                "sample_count": 1,
+                "iter_count": 1,
+                "process_resources": {
+                  "status": "unsupported",
+                  "user_cpu_ns": null,
+                  "system_cpu_ns": null,
+                  "voluntary_context_switches": null,
+                  "involuntary_context_switches": null,
+                  "minor_page_faults": null,
+                  "major_page_faults": null,
+                  "memory_status": "supported",
+                  "rss_bytes": 7585792,
+                  "pss_bytes": null
+                },
+                "side": "current"
+              },
+              {
+                "name": "workflow::optimize_scored_file",
+                "median_ns": 23472667,
+                "alloc_count": 0,
+                "alloc_bytes": 0,
+                "max_alloc_count": 0,
+                "max_alloc_bytes": 0,
+                "sample_count": 1,
+                "iter_count": 1,
+                "process_resources": {
+                  "status": "unsupported",
+                  "user_cpu_ns": null,
+                  "system_cpu_ns": null,
+                  "voluntary_context_switches": null,
+                  "involuntary_context_switches": null,
+                  "minor_page_faults": null,
+                  "major_page_faults": null,
+                  "memory_status": "supported",
+                  "rss_bytes": 7569408,
+                  "pss_bytes": null
+                },
+                "side": "current"
+              },
+              {
+                "name": "workflow::optimize_scored_file",
+                "median_ns": 24864625,
+                "alloc_count": 0,
+                "alloc_bytes": 0,
+                "max_alloc_count": 0,
+                "max_alloc_bytes": 0,
+                "sample_count": 1,
+                "iter_count": 1,
+                "process_resources": {
+                  "status": "unsupported",
+                  "user_cpu_ns": null,
+                  "system_cpu_ns": null,
+                  "voluntary_context_switches": null,
+                  "involuntary_context_switches": null,
+                  "minor_page_faults": null,
+                  "major_page_faults": null,
+                  "memory_status": "supported",
+                  "rss_bytes": 7602176,
+                  "pss_bytes": null
+                },
+                "side": "current"
+              },
+              {
+                "name": "workflow::optimize_scored_file",
+                "median_ns": 22463875,
+                "alloc_count": 0,
+                "alloc_bytes": 0,
+                "max_alloc_count": 0,
+                "max_alloc_bytes": 0,
+                "sample_count": 1,
+                "iter_count": 1,
+                "process_resources": {
+                  "status": "unsupported",
+                  "user_cpu_ns": null,
+                  "system_cpu_ns": null,
+                  "voluntary_context_switches": null,
+                  "involuntary_context_switches": null,
+                  "minor_page_faults": null,
+                  "major_page_faults": null,
+                  "memory_status": "supported",
+                  "rss_bytes": 7602176,
+                  "pss_bytes": null
+                },
+                "side": "current"
+              },
+              {
+                "name": "workflow::optimize_scored_file",
+                "median_ns": 24311000,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -168,102 +260,10 @@
                   "pss_bytes": null
                 },
                 "side": "current"
-              },
-              {
-                "name": "workflow::optimize_scored_file",
-                "median_ns": 24230167,
-                "alloc_count": 0,
-                "alloc_bytes": 0,
-                "max_alloc_count": 0,
-                "max_alloc_bytes": 0,
-                "sample_count": 1,
-                "iter_count": 1,
-                "process_resources": {
-                  "status": "unsupported",
-                  "user_cpu_ns": null,
-                  "system_cpu_ns": null,
-                  "voluntary_context_switches": null,
-                  "involuntary_context_switches": null,
-                  "minor_page_faults": null,
-                  "major_page_faults": null,
-                  "memory_status": "supported",
-                  "rss_bytes": 7585792,
-                  "pss_bytes": null
-                },
-                "side": "current"
-              },
-              {
-                "name": "workflow::optimize_scored_file",
-                "median_ns": 23226584,
-                "alloc_count": 0,
-                "alloc_bytes": 0,
-                "max_alloc_count": 0,
-                "max_alloc_bytes": 0,
-                "sample_count": 1,
-                "iter_count": 1,
-                "process_resources": {
-                  "status": "unsupported",
-                  "user_cpu_ns": null,
-                  "system_cpu_ns": null,
-                  "voluntary_context_switches": null,
-                  "involuntary_context_switches": null,
-                  "minor_page_faults": null,
-                  "major_page_faults": null,
-                  "memory_status": "supported",
-                  "rss_bytes": 7569408,
-                  "pss_bytes": null
-                },
-                "side": "current"
-              },
-              {
-                "name": "workflow::optimize_scored_file",
-                "median_ns": 23064250,
-                "alloc_count": 0,
-                "alloc_bytes": 0,
-                "max_alloc_count": 0,
-                "max_alloc_bytes": 0,
-                "sample_count": 1,
-                "iter_count": 1,
-                "process_resources": {
-                  "status": "unsupported",
-                  "user_cpu_ns": null,
-                  "system_cpu_ns": null,
-                  "voluntary_context_switches": null,
-                  "involuntary_context_switches": null,
-                  "minor_page_faults": null,
-                  "major_page_faults": null,
-                  "memory_status": "supported",
-                  "rss_bytes": 7585792,
-                  "pss_bytes": null
-                },
-                "side": "current"
-              },
-              {
-                "name": "workflow::optimize_scored_file",
-                "median_ns": 23393125,
-                "alloc_count": 0,
-                "alloc_bytes": 0,
-                "max_alloc_count": 0,
-                "max_alloc_bytes": 0,
-                "sample_count": 1,
-                "iter_count": 1,
-                "process_resources": {
-                  "status": "unsupported",
-                  "user_cpu_ns": null,
-                  "system_cpu_ns": null,
-                  "voluntary_context_switches": null,
-                  "involuntary_context_switches": null,
-                  "minor_page_faults": null,
-                  "major_page_faults": null,
-                  "memory_status": "supported",
-                  "rss_bytes": 7569408,
-                  "pss_bytes": null
-                },
-                "side": "current"
               }
             ],
-            "medianNs": 23226584,
-            "spreadNs": 1165917
+            "medianNs": 24311000,
+            "spreadNs": 2400750
           }
         }
       ]
@@ -277,7 +277,7 @@
             "samples": [
               {
                 "name": "workflow::png_file_conversion",
-                "median_ns": 20883750,
+                "median_ns": 20521875,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -293,37 +293,14 @@
                   "minor_page_faults": null,
                   "major_page_faults": null,
                   "memory_status": "supported",
-                  "rss_bytes": 6750208,
+                  "rss_bytes": 6782976,
                   "pss_bytes": null
                 },
                 "side": "current"
               },
               {
                 "name": "workflow::png_file_conversion",
-                "median_ns": 19430125,
-                "alloc_count": 0,
-                "alloc_bytes": 0,
-                "max_alloc_count": 0,
-                "max_alloc_bytes": 0,
-                "sample_count": 1,
-                "iter_count": 1,
-                "process_resources": {
-                  "status": "unsupported",
-                  "user_cpu_ns": null,
-                  "system_cpu_ns": null,
-                  "voluntary_context_switches": null,
-                  "involuntary_context_switches": null,
-                  "minor_page_faults": null,
-                  "major_page_faults": null,
-                  "memory_status": "supported",
-                  "rss_bytes": 6766592,
-                  "pss_bytes": null
-                },
-                "side": "current"
-              },
-              {
-                "name": "workflow::png_file_conversion",
-                "median_ns": 20679208,
+                "median_ns": 20142792,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -346,7 +323,7 @@
               },
               {
                 "name": "workflow::png_file_conversion",
-                "median_ns": 19468417,
+                "median_ns": 19564875,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -369,7 +346,30 @@
               },
               {
                 "name": "workflow::png_file_conversion",
-                "median_ns": 19728709,
+                "median_ns": 20168833,
+                "alloc_count": 0,
+                "alloc_bytes": 0,
+                "max_alloc_count": 0,
+                "max_alloc_bytes": 0,
+                "sample_count": 1,
+                "iter_count": 1,
+                "process_resources": {
+                  "status": "unsupported",
+                  "user_cpu_ns": null,
+                  "system_cpu_ns": null,
+                  "voluntary_context_switches": null,
+                  "involuntary_context_switches": null,
+                  "minor_page_faults": null,
+                  "major_page_faults": null,
+                  "memory_status": "supported",
+                  "rss_bytes": 6782976,
+                  "pss_bytes": null
+                },
+                "side": "current"
+              },
+              {
+                "name": "workflow::png_file_conversion",
+                "median_ns": 20606542,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -391,8 +391,8 @@
                 "side": "current"
               }
             ],
-            "medianNs": 19728709,
-            "spreadNs": 1453625
+            "medianNs": 20168833,
+            "spreadNs": 1041667
           }
         },
         {
@@ -401,30 +401,7 @@
             "samples": [
               {
                 "name": "workflow::png_file_conversion",
-                "median_ns": 7046208,
-                "alloc_count": 0,
-                "alloc_bytes": 0,
-                "max_alloc_count": 0,
-                "max_alloc_bytes": 0,
-                "sample_count": 1,
-                "iter_count": 1,
-                "process_resources": {
-                  "status": "unsupported",
-                  "user_cpu_ns": null,
-                  "system_cpu_ns": null,
-                  "voluntary_context_switches": null,
-                  "involuntary_context_switches": null,
-                  "minor_page_faults": null,
-                  "major_page_faults": null,
-                  "memory_status": "supported",
-                  "rss_bytes": 6782976,
-                  "pss_bytes": null
-                },
-                "side": "oracle"
-              },
-              {
-                "name": "workflow::png_file_conversion",
-                "median_ns": 6927375,
+                "median_ns": 7033583,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -447,7 +424,7 @@
               },
               {
                 "name": "workflow::png_file_conversion",
-                "median_ns": 6843292,
+                "median_ns": 6943750,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -470,7 +447,7 @@
               },
               {
                 "name": "workflow::png_file_conversion",
-                "median_ns": 6950125,
+                "median_ns": 6954625,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -493,7 +470,7 @@
               },
               {
                 "name": "workflow::png_file_conversion",
-                "median_ns": 6894667,
+                "median_ns": 6992625,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -509,14 +486,37 @@
                   "minor_page_faults": null,
                   "major_page_faults": null,
                   "memory_status": "supported",
-                  "rss_bytes": 6782976,
+                  "rss_bytes": 6766592,
+                  "pss_bytes": null
+                },
+                "side": "oracle"
+              },
+              {
+                "name": "workflow::png_file_conversion",
+                "median_ns": 6893709,
+                "alloc_count": 0,
+                "alloc_bytes": 0,
+                "max_alloc_count": 0,
+                "max_alloc_bytes": 0,
+                "sample_count": 1,
+                "iter_count": 1,
+                "process_resources": {
+                  "status": "unsupported",
+                  "user_cpu_ns": null,
+                  "system_cpu_ns": null,
+                  "voluntary_context_switches": null,
+                  "involuntary_context_switches": null,
+                  "minor_page_faults": null,
+                  "major_page_faults": null,
+                  "memory_status": "supported",
+                  "rss_bytes": 6766592,
                   "pss_bytes": null
                 },
                 "side": "oracle"
               }
             ],
-            "medianNs": 6927375,
-            "spreadNs": 202916
+            "medianNs": 6954625,
+            "spreadNs": 139874
           }
         }
       ]
@@ -530,30 +530,7 @@
             "samples": [
               {
                 "name": "workflow::startup_version",
-                "median_ns": 3718459,
-                "alloc_count": 0,
-                "alloc_bytes": 0,
-                "max_alloc_count": 0,
-                "max_alloc_bytes": 0,
-                "sample_count": 1,
-                "iter_count": 1,
-                "process_resources": {
-                  "status": "unsupported",
-                  "user_cpu_ns": null,
-                  "system_cpu_ns": null,
-                  "voluntary_context_switches": null,
-                  "involuntary_context_switches": null,
-                  "minor_page_faults": null,
-                  "major_page_faults": null,
-                  "memory_status": "supported",
-                  "rss_bytes": 6782976,
-                  "pss_bytes": null
-                },
-                "side": "current"
-              },
-              {
-                "name": "workflow::startup_version",
-                "median_ns": 3733833,
+                "median_ns": 3750500,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -576,7 +553,7 @@
               },
               {
                 "name": "workflow::startup_version",
-                "median_ns": 3762750,
+                "median_ns": 3729208,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -599,7 +576,30 @@
               },
               {
                 "name": "workflow::startup_version",
-                "median_ns": 3772833,
+                "median_ns": 3759208,
+                "alloc_count": 0,
+                "alloc_bytes": 0,
+                "max_alloc_count": 0,
+                "max_alloc_bytes": 0,
+                "sample_count": 1,
+                "iter_count": 1,
+                "process_resources": {
+                  "status": "unsupported",
+                  "user_cpu_ns": null,
+                  "system_cpu_ns": null,
+                  "voluntary_context_switches": null,
+                  "involuntary_context_switches": null,
+                  "minor_page_faults": null,
+                  "major_page_faults": null,
+                  "memory_status": "supported",
+                  "rss_bytes": 6799360,
+                  "pss_bytes": null
+                },
+                "side": "current"
+              },
+              {
+                "name": "workflow::startup_version",
+                "median_ns": 3787000,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -622,7 +622,7 @@
               },
               {
                 "name": "workflow::startup_version",
-                "median_ns": 3686209,
+                "median_ns": 3754292,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -644,8 +644,8 @@
                 "side": "current"
               }
             ],
-            "medianNs": 3733833,
-            "spreadNs": 86624
+            "medianNs": 3754292,
+            "spreadNs": 57792
           }
         },
         {
@@ -654,7 +654,7 @@
             "samples": [
               {
                 "name": "workflow::startup_version",
-                "median_ns": 3279917,
+                "median_ns": 3202167,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -677,7 +677,7 @@
               },
               {
                 "name": "workflow::startup_version",
-                "median_ns": 3164834,
+                "median_ns": 3132333,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -700,7 +700,7 @@
               },
               {
                 "name": "workflow::startup_version",
-                "median_ns": 3230750,
+                "median_ns": 3098166,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -723,7 +723,7 @@
               },
               {
                 "name": "workflow::startup_version",
-                "median_ns": 3184459,
+                "median_ns": 3104667,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -746,7 +746,7 @@
               },
               {
                 "name": "workflow::startup_version",
-                "median_ns": 3169708,
+                "median_ns": 3265625,
                 "alloc_count": 0,
                 "alloc_bytes": 0,
                 "max_alloc_count": 0,
@@ -768,8 +768,8 @@
                 "side": "oracle"
               }
             ],
-            "medianNs": 3184459,
-            "spreadNs": 115083
+            "medianNs": 3132333,
+            "spreadNs": 167459
           }
         }
       ]
