@@ -32,6 +32,7 @@ Do not distribute them as a newly licensed photographic corpus without establish
 | quantizr (RGBA palette quantization) | 1.4.3 | MIT (via unmodified LICENSE file) |
 | image-webp (WebP decode) | 0.2.4 | MIT OR Apache-2.0 |
 | webpkit (WebP encode, vendored path dependency, experimental) | `cc1311ebf` | MIT OR Apache-2.0 |
+| webpkit conformance fixtures + `webpkit-samples` (dev-only) | `cc1311ebf` | MIT OR Apache-2.0 |
 | rav1d (AV1 decode) | 1.1.0 | BSD-2-Clause |
 | ravif (AVIF encode) | 0.13.0 | BSD-3-Clause |
 | zenavif-parse (AVIF container) | 0.6.2 | MPL-2.0 |
