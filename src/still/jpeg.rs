@@ -9,6 +9,10 @@ pub(super) struct Structure {
     pub xmp: bool,
     pub orientation: Option<u8>,
     pub end: usize,
+    pub precision: u8,
+    pub components: u8,
+    pub width: u32,
+    pub height: u32,
 }
 
 enum Position { Headers, Entropy, BetweenScans }
@@ -17,7 +21,7 @@ fn invalid() -> Error { Error::new(ErrorKind::Invalid,"invalid or truncated JPEG
 
 pub(super) fn structure(bytes: &[u8]) -> Result<Structure, Error> {
     if !bytes.starts_with(&[255,216]) { return Err(invalid()); }
-    let mut result=Structure {auxiliary:false,hdr:false,late_metadata:false,icc:false,exif:false,xmp:false,orientation:None,end:0};
+    let mut result=Structure {auxiliary:false,hdr:false,late_metadata:false,icc:false,exif:false,xmp:false,orientation:None,end:0,precision:0,components:0,width:0,height:0};
     let mut position=Position::Headers;
     let mut at=2;
     loop {
@@ -44,6 +48,13 @@ pub(super) fn structure(bytes: &[u8]) -> Result<Structure, Error> {
         if length<2 {return Err(invalid());}
         let end=at.checked_add(length).ok_or_else(invalid)?;
         let payload=bytes.get(at+2..end).ok_or_else(invalid)?;
+        if (0xC0..=0xCF).contains(&marker) && !matches!(marker,0xC4|0xC8|0xCC) {
+            let sof=payload.get(..6).ok_or_else(invalid)?;
+            result.precision=sof[0];
+            result.height=u16::from_be_bytes([sof[1],sof[2]]) as u32;
+            result.width=u16::from_be_bytes([sof[3],sof[4]]) as u32;
+            result.components=sof[5];
+        }
         if (0xE0..=0xEF).contains(&marker) {
             result.late_metadata|=matches!(position,Position::BetweenScans);
             result.auxiliary|=marker==0xE2 && payload.starts_with(b"MPF\0");
@@ -62,4 +73,88 @@ pub(super) fn structure(bytes: &[u8]) -> Result<Structure, Error> {
         at=end;
         if marker==0xDA {position=Position::Entropy;}
     }
+}
+
+use super::{Effort, EncodingMode, Format, SampleLayout, StillImage, MAX_METADATA_BYTES};
+
+pub(super) fn decode(bytes: &[u8], stop: &crate::cancellation::Cancellation, structure: &Structure) -> Result<StillImage, super::Error> {
+    use zune_core::{bytestream::ZCursor, colorspace::ColorSpace, options::DecoderOptions};
+    if stop.is_cancelled() { return Err(super::Error::new(super::ErrorKind::Invalid, "operation cancelled")); }
+    if structure.precision != 8 {
+        return Err(super::Error::new(super::ErrorKind::Unsupported, "JPEG decoding requires eight-bit precision"));
+    }
+    if !matches!(structure.components, 1 | 3) {
+        return Err(super::Error::new(super::ErrorKind::Unsupported, "JPEG requires one or three components; CMYK/YCCK conversion is unsupported"));
+    }
+    let gray = structure.components == 1;
+    let layout = if gray { SampleLayout::Gray8 } else { SampleLayout::Rgb8 };
+    let options = DecoderOptions::default().jpeg_set_out_colorspace(if gray { ColorSpace::Luma } else { ColorSpace::RGB });
+    let mut decoder = zune_jpeg::JpegDecoder::new_with_options(ZCursor::new(bytes), options);
+    decoder.decode_headers().map_err(|e| super::Error::caused(super::ErrorKind::Invalid, e))?;
+    let icc = decoder.icc_profile();
+    if structure.icc && icc.is_none() {
+        return Err(super::Error::new(super::ErrorKind::Unsupported, "JPEG ICC profile could not be preserved"));
+    }
+    let exif = decoder.info().and_then(|info| info.exif_data.clone());
+    let xmp = decoder.info().and_then(|info| info.xmp_data.clone());
+    let metadata_bytes = [&icc, &exif, &xmp].into_iter().flatten()
+        .try_fold(0usize, |n, b| n.checked_add(b.len()));
+    if metadata_bytes.is_none_or(|n| n > MAX_METADATA_BYTES) {
+        return Err(super::Error::new(super::ErrorKind::Limit, "decoded metadata exceeds 8 MiB"));
+    }
+    let samples = decoder.decode().map_err(|e| super::Error::caused(super::ErrorKind::Invalid, e))?;
+    let mut image = StillImage::from_samples(structure.width, structure.height, layout, samples)?;
+    image.format = Format::Jpeg;
+    image.info.format = zencodec::ImageFormat::Jpeg;
+    image.info.source_color.bit_depth = Some(8);
+    image.info.source_color.channel_count = Some(structure.components);
+    let mut metadata = zencodec::Metadata::none();
+    if let Some(icc) = icc { metadata = metadata.with_icc(icc); }
+    if let Some(orientation) = exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation) {
+        metadata.orientation = orientation;
+    }
+    if let Some(exif) = exif { metadata = metadata.with_exif(exif); }
+    if let Some(xmp) = xmp { metadata = metadata.with_xmp(xmp); }
+    image.metadata = metadata;
+    image.info.orientation = image.metadata.orientation;
+    Ok(image)
+}
+
+fn xmp_app1(xmp: &[u8]) -> Vec<u8> {
+    let mut payload = b"http://ns.adobe.com/xap/1.0/\0".to_vec();
+    payload.extend_from_slice(xmp);
+    payload
+}
+
+pub(super) fn encode(image: &StillImage, mode: super::EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, super::Error> {
+    let EncodingMode::Quality(quality) = mode else {
+        return Err(super::Error::new(super::ErrorKind::Unsupported, "JPEG lossless requires original-byte preservation"));
+    };
+    if stop.is_cancelled() { return Err(super::Error::new(super::ErrorKind::Invalid, "operation cancelled")); }
+    if image.bit_depth() != 8 {
+        return Err(super::Error::new(super::ErrorKind::Unsupported, "JPEG encoding requires eight-bit samples"));
+    }
+    let opaque = image.without_opaque_alpha()?;
+    let samples = opaque.samples();
+    let (width, height) = opaque.dimensions();
+    let quality = (quality.value().round() as u8).clamp(1, 100);
+    let preset = match effort {
+        Effort::Fast | Effort::Balanced => mozjpeg_rs::Preset::ProgressiveBalanced,
+        Effort::Best => mozjpeg_rs::Preset::ProgressiveSmallest,
+    };
+    let mut encoder = mozjpeg_rs::Encoder::new(preset).quality(quality);
+    if !opaque.is_grayscale() { encoder = encoder.subsampling(mozjpeg_rs::Subsampling::S420); }
+    if let Some(icc) = &opaque.metadata.icc_profile { encoder = encoder.icc_profile(icc.to_vec()); }
+    if let Some(exif) = &opaque.metadata.exif {
+        encoder = encoder.exif_data(exif.as_ref().strip_prefix(b"Exif\0\0").unwrap_or(exif.as_ref()).to_vec());
+    }
+    if let Some(xmp) = &opaque.metadata.xmp { encoder = encoder.add_marker(1, xmp_app1(xmp)); }
+    let bytes = if opaque.is_grayscale() {
+        encoder.encode_gray_with_stop(&samples, width, height, stop)
+    } else {
+        encoder.encode_rgb_with_stop(&samples, width, height, stop)
+    }
+    .map_err(|e| super::Error::caused(super::ErrorKind::Encode, e))?;
+    super::limits().check_output_size(bytes.len() as u64).map_err(|e| super::Error::caused(super::ErrorKind::Limit, e))?;
+    Ok(bytes)
 }

@@ -1,4 +1,4 @@
-use super::{Effort, EncodingMode, Error, ErrorKind, StillImage, MAX_METADATA_BYTES};
+use super::{Effort, EncodingMode, Error, ErrorKind, MAX_METADATA_BYTES, SampleLayout, StillImage};
 
 pub(crate) fn is_color_chunk(kind:&[u8])->bool {
     matches!(kind,b"iCCP"|b"cICP"|b"sRGB"|b"gAMA"|b"cHRM"|b"cLLI"|b"mDCV")
@@ -55,6 +55,52 @@ fn compressed_metadata<'a>(kind:&[u8],data:&'a [u8])->Result<Option<&'a [u8]>,Er
     }
 }
 
+fn chunk_data(chunk: &[u8]) -> Result<&[u8], Error> {
+    let data = chunk.get(8..chunk.len().saturating_sub(4)).ok_or_else(|| Error::new(ErrorKind::Invalid, "invalid PNG chunk"))?;
+    Ok(data)
+}
+
+fn uncompressed_text(kind:&[u8],data:&[u8])->Result<Option<Vec<u8>>,Error> {
+    let Some(compressed) = compressed_metadata(kind, data)? else { return Ok(None); };
+    let decoded = fdeflate::decompress_to_vec_bounded(compressed, MAX_METADATA_BYTES)
+        .map_err(|e| match e {
+            fdeflate::BoundedDecompressionError::OutputTooLarge {..} => Error::new(ErrorKind::Limit, "PNG text exceeds 8 MiB"),
+            fdeflate::BoundedDecompressionError::DecompressionError {inner} => Error::new(ErrorKind::Invalid, format!("invalid PNG text: {inner:?}")),
+        })?;
+    Ok(Some(decoded))
+}
+
+fn text_payload(kind:&[u8],data:&[u8])->Result<Option<Vec<u8>>,Error> {
+    match kind {
+        b"iTXt" => {
+            let end=data.iter().position(|&b|b==0).ok_or_else(||Error::new(ErrorKind::Invalid,"invalid PNG metadata keyword"))?;
+            let rest=&data[end+1..];
+            if rest.len()<2 || rest[0]>1 || rest[1]!=0 {return Err(Error::new(ErrorKind::Invalid,"invalid PNG text compression"));}
+            let mut text=&rest[2..];
+            for _ in 0..2 {let end=text.iter().position(|&b|b==0).ok_or_else(||Error::new(ErrorKind::Invalid,"invalid PNG international text"))?;text=&text[end+1..];}
+            if rest[0]==1 {uncompressed_text(b"iTXt",data)} else {Ok(Some(text.to_vec()))}
+        },
+        _ => Ok(None),
+    }
+}
+
+fn xmp_from_chunks(chunks: &[Vec<u8>]) -> Result<Option<Vec<u8>>, Error> {
+    for chunk in chunks {
+        if &chunk[4..8] != b"iTXt" { continue; }
+        let data = chunk_data(chunk)?;
+        let end = data.iter().position(|&b| b == 0).ok_or_else(|| Error::new(ErrorKind::Invalid, "invalid PNG keyword"))?;
+        if &data[..end] == b"XML:com.adobe.xmp" { return text_payload(b"iTXt", data); }
+    }
+    Ok(None)
+}
+
+fn exif_from_chunks(chunks: &[Vec<u8>]) -> Result<Option<Vec<u8>>, Error> {
+    for chunk in chunks {
+        if &chunk[4..8] == b"eXIf" { return Ok(Some(chunk_data(chunk)?.to_vec())); }
+    }
+    Ok(None)
+}
+
 pub(super) fn restore_metadata(bytes: &[u8], metadata: &[Vec<u8>]) -> Result<Vec<u8>, Error> {
     if metadata.is_empty() { return Ok(bytes.to_vec()); }
     let mut output = bytes[..33].to_vec();
@@ -70,29 +116,140 @@ pub(super) fn restore_metadata(bytes: &[u8], metadata: &[Vec<u8>]) -> Result<Vec
     Ok(output)
 }
 
+fn png_compression(effort: Effort) -> ::png::Compression {
+    match effort { Effort::Fast => ::png::Compression::Fast, Effort::Balanced => ::png::Compression::Balanced, Effort::Best => ::png::Compression::High }
+}
+
+fn png_encode(image: &StillImage, effort: Effort, samples: &[u8], indexed: Option<Vec<u8>>, indexed_trns: Option<Vec<u8>>) -> Result<Vec<u8>, Error> {
+    let (width, height) = image.dimensions();
+    let mut info = ::png::Info::with_size(width, height);
+    match indexed {
+        Some(palette) => {
+            info.color_type = ::png::ColorType::Indexed;
+            info.bit_depth = ::png::BitDepth::Eight;
+            info.palette = Some(palette.into());
+            info.trns = indexed_trns.map(Into::into);
+        },
+        None => {
+            info.color_type = match (image.is_grayscale(), image.has_alpha()) { (true, false) => ::png::ColorType::Grayscale, (true, true) => ::png::ColorType::GrayscaleAlpha, (false, false) => ::png::ColorType::Rgb, (false, true) => ::png::ColorType::Rgba };
+            info.bit_depth = if image.bit_depth() == 16 { ::png::BitDepth::Sixteen } else { ::png::BitDepth::Eight };
+        },
+    }
+    info.icc_profile = image.metadata.icc_profile.as_deref().map(std::borrow::Cow::Borrowed);
+    info.exif_metadata = image.metadata.exif.as_deref().map(std::borrow::Cow::Borrowed);
+    let mut bytes = Vec::new();
+    {
+        let mut encoder = ::png::Encoder::with_info(&mut bytes, info).map_err(|e| Error::caused(ErrorKind::Encode, e))?;
+        encoder.set_compression(png_compression(effort));
+        let mut writer = encoder.write_header().map_err(|e| Error::caused(ErrorKind::Encode, e))?;
+        writer.write_image_data(samples).map_err(|e| Error::caused(ErrorKind::Encode, e))?;
+        writer.finish().map_err(|e| Error::caused(ErrorKind::Encode, e))?;
+    }
+    if let Some(cicp) = &image.metadata.cicp {
+        let data = [cicp.color_primaries, cicp.transfer_characteristics, cicp.matrix_coefficients, cicp.full_range as u8];
+        let chunk = chunk(b"cICP", &data);
+        bytes.splice(33..33, chunk);
+    }
+    Ok(bytes)
+}
+
+fn palette_path(image: &StillImage, quality: super::Quality, effort: Effort) -> Result<Vec<u8>, Error> {
+    if image.bit_depth() != 8 || image.is_grayscale() { return Err(Error::new(ErrorKind::Unsupported, "palette quality requires eight-bit RGB or RGBA samples")); }
+    let channels = image.pixels.descriptor().channels();
+    let samples = image.samples();
+    if channels == 4 && samples.chunks_exact(4).any(|p| p[3] != 255) {
+        return Err(Error::new(ErrorKind::Unsupported, "palette quality requires fully opaque samples in this build"));
+    }
+    let colors = (2.0 + quality.value() * 254.0 / 100.0).round() as usize;
+    let size = quantette::PaletteSize::from_usize_clamped(colors);
+    let rgb: Vec<quantette::deps::palette::Srgb<u8>> = samples.chunks_exact(channels).map(|p| quantette::deps::palette::Srgb::new(p[0], p[1], p[2])).collect();
+    let (width, height) = image.dimensions();
+    let reference = quantette::ImageRef::new(width, height, &rgb)
+        .map_err(|_| Error::new(ErrorKind::Invalid, "palette quantization input rejected"))?;
+    let quantized = quantette::Pipeline::new()
+        .palette_size(size)
+        .ditherer(Some(quantette::dither::FloydSteinberg::new()))
+        .input_image(reference)
+        .output_srgb8_indexed_image();
+    let palette_bytes: Vec<u8> = quantized.palette().iter().flat_map(|c| [c.red, c.green, c.blue]).collect();
+    png_encode(image, effort, quantized.indices(), Some(palette_bytes), None)
+}
+
+pub(super) fn decode(bytes: &[u8], stop: &crate::cancellation::Cancellation) -> Result<StillImage, Error> {
+    use ::png::{BitDepth, ColorType, Transformations};
+    if stop.is_cancelled() { return Err(Error::new(ErrorKind::Invalid, "operation cancelled")); }
+    let chunks = metadata_chunks(bytes, true)?;
+    let mut decoder = ::png::Decoder::new(std::io::Cursor::new(bytes));
+    decoder.set_limits(::png::Limits { bytes: super::IMAGE_MEMORY_BYTES as usize });
+    decoder.set_transformations(Transformations::EXPAND);
+    let mut reader = decoder.read_info().map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+    let info = reader.info();
+    let (width, height) = info.size();
+    super::check_dimensions(width, height)?;
+    let buffer_size = reader.output_buffer_size().ok_or_else(|| Error::new(ErrorKind::Limit, "PNG output size overflow"))?;
+    let mut buffer = vec![0; buffer_size];
+    let output = reader.next_frame(&mut buffer).map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+    buffer.truncate(output.line_size.checked_mul(height as usize).ok_or_else(|| Error::new(ErrorKind::Limit, "PNG output size overflow"))?);
+    #[cfg(target_endian = "little")]
+    if matches!(output.bit_depth, BitDepth::Sixteen) {
+        for pair in buffer.chunks_exact_mut(2) { pair.swap(0, 1); }
+    }
+    let layout = match (output.color_type, output.bit_depth) {
+        (ColorType::Grayscale, BitDepth::Eight) => SampleLayout::Gray8,
+        (ColorType::Grayscale, BitDepth::Sixteen) => SampleLayout::Gray16,
+        (ColorType::GrayscaleAlpha, BitDepth::Eight) => SampleLayout::GrayAlpha8,
+        (ColorType::GrayscaleAlpha, BitDepth::Sixteen) => SampleLayout::GrayAlpha16,
+        (ColorType::Rgb, BitDepth::Eight) => SampleLayout::Rgb8,
+        (ColorType::Rgb, BitDepth::Sixteen) => SampleLayout::Rgb16,
+        (ColorType::Rgba, BitDepth::Eight) => SampleLayout::Rgba8,
+        (ColorType::Rgba, BitDepth::Sixteen) => SampleLayout::Rgba16,
+        _ => return Err(Error::new(ErrorKind::Invalid, "PNG decoder produced an unsupported sample layout")),
+    };
+    let mut image = StillImage::from_samples(width, height, layout, buffer)?;
+    image.format = super::Format::Png;
+    image.info.format = zencodec::ImageFormat::Png;
+    image.info.source_color.bit_depth = Some(image.bit_depth());
+    image.info.source_color.channel_count = Some(image.pixels.descriptor().channels() as u8);
+    image.png_metadata = chunks;
+    if let Some([primaries, transfer, matrix, full_range]) = image.png_metadata.iter().find_map(|chunk| {
+        if &chunk[4..8] != b"cICP" { return None; }
+        let data = &chunk[8..chunk.len().saturating_sub(4)];
+        (data.len() == 4).then_some([data[0], data[1], data[2], data[3]])
+    }) {
+        image.metadata.cicp = Some(zencodec::Cicp::new(primaries, transfer, matrix, full_range != 0));
+        image.info.source_color.color_authority = zencodec::ColorAuthority::Cicp;
+    }
+    let xmp = xmp_from_chunks(&image.png_metadata)?;
+    let exif = exif_from_chunks(&image.png_metadata)?;
+    let mut metadata = zencodec::Metadata::none();
+    if let Some(icc) = reader.info().icc_profile.as_ref() { metadata = metadata.with_icc(icc.as_ref().to_vec()); }
+    else if image.png_metadata.iter().any(|chunk| &chunk[4..8] == b"iCCP") {
+        return Err(Error::new(ErrorKind::Unsupported, "PNG ICC profile could not be preserved"));
+    }
+    if let Some(orientation) = exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation) { metadata.orientation = orientation; }
+    if let Some(exif) = exif { metadata = metadata.with_exif(exif); }
+    if let Some(xmp) = xmp { metadata = metadata.with_xmp(xmp); }
+    image.metadata = metadata;
+    image.info.orientation = image.metadata.orientation;
+    Ok(image)
+}
+
 pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
     if image.png_metadata.iter().any(|chunk| {
         let kind = &chunk[4..8];
         matches!(kind, b"bKGD" | b"sBIT") || (kind[3].is_ascii_uppercase()
             && !is_color_chunk(kind) && kind != b"eXIf")
     }) { return Err(Error::new(ErrorKind::Unsupported, "PNG layout-sensitive or unknown unsafe-to-copy metadata requires explicit stripping")); }
-    let compression = match effort { Effort::Fast => zenpng::Compression::Fastest, Effort::Balanced => zenpng::Compression::Fast, Effort::Best => zenpng::Compression::Balanced };
+    if stop.is_cancelled() { return Err(Error::new(ErrorKind::Invalid, "operation cancelled")); }
     let bytes = match mode {
-        EncodingMode::Quality(quality) => {
-            if image.bit_depth() != 8 || image.is_grayscale() { return Err(Error::new(ErrorKind::Unsupported, "palette quality requires eight-bit RGB or RGBA")); }
-            let channels = image.pixels.descriptor().channels();
+        EncodingMode::Quality(quality) => palette_path(image, quality, effort)?,
+        EncodingMode::Lossless => {
             let samples = image.samples();
-            let rgba: Vec<_> = samples.chunks_exact(channels).map(|p| rgb::RGBA8::new(p[0], p[1], p[2], if channels == 4 { p[3] } else { 255 })).collect();
-            let (width, height) = image.dimensions();
-            let pixels = imgref::Img::new(rgba, width as usize, height as usize);
-            let config = zenpng::EncodeConfig::default().with_compression(compression);
-            let colors = 2 + (quality.value() * 254.0 / 100.0).round() as u16;
-            let quantizer = zenpng::ZenquantQuantizer::new().with_max_colors(colors);
-            zenpng::encode_indexed(pixels.as_ref(), &config, &quantizer, Some(&image.metadata), stop, stop)
-                .map_err(|e| Error::caused(ErrorKind::Encode, e))?
+            let samples = if image.bit_depth() == 16 {
+                samples.chunks_exact(2).flat_map(|p| u16::from_ne_bytes([p[0], p[1]]).to_be_bytes()).collect()
+            } else { samples };
+            png_encode(image, effort, &samples, None, None)?
         },
-        EncodingMode::Lossless if image.bit_depth()==16 || image.metadata.icc_profile.is_some() || (image.is_grayscale() && image.has_alpha()) => encode_preserving_layout(image,effort)?,
-        EncodingMode::Lossless => super::encode(zenpng::PngEncoderConfig::new().with_compression(compression), image,stop)?,
     };
     let mut metadata = image.png_metadata.clone();
     if let Some(xmp)=image.metadata.xmp.as_deref() && !metadata.iter().any(|chunk|&chunk[4..8]==b"iTXt") {
@@ -108,20 +265,4 @@ fn chunk(kind: &[u8; 4], data: &[u8]) -> Vec<u8> {
     let mut chunk = (data.len() as u32).to_be_bytes().to_vec();
     chunk.extend_from_slice(kind); chunk.extend_from_slice(data);
     let crc = crc32fast::hash(&chunk[4..]); chunk.extend_from_slice(&crc.to_be_bytes()); chunk
-}
-
-fn encode_preserving_layout(image:&StillImage,effort:Effort)->Result<Vec<u8>,Error> {
-    let (width,height)=image.dimensions();let mut info=::png::Info::with_size(width,height);
-    info.color_type=match (image.is_grayscale(),image.has_alpha()) {(true,false)=>::png::ColorType::Grayscale,(true,true)=>::png::ColorType::GrayscaleAlpha,(false,false)=>::png::ColorType::Rgb,(false,true)=>::png::ColorType::Rgba};
-    info.bit_depth=if image.bit_depth()==16 {::png::BitDepth::Sixteen} else {::png::BitDepth::Eight};
-    info.icc_profile=image.metadata.icc_profile.as_deref().map(std::borrow::Cow::Borrowed);
-    info.exif_metadata=image.metadata.exif.as_deref().map(std::borrow::Cow::Borrowed);
-    let samples=image.samples();let samples=if image.bit_depth()==16 {samples.chunks_exact(2).flat_map(|p|u16::from_ne_bytes([p[0],p[1]]).to_be_bytes()).collect()} else {samples};
-    let mut bytes=Vec::new();
-    {
-        let mut encoder=::png::Encoder::with_info(&mut bytes,info).map_err(|e|Error::caused(ErrorKind::Encode,e))?;
-        encoder.set_compression(match effort {Effort::Fast=>::png::Compression::Fast,Effort::Balanced=>::png::Compression::Balanced,Effort::Best=>::png::Compression::High});
-        let mut writer=encoder.write_header().map_err(|e|Error::caused(ErrorKind::Encode,e))?;writer.write_image_data(&samples).map_err(|e|Error::caused(ErrorKind::Encode,e))?;writer.finish().map_err(|e|Error::caused(ErrorKind::Encode,e))?;
-    }
-    Ok(bytes)
 }

@@ -17,6 +17,7 @@ pub(crate) fn create_test_image_u8(width: usize, height: usize, colorspace: Colo
         px[0] = r;
         px[1] = 0;
         px[2] = b;
+        px[3] = 255;
     })
 }
 

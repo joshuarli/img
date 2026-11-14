@@ -14,7 +14,6 @@ impl Cancellation {
     pub fn cancel(&self) { self.flag().store(true,Ordering::Relaxed); }
     /// Whether cancellation has been requested.
     pub fn is_cancelled(&self)->bool { self.flag().load(Ordering::Relaxed) }
-    pub(crate) fn token(&self)->zencodec::StopToken { zencodec::StopToken::new(self.clone()) }
 }
 impl zencodec::enough::Stop for Cancellation {
     fn check(&self)->Result<(),zencodec::enough::StopReason> {

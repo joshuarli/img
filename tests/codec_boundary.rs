@@ -14,10 +14,14 @@ fn bounded_still_adapter_checks_actual_samples() {
     let output = scratch.0.join("result.png");
     publish(&image.encode(Format::Png, EncodingMode::Lossless, Effort::Fast).unwrap(), Destination::New(&output), None).unwrap();
     common::check_png(&output, 32, 24, &samples);
-    let rgb: Vec<_> = samples.chunks_exact(3).map(|p| rgb::RGB8::new(p[0], p[1], p[2])).collect();
-    let direct = zenpng::encode_rgb8(imgref::Img::new(rgb, 32, 24).as_ref(), None,
-        &zenpng::EncodeConfig::default(), &enough::Unstoppable, &enough::Unstoppable).unwrap();
-    let direct_image = StillImage::decode(&direct).unwrap();
+    let mut raw = Vec::new();
+    {
+        let mut encoder = png::Encoder::new(&mut raw, 32, 24);
+        encoder.set_color(png::ColorType::Rgb);
+        encoder.set_depth(png::BitDepth::Eight);
+        encoder.write_header().unwrap().write_image_data(&samples).unwrap();
+    }
+    let direct_image = StillImage::decode(&raw).unwrap();
     assert_eq!(direct_image.samples(), samples);
     for (w, h) in [(0, 1), (1, 0), (u32::MAX, u32::MAX), (MAX_DIMENSION + 1, 1), (4097, 4097)] {
         assert!(StillImage::from_rgb8(w, h, vec![]).is_err());

@@ -1,7 +1,7 @@
 use super::{Effort, EncodingMode, Error, ErrorKind, Format, SampleLayout, StillImage};
-use rav1d_safe::src::managed::{ColorPrimaries, ColorRange, Decoder, Frame, PixelLayout, Planes, Settings, TransferCharacteristics};
+use super::av1::Chroma;
 
-pub(super) fn decode(bytes: &[u8],stop: &crate::cancellation::Cancellation) -> Result<StillImage, Error> {
+pub(super) fn decode(bytes: &[u8], stop: &crate::cancellation::Cancellation) -> Result<StillImage, Error> {
     let config = zenavif_parse::DecodeConfig::default().with_peak_memory_limit(super::IMAGE_MEMORY_BYTES);
     let parser = zenavif_parse::AvifParser::from_bytes_with_config(bytes, &config, stop)
         .map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
@@ -25,54 +25,43 @@ pub(super) fn decode(bytes: &[u8],stop: &crate::cancellation::Cancellation) -> R
     if !header.still_picture { return Err(Error::new(ErrorKind::Unsupported, "AVIF requires a still AV1 bitstream")); }
     let data = parser.primary_data().map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
     if bitstream_hdr(&data)? {return Err(Error::new(ErrorKind::Unsupported,"AVIF HDR metadata requires independently validated processing"));}
-    let primary = frame(&data)?;
-    if primary.content_light().is_some() || primary.mastering_display().is_some() {
-        return Err(Error::new(ErrorKind::Unsupported,"AVIF HDR metadata requires independently validated processing"));
-    }
-    if primary.pixel_layout() == PixelLayout::I400 { return Err(Error::new(ErrorKind::Unsupported, "monochrome AVIF decoding is not independently verified")); }
-    let (width, height) = (primary.width(), primary.height());
-    super::check_dimensions(width, height)?;
-    let color = primary.color_info();
-    if color.primaries != ColorPrimaries::BT709 || color.transfer_characteristics != TransferCharacteristics::SRGB {
-        return Err(Error::new(ErrorKind::Unsupported, "AVIF bitstream requires validated SDR sRGB color signaling"));
-    }
+    let frame = super::av1::decode_still(&data, stop)?;
+    let (width, height) = (frame.width, frame.height);
     let (matrix, full_range) = match parser.color_info() {
         Some(zenavif_parse::ColorInformation::Nclx { color_primaries: 1, transfer_characteristics: 13, matrix_coefficients, full_range }) => (*matrix_coefficients as u8, *full_range),
-        Some(zenavif_parse::ColorInformation::IccProfile(_)) | None => (color.matrix_coefficients as u8, color.color_range == ColorRange::Full),
+        Some(zenavif_parse::ColorInformation::IccProfile(_)) | None => (frame.matrix, frame.full_range),
         _ => return Err(Error::new(ErrorKind::Unsupported, "AVIF container requires validated SDR sRGB color signaling")),
     };
-    let Planes::Depth8(planes) = primary.planes() else { return Err(Error::new(ErrorKind::Unsupported, "AVIF decoding requires eight-bit precision")); };
-    let y = planes.y();
-    let (pixels, layout) = if primary.pixel_layout() == PixelLayout::I400 {
-        if !full_range { return Err(Error::new(ErrorKind::Unsupported, "limited-range monochrome AVIF is unsupported")); }
-        ((0..height as usize).flat_map(|row| y.row(row)[..width as usize].iter().copied()).collect(), SampleLayout::Gray8)
-    } else {
-        let u = planes.u().ok_or_else(|| Error::new(ErrorKind::Invalid, "missing AVIF chroma"))?;
-        let v = planes.v().ok_or_else(|| Error::new(ErrorKind::Invalid, "missing AVIF chroma"))?;
+    let pixels = if matrix == 0 {
+        if frame.chroma != Chroma::I444 || !full_range { return Err(Error::new(ErrorKind::Unsupported, "AVIF identity matrix requires full-range 4:4:4")); }
         let mut pixels = vec![0; width as usize * height as usize * 3];
-        if matrix == 0 {
-            if primary.pixel_layout() != PixelLayout::I444 || !full_range { return Err(Error::new(ErrorKind::Unsupported, "AVIF identity matrix requires full-range 4:4:4")); }
-            for row in 0..height as usize { for x in 0..width as usize {
-                let at = (row * width as usize + x) * 3;
-                pixels[at..at + 3].copy_from_slice(&[v.pixel(x, row), y.pixel(x, row), u.pixel(x, row)]);
-            }}
-        } else {
-            let matrix = match matrix { 1 => yuv::YuvStandardMatrix::Bt709, 6 => yuv::YuvStandardMatrix::Bt601,
-                _ => return Err(Error::new(ErrorKind::Unsupported, "AVIF matrix coefficients are unsupported")) };
-            let image = yuv::YuvPlanarImage { y_plane: y.as_slice(), y_stride: y.stride() as u32,
-                u_plane: u.as_slice(), u_stride: u.stride() as u32, v_plane: v.as_slice(), v_stride: v.stride() as u32, width, height };
-            let range = if full_range { yuv::YuvRange::Full } else { yuv::YuvRange::Limited };
-            let result = match primary.pixel_layout() {
-                PixelLayout::I420 => yuv::yuv420_to_rgb(&image, &mut pixels, width * 3, range, matrix),
-                PixelLayout::I422 => yuv::yuv422_to_rgb(&image, &mut pixels, width * 3, range, matrix),
-                PixelLayout::I444 => yuv::yuv444_to_rgb(&image, &mut pixels, width * 3, range, matrix),
-                PixelLayout::I400 => unreachable!(),
-            };
-            result.map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+        for row in 0..height as usize {
+            let y_at = row * width as usize;
+            let u_at = row * frame.chroma_width;
+            for x in 0..width as usize {
+                let at = (y_at + x) * 3;
+                pixels[at] = frame.v[u_at + x];
+                pixels[at + 1] = frame.y[y_at + x];
+                pixels[at + 2] = frame.u[u_at + x];
+            }
         }
-        (pixels, SampleLayout::Rgb8)
+        pixels
+    } else {
+        let matrix = match matrix { 1 => yuv::YuvStandardMatrix::Bt709, 6 => yuv::YuvStandardMatrix::Bt601,
+            _ => return Err(Error::new(ErrorKind::Unsupported, "AVIF matrix coefficients are unsupported")) };
+        let image = yuv::YuvPlanarImage { y_plane: &frame.y, y_stride: width,
+            u_plane: &frame.u, u_stride: frame.chroma_width as u32, v_plane: &frame.v, v_stride: frame.chroma_width as u32, width, height };
+        let range = if full_range { yuv::YuvRange::Full } else { yuv::YuvRange::Limited };
+        let mut pixels = vec![0; width as usize * height as usize * 3];
+        let result = match frame.chroma {
+            Chroma::I420 => yuv::yuv420_to_rgb(&image, &mut pixels, width * 3, range, matrix),
+            Chroma::I422 => yuv::yuv422_to_rgb(&image, &mut pixels, width * 3, range, matrix),
+            Chroma::I444 => yuv::yuv444_to_rgb(&image, &mut pixels, width * 3, range, matrix),
+        };
+        result.map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
+        pixels
     };
-    let mut image = StillImage::from_samples(width, height, layout, pixels)?;
+    let mut image = StillImage::from_samples(width, height, SampleLayout::Rgb8, pixels)?;
     image.format = Format::Avif;
     image.info.format = zencodec::ImageFormat::Avif;
     image.metadata.cicp = Some(zencodec::Cicp::new(1, 13, 0, true));
@@ -110,26 +99,27 @@ pub(super) fn bitstream_hdr(mut data:&[u8])->Result<bool,Error> {
     Ok(false)
 }
 
-fn frame(data: &[u8]) -> Result<Frame, Error> {
-    let mut settings = Settings::default();
-    settings.threads = 1; settings.apply_grain = true; settings.frame_size_limit = super::MAX_PIXELS as u32;
-    let mut decoder = Decoder::with_settings(settings).map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
-    let first=decoder.decode(data).map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
-    let first=match first {Some(frame)=>Some(frame),None=>decoder.get_frame().map_err(|e|Error::caused(ErrorKind::Invalid,e))?};
-    if decoder.get_frame().map_err(|e|Error::caused(ErrorKind::Invalid,e))?.is_some() {
-        return Err(Error::new(ErrorKind::Unsupported,"AVIF requires exactly one displayed frame"));
-    }
-    first.ok_or_else(||Error::new(ErrorKind::Invalid,"AVIF bitstream contains no displayed frame"))
-}
-
 pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
     let EncodingMode::Quality(quality) = mode else { return Err(Error::new(ErrorKind::Unsupported, "strict lossless AVIF encoding is unsupported")); };
+    if stop.is_cancelled() { return Err(Error::new(ErrorKind::Invalid, "operation cancelled")); }
     if image.bit_depth() != 8 { return Err(Error::new(ErrorKind::Unsupported, "AVIF encoding requires eight-bit SDR samples")); }
     if image.has_alpha() { return Err(Error::new(ErrorKind::Unsupported, "AVIF encoding cannot guarantee exact alpha with the selected encoder")); }
     if image.is_grayscale() { return Err(Error::new(ErrorKind::Unsupported, "native grayscale AVIF encoding is unsupported")); }
-    let mut config = zenavif::AvifEncoderConfig::new().with_quality(1.0 + quality.value() * 0.98).with_alpha_quality_value(100.0)
-        .with_effort_u32(match effort { Effort::Fast => 10, Effort::Balanced => 8, Effort::Best => 6 });
-    *config.inner_mut() = config.inner().clone().bit_depth(zenavif::EncodeBitDepth::Eight).threads(Some(1))
-        .color_primaries(1).transfer_characteristics(13).matrix_coefficients(6);
-    super::encode(config, image,stop)
+    if image.metadata.icc_profile.as_deref().is_some_and(|icc| !zenpixels::icc::is_common_srgb(icc)) {
+        return Err(Error::new(ErrorKind::Unsupported, "AVIF encoding cannot embed non-sRGB ICC profiles with the selected encoder"));
+    }
+    if image.metadata.xmp.is_some() { return Err(Error::new(ErrorKind::Unsupported, "AVIF encoding cannot embed XMP with the selected encoder")); }
+    let (width, height) = image.dimensions();
+    let rgb: Vec<rgb::RGB8> = image.samples().chunks_exact(3).map(|px| rgb::RGB8::new(px[0], px[1], px[2])).collect();
+    let dims = imgref::Img::new(rgb, width as usize, height as usize);
+    let speed = match effort { Effort::Fast => 10, Effort::Balanced => 8, Effort::Best => 6 };
+    let mut encoder = ravif::Encoder::new()
+        .with_quality(quality.value().clamp(1.0, 100.0))
+        .with_speed(speed)
+        .with_bit_depth(ravif::BitDepth::Eight)
+        .with_num_threads(Some(1));
+    if let Some(exif) = &image.metadata.exif { encoder = encoder.with_exif(exif.as_ref().to_vec()); }
+    let encoded = encoder.encode_rgb(dims.as_ref()).map_err(|e| Error::caused(ErrorKind::Encode, e))?;
+    super::limits().check_output_size(encoded.avif_file.len() as u64).map_err(|e| Error::caused(ErrorKind::Limit, e))?;
+    Ok(encoded.avif_file)
 }

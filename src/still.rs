@@ -1,12 +1,13 @@
 //! Bounded still-image decoding and encoding.
 
 use std::{borrow::Cow, fmt, io::Read};
-use zencodec::{decode::{DecodeJob, Decode, DecoderConfig}, encode::{EncodeJob, Encoder, EncoderConfig}};
 use zenpixels::{PixelBuffer, PixelDescriptor};
 
 pub(crate) mod png;
 mod jpeg;
 mod avif;
+mod av1;
+mod webp;
 pub(crate) mod color;
 pub use color::{PreparedImage, SamplePreservation};
 
@@ -230,39 +231,15 @@ impl StillImage {
         limits().check_input_size(bytes.len() as u64).map_err(|e| Error::caused(ErrorKind::Limit, e))?;
         let format = Format::sniff(bytes)?;
         match format {
-            Format::Png => {
-                let chunks = png::metadata_chunks(bytes,true)?;
-                let mut image = decode(zenpng::PngDecoderConfig::new(), bytes, format, stop)?;
-                if chunks.iter().any(|chunk| &chunk[4..8] == b"iCCP") && image.metadata.icc_profile.is_none() {
-                    return Err(Error::new(ErrorKind::Unsupported, "PNG ICC profile could not be preserved"));
-                }
-                if matches!(bytes[25], 0 | 4) && image.bit_depth() == 8 && image.pixels.descriptor().channels() == 4 {
-                    let samples = image.samples();
-                    if samples.chunks_exact(4).any(|p| p[0] != p[1] || p[1] != p[2]) {
-                        return Err(Error::new(ErrorKind::Invalid, "grayscale PNG decoder returned unequal RGB channels"));
-                    }
-                    let gray_alpha = samples.chunks_exact(4).flat_map(|p| [p[0], p[3]]).collect();
-                    let (width, height) = image.dimensions();
-                    image.pixels = PixelBuffer::from_vec(gray_alpha, width, height, PixelDescriptor::GRAYA8_SRGB)
-                        .map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
-                }
-                image.png_metadata = chunks;
-                Ok(image)
-            },
+            Format::Png => png::decode(bytes, stop),
             Format::Jpeg => {
                 let structure=jpeg::structure(bytes)?;
                 if structure.auxiliary || structure.hdr {return Err(Error::new(ErrorKind::Unsupported,"JPEG auxiliary images and HDR gain maps are unsupported"));}
                 if structure.end!=bytes.len() {return Err(Error::new(ErrorKind::Unsupported,"JPEG trailing payloads are unsupported"));}
                 if structure.late_metadata {return Err(Error::new(ErrorKind::Unsupported,"JPEG application metadata after scan start is unsupported"));}
-                let mut config = zenjpeg::JpegDecoderConfig::new();
-                let header = config.inner().read_info(bytes).map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
-                if header.precision!=8 {return Err(Error::new(ErrorKind::Unsupported,"JPEG decoding requires eight-bit precision"));}
-                if structure.icc && header.icc_profile.is_none() {return Err(Error::new(ErrorKind::Unsupported,"JPEG ICC profile could not be preserved"));}
-                if !matches!(header.num_components,1|3) {return Err(Error::new(ErrorKind::Unsupported,"JPEG requires one or three components; CMYK/YCCK conversion is unsupported"));}
-                if header.num_components == 1 { config.inner_mut().output_format = Some(zenjpeg::decoder::PixelFormat::Gray); }
-                decode(config, bytes, format, stop)
+                jpeg::decode(bytes, stop, &structure)
             },
-            Format::Webp => decode(zenwebp::zencodec::WebpDecoderConfig::new(), bytes, format, stop),
+            Format::Webp => webp::decode(bytes, stop),
             Format::Avif => avif::decode(bytes,stop),
         }
     }
@@ -289,37 +266,8 @@ impl StillImage {
     pub fn encode_cancellable(&self, format: Format, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
         match format {
             Format::Png => png::encode(self, mode, effort,stop),
-            Format::Jpeg => {
-                let EncodingMode::Quality(quality) = mode else { return Err(Error::new(ErrorKind::Unsupported, "JPEG lossless requires original-byte preservation")); };
-                if self.bit_depth() != 8 { return Err(Error::new(ErrorKind::Unsupported, "JPEG encoding requires eight-bit samples")); }
-                let opaque = self.without_opaque_alpha()?;
-                let config = if opaque.is_grayscale() { zenjpeg::encoder::EncoderConfig::grayscale(quality.value()) }
-                    else { zenjpeg::encoder::EncoderConfig::ycbcr(quality.value(), zenjpeg::encoder::ChromaSubsampling::Quarter) };
-                let preset = match effort {
-                    Effort::Fast => zenjpeg::encoder::OptimizationPreset::JpegliBaseline,
-                    _ => zenjpeg::encoder::OptimizationPreset::JpegliProgressive,
-                };
-                let config = config.optimization(preset).progressive(true);
-                let mut request = config.request().stop(stop);
-                if let Some(icc) = &opaque.metadata.icc_profile { request = request.icc_profile(icc); }
-                if let Some(exif) = &opaque.metadata.exif { request = request.exif(zenjpeg::encoder::Exif::raw(exif.to_vec())); }
-                if let Some(xmp) = &opaque.metadata.xmp { request = request.xmp(xmp); }
-                let layout = if opaque.is_grayscale() { zenjpeg::encoder::PixelLayout::Gray8Srgb }
-                    else { zenjpeg::encoder::PixelLayout::Rgb8Srgb };
-                let bytes = opaque.pixels.as_slice();
-                let output = request.encode_bytes(&bytes.contiguous_bytes(), bytes.width(), bytes.rows(), layout)
-                    .map_err(|e| Error::caused(ErrorKind::Encode, e))?;
-                limits().check_output_size(output.len() as u64).map_err(|e| Error::caused(ErrorKind::Limit, e))?;
-                Ok(output)
-            },
-            Format::Webp => {
-                if self.bit_depth() != 8 { return Err(Error::new(ErrorKind::Unsupported, "WebP encoding requires eight-bit samples")); }
-                let config = match mode {
-                    EncodingMode::Lossless => zenwebp::zencodec::WebpEncoderConfig::lossless().with_exact(true),
-                    EncodingMode::Quality(quality) => zenwebp::zencodec::WebpEncoderConfig::lossy().with_quality(quality.value()),
-                }.with_alpha_quality_value(100.0).with_effort_u32(match effort { Effort::Fast => 0, Effort::Balanced => 6, Effort::Best => 10 });
-                encode(config, self,stop)
-            },
+            Format::Jpeg => jpeg::encode(self, mode, effort,stop),
+            Format::Webp => webp::encode(self, mode, effort,stop),
             Format::Avif => avif::encode(self, mode, effort,stop),
         }
     }
@@ -339,47 +287,6 @@ impl StillImage {
         image.info = self.info.clone();
         Ok(Cow::Owned(image))
     }
-}
-
-pub(crate) fn decode<C: DecoderConfig>(config: C, bytes: &[u8], format: Format, stop: &crate::cancellation::Cancellation) -> Result<StillImage, Error> {
-    let mut policy = zencodec::decode::DecodePolicy::none();
-    policy.strict = Some(true);
-    policy.allow_truncated = Some(false);
-    let job = config.job().with_stop(stop.token()).with_limits(limits()).with_policy(policy).with_orientation(zencodec::OrientationHint::Preserve);
-    let info = job.probe(bytes).map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
-    check_dimensions(info.width, info.height)?;
-    if info.sequence != zencodec::ImageSequence::Single { return Err(Error::new(ErrorKind::Unsupported, "animation is unsupported")); }
-    if format == Format::Jpeg && info.source_color.bit_depth.is_some_and(|depth| depth != 8) {
-        return Err(Error::new(ErrorKind::Unsupported, "JPEG decoding requires eight-bit precision"));
-    }
-    let result = job.decoder(Cow::Borrowed(bytes), &[]).map_err(|e| Error::caused(ErrorKind::Invalid, e))?
-        .decode().map_err(|e| Error::caused(ErrorKind::Invalid, e))?;
-    let mut metadata = result.metadata();
-    if let Some(exif) = &metadata.exif
-        && let Some(orientation) = zencodec::helpers::parse_exif_orientation(exif) {
-        metadata.orientation = orientation;
-    }
-    let metadata_bytes = [&metadata.icc_profile, &metadata.exif, &metadata.xmp].into_iter()
-        .flatten().try_fold(0usize, |n, b| n.checked_add(b.len()));
-    if metadata_bytes.is_none_or(|n| n > MAX_METADATA_BYTES) { return Err(Error::new(ErrorKind::Limit, "decoded metadata exceeds 8 MiB")); }
-    let mut decoded_info = result.info().clone();
-    decoded_info.orientation = metadata.orientation;
-    if decoded_info.source_color.bit_depth.is_none() { decoded_info.source_color.bit_depth = info.source_color.bit_depth; }
-    if decoded_info.source_color.channel_count.is_none() { decoded_info.source_color.channel_count = info.source_color.channel_count; }
-    let info = decoded_info;
-    Ok(StillImage { pixels: result.into_buffer(), metadata, format, info, png_metadata: vec![] })
-}
-
-pub(crate) fn encode<C: EncoderConfig>(config: C, image: &StillImage, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error>
-where <C::Job as EncodeJob>::Enc: Encoder {
-    // Published adapters require a transfer tag even when encoding raw profile-tagged samples.
-    // Color interpretation remains in retained metadata; this view does not transform samples.
-    let view = image.pixels.as_slice();
-    let descriptor = view.descriptor().with_transfer(zenpixels::TransferFunction::Srgb);
-    let view = view.with_descriptor(descriptor);
-    config.job().with_stop(stop.token()).with_limits(limits()).with_metadata_policy(image.metadata.clone(), zencodec::MetadataPolicy::PreserveExact).encoder()
-        .map_err(|e| Error::caused(ErrorKind::Encode, e))?.encode(view)
-        .map(|out| out.into_vec()).map_err(|e| Error::caused(ErrorKind::Encode, e))
 }
 
 /// Header details available without decoding pixel planes.
@@ -420,21 +327,26 @@ pub struct Description {
     /// Embedded XMP.
     pub xmp: bool,
 }
-fn describe_info(info: zencodec::ImageInfo, format: Format) -> Description {
-    let orientation=info.embedded_metadata.exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation).unwrap_or(info.orientation) as u8;
-    Description { format,width:info.width,height:info.height,bit_depth:info.source_color.bit_depth,alpha:info.has_alpha,
-        grayscale:info.source_color.channel_count.map(|c|c<=2),icc:info.source_color.icc_profile.is_some(),
-        cicp:info.source_color.cicp.map(|c|[c.color_primaries as u16,c.transfer_characteristics as u16,c.matrix_coefficients as u16,c.full_range as u16]),
-        orientation,animation:info.sequence!=zencodec::ImageSequence::Single,grid:false,rotation_ccw_degrees:None,mirror_axis:None,pixel_aspect_ratio:None,hdr_metadata:info.source_color.content_light_level.is_some()||info.source_color.mastering_display.is_some()||info.source_color.cicp.is_some_and(|c|matches!(c.transfer_characteristics,16|18)),exif:info.embedded_metadata.exif.is_some(),xmp:info.embedded_metadata.xmp.is_some() }
-}
 /// Inspect bounded encoded headers, including representations refused for pixel processing.
 pub fn describe(bytes: &[u8]) -> Result<Description, Error> {
     if bytes.len() as u64 > MAX_INPUT_BYTES { return Err(Error::new(ErrorKind::Limit,"compressed input exceeds 128 MiB")); }
     let format=Format::sniff(bytes)?;
-    let info=match format {
-        Format::Png => {png::metadata_chunks(bytes,false)?;zenpng::PngDecoderConfig::new().job().with_limits(limits()).probe(bytes).map_err(|e|Error::caused(ErrorKind::Invalid,e))},
-        Format::Jpeg => zenjpeg::JpegDecoderConfig::new().job().with_limits(limits()).probe(bytes).map_err(|e|Error::caused(ErrorKind::Invalid,e)),
-        Format::Webp => zenwebp::zencodec::WebpDecoderConfig::new().job().with_limits(limits()).probe(bytes).map_err(|e|Error::caused(ErrorKind::Invalid,e)),
+    match format {
+        Format::Png => describe_png(bytes),
+        Format::Jpeg => {
+            let structure=jpeg::structure(bytes)?;
+            Ok(Description {format,width:structure.width,height:structure.height,bit_depth:(structure.precision>0).then_some(structure.precision),alpha:false,grayscale:Some(structure.components==1),icc:structure.icc,cicp:None,orientation:structure.orientation.unwrap_or(1),animation:structure.auxiliary,grid:false,rotation_ccw_degrees:None,mirror_axis:None,pixel_aspect_ratio:None,hdr_metadata:structure.hdr,exif:structure.exif,xmp:structure.xmp})
+        },
+        Format::Webp => {
+            let mut decoder=image_webp::WebPDecoder::new(std::io::Cursor::new(bytes)).map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
+            let (width,height)=decoder.dimensions();
+            check_dimensions(width,height)?;
+            let icc=decoder.icc_profile().map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
+            let exif=decoder.exif_metadata().map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
+            let xmp=decoder.xmp_metadata().map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
+            let orientation=exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation).map(|o|o as u8).unwrap_or(1);
+            Ok(Description {format,width,height,bit_depth:Some(8),alpha:decoder.has_alpha(),grayscale:None,icc:icc.is_some(),cicp:None,orientation,animation:decoder.is_animated(),grid:false,rotation_ccw_degrees:None,mirror_axis:None,pixel_aspect_ratio:None,hdr_metadata:false,exif:exif.is_some(),xmp:xmp.is_some()})
+        },
         Format::Avif => {
             let config=zenavif_parse::DecodeConfig::default().with_peak_memory_limit(IMAGE_MEMORY_BYTES);
             let parser=zenavif_parse::AvifParser::from_bytes_with_config(bytes,&config,&zencodec::Unstoppable).map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
@@ -445,16 +357,35 @@ pub fn describe(bytes: &[u8]) -> Result<Description, Error> {
             let exif=parser.exif().transpose().map_err(|e|Error::caused(ErrorKind::Invalid,e))?;
             let cicp=match parser.color_info() { Some(zenavif_parse::ColorInformation::Nclx {color_primaries,transfer_characteristics,matrix_coefficients,full_range})=>Some([*color_primaries,*transfer_characteristics,*matrix_coefficients,*full_range as u16]), _=>None };
             let bitstream_hdr=if parser.grid_config().is_none() {avif::bitstream_hdr(&parser.primary_data().map_err(|e|Error::caused(ErrorKind::Invalid,e))?)?} else {false};
-            return Ok(Description {format,width,height,bit_depth:parser.av1_config().map(|c|c.bit_depth),alpha:parser.alpha_metadata().is_some(),grayscale:parser.av1_config().map(|c|c.monochrome),icc:matches!(parser.color_info(),Some(zenavif_parse::ColorInformation::IccProfile(_))),cicp,orientation:exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation).map(|o|o as u8).unwrap_or(1),animation:parser.animation_info().is_some(),grid:parser.grid_config().is_some(),rotation_ccw_degrees:parser.rotation().map(|r|r.angle),mirror_axis:parser.mirror().map(|m|m.axis),pixel_aspect_ratio:parser.pixel_aspect_ratio().map(|p|[p.h_spacing,p.v_spacing]),hdr_metadata:parser.content_light_level().is_some()||parser.mastering_display().is_some()||parser.gain_map_metadata().is_some()||bitstream_hdr||cicp.is_some_and(|c|matches!(c[1],16|18)),exif:exif.is_some(),xmp:parser.xmp().is_some()});
+            Ok(Description {format,width,height,bit_depth:parser.av1_config().map(|c|c.bit_depth),alpha:parser.alpha_metadata().is_some(),grayscale:parser.av1_config().map(|c|c.monochrome),icc:matches!(parser.color_info(),Some(zenavif_parse::ColorInformation::IccProfile(_))),cicp,orientation:exif.as_deref().and_then(zencodec::helpers::parse_exif_orientation).map(|o|o as u8).unwrap_or(1),animation:parser.animation_info().is_some(),grid:parser.grid_config().is_some(),rotation_ccw_degrees:parser.rotation().map(|r|r.angle),mirror_axis:parser.mirror().map(|m|m.axis),pixel_aspect_ratio:parser.pixel_aspect_ratio().map(|p|[p.h_spacing,p.v_spacing]),hdr_metadata:parser.content_light_level().is_some()||parser.mastering_display().is_some()||parser.gain_map_metadata().is_some()||bitstream_hdr||cicp.is_some_and(|c|matches!(c[1],16|18)),exif:exif.is_some(),xmp:parser.xmp().is_some()})
         },
-    }?;
-    let mut description=describe_info(info,format);
-    if format==Format::Jpeg {
-        let structure=jpeg::structure(bytes)?;
-        description.animation|=structure.auxiliary;
-        description.hdr_metadata|=structure.hdr;
-        description.icc|=structure.icc;description.exif|=structure.exif;description.xmp|=structure.xmp;
-        description.orientation=structure.orientation.unwrap_or(description.orientation);
     }
-    Ok(description)
+}
+
+fn describe_png(bytes: &[u8]) -> Result<Description, Error> {
+    let chunks = png::metadata_chunks(bytes, false)?;
+    let header = bytes.get(16..29).ok_or_else(|| Error::new(ErrorKind::Invalid, "truncated PNG header"))?;
+    if bytes.get(12..16) != Some(b"IHDR") { return Err(Error::new(ErrorKind::Invalid, "missing PNG IHDR")); }
+    if bytes.get(8..12) != Some(b"\0\0\0\r") { return Err(Error::new(ErrorKind::Invalid, "PNG IHDR length is not thirteen")); }
+    let width = u32::from_be_bytes(header[..4].try_into().unwrap());
+    let height = u32::from_be_bytes(header[4..8].try_into().unwrap());
+    check_dimensions(width, height)?;
+    let bit_depth = header[8];
+    let color_type = header[9];
+    let alpha = matches!(color_type, 4 | 6) || chunks.iter().any(|chunk| &chunk[4..8] == b"tRNS");
+    let grayscale = matches!(color_type, 0 | 4);
+    let icc = chunks.iter().any(|chunk| &chunk[4..8] == b"iCCP");
+    let cicp = chunks.iter().find_map(|chunk| {
+        if &chunk[4..8] != b"cICP" { return None; }
+        let data = &chunk[8..chunk.len() - 4];
+        (data.len() == 4).then_some([u16::from(data[0]), u16::from(data[1]), u16::from(data[2]), u16::from(data[3])])
+    });
+    let exif_chunk = chunks.iter().find(|chunk| &chunk[4..8] == b"eXIf");
+    let exif = exif_chunk.is_some();
+    let xmp = chunks.iter().any(|chunk| {
+        &chunk[4..8] == b"iTXt" && chunk[8..].starts_with(b"XML:com.adobe.xmp\0")
+    });
+    let orientation = exif_chunk.and_then(|chunk| zencodec::helpers::parse_exif_orientation(&chunk[8..chunk.len() - 4])).map(|o| o as u8).unwrap_or(1);
+    let animation = chunks.iter().any(|chunk| &chunk[4..8] == b"acTL");
+    Ok(Description { format: Format::Png, width, height, bit_depth: (bit_depth > 0).then_some(bit_depth), alpha, grayscale: Some(grayscale), icc, cicp, orientation, animation, grid: false, rotation_ccw_degrees: None, mirror_axis: None, pixel_aspect_ratio: None, hdr_metadata: false, exif, xmp })
 }
