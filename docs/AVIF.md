@@ -12,4 +12,4 @@ The unaccepted alpha experiment is preserved at local branch `campaign/s5-alpha-
 
 The decoder shim exists because rav1d's raw dav1d-style API is the only permissive pure-Rust AV1 decode path; it bounds allocations, drains and copies planes out of rav1d-owned memory, and never exposes rav1d types across the boundary. Replacing it requires independent external matrix and range cases, including the regressions linked above.
 
-zenavif-parse 0.6.2 retains MPL-2.0 and zenavif-serialize 0.1.4 retains BSD-3-Clause (development-only fixture tool). rav1d and rav1e are pure Rust in this configuration; no assembler or C FFI feature is selected.
+The ISOBMFF/AVIF container reader is implemented in-tree at `src/still/avif_container.rs`, written from ISO/IEC 14496-12, ISO/IEC 23008-12 and the AV1 sequence-header spec (bounded, dependency-free, corruption-hardened, cancellation-aware). zenavif-serialize 0.1.4 retains BSD-3-Clause (development-only fixture tool). rav1d and rav1e are pure Rust in this configuration; no assembler or C FFI feature is selected.

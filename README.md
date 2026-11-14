@@ -62,15 +62,13 @@ contributing, see [development checks](docs/CODEC-BOUNDARY.md#development-checks
 Open defects are tracked in [TODO.md](TODO.md).
 
 Rimage's source is licensed under **Apache-2.0**; the upstream MIT notice is
-preserved. The production dependency closure contains no AGPL or GPL code:
+preserved. The production dependency closure contains no copyleft of any kind:
 every production dependency is permissively licensed (MIT, Apache-2.0, Zlib,
-BSD-2/3-Clause, ISC, Unicode-3.0 or a permissive dual license) except
-`zenavif-parse` 0.6.2 (MPL-2.0, file-level weak copyleft, unmodified; its text
-is preserved in `licenses/MPL-2.0` and its sources ship with this repository).
-Binary distributions carry no AGPL/GPL obligations; the only copyleft
-obligation is offering the MPL-2.0 component's source under MPL-2.0, which
-this repository satisfies. The WebP backend is experimental pending the parity
-campaign below; no commercial codec license is assumed. See
+BSD-2/3-Clause, ISC, Unicode-3.0, CC0-1.0 or a permissive dual license; the one
+`license-file` entry, `quantizr`, is verbatim MIT). The AVIF container reader is
+implemented in-tree. Binary distributions carry no AGPL, GPL or MPL obligations.
+No commercial codec license is assumed. The WebP backend is experimental pending
+the parity campaign below; see
 [license provenance](docs/PROVENANCE.md) and the
 license files.
 
