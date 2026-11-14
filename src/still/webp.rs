@@ -55,8 +55,15 @@ fn webkit_metadata(image: &StillImage) -> webpkit::Metadata {
         .with_xmp(image.metadata.xmp.as_deref().map(<[u8]>::to_vec))
 }
 
-fn webkit_effort(effort: Effort) -> webpkit::Effort {
-    match effort { Effort::Fast => webpkit::Effort::level(1), Effort::Balanced => webpkit::Effort::AUTO, Effort::Best => webpkit::Effort::level(9) }
+fn webkit_effort(mode: EncodingMode, effort: Effort) -> webpkit::Effort {
+    match (mode, effort) {
+        (EncodingMode::Lossless, Effort::Fast) => webpkit::Effort::level(1),
+        (EncodingMode::Lossless, Effort::Balanced) => webpkit::Effort::AUTO,
+        (EncodingMode::Lossless, Effort::Best) => webpkit::Effort::level(9),
+        (EncodingMode::Quality(_), Effort::Fast) => webpkit::Effort::AUTO,
+        (EncodingMode::Quality(_), Effort::Balanced) => webpkit::Effort::AUTO,
+        (EncodingMode::Quality(_), Effort::Best) => webpkit::Effort::level(9),
+    }
 }
 
 pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
@@ -71,11 +78,11 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, sto
     let metadata = webkit_metadata(image);
     let result = match mode {
         EncodingMode::Lossless => webpkit::Encoder::lossless()
-            .effort(webkit_effort(effort))
+            .effort(webkit_effort(mode, effort))
             .metadata(metadata)
             .encode_ref(reference),
         EncodingMode::Quality(quality) => webpkit::Encoder::lossy()
-            .effort(webkit_effort(effort))
+            .effort(webkit_effort(mode, effort))
             .quality((quality.value().round() as u8).clamp(0, 100))
             .metadata(metadata)
             .encode_ref(reference),
