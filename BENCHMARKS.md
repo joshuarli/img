@@ -150,6 +150,34 @@ Sizes at t80 are now equal to or better than the master baseline on coffee (−3
 
 Matched-score decomposition (direct `--quality` sweeps, scored by the same PerceptualReference): at score ≈ 85.6, coffee costs 165,090 / 114,840 / 93,198 bytes under the former level(1) tier, the size-adaptive tier, and the withdrawn default; grass at score ≈ 83 is 99,506 bytes under the size-adaptive tier vs 130,658 under level(1). Even the deepest VP8L search lands at 11,712 B for `large.png` (vs 12,682 at the production level and 7,014 for the withdrawn default) — a codec capability gap, not an effort-selection gap; the AVIF comparison and its records are untouched by this iteration.
 
+Matched-score WebP re-score vs `cwebp` 1.6.0 (method 4, single run, `RIMAGE_BENCH_TOOLS=rimage,cwebp`), committed as [untimed-2026-11-14.json](benchmarks/results/untimed-2026-11-14.json) with outputs under `2026-11-14-*.webp` — the retained 2026-11-13 outputs are untouched. Scores by the same PerceptualReference; cwebp passes the same gate independently.
+
+| Fixture | Target | rimage bytes @ score | cwebp bytes @ score | rimage Δ vs cwebp |
+| --- | --- | --- | --- | --- |
+| coffee.png | 80 | 62,224 @ 80.6 | 87,502 @ 85.8 | −28.9% |
+| grass.png | 80 | 84,652 @ 83.1 | 82,802 @ 84.2 | +2.2% |
+| gravel.png | 80 | 49,966 @ 80.7 | 59,728 @ 83.5 | −16.3% |
+| large.png | 80 | 12,682 @ 100.0 (lossless) | 42,032 @ 84.1 | −69.8% |
+| transparent.png | 80 | 196 @ 81.3 | 168 @ 81.3 | +16.7% |
+| flat.png | 80 | 32 @ 100.0 (lossless) | 82 @ 90.2 | −61.0% |
+| gray.png | 80 | 56 @ 100.0 (lossless) | 88 @ 80.3 | −36.4% |
+| line.png | 80 | 64 @ 100.0 (lossless) | 1,308 @ 88.2 | −95.1% |
+| text.png | 80 | 72 @ 100.0 (lossless) | 490 @ 81.2 | −85.3% |
+| ui.png | 80 | 66 @ 100.0 (lossless) | refused | — |
+| compressed.webp | 80 | 66 @ 100.0 (lossless) | refused | — |
+| grass.png | 90 | 155,570 @ 90.9 | 146,582 @ 94.4 | +6.1% |
+| gravel.png | 90 | 130,144 @ 92.7 | 124,510 @ 94.2 | +4.5% |
+| coffee.png | 90 | 386,802 @ 100.0 (lossless fallback) | refused | — |
+| transparent.png | 90 | 200 @ 100.0 (lossless) | 254 @ 92.0 | −21.3% |
+| large.png | 90 | 12,682 @ 100.0 (lossless) | refused | — |
+| grass.png | 95 | 212,590 @ 100.0 (lossless fallback) | 176,330 @ 95.7 | +20.6% |
+| gravel.png | 95 | 188,642 @ 100.0 (lossless fallback) | 152,426 @ 95.6 | +23.7% |
+| coffee.png | 95 | 386,802 @ 100.0 (lossless fallback) | refused | — |
+| transparent.png | 95 | 200 @ 100.0 (lossless) | 770 @ 95.2 | −74.0% |
+| large.png | 95 | 12,682 @ 100.0 (lossless) | refused | — |
+
+Where both stacks pass at the target gate, rimage wins coffee, gravel, large and the synthetic lossless cells, and loses grass (+2.2%) and transparent (+16.7%) at t80. At t90/t95 rimage completes photographic cells only via lossless fallback (score 100) and lands 4.5–23.7% above cwebp's lossy outputs at 92–96; rimage's fast candidate ladder never produced a passing lossy candidate above t80 on those inputs. `cwebp` refuses coffee/large at t90/t95 (no passing quality on its grid) and every `ui.png`/`compressed.webp` cell; `astronaut.png`/`icc.png` refuse on both stacks (ICC transform leaves the SDR sRGB gamut) and `deep.png` is excluded (high depth). This is one corpus, one host, single-run capture — not a release claim, and it does not re-score the 2026-11-13 cells.
+
 These are one corpus (14 fixtures), one host, fast effort, startup-inclusive process walls and medians of five interleaved repetitions; they are not a release claim. The lossy size regressions at the t80 gate are materially closed; the backend remains experimental pending the best-effort and Linux measurements, the lossless gradient gap, and a full matrix re-score.
 
 ## Remaining proofs
