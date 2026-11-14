@@ -35,6 +35,8 @@ fn run()->Result<(),Box<dyn std::error::Error>> {
     let source_diff_sha256={use sha2::{Digest,Sha256};format!("{:x}",Sha256::digest(&source_diff))};
     let binary_sha256={use sha2::{Digest,Sha256};format!("{:x}",Sha256::digest(fs::read(&current)?))};
     let tools=[("rimage",current.as_os_str().to_owned(),"new"),("rimage-png",current.as_os_str().to_owned(),"new-png"),("original-mozjpeg",original.as_os_str().to_owned(),"original-jpeg"),("original-oxipng",original.as_os_str().to_owned(),"original-png"),("original-ravif",original.as_os_str().to_owned(),"original-avif"),("cwebp","cwebp".into(),"cwebp")];
+    let output_prefix=std::env::var("RIMAGE_BENCH_OUTPUT_PREFIX").unwrap_or_default();
+    let tool_filter: Option<Vec<String>> = std::env::var("RIMAGE_BENCH_TOOLS").ok().map(|v| v.split(',').map(str::to_string).collect());
     let mut records=vec![];
     for run in 0..if timed {5} else {1} {
         for (name,source,source_directory) in &cases {
@@ -43,11 +45,14 @@ fn run()->Result<(),Box<dyn std::error::Error>> {
                 let mut order=(0..tools.len()).collect::<Vec<_>>();if run%2==1 {order.reverse();}
                 for index in order {
                     let (tool,executable,kind)=&tools[index];
+                    if let Some(filter) = &tool_filter {
+                        if !filter.iter().any(|t| t == tool) { continue; }
+                    }
                     if kind.ends_with("png") && target!=80.0 {continue;}
                     let mut record=support::record_base(tool,name,&revision);record["attempts"]=json!([]);record["run"]=json!(run);record["target"]=json!(target);record["sourcePath"]=json!(format!("{source_directory}/{name}"));record["width"]=json!(width);record["height"]=json!(height);record["inputBytes"]=json!(source.len());record["parameters"]=match *kind {"new"=>json!({"target":target,"effort":"fast","globalCandidateCap":8}),"new-png"=>json!({"lossless":true,"effort":"fast"}),"original-jpeg"=>json!({"qualityGrid":[1,25,50,75,95,100],"progressive":true,"qtable":"NRobidoux"}),"original-png"=>json!({"lossless":true,"effort":2}),"original-avif"=>json!({"qualityGrid":[1,25,50,75,95,100],"speed":6,"sourcePrecision":"original ravif defaults to 10-bit; scored decode may refuse"}),_=>json!({"qualityGrid":[0,25,50,75,95,100],"method":4,"alphaQuality":100,"exact":true,"metadata":"all"})};
                     let extension=if *kind=="original-jpeg" {"jpg"} else if kind.ends_with("png") {"png"} else if *kind=="original-avif" {"avif"} else {"webp"};
                     let input=benchmark.join(source_directory).join(name);
-                    let target_name=format!("{}{}-{}-{}-{}.{}",if timed {"timed-"} else {""},name.replace('.',"_"),tool,target,run,extension);let saved=output_dir.join(&target_name);
+                    let target_name=format!("{}{}{}-{}-{}-{}.{}",output_prefix,if timed {"timed-"} else {""},name.replace('.',"_"),tool,target,run,extension);let saved=output_dir.join(&target_name);
                     let start=Instant::now();
                     let result=(||->Result<(Vec<u8>,Option<f64>,bool),String> {
                         if image.bit_depth()>8 && !kind.ends_with("png") {return Err("quality comparison excludes high-depth samples; exact proof is separate".into());}
@@ -92,7 +97,8 @@ fn run()->Result<(),Box<dyn std::error::Error>> {
     }
     if timed && !Command::new("perf-gate-ready").arg("-1").status()?.success() {return Err("discard overlapping timings; post-run perf gate failed".into());}
     let document=json!({"schemaVersion":1,"revision":revision,"architecture":std::env::consts::ARCH,"timingGate":if timed {"accepted"} else {"not measured: capture mode"},"runsPerSide":if timed {5} else {1},"sourceDirty":!source_diff.is_empty(),"sourceDiffSha256":source_diff_sha256,"binarySha256":binary_sha256,"tools":{"rimage":"locked repository dist","original":"66fc0fc plus docs/original-build.patch, release; mozjpeg 0.10.13 (mozjpeg-sys 2.2.3), oxipng 10.2.1, ravif 0.13.0","cwebp":"1.6.0, single-threaded","jpegli":"unavailable","dedicatedAvif":"standalone unavailable; original ravif 0.13.0 included but emits unsupported 10-bit"},"summary":support::summarize(&records),"records":records});
-    fs::write(output_dir.join(if timed {"timed.json"} else {"untimed.json"}),serde_json::to_vec_pretty(&document)?)?;
+    let results_name=std::env::var("RIMAGE_RESULTS_NAME").unwrap_or_else(|_| if timed {"timed.json".to_string()} else {"untimed.json".to_string()});
+    fs::write(output_dir.join(results_name),serde_json::to_vec_pretty(&document)?)?;
     println!("saved {} records; {} completed",document["records"].as_array().unwrap().len(),document["records"].as_array().unwrap().iter().filter(|r|r["completed"]==true).count());
     Ok(())
 }
