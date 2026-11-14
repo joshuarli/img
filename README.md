@@ -70,3 +70,5 @@ license files. No commercial codec license is assumed.
 ## Permissive WebP replacement campaign
 
 An isolated snapshot of the MIT/Apache-2.0 [Webpkit](https://github.com/P4suta/webpkit) codec now lives in [`codecs/webpkit/`](codecs/webpkit/). The executable unattended correctness/performance campaign is [`docs/WEBP-HILLCLIMB.md`](docs/WEBP-HILLCLIMB.md) and its exact import provenance is [`docs/WEBP-IMPORT.md`](docs/WEBP-IMPORT.md). This is **candidate code**, not yet a production replacement: `rimage` still links `zenwebp` and the distribution-license statement above remains in effect until verified dependency closure changes.
+
+The [permissive codec audit](docs/PERMISSIVE-CODEC-AUDIT.md) inventories the remaining AGPL/GPL roles and the leading pure-Rust alternatives for JPEG, PNG/DEFLATE, palette quantization and AVIF/AV1, with explicit integration blockers and performance validation gates.
