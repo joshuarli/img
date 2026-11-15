@@ -332,10 +332,36 @@ const fn header_bits(used: u64) -> u64 {
     if used <= 1 { 0 } else { 24 + used * 3 }
 }
 
+/// Exact `log2(x)` for small `x`, computed by the same bit-by-bit refinement at
+/// compile time — a byte-identical shortcut for the hot `channel_bits*` scans
+/// (histogram frequencies are overwhelmingly small). The runtime path for `x >
+/// LOG2_SMALL_MAX` is unchanged.
+const LOG2_SMALL_MAX: u64 = 4096;
+const LOG2_SMALL: [u64; (LOG2_SMALL_MAX + 1) as usize] = build_log2_small();
+
+const fn build_log2_small() -> [u64; (LOG2_SMALL_MAX + 1) as usize] {
+    let mut table = [0u64; (LOG2_SMALL_MAX + 1) as usize];
+    let mut x = 1u64;
+    while x <= LOG2_SMALL_MAX {
+        table[x as usize] = fixed_log2_bitwise(x);
+        x += 1;
+    }
+    table
+}
+
 /// `log2(x)` for `x >= 1`, scaled by `2^LOG2_FRAC_BITS`, using only integer
 /// arithmetic (a bit-by-bit fractional refinement). Deterministic across
 /// platforms and `no_std`-safe.
 pub(crate) fn fixed_log2(x: u64) -> u64 {
+    if x <= LOG2_SMALL_MAX {
+        return LOG2_SMALL[x as usize];
+    }
+    fixed_log2_bitwise(x)
+}
+
+/// The bit-by-bit refinement itself; see [`fixed_log2`]. Split out so the const
+/// table and the runtime path share one definition (they cannot drift).
+const fn fixed_log2_bitwise(x: u64) -> u64 {
     if x <= 1 {
         return 0;
     }
@@ -358,7 +384,7 @@ pub(crate) fn fixed_log2(x: u64) -> u64 {
         }
         bit >>= 1;
     }
-    (u64::from(int_part) << LOG2_FRAC_BITS) | frac
+    ((int_part as u64) << LOG2_FRAC_BITS) | frac
 }
 
 #[cfg(test)]
