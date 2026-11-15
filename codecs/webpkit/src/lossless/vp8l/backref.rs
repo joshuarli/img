@@ -17,8 +17,8 @@
 
 use crate::lossless::color_cache::ColorCache;
 use crate::lossless::constants::{
-    HASH_BITS_LZ77, MAX_CHAIN, MAX_COPY_LENGTH, MIN_MATCH, NUM_DISTANCE_CODES,
-    NUM_LITERAL_CODES, WINDOW_SIZE,
+    DEEP_CHAIN_MIN_PIXELS, HASH_BITS_LZ77, MAX_CHAIN, MAX_COPY_LENGTH, MIN_MATCH,
+    NUM_DISTANCE_CODES, NUM_LITERAL_CODES, WINDOW_SIZE,
 };
 use crate::lossless::histogram::{Histogram, fixed_log2};
 use crate::lossless::lz77::{PlaneCodeMap, prefix_encode};
@@ -213,12 +213,29 @@ pub(crate) struct HashChain {
 impl HashChain {
     /// Build the chain in a single left-to-right pass.
     fn build(pixels: &[u32]) -> Self {
+        Self::build_with(pixels, false)
+    }
+
+    /// Build the chain over [`MIN_MATCH`] pixels instead of the pair hash. Every
+    /// match the DP can emit is at least [`MIN_MATCH`] long, so positions whose
+    /// first four pixels differ can never produce a pushed staircase point; the
+    /// narrower buckets keep the same newest-first order for the useful candidates
+    /// while spending far fewer hops on positions that cannot reach the minimum.
+    fn build_quad(pixels: &[u32]) -> Self {
+        Self::build_with(pixels, true)
+    }
+
+    fn build_with(pixels: &[u32], quad: bool) -> Self {
         let n = pixels.len();
         let hash_bits = effective_hash_bits(n);
         let mut head = vec![NONE; 1usize << hash_bits];
         let mut prev = vec![NONE; n];
         for (i, slot) in prev.iter_mut().enumerate() {
-            let h = pair_hash(pixels, i, hash_bits);
+            let h = if quad {
+                quad_hash(pixels, i, hash_bits)
+            } else {
+                pair_hash(pixels, i, hash_bits)
+            };
             *slot = head[h];
             head[h] = i as u32;
         }
@@ -447,6 +464,23 @@ fn pair_hash(pixels: &[u32], i: usize, hash_bits: u32) -> usize {
     (key >> (32 - hash_bits)) as usize
 }
 
+/// Hash the [`MIN_MATCH`]-pixel run starting at `i`. Missing tail pixels hash as
+/// zero exactly like [`pair_hash`]'s single-pixel lookahead; positions too close
+/// to the end never reach the match search, so their bucket only has to be stable.
+fn quad_hash(pixels: &[u32], i: usize, hash_bits: u32) -> usize {
+    let a = pixels[i];
+    let b = pixels.get(i + 1).copied().unwrap_or(0);
+    let c = pixels.get(i + 2).copied().unwrap_or(0);
+    let d = pixels.get(i + 3).copied().unwrap_or(0);
+    let mut key = a.wrapping_mul(HASH_MUL_LO);
+    key ^= b.wrapping_mul(HASH_MUL_HI);
+    key = key.wrapping_mul(0x9e37_79b1);
+    key ^= c.wrapping_mul(0x85eb_ca6b);
+    key = key.wrapping_mul(0xc2b2_ae35);
+    key ^= d.wrapping_mul(0x27d4_eb2f);
+    (key >> (32 - hash_bits)) as usize
+}
+
 /// Hash-table width for `n` pixels: `ceil(log2 n)`, capped at [`HASH_BITS_LZ77`],
 /// so small images do not allocate the full table. Using `next_power_of_two`
 /// keeps this correct (and overflow-free) for every `n`, including the tiny
@@ -580,7 +614,7 @@ pub(crate) fn parse_optimal(
     pixels: &[u32],
     width: u32,
     greedy_tokens: &[Token],
-    chain: &HashChain,
+    base_chain: &HashChain,
     chain_cap: u32,
 ) -> Vec<Token> {
     let n = pixels.len();
@@ -600,12 +634,25 @@ pub(crate) fn parse_optimal(
         let histogram =
             crate::lossless::vp8l::encode::RefModel::new(greedy_tokens, pixels, width).histogram(0);
         let cost_model = CostModel::from_histogram(&histogram);
-        // `chain` is threaded in by the caller (built once by the greedy parse). It
-        // is a pure function of `pixels`, so a shared chain is bit-identical to one
-        // built here, leaving the DP — and its tokens — unchanged.
+        // `base_chain` is threaded in by the caller (built once by the greedy
+        // parse); large images swap in a minimum-match-keyed chain below, while
+        // small images reuse it so a shared chain stays bit-identical to one
+        // built here.
         // `width` is fixed across the DP, so build the distance -> plane-code reverse
         // map once rather than rescanning the 120-entry table for every candidate.
         let plane_map = PlaneCodeMap::new(width);
+        // Large images already pay for the deep staircase walk; keying that walk
+        // on the full minimum match instead of the pixel pair removes the chain
+        // nodes that cannot reach `MIN_MATCH`, so the same hop budget reaches the
+        // useful candidates sooner. Small images keep the shared pair chain so
+        // their walls stay flat.
+        let wide_chain;
+        let chain = if n >= DEEP_CHAIN_MIN_PIXELS {
+            wide_chain = HashChain::build_quad(pixels);
+            &wide_chain
+        } else {
+            base_chain
+        };
 
         // `cost[p]` = minimal Q16 cost to code `pixels[p..]`, with `cost[n] = 0`.
         // Computing `cost[i]` reads only `cost[i + 1 ..= i + max_len]` and
@@ -1021,6 +1068,22 @@ mod tests {
         // `i + 1` -> `i` index slip) gives a different bucket. For [1, 2] at 8 bits
         // the real bucket is 0xE9 = 233; the both-equal fold would give 0x22 = 34.
         assert_eq!(super::pair_hash(&[1u32, 2], 0, 8), 233);
+    }
+
+    #[test]
+    fn quad_hash_keys_min_match_runs_not_pairs() {
+        // Positions 0 and 8 share the four-pixel run [1,2,3,4]; position 4 shares
+        // only the leading pair [1,2] before diverging. The quad key must keep
+        // the run positions together while splitting the pair-only position.
+        let pixels = [
+            1u32, 2, 3, 4, //
+            1, 2, 9, 8, //
+            1, 2, 3, 4,
+        ];
+        assert_eq!(super::quad_hash(&pixels, 0, 18), super::quad_hash(&pixels, 8, 18));
+        assert_ne!(super::quad_hash(&pixels, 0, 18), super::quad_hash(&pixels, 4, 18));
+        assert_eq!(super::pair_hash(&pixels, 0, 18), super::pair_hash(&pixels, 4, 18));
+        assert_eq!(super::pair_hash(&pixels, 0, 18), super::pair_hash(&pixels, 8, 18));
     }
 
     #[test]
