@@ -7,7 +7,7 @@ fn global_budget_smallest_evaluated_winner_and_repeatability() {
     let request=Request { operation:Operation::Optimize(FormatSelection::Auto),fidelity:Fidelity::Score(ScoreTarget::new(70.0).unwrap()),effort:Effort::Fast,..Request::default() };
     let a=optimizer::process(&bytes,request).unwrap(); let b=optimizer::process(&bytes,request).unwrap();
     assert_eq!(a.bytes,b.bytes); assert_eq!(a.format,b.format);
-    assert_eq!(a.evaluations.len(),8);
+    assert_eq!(a.evaluations.len(),9);
     for format in [Format::Jpeg,Format::Png,Format::Webp,Format::Avif] { assert!(a.evaluations.iter().any(|e|e.format==format)); }
     assert!(a.bytes.len()<=bytes.len());
     let smallest=a.evaluations.iter().filter(|e|e.failure.is_none()).filter_map(|e|e.bytes).chain([bytes.len()]).min().unwrap();

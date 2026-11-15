@@ -80,7 +80,7 @@ pub enum Effort {
 }
 impl Effort {
     /// Total candidate cap across all eligible formats.
-    pub fn candidate_cap(self) -> usize { match self { Self::Fast => 8, Self::Balanced => 24, Self::Best => 64 } }
+    pub fn candidate_cap(self) -> usize { match self { Self::Fast => 9, Self::Balanced => 24, Self::Best => 64 } }
 }
 
 /// Exact-sample encoding or direct lossy encoder control.
