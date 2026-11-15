@@ -31,7 +31,7 @@ fn run()->Result<(),Box<dyn std::error::Error>> {
     let current=std::env::var_os("IMG_BENCH_BIN").map(PathBuf::from).unwrap_or_else(||repository.join("target/dist/img"));
     let original=std::env::var_os("IMG_ORIGINAL_BIN").map(PathBuf::from).unwrap_or_else(||repository.join(".work/tmp/original-target/release/img"));
     let revision=String::from_utf8(Command::new("git").current_dir(repository).args(["rev-parse","HEAD"]).output()?.stdout)?.trim().to_owned();
-    let source_diff=Command::new("git").current_dir(repository).args(["diff","HEAD","--","src","Cargo.toml","Cargo.lock","examples/benchmark.rs","benches/support/mod.rs"]).output()?.stdout;
+    let source_diff=Command::new("git").current_dir(repository).args(["diff","HEAD","--","src","codecs/webpkit/src","Cargo.toml","Cargo.lock","examples/benchmark.rs","benches/support/mod.rs"]).output()?.stdout;
     let source_diff_sha256={use sha2::{Digest,Sha256};format!("{:x}",Sha256::digest(&source_diff))};
     let binary_sha256={use sha2::{Digest,Sha256};format!("{:x}",Sha256::digest(fs::read(&current)?))};
     let tools=[("img",current.as_os_str().to_owned(),"new"),("img-png",current.as_os_str().to_owned(),"new-png"),("original-mozjpeg",original.as_os_str().to_owned(),"original-jpeg"),("original-oxipng",original.as_os_str().to_owned(),"original-png"),("original-ravif",original.as_os_str().to_owned(),"original-avif"),("cwebp","cwebp".into(),"cwebp")];
