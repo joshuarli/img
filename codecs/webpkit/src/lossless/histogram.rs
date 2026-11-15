@@ -223,6 +223,7 @@ impl Histogram {
 
     /// `estimate_bits` of the element-wise SUM of `self` and `other`, computed
     /// without allocating the merged histogram — the greedy merge-cost query.
+    #[cfg(test)]
     pub(crate) fn merged_estimate_bits(&self, other: &Self) -> u64 {
         let channels = [
             channel_bits_pair(&self.green, &other.green),
@@ -266,6 +267,95 @@ impl Histogram {
     }
 }
 
+pub(crate) struct ClusterHistogram {
+    histogram: Histogram,
+    support: [ChannelSupport; 5],
+}
+
+impl Histogram {
+    fn channels(&self) -> [&[u32]; 5] {
+        [&self.green, &self.red, &self.blue, &self.alpha, &self.dist]
+    }
+}
+
+impl ClusterHistogram {
+    pub(crate) fn new(histogram: Histogram) -> Self {
+        let support = histogram.channels().map(ChannelSupport::new);
+        Self { histogram, support }
+    }
+
+    pub(crate) fn estimate_bits(&self) -> u64 {
+        self.histogram.estimate_bits()
+    }
+
+    pub(crate) fn add_assign(&mut self, other: &Self) {
+        self.histogram.add_assign(&other.histogram);
+        for (a, b) in self.support.iter_mut().zip(&other.support) {
+            a.total += b.total;
+            for (a, b) in a.bits.iter_mut().zip(&b.bits) {
+                *a |= *b;
+            }
+        }
+    }
+
+    pub(crate) fn merged_estimate_bits(&self, other: &Self) -> u64 {
+        self.histogram.channels().into_iter()
+            .zip(other.histogram.channels())
+            .zip(self.support.iter().zip(&other.support))
+            .map(|((a, b), (sa, sb))| {
+                let (bits, used) = sa.merged_cost(sb, a, b);
+                bits + header_bits(used)
+            }).sum::<u64>() + self.histogram.extra_bits + other.histogram.extra_bits
+    }
+
+    pub(crate) fn into_histogram(self) -> Histogram {
+        self.histogram
+    }
+}
+
+struct ChannelSupport {
+    total: u64,
+    bits: Vec<u64>,
+}
+
+impl ChannelSupport {
+    fn new(bins: &[u32]) -> Self {
+        let mut bits = vec![0u64; bins.len().div_ceil(64)];
+        let mut total = 0u64;
+        for (index, &count) in bins.iter().enumerate() {
+            total += u64::from(count);
+            if count > 0 { bits[index / 64] |= 1u64 << (index % 64); }
+        }
+        Self { total, bits }
+    }
+
+    fn merged_cost(&self, other: &Self, a: &[u32], b: &[u32]) -> (u64, u64) {
+        debug_assert_eq!(a.len(), b.len());
+        let used: u64 = self.bits.iter().zip(&other.bits)
+            .map(|(&a, &b)| u64::from((a | b).count_ones())).sum();
+        if used <= 1 { return (0, used); }
+        let mut weighted_logs = 0u64;
+        if used * 4 <= a.len() as u64 {
+            for (word, (&a_bits, &b_bits)) in self.bits.iter().zip(&other.bits).enumerate() {
+                let mut bits = a_bits | b_bits;
+                while bits != 0 {
+                    let index = word * 64 + bits.trailing_zeros() as usize;
+                    let count = u64::from(a[index]) + u64::from(b[index]);
+                    weighted_logs += count * fixed_log2(count);
+                    bits &= bits - 1;
+                }
+            }
+        } else {
+            for (&a, &b) in a.iter().zip(b) {
+                let count = u64::from(a) + u64::from(b);
+                if count > 0 { weighted_logs += count * fixed_log2(count); }
+            }
+        }
+        let total = self.total + other.total;
+        ((total * fixed_log2(total) - weighted_logs) >> LOG2_FRAC_BITS, used)
+    }
+}
+
 /// Shannon cost (whole bits) and number of used symbols of one channel.
 fn channel_bits(bins: &[u32]) -> (u64, u64) {
     let total: u64 = bins.iter().map(|&n| u64::from(n)).sum();
@@ -303,6 +393,7 @@ pub(crate) fn shannon_bits(total: u64, used_counts: &[u32]) -> u64 {
 
 /// Shannon cost (whole bits) and used-symbol count of the element-wise SUM of two
 /// equal-length bin slices — the pairwise sibling of [`channel_bits`].
+#[cfg(test)]
 fn channel_bits_pair(a: &[u32], b: &[u32]) -> (u64, u64) {
     debug_assert_eq!(a.len(), b.len());
     let mut total = 0u64;
@@ -553,6 +644,20 @@ mod tests {
             let b: Vec<u32> = bins.iter().map(|&(_, b)| b).collect();
             let merged: Vec<u32> = bins.iter().map(|&(a, b)| a + b).collect();
             prop_assert_eq!(super::channel_bits_pair(&a, &b), channel_bits(&merged));
+            prop_assert_eq!(super::ChannelSupport::new(&a).merged_cost(&super::ChannelSupport::new(&b), &a, &b), channel_bits(&merged));
+        }
+
+        #[test]
+        fn sparse_supported_channel_cost_matches_scan(
+            values in prop::collection::vec((0usize..2328, 0u32..50_000, 0u32..50_000), 0..300),
+        ) {
+            let mut a = vec![0u32; 2328];
+            let mut b = vec![0u32; 2328];
+            for (index, x, y) in values {
+                a[index] += x;
+                b[index] += y;
+            }
+            prop_assert_eq!(super::ChannelSupport::new(&a).merged_cost(&super::ChannelSupport::new(&b), &a, &b), super::channel_bits_pair(&a, &b));
         }
 
         /// `shannon_bits(total, used_counts)` — fed the total and just the nonzero
@@ -600,6 +705,12 @@ mod tests {
             merged.add_assign(&b);
             prop_assert_eq!(a.merged_estimate_bits(&b), merged.estimate_bits());
             prop_assert_eq!(a.merged_estimate_bits(&b), b.merged_estimate_bits(&a));
+            let mut supported = super::ClusterHistogram::new(a.clone());
+            let other = super::ClusterHistogram::new(b);
+            prop_assert_eq!(supported.merged_estimate_bits(&other), merged.estimate_bits());
+            supported.add_assign(&other);
+            merged.add_assign(&a);
+            prop_assert_eq!(supported.merged_estimate_bits(&super::ClusterHistogram::new(a)), merged.estimate_bits());
         }
     }
 }

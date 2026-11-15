@@ -12,7 +12,7 @@ use alloc::collections::BinaryHeap;
 use core::cmp::Reverse;
 
 use crate::lossless::constants::{ALPHABET_SIZE, MIN_TRANSFORM_BITS, subsample_size};
-use crate::lossless::histogram::Histogram;
+use crate::lossless::histogram::{ClusterHistogram, Histogram};
 use crate::lossless::prelude::*;
 use crate::lossless::vp8l::backref::{Resolved, Token, resolve};
 use crate::lossless::work::work;
@@ -166,7 +166,7 @@ fn greedy_cluster(
     // is all zero — every unit type increments some green bin). `cluster_of[b]`
     // tracks the surviving cluster of block b (None for empty blocks -> group 0).
     let mut cluster_of: Vec<Option<usize>> = vec![None; num_blocks];
-    let mut hist: Vec<Histogram> = Vec::new();
+    let mut hist: Vec<ClusterHistogram> = Vec::new();
     let mut src_block: Vec<usize> = Vec::new();
     for (b, h) in block_histograms.into_iter().enumerate() {
         if h.green().iter().all(|&n| n == 0) {
@@ -174,14 +174,14 @@ fn greedy_cluster(
         }
         cluster_of[b] = Some(hist.len());
         src_block.push(b);
-        hist.push(h);
+        hist.push(ClusterHistogram::new(h));
     }
     let n = hist.len();
     if n <= 1 {
         return None;
     }
 
-    let mut est: Vec<u64> = hist.iter().map(Histogram::estimate_bits).collect();
+    let mut est: Vec<u64> = hist.iter().map(ClusterHistogram::estimate_bits).collect();
     let mut active: Vec<bool> = vec![true; n];
     let mut active_count = n;
     // Upper-triangular pairwise merge deltas (delta = merged - sep; negative saves).
@@ -274,7 +274,7 @@ fn greedy_cluster(
         .into_iter()
         .enumerate()
         .filter(|(old, _)| active[*old])
-        .map(|(old, h)| (new_id[old], h))
+        .map(|(old, h)| (new_id[old], h.into_histogram()))
         .collect();
     tagged.sort_by_key(|&(id, _)| id);
     let group_histograms: Vec<Histogram> = tagged.into_iter().map(|(_, h)| h).collect();
@@ -296,7 +296,7 @@ fn greedy_cluster(
               `u64 as i64` casts never wrap (the same cast lz77.rs uses for its \
               distance arithmetic)"
 )]
-fn merge_delta(a: &Histogram, b: &Histogram, est_a: u64, est_b: u64) -> i64 {
+fn merge_delta(a: &ClusterHistogram, b: &ClusterHistogram, est_a: u64, est_b: u64) -> i64 {
     work!(ClusterEstimate);
     a.merged_estimate_bits(b) as i64 - est_a as i64 - est_b as i64
 }
@@ -341,7 +341,7 @@ fn greedy_cluster_reference(
     let mut delta: Vec<i64> = vec![0; n * n];
     for i in 0..n {
         for j in (i + 1)..n {
-            delta[i * n + j] = merge_delta(&hist[i], &hist[j], est[i], est[j]);
+            delta[i * n + j] = hist[i].merged_estimate_bits(&hist[j]) as i64 - est[i] as i64 - est[j] as i64;
         }
     }
 
@@ -380,7 +380,7 @@ fn greedy_cluster_reference(
                 continue;
             }
             let (lo, hi) = if a < j { (a, j) } else { (j, a) };
-            delta[lo * n + hi] = merge_delta(&hist[lo], &hist[hi], est[lo], est[hi]);
+            delta[lo * n + hi] = hist[lo].merged_estimate_bits(&hist[hi]) as i64 - est[lo] as i64 - est[hi] as i64;
         }
     }
 
@@ -507,7 +507,7 @@ mod tests {
             expected != 0 && expected != 1,
             "delta {expected} must be distinct from the constant mutants"
         );
-        assert_eq!(merge_delta(&a, &b, est_a, est_b), expected);
+        assert_eq!(merge_delta(&super::ClusterHistogram::new(a), &super::ClusterHistogram::new(b), est_a, est_b), expected);
     }
 
     #[test]
