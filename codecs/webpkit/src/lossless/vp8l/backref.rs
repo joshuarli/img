@@ -349,16 +349,21 @@ struct ShiftMemo {
     read: Vec<(u32, u32)>,
     /// `(distance, capped_len)` being recorded at position `i`.
     write: Vec<(u32, u32)>,
+    read_at: usize,
 }
 
 impl ShiftMemo {
     /// The capped match length recorded for `dist` at the previous (`i + 1`)
     /// position, if that distance was probed there.
-    fn child(&self, dist: u32) -> Option<u32> {
-        self.read
-            .binary_search_by_key(&dist, |&(d, _)| d)
-            .ok()
-            .map(|index| self.read[index].1)
+    fn child(&mut self, dist: u32) -> Option<u32> {
+        while let Some(&(distance, len)) = self.read.get(self.read_at) {
+            if distance < dist {
+                self.read_at += 1;
+            } else {
+                return (distance == dist).then_some(len);
+            }
+        }
+        None
     }
 
     /// Record the capped match length for `dist` at the current position, for the
@@ -373,6 +378,7 @@ impl ShiftMemo {
     fn advance(&mut self) {
         core::mem::swap(&mut self.read, &mut self.write);
         self.write.clear();
+        self.read_at = 0;
     }
 }
 
@@ -1048,6 +1054,16 @@ mod tests {
         assert_eq!(memo.child(7), Some(9));
         memo.advance();
         assert_eq!(memo.child(7), None);
+        for distance in [3, 6, 9, 12] {
+            memo.record(distance, distance + 1);
+        }
+        memo.advance();
+        assert_eq!(memo.child(0), None);
+        assert_eq!(memo.child(9), Some(10));
+        assert_eq!(memo.child(9), Some(10));
+        assert_eq!(memo.child(10), None);
+        assert_eq!(memo.child(12), Some(13));
+        assert_eq!(memo.child(100), None);
     }
 
     #[test]
