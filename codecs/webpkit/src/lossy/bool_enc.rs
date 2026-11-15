@@ -30,6 +30,7 @@ pub(crate) struct BoolEncoder {
 impl BoolEncoder {
     /// A fresh encoder over an empty partition (RFC `init_bool_encoder`).
     #[must_use]
+    #[inline]
     pub(crate) const fn new() -> Self {
         Self {
             out: Vec::new(),
@@ -41,6 +42,7 @@ impl BoolEncoder {
 
     /// Propagate a carry into the already-written bytes (`add_one_to_output`):
     /// walk back turning `0xff` into `0` until a byte can be incremented.
+    #[inline]
     fn add_one_to_output(&mut self) {
         for byte in self.out.iter_mut().rev() {
             if *byte == 0xff {
@@ -55,6 +57,7 @@ impl BoolEncoder {
     /// Encode one boolean that is zero with probability `prob / 256` — the exact
     /// inverse of `BoolDecoder::read_bool` (RFC `write_bool`). `split` is the
     /// same `1 + (((range - 1) * prob) >> 8)` the decoder uses.
+    #[inline]
     pub(crate) fn put_bool(&mut self, prob: u8, bit: bool) {
         let split = 1 + (((self.range - 1) * u32::from(prob)) >> 8);
         if bit {
@@ -79,12 +82,14 @@ impl BoolEncoder {
     }
 
     /// Encode one equal-probability raw bit (inverse of `read_flag`).
+    #[inline]
     pub(crate) fn put_flag(&mut self, bit: bool) {
         self.put_bool(128, bit);
     }
 
     /// Encode `n` bits MSB-first at prob 128 (inverse of `read_literal`, whose
     /// loop is `v = (v << 1) | flag`, so the first flag carries the top bit).
+    #[inline]
     pub(crate) fn put_literal(&mut self, n: u32, value: u32) {
         let mut i = n;
         while i > 0 {
@@ -94,6 +99,7 @@ impl BoolEncoder {
     }
 
     /// Encode an `n`-bit magnitude then a sign flag (inverse of `read_signed`).
+    #[inline]
     pub(crate) fn put_signed(&mut self, n: u32, value: i32) {
         self.put_literal(n, value.unsigned_abs());
         self.put_flag(value < 0);

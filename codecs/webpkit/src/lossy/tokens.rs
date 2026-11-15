@@ -190,6 +190,7 @@ pub(crate) fn emit_mb_residuals(
 /// returning `nz = last + 1` (the decoder's `GetCoeffs` return value) so the
 /// caller can update the non-zero context. `levels` are in zig-zag order; `first`
 /// is the starting position (1 for a 16×16-luma AC block, else 0).
+#[inline]
 fn put_coeffs(
     enc: &mut BoolEncoder,
     bands: &CoeffProbas,
