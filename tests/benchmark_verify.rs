@@ -14,7 +14,7 @@ fn licensed_corpus_and_actual_quality_sample_constraints() {
     let bytes=&generated[0].1;
     for target in [80.0,90.0,95.0] {
         let result=optimizer::process(bytes,Request {operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Score(ScoreTarget::new(target).unwrap()),effort:Effort::Fast,..Request::default()}).unwrap();
-        let score=img::perceptual::compare(bytes,&result.bytes).unwrap();assert!(score>=target);assert_eq!(result.evaluations.len(),9);
+        let score=img::perceptual::compare(bytes,&result.bytes).unwrap();assert!(score>=target);assert_eq!(result.evaluations.len(),10);
     }
     let saved=support::verify_saved(&support::root().join("results"));
     if support::root().join("results/untimed.json").exists() {assert!(saved>0);}
