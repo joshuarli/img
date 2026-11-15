@@ -24,12 +24,13 @@ gh workflow run release.yml --ref master
 output fidelity and linkage. Linux artifacts have neither PT_INTERP nor
 DT_NEEDED; static PIE relocation sections are permitted. macOS links only OS
 libraries. Publication verifies the exact expected artifact set, then packages
-three ZIPs and a corresponding-source archive with a sorted SHA256SUMS. The ZIPs
-include license notices. Source includes the exact tree, Cargo.lock and vendored
-locked dependencies with their upstream notices; it builds without a registry:
+three binary archives and a corresponding-source archive with a sorted
+SHA256SUMS. The binary archives include license notices. Source includes the
+exact tree, Cargo.lock and vendored locked dependencies with their upstream
+notices; it builds without a registry:
 
 ```sh
-tar -xzf img-source.tar.gz
+tar -xJf img-source.tar.xz
 cd img
 cargo build --offline --locked --profile dist --features build-binary
 ```
@@ -40,7 +41,7 @@ musl/mold environment. See [license provenance](PROVENANCE.md) before distributi
 or modifying the permissively licensed work.
 
 The private repository requires authenticated GitHub access. `~/usr` installs
-the latest published SHA-named prerelease using `gh`; it checks the selected ZIP
+the latest published SHA-named prerelease; it checks the selected archive
 against its manifest before installing and retains previous bytes on failure.
 The sync tool dependency installs gh, but does not log in or change repository
 visibility. Validate an installation through the public sync entrypoint in a
