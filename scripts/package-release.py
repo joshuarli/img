@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import hashlib
 import shutil
+import subprocess
 import sys
-import zipfile
 from pathlib import Path
 
 root = Path(__file__).resolve().parent.parent
@@ -11,7 +11,7 @@ artifacts = {
     'img-aarch64-apple-darwin': 'img-aarch64-apple-darwin',
     'img-aarch64-unknown-linux-musl': 'img-aarch64-unknown-linux-musl-static',
     'img-x86_64-unknown-linux-musl': 'img-x86_64-unknown-linux-musl-static',
-    'img-source': 'img-source.tar.gz',
+    'img-source': 'img-source.tar.xz',
 }
 if {path.name for path in dist.iterdir()} != set(artifacts):
     raise SystemExit('release must contain exactly the three binary artifacts and corresponding source')
@@ -28,10 +28,12 @@ for directory, filename in artifacts.items():
     if directory == 'img-source':
         shutil.copyfile(source, packages / filename)
         continue
-    with zipfile.ZipFile(packages / f'{filename}.zip', 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
-        archive.write(source, filename)
-        for notice in notices:
-            archive.write(root / notice, notice)
+    source.chmod(0o755)
+    subprocess.run([
+        'tar', '--sort=name', '--mtime=@0', '--owner=0', '--group=0', '--numeric-owner',
+        '-cJf', str((packages / f'{filename}.tar.xz').resolve()),
+        '-C', str(root), *sorted(notices), '-C', str(source.parent.resolve()), filename,
+    ], check=True)
 with (packages / 'SHA256SUMS').open('w') as manifest:
     for path in sorted(packages.iterdir()):
         if path.name == 'SHA256SUMS':
