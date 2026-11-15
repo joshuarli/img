@@ -292,6 +292,25 @@ vs the withdrawn closure (`5424df8`) after this landing: grass t80 76,818 < 81,0
 
 The intervening capture `untimed-2026-11-15-r2.json` (cap 9 + tier-gate, pre-lambda) was measured, confirmed refusal-identical and discarded as byte-redundant with this one; the retained 2026-11-13/14 records and the 2026-11-15 records are untouched.
 
+### Wall verdict after the landings (fresh timed ledger)
+
+Committed as [timed-lambda-2026-11-15.json](benchmarks/results/timed-lambda-2026-11-15.json) with prefixed `2026-11-15-lambdatimed-timed-*.webp` outputs (quiet host, `perf-gate-ready` 0 pre/post, `RAYON_NUM_THREADS=1`, five interleaved repetitions, `timingGate: accepted`, revision `e11aeca`, 420 records / 280 completed, `sourceDirty: false`; cwebp medians flat). Encode medians (startup-inclusive walls), vs the 2026-11-15 timed ledger:
+
+| Fixture | img med ms (was) | Δ | cwebp med ms | img ≈ ×cwebp |
+| --- | --- | --- | --- | --- |
+| large.png (2048×1024, deep DP by the 1 MP override) | 40,405–40,442 | 0.0% | 1,499 | ≈27× |
+| coffee t80/t90/t95 | 1,100/1,100/1,100 | +7.4/+7.6/+7.8% | 288 | ≈3.8× |
+| grass t80/t90/t95 | 1,559/1,577/1,538 | +3.9/+3.5/+3.6% | 370 | ≈4.2× |
+| gravel t80/t90/t95 | 1,623/1,672/1,723 | −5.5/−4.0/+0.3% | 341 | ≈4.8× |
+| transparent t80/t90/t95 | 94/93/93 | +3.9/+2.0/+1.9% | 32 | ≈2.9× |
+| line t80/t90/t95 | 48/49/49 | −63% | 28 | ≈1.7× |
+| text t80/t90/t95 | 45/45/45 | −65% | 27 | ≈1.7× |
+| ui t80/t90/t95 | 38/36/35 | −28/−27/−29% | refused | — |
+| compressed t80/t90/t95 | 37/35/35 | −27/−29/−28% | refused | — |
+| flat/gray | 28–29 | flat (±3%) | 24–25 | ≈1.2× |
+
+Median-of-medians 90.8 → 44.8 ms (−51%). The `q_ac^2` trellis keeps more coefficients than the `>>2` rate weight, so the lossy hot path (`trellis_eval`) does slightly more work — coffee/grass +3.6–7.8% is that, not noise between quiet-host captures (cwebp medians were flat). The deep-DP wall on small repetitive cells is gone (tier-gate); the 1 MP override keeps the large.png win at the same ~40.4 s it cost before. Photographic encode walls are otherwise unchanged in shape: 3.6–5.7× cwebp process walls, 3.3–4.4× the withdrawn closure — the open arm is a vectorized trellis/match inner loop, not a capture.
+
 ## Remaining proofs
 
 These measurements need the stated environments. Existing results apply to their recorded source and supported fixtures; they do not establish correctness for every accepted image representation.
