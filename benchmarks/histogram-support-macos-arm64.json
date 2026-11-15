@@ -779,5 +779,6 @@
     "case": "coffee",
     "target": 80,
     "method": "/usr/bin/time -l; baseline sample reused from histogram-pass-macos-arm64.json"
-  }
+  },
+  "candidateRevision": "20f1019"
 }

@@ -301,9 +301,6 @@ fn merge_delta(a: &ClusterHistogram, b: &ClusterHistogram, est_a: u64, est_b: u6
     a.merged_estimate_bits(b) as i64 - est_a as i64 - est_b as i64
 }
 
-/// Reference full-scan clustering: the pre-optimization body of
-/// [`greedy_cluster`], kept verbatim so a proptest can pin the incremental
-/// per-row-minima fast path to byte-identical output.
 #[cfg(test)]
 #[expect(
     clippy::needless_range_loop,
