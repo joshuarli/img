@@ -367,7 +367,11 @@
   "cores": 8,
   "memoryBytes": 8589934592,
   "toolchain": "nightly-2026-11-09 rustc 1.102.0-nightly (5b7b37aef 2026-11-08)",
-  "profile": "dist",
+  "profile": {
+    "method": "macOS sample, 10 seconds, separate L6 coffee encode loop",
+    "mainThreadSamples": 7431,
+    "mergeDeltaSelfSamples": 4924
+  },
   "rayonNumThreads": 1,
   "baselineRevision": "1e48112",
   "binarySha256": {
@@ -779,5 +783,6 @@
     "generated/text": "781974490b4441aac6ed169a8c008784a5730082cdd827d8962880d526373c4e",
     "generated/flat": "ca177e20b0be4980dc27ff977eb962bf84da94ad9f2c341ba513f208c04648b4",
     "generated/gray": "29cb9e9f9a8d6019cb6a868264eaf713f2fca8d37e74404ee3a17c45ee735b09"
-  }
+  },
+  "candidateRevision": "f5dc88b"
 }

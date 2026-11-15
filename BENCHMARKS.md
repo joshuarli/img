@@ -360,3 +360,16 @@ The [fresh full WebP capture](benchmarks/results/untimed-memo-2026-11-15.json) r
 | transparent t80 | 0.431, 0.429–0.439 | 0.431, 0.430–0.439 | 110 |
 
 Large improves another 26.6%. Coffee t80 is 0.7% slower with overlapping ranges; coffee t95 and transparency also overlap baseline spread. Every pair has identical output hashes. Separate large-t80 peak RSS is 437,207,040 bytes versus the retained binary-search sample's 437,256,192. The binary shrinks 16 bytes to 4,490,240. No new allocation or dependency is introduced. All 912 default-feature codec tests, 49 focused product tests and the no_std + alloc check pass. The [fresh full WebP capture](benchmarks/results/untimed-cursor-2026-11-15.json), revision `9c9de14`, `sourceDirty: false`, contains 84 records / 56 completed outputs. All 56 outputs compare byte-identically with the preceding capture; scores, sizes and refusals match. The campaign gate remains **NOT met**.
+
+**Single-pass merged-histogram cost (2026-11-15, `f5dc88b`).** Totals and weighted logarithms now accumulate in one pass over paired histogram bins. Exact integer costs and candidate rankings stay unchanged. A separate 10-second L6 coffee profile attributed 4,924 of 7,431 sampled main-thread stacks to merge-cost estimation. [Five alternating immutable-dist CLI rounds](benchmarks/histogram-pass-macos-arm64.json), against `1e48112` on the same M1 with clean pre/post load gates, measure:
+
+| Input and score | Baseline median, range (s) | Candidate median, range (s) |
+| --- | --- | --- |
+| coffee t80 | 9.234, 9.186–9.268 | 8.986, 8.899–9.012 |
+| grass t95 | 6.659, 6.641–6.749 | 6.523, 6.501–6.532 |
+| large t80 | 10.998, 10.971–11.033 | 11.002, 10.947–11.267 |
+| transparent t80 | 0.434, 0.430–0.437 | 0.428, 0.427–0.431 |
+
+Coffee improves 2.7% and grass 2.0%, with disjoint ranges. Large and transparency overlap baseline spread. A separate five-round sparse-image check passes both load gates and shows overlapping ranges on line, text, flat and gray; its raw samples are included in the same ledger. Every output hash matches. Coffee peak RSS is 70,778,880 → 70,828,032 bytes (+0.07%); binary size remains 4,490,240 bytes. No allocations or dependencies were added. All 913 default-feature codec tests, 49 focused product tests and no_std + alloc pass.
+
+The [fresh full WebP capture](benchmarks/results/untimed-histogram-2026-11-15.json), revision `f5dc88b`, has clean source, 84 records and 56 completed outputs. All 56 outputs compare byte-identically with the preceding capture, and every recorded score, size and refusal matches. The destination gate remains **NOT met**.
