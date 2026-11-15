@@ -531,7 +531,9 @@ fn build_best_tasks(breadth: Breadth) -> Vec<BestTask> {
         // cwebp's own picks span both directions (coffee p=3/cc=4, astronaut
         // p=2/cc=4); each task emits both the SG-first and no-SG compositions.
         // Measured: dropping p-1 regresses coffee ~800 B; dropping p+1/p+2
-        // regresses astronaut ~9 KB.
+        // regresses astronaut ~9 KB. They must stay at every cross-color level —
+        // gating them to the meta breadth regressed coffee L1 by ~19 KB (the
+        // optimal-parse-only composed stream wins there without meta-Huffman).
         for &p in breadth.tile_bits {
             for d in -1i32..=2 {
                 let cc = p as i32 + d;
