@@ -391,5 +391,8 @@
     "case": "generated/large",
     "target": 80,
     "method": "/usr/bin/time -l, separate from timing rounds"
-  }
+  },
+  "operation": "convert",
+  "effort": "fast",
+  "commandTemplate": "{binary} convert benchmarks/corpus/{case}.png -o {output} --score {target} --effort fast --quiet"
 }

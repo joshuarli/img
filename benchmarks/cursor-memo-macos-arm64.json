@@ -390,5 +390,9 @@
     "case": "generated/large",
     "target": 80,
     "method": "/usr/bin/time -l; baseline sample reused from search-memo-macos-arm64.json"
-  }
+  },
+  "candidateRevision": "9c9de14",
+  "operation": "convert",
+  "effort": "fast",
+  "commandTemplate": "{binary} convert benchmarks/corpus/{case}.png -o {output} --score {target} --effort fast --quiet"
 }

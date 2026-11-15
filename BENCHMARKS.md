@@ -349,3 +349,14 @@ AVIF alpha, monochrome, high depth/HDR, grids and unsupported display transforms
 Large improves 63.3%; the other cases overlap their baseline spread. Every pair has identical SHA-256 output. Separate large-t80 peak-RSS samples are 437,174,272 → 437,256,192 bytes (+0.02%). The production binary grows 32 bytes (4,490,224 → 4,490,256). No dependencies or allocations were added. The 912 default-feature codec tests and 49 focused product tests pass. The campaign gate remains **NOT met**: photographic L6 cost and the two t95 byte losses remain. Skipping L6 after a lossy pass was discarded because it cannot guarantee identical selection on arbitrary images.
 
 The [fresh full WebP capture](benchmarks/results/untimed-memo-2026-11-15.json) records revision `560864d`, `sourceDirty: false`, 84 records and 56 completed outputs. Every completed output compares byte-identically with the small-tier capture, including cwebp; all recorded scores, sizes and refusals match. This capture provides correctness and selection evidence, not new timings.
+
+**Forward lossless match-memo cursor (2026-11-15, `9c9de14`).** Lookup requests increase with hash-chain distance. One cursor consumes the prior position's sorted memo and resets at the existing buffer swap, replacing repeated binary searches. [Five alternating CLI rounds](benchmarks/cursor-memo-macos-arm64.json) compare immutable dist binaries against `85bacd3`, with the same M1, pinned toolchain, one Rayon thread, and clean pre/post load gates:
+
+| Input and score | Binary-search median, range (s) | Cursor median, range (s) | Output bytes |
+| --- | --- | --- | --- |
+| large t80 | 15.018, 14.925–15.031 | 11.022, 10.955–11.191 | 4,846 |
+| coffee t80 | 9.155, 9.146–9.222 | 9.223, 9.197–9.273 | 57,762 |
+| coffee t95 | 9.154, 9.144–9.238 | 9.212, 9.131–9.269 | 353,630 |
+| transparent t80 | 0.431, 0.429–0.439 | 0.431, 0.430–0.439 | 110 |
+
+Large improves another 26.6%. Coffee t80 is 0.7% slower with overlapping ranges; coffee t95 and transparency also overlap baseline spread. Every pair has identical output hashes. Separate large-t80 peak RSS is 437,207,040 bytes versus the retained binary-search sample's 437,256,192. The binary shrinks 16 bytes to 4,490,240. No new allocation or dependency is introduced. All 912 default-feature codec tests, 49 focused product tests and the no_std + alloc check pass. The [fresh full WebP capture](benchmarks/results/untimed-cursor-2026-11-15.json), revision `9c9de14`, `sourceDirty: false`, contains 84 records / 56 completed outputs. All 56 outputs compare byte-identically with the preceding capture; scores, sizes and refusals match. The campaign gate remains **NOT met**.
