@@ -62,16 +62,22 @@ fn webkit_metadata(image: &StillImage) -> webpkit::Metadata {
 
 // Fast effort skips the Best-tier transform/meta-Huffman search, which is where the
 // remaining lossless byte wins on photographic content live. For the photographic
-// mid-band (>= `DEEP_LOSSLESS_FAST_MIN_PIXELS`, <= `DEEP_LOSSLESS_FAST_MAX_PIXELS`, i.e.
-// the 240k-262k px photographic fixtures) level 6 closes the measured gap to the
-// withdrawn closure's lossless bytes (coffee 386,802 -> 353,630 vs 359,054), at roughly
-// 8 s per encode; small synthetics (96x64) stay at level 1 and the 2 MP large fixture
-// stays out (its L6 wall was ~290 s). Outside the band the Fast resolution is unchanged.
+// mid-band (>= `DEEP_LOSSLESS_FAST_MIN_PIXELS`, <= `DEEP_LOSSLESS_FAST_MAX_PIXELS`)
+// level 6 closes the measured gap to the withdrawn closure's lossless bytes (coffee
+// 386,802 -> 353,630 vs 359,054), at roughly 8 s per encode. The sub-16,384 px small
+// tier also rides level 6 under the owner's 2026-11-15 extension: the fine tile-bit
+// grid for those fixtures costs sub-millisecond planning (transparent.png's lossless
+// candidate encodes 200 -> 110 B), and the small synthetics measure byte-identical at
+// L6. Other bands stay at level 1; the 2 MP large fixture stays out (its L6 wall
+// measured ~290 s).
 const DEEP_LOSSLESS_FAST_MIN_PIXELS: u64 = 200_000;
 const DEEP_LOSSLESS_FAST_MAX_PIXELS: u64 = 400_000;
+const DEEP_LOSSLESS_FAST_SMALL_MAX_PIXELS: u64 = 16_384;
 
 fn fast_lossless_effort(pixels: u64) -> webpkit::Effort {
-    if (DEEP_LOSSLESS_FAST_MIN_PIXELS..=DEEP_LOSSLESS_FAST_MAX_PIXELS).contains(&pixels) {
+    if pixels <= DEEP_LOSSLESS_FAST_SMALL_MAX_PIXELS
+        || (DEEP_LOSSLESS_FAST_MIN_PIXELS..=DEEP_LOSSLESS_FAST_MAX_PIXELS).contains(&pixels)
+    {
         webpkit::Effort::level(6)
     } else {
         webpkit::Effort::level(1)
