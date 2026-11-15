@@ -27,10 +27,10 @@
 use crate::lossless::bit_io::writer::BitWriter;
 use crate::lossless::color_cache::ColorCache;
 use crate::lossless::constants::{
-    ALPHABET_SIZE, COLOR_INDEXING_TRANSFORM, CROSS_COLOR_TRANSFORM, MAX_CACHE_BITS,
-    MIN_TRANSFORM_BITS, NUM_LENGTH_CODES, NUM_LITERAL_CODES, NUM_TRANSFORM_BITS,
-    PREDICTOR_TRANSFORM, SUBTRACT_GREEN_TRANSFORM, VP8L_IMAGE_SIZE_BITS, VP8L_MAGIC_BYTE,
-    VP8L_VERSION_BITS, subsample_size,
+    ALPHABET_SIZE, COLOR_INDEXING_TRANSFORM, CROSS_COLOR_TRANSFORM, DEEP_CHAIN_MIN_PIXELS,
+    MAX_CACHE_BITS, MAX_CHAIN, MAX_CHAIN_OPTIMAL, MIN_TRANSFORM_BITS, NUM_LENGTH_CODES,
+    NUM_LITERAL_CODES, NUM_TRANSFORM_BITS, PREDICTOR_TRANSFORM, SUBTRACT_GREEN_TRANSFORM,
+    VP8L_IMAGE_SIZE_BITS, VP8L_MAGIC_BYTE, VP8L_VERSION_BITS, subsample_size,
 };
 use crate::lossless::histogram::Histogram;
 use crate::lossless::huffman::build::build_code_lengths;
@@ -82,19 +82,22 @@ enum TransformPlan {
 /// through [`crate::lossless::vp8l::decode::decode`].
 #[must_use]
 pub(crate) fn encode(width: u32, height: u32, argb: &[u32]) -> Vec<u8> {
-    encode_with(width, height, argb, true)
+    encode_with(width, height, argb, true, MAX_CHAIN_OPTIMAL)
 }
 
 /// Encode as [`encode`], but with `use_lz77` cleared (the `Fast` method) the
 /// encoder skips the LZ77 / color-cache search and emits only the literal +
 /// subtract-green tiers — faster, slightly larger.
+///
+/// `chain_cap` bounds the optimal-parse DP staircase walk the LZ77 search
+/// runs; callers pick it with [`effective_chain_cap`] or a fixed level cap.
 #[must_use]
-pub(crate) fn encode_with(width: u32, height: u32, argb: &[u32], use_lz77: bool) -> Vec<u8> {
+pub(crate) fn encode_with(width: u32, height: u32, argb: &[u32], use_lz77: bool, chain_cap: u32) -> Vec<u8> {
     // Alpha-used is a header advisory computed once; subtract-green leaves the
     // alpha channel untouched, so both tiers share the same value.
     let alpha_used = argb.iter().any(|&p| p >> 24 != 0xff);
-    let tier0 = encode_stream(width, height, alpha_used, argb, false, use_lz77);
-    let tier1 = encode_stream(width, height, alpha_used, argb, true, use_lz77);
+    let tier0 = encode_stream(width, height, alpha_used, argb, false, use_lz77, chain_cap);
+    let tier1 = encode_stream(width, height, alpha_used, argb, true, use_lz77, chain_cap);
     if tier1.len() < tier0.len() {
         tier1
     } else {
@@ -129,7 +132,7 @@ const _: () = assert!(
 #[must_use]
 pub(crate) fn encode_alpha_stream(alpha: &[u8], width: u32, height: u32) -> Vec<u8> {
     let argb: Vec<u32> = alpha.iter().map(|&a| u32::from(a) << 8).collect();
-    let mut full = encode(width, height, &argb);
+    let mut full = encode_with(width, height, &argb, true, MAX_CHAIN_OPTIMAL);
     full.split_off(VP8L_HEADER_BYTES)
 }
 
@@ -147,6 +150,7 @@ fn encode_stream(
     argb: &[u32],
     use_subtract_green: bool,
     use_lz77: bool,
+    chain_cap: u32,
 ) -> Vec<u8> {
     // Borrow for Tier 0; own a transformed copy for Tier 1. `owned` is only
     // read on the branch that initializes it, so Tier 0 allocates nothing extra.
@@ -181,7 +185,7 @@ fn encode_stream(
     }
     // Full LZ77 + color-cache search; the pixels are already at the image width,
     // so the header and working widths coincide.
-    search_lz77(width, height, alpha_used, plans, width, pixels)
+    search_lz77(width, height, alpha_used, plans, width, pixels, chain_cap)
 }
 
 /// Full LZ77 + color-cache candidate search over already-transformed `pixels`
@@ -208,6 +212,7 @@ fn search_lz77_variant(
     pixels: &[u32],
     optimal_parse: bool,
     meta_huffman: bool,
+    chain_cap: u32,
 ) -> Vec<u8> {
     let emit = |cache_bits, model: &RefModel<'_>, histogram: &Histogram| {
         emit_stream(
@@ -246,9 +251,11 @@ fn search_lz77_variant(
     keep_smaller(&mut best, emit(cache_lz77, &model_lz77, &hist_lz77));
     let ysize = pixels.len() as u32 / working_width;
     // Cost-model-driven optimal parse: a self-floored extra candidate (chosen only
-    // when strictly smaller by real bytes), seeded from the greedy stream.
+    // when strictly smaller by real bytes), seeded from the greedy stream. Large
+    // images open the deeper staircase walk at every effort level.
     if optimal_parse {
-        let tokens_dp = parse_optimal(pixels, working_width, &tokens_lz77, &chain);
+        let optimal_chain_cap = effective_chain_cap(chain_cap, pixels.len());
+        let tokens_dp = parse_optimal(pixels, working_width, &tokens_lz77, &chain, optimal_chain_cap);
         drop(chain);
         let model_dp = RefModel::new(&tokens_dp, pixels, working_width);
         let (cache_dp, hist_dp) = best_cache_bits(&model_dp);
@@ -345,6 +352,7 @@ fn search_lz77(
     plans: &[TransformPlan],
     working_width: u32,
     pixels: &[u32],
+    chain_cap: u32,
 ) -> Vec<u8> {
     search_lz77_variant(
         header_width,
@@ -355,6 +363,7 @@ fn search_lz77(
         pixels,
         true,
         false,
+        chain_cap,
     )
 }
 
@@ -379,6 +388,7 @@ fn search_lz77_best(
         pixels,
         true,
         true,
+        MAX_CHAIN_OPTIMAL,
     )
 }
 
@@ -412,6 +422,10 @@ struct Breadth {
     optimal_parse: bool,
     /// Whether each family search adds the meta-Huffman shots.
     meta_huffman: bool,
+    /// Hop cap for the optimal-parse DP's staircase walk. Small images at low
+    /// levels keep [`MAX_CHAIN`] so their wall stays flat; effort level ≥ 3 or a
+    /// large image opens [`MAX_CHAIN_OPTIMAL`] (see [`search_lz77_variant`]).
+    chain_cap: u32,
 }
 
 /// Map an effort level (`0..=9`) to its [`Breadth`]. Monotone: each higher level's
@@ -424,42 +438,49 @@ const fn schedule(level: u8) -> Breadth {
     const T34: &[u32] = &[3, 4];
     const T234: &[u32] = &[2, 3, 4];
     const FULL: &[u32] = &TRANSFORM_TILE_BITS_SWEEP;
+    let chain_cap = if level >= 3 { MAX_CHAIN_OPTIMAL } else { MAX_CHAIN };
     match level {
         0 => Breadth {
             tile_bits: T4,
             cross_color: false,
             optimal_parse: false,
             meta_huffman: false,
+            chain_cap,
         },
         1 => Breadth {
             tile_bits: T4,
             cross_color: true,
             optimal_parse: true,
             meta_huffman: false,
+            chain_cap,
         },
         2 => Breadth {
             tile_bits: T34,
             cross_color: true,
             optimal_parse: true,
             meta_huffman: false,
+            chain_cap,
         },
         3 => Breadth {
             tile_bits: T234,
             cross_color: true,
             optimal_parse: true,
             meta_huffman: false,
+            chain_cap,
         },
         4 | 5 => Breadth {
             tile_bits: FULL,
             cross_color: true,
             optimal_parse: true,
             meta_huffman: false,
+            chain_cap,
         },
         _ => Breadth {
             tile_bits: FULL,
             cross_color: true,
             optimal_parse: true,
             meta_huffman: true,
+            chain_cap,
         },
     }
 }
@@ -509,6 +530,16 @@ fn run_best_task(
     }
 }
 
+/// The optimal-parse DP's staircase hop cap for an encode of `pixels` at a
+/// breadth that hands over `breadth_cap`: large images always get the deep walk.
+fn effective_chain_cap(breadth_cap: u32, pixels: usize) -> u32 {
+    if pixels >= DEEP_CHAIN_MIN_PIXELS {
+        MAX_CHAIN_OPTIMAL
+    } else {
+        breadth_cap
+    }
+}
+
 /// Run one transform family's search at `breadth`: adds the optimal-parse and
 /// meta-Huffman candidates only when the level enables them.
 fn family_search(
@@ -529,6 +560,7 @@ fn family_search(
         pixels,
         breadth.optimal_parse,
         breadth.meta_huffman,
+        breadth.chain_cap,
     )
 }
 
@@ -543,7 +575,13 @@ fn floor_streams(
     alpha_used: bool,
     argb: &[u32],
 ) -> Vec<Vec<u8>> {
-    let floor = encode_with(width, height, argb, true);
+    let floor = encode_with(
+        width,
+        height,
+        argb,
+        true,
+        effective_chain_cap(breadth.chain_cap, argb.len()),
+    );
     if !breadth.meta_huffman {
         return vec![floor];
     }
@@ -1266,6 +1304,7 @@ impl Prefix {
 
 #[cfg(test)]
 mod tests {
+    use crate::lossless::constants::MAX_CHAIN_OPTIMAL;
     use super::{
         RefModel, TransformPlan, best_cache_bits, emit_stream, emit_stream_meta, encode,
         encode_best, encode_best_at, encode_stream,
@@ -1361,8 +1400,8 @@ mod tests {
         // single-symbol codes, leaving only green to code, so Tier 1 is smaller.
         let pixels: Vec<u32> = (0..32u32).map(|v| argb(255, v, v, v)).collect();
         let au = alpha_used(&pixels);
-        let tier0 = encode_stream(32, 1, au, &pixels, false, true);
-        let tier1 = encode_stream(32, 1, au, &pixels, true, true);
+        let tier0 = encode_stream(32, 1, au, &pixels, false, true, MAX_CHAIN_OPTIMAL);
+        let tier1 = encode_stream(32, 1, au, &pixels, true, true, MAX_CHAIN_OPTIMAL);
         assert!(
             tier1.len() < tier0.len(),
             "subtract-green must shrink a grayscale ramp"
@@ -1378,8 +1417,8 @@ mod tests {
         // Tier 0 wins (also exercising the tie-goes-to-Tier-0 `<=` boundary).
         let pixels: Vec<u32> = (0..32u32).map(|v| argb(255, 0x40, v, 0x80)).collect();
         let au = alpha_used(&pixels);
-        let tier0 = encode_stream(32, 1, au, &pixels, false, true);
-        let tier1 = encode_stream(32, 1, au, &pixels, true, true);
+        let tier0 = encode_stream(32, 1, au, &pixels, false, true, MAX_CHAIN_OPTIMAL);
+        let tier1 = encode_stream(32, 1, au, &pixels, true, true, MAX_CHAIN_OPTIMAL);
         assert!(tier0.len() <= tier1.len());
         assert_eq!(encode(32, 1, &pixels), tier0);
         assert_round_trip(32, 1, &pixels);
@@ -1907,13 +1946,13 @@ mod tests {
         let model_lz = RefModel::new(&tokens_lz, &pixels, w);
         let (b_lz, h_lz) = best_cache_bits(&model_lz);
         assert!(emit_stream(w, h, au, &[], b_lz, &model_lz, &h_lz).len() > lit_cache.len());
-        let tokens_dp = parse_optimal(&pixels, w, &tokens_lz, &chain);
+        let tokens_dp = parse_optimal(&pixels, w, &tokens_lz, &chain, MAX_CHAIN_OPTIMAL);
         let model_dp = RefModel::new(&tokens_dp, &pixels, w);
         let (b_dp, h_dp) = best_cache_bits(&model_dp);
         assert!(emit_stream(w, h, au, &[], b_dp, &model_dp, &h_dp).len() > lit_cache.len());
         // Both the Balanced (`search_lz77`) and Best (`search_lz77_best`) searches
         // must therefore return exactly the literal-cache candidate.
-        assert_eq!(search_lz77(w, h, au, &[], w, &pixels), lit_cache);
+        assert_eq!(search_lz77(w, h, au, &[], w, &pixels, MAX_CHAIN_OPTIMAL), lit_cache);
         assert_eq!(search_lz77_best(w, h, au, &[], w, &pixels), lit_cache);
         assert_round_trip(w, h, &pixels);
     }
@@ -1942,7 +1981,7 @@ mod tests {
         }
         let au = alpha_used(&pixels);
         let with_meta = search_lz77_best(w, h, au, &[], w, &pixels);
-        let no_meta = search_lz77(w, h, au, &[], w, &pixels);
+        let no_meta = search_lz77(w, h, au, &[], w, &pixels, MAX_CHAIN_OPTIMAL);
         assert!(
             with_meta.len() < no_meta.len(),
             "meta-Huffman must shrink the bimodal image: {} vs {}",
@@ -2167,7 +2206,7 @@ mod proptests {
         encode_with,
     };
     use crate::effort::MAX_LEVEL;
-    use crate::lossless::constants::{ALPHABET_SIZE, MAX_CACHE_BITS};
+    use crate::lossless::constants::{ALPHABET_SIZE, MAX_CACHE_BITS, MAX_CHAIN_OPTIMAL};
     use crate::lossless::histogram::Histogram;
     use crate::lossless::vp8l::backref::{Resolved, Token, parse, resolve};
     use crate::lossless::vp8l::decode::decode;
@@ -2287,7 +2326,7 @@ mod proptests {
             // The `Fast` method (`use_lz77` cleared) skips the LZ77 / color-cache
             // search and emits only the literal + subtract-green tiers; it must
             // still be exactly lossless.
-            let fast = encode_with(width, height, &pixels, false);
+            let fast = encode_with(width, height, &pixels, false, MAX_CHAIN_OPTIMAL);
             let decoded_fast = decode(&fast).expect("Fast encoder must emit decodable VP8L");
             prop_assert_eq!(decoded_fast.width, width);
             prop_assert_eq!(decoded_fast.height, height);

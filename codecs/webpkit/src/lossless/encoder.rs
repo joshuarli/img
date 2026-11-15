@@ -172,7 +172,7 @@ mod tests {
             })
             .collect();
         let auto = encode_payload(Effort::AUTO, 16, 16, &gradient).len();
-        let old_fast = encode_with(16, 16, &gradient, false).len();
+        let old_fast = encode_with(16, 16, &gradient, false, crate::lossless::constants::MAX_CHAIN).len();
         assert!(
             auto * 4 < old_fast,
             "gradient AUTO must crush the transform-free baseline: {auto} vs {old_fast}"
@@ -191,7 +191,7 @@ mod tests {
             })
             .collect();
         let auto_photo = encode_payload(Effort::AUTO, 32, 32, &photo).len();
-        let old_fast_photo = encode_with(32, 32, &photo, false).len();
+        let old_fast_photo = encode_with(32, 32, &photo, false, crate::lossless::constants::MAX_CHAIN).len();
         assert!(
             auto_photo < old_fast_photo,
             "photo AUTO must beat the transform-free baseline: {auto_photo} vs {old_fast_photo}"

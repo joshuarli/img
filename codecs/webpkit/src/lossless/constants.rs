@@ -69,8 +69,17 @@ pub(crate) const MAX_CHAIN: u32 = 64;
 /// level 1, against a 4.5× lossless wall on exactly that content); photographic
 /// chains exhaust long before the cap, so their wall is unchanged. The greedy
 /// seed stays at [`MAX_CHAIN`], so the floor streams — and every synthetic-cell
-/// byte an ordinary image emits — are unchanged.
+/// byte an ordinary image emits — are unchanged. Applied at effort level ≥ 3, or
+/// on images of at least [`DEEP_CHAIN_MIN_PIXELS`] pixels at any level; smaller
+/// images at lower levels keep the [`MAX_CHAIN`] walk so small-cell walls stay
+/// flat.
 pub(crate) const MAX_CHAIN_OPTIMAL: u32 = 256;
+/// Pixel count at or above which the optimal-parse DP earns the deep
+/// [`MAX_CHAIN_OPTIMAL`] staircase walk at every effort level. 1 MP matches the
+/// [`crate::lossless::histogram`] `size_cap` breakpoints; the measured corpus win
+/// lives above this line (a 2048×1024 smooth gradient) and it costs nothing on
+/// small synthetics or photographic chains, which exhaust long before the cap.
+pub(crate) const DEEP_CHAIN_MIN_PIXELS: usize = 1 << 20;
 /// Maximum bit width of the LZ77 pixel-pair hash table (libwebp `HASH_BITS`).
 /// The match finder uses `min(HASH_BITS_LZ77, ceil_log2(pixels))` so small
 /// images do not allocate the full `1 << 18` table.

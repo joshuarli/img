@@ -17,7 +17,7 @@
 
 use crate::lossless::color_cache::ColorCache;
 use crate::lossless::constants::{
-    HASH_BITS_LZ77, MAX_CHAIN, MAX_CHAIN_OPTIMAL, MAX_COPY_LENGTH, MIN_MATCH, NUM_DISTANCE_CODES,
+    HASH_BITS_LZ77, MAX_CHAIN, MAX_COPY_LENGTH, MIN_MATCH, NUM_DISTANCE_CODES,
     NUM_LITERAL_CODES, WINDOW_SIZE,
 };
 use crate::lossless::histogram::{Histogram, fixed_log2};
@@ -272,14 +272,15 @@ impl HashChain {
     /// most-recent-first (so nearest distance first), each time [`match_length`]
     /// reaches a strictly longer length than any seen so far, push
     /// `(dist = i - pos, len)` into `out`. This reuses [`Self::find`]'s exact
-    /// `window_min` / [`MAX_COPY_LENGTH`] / [`match_length`] structure with the
-    /// deeper [`MAX_CHAIN_OPTIMAL`] hop cap;
+    /// `window_min` / [`MAX_COPY_LENGTH`] / [`match_length`] structure with a
+    /// deeper [`MAX_CHAIN_OPTIMAL`] hop cap (`chain_cap`, which is always
+    /// [`MAX_CHAIN`] or [`MAX_CHAIN_OPTIMAL`]);
     /// where `find` keeps only the single longest match, this keeps the whole
     /// improving spectrum — from a short copy at a *near* distance to a long copy
     /// at a *far* one. Because the chain is newest-first, the first position to
     /// reach a given length is the nearest (hence cheapest plane-code distance)
     /// for that length, so the near/far tradeoff the greedy parse cannot express
-    /// is handed to the DP. Yields at most [`MAX_CHAIN_OPTIMAL`] points, each of
+    /// is handed to the DP. Yields at most `chain_cap` points, each of
     /// length `>= MIN_MATCH`, in ascending-length order.
     ///
     /// `memo` carries per-distance match lengths from the previous DP position so
@@ -292,6 +293,7 @@ impl HashChain {
         i: usize,
         out: &mut Vec<(u32, u32)>,
         memo: &mut ShiftMemo,
+        chain_cap: u32,
     ) {
         out.clear();
         let max_len = (MAX_COPY_LENGTH as usize).min(pixels.len() - i);
@@ -305,7 +307,7 @@ impl HashChain {
         let mut guard = pixels[i];
         let mut candidate = self.prev[i];
         let mut hops = 0u32;
-        while candidate != NONE && candidate as usize >= window_min && hops < MAX_CHAIN_OPTIMAL {
+        while candidate != NONE && candidate as usize >= window_min && hops < chain_cap {
             work!(MatchHop);
             let pos = candidate as usize;
             // Same byte-invariant quick reject as `find`: a position that fails to
@@ -568,11 +570,14 @@ enum Choice {
 /// `Literal` / `Copy` shape [`resolve`] already handles — so it round-trips by
 /// construction, and (wired as a self-floored extra candidate) can only ever
 /// replace the greedy stream when it is strictly smaller.
+/// `chain_cap` bounds the [`HashChain::find_candidates`] staircase walk;
+/// callers choose [`MAX_CHAIN`] or [`MAX_CHAIN_OPTIMAL`].
 pub(crate) fn parse_optimal(
     pixels: &[u32],
     width: u32,
     greedy_tokens: &[Token],
     chain: &HashChain,
+    chain_cap: u32,
 ) -> Vec<Token> {
     let n = pixels.len();
     if n < MIN_MATCH as usize {
@@ -622,7 +627,7 @@ pub(crate) fn parse_optimal(
                 .literal_cost(pixels[i])
                 .saturating_add(cost[(i + 1) % ring]);
             let mut best_choice = Choice::Literal;
-            chain.find_candidates(pixels, i, &mut cands, &mut memo);
+            chain.find_candidates(pixels, i, &mut cands, &mut memo, chain_cap);
             for &(dist, len) in &cands {
                 let (length_symbol, length_bits, _) = prefix_encode(len);
                 let plane_code = plane_map.plane_code(dist);
@@ -667,6 +672,7 @@ pub(crate) fn parse_optimal(
 #[cfg(test)]
 mod tests {
     use super::{Resolved, Token, parse, parse_lz77, parse_optimal, resolve};
+    use crate::lossless::constants::MAX_CHAIN_OPTIMAL;
     use crate::lossless::color_cache::ColorCache;
     use proptest::prelude::*;
 
@@ -867,8 +873,9 @@ mod tests {
         pixels: &[u32],
         i: usize,
         out: &mut Vec<(u32, u32)>,
+        chain_cap: u32,
     ) {
-        use crate::lossless::constants::{MAX_CHAIN_OPTIMAL, MAX_COPY_LENGTH, MIN_MATCH, WINDOW_SIZE};
+        use crate::lossless::constants::{MAX_COPY_LENGTH, MIN_MATCH, WINDOW_SIZE};
         out.clear();
         let max_len = (MAX_COPY_LENGTH as usize).min(pixels.len() - i);
         if max_len < MIN_MATCH as usize {
@@ -878,7 +885,7 @@ mod tests {
         let mut best_len = 0usize;
         let mut candidate = chain.prev[i];
         let mut hops = 0u32;
-        while candidate != super::NONE && candidate as usize >= window_min && hops < MAX_CHAIN_OPTIMAL {
+        while candidate != super::NONE && candidate as usize >= window_min && hops < chain_cap {
             let pos = candidate as usize;
             if pixels[pos + best_len] == pixels[i + best_len] {
                 let len = super::match_length(pixels, pos, i, max_len);
@@ -914,8 +921,8 @@ mod tests {
             let mut memo = super::ShiftMemo::default();
             let (mut got, mut want) = (Vec::new(), Vec::new());
             for i in (0..pixels.len()).rev() {
-                chain.find_candidates(pixels, i, &mut got, &mut memo);
-                find_candidates_reference(&chain, pixels, i, &mut want);
+                chain.find_candidates(pixels, i, &mut got, &mut memo, MAX_CHAIN_OPTIMAL);
+                find_candidates_reference(&chain, pixels, i, &mut want, MAX_CHAIN_OPTIMAL);
                 assert_eq!(got, want, "candidate mismatch at position {i}");
                 memo.advance();
             }
@@ -928,7 +935,7 @@ mod tests {
     /// `parse_lz77`'s chain changes nothing.
     fn parse_optimal_reference(pixels: &[u32], width: u32, greedy: &[Token]) -> Vec<Token> {
         let chain = super::HashChain::build(pixels);
-        parse_optimal(pixels, width, greedy, &chain)
+        parse_optimal(pixels, width, greedy, &chain, MAX_CHAIN_OPTIMAL)
     }
 
     /// Explicit edge cases for the shared-chain path: empty, 1x1, solid, a tiny
@@ -950,7 +957,7 @@ mod tests {
         for pixels in [&empty, &one, &solid, &palette, &tile, &alpha] {
             for width in [1u32, 2, 5, 8] {
                 let (greedy, chain) = parse_lz77(pixels);
-                let shared = parse_optimal(pixels, width, &greedy, &chain);
+                let shared = parse_optimal(pixels, width, &greedy, &chain, MAX_CHAIN_OPTIMAL);
                 let reference = parse_optimal_reference(pixels, width, &greedy);
                 assert_eq!(shared, reference, "shared-chain mismatch at width {width}");
             }
@@ -1101,7 +1108,7 @@ mod tests {
         let chain = super::HashChain::build(&pixels);
         let mut memo = super::ShiftMemo::default();
         let mut out = Vec::new();
-        chain.find_candidates(&pixels, i, &mut out, &mut memo);
+        chain.find_candidates(&pixels, i, &mut out, &mut memo, MAX_CHAIN_OPTIMAL);
         assert!(
             out.is_empty(),
             "the staircase must be empty at the hop limit, got {out:?}"
@@ -1117,7 +1124,7 @@ mod tests {
         let pixels = [1u32, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1];
         let greedy = parse(&pixels, true);
         let chain = super::HashChain::build(&pixels);
-        let optimal = parse_optimal(&pixels, 8, &greedy, &chain);
+        let optimal = parse_optimal(&pixels, 8, &greedy, &chain, MAX_CHAIN_OPTIMAL);
         assert_eq!(
             optimal,
             vec![
@@ -1144,7 +1151,7 @@ mod tests {
         let pixels = [1u32, 0, 1, 1, 0, 1, 1, 1];
         let greedy = parse(&pixels, true);
         let chain = super::HashChain::build(&pixels);
-        let optimal = parse_optimal(&pixels, 1, &greedy, &chain);
+        let optimal = parse_optimal(&pixels, 1, &greedy, &chain, MAX_CHAIN_OPTIMAL);
         assert_eq!(
             optimal,
             vec![
@@ -1170,7 +1177,7 @@ mod tests {
         ];
         let greedy = parse(&pixels, true);
         let chain = super::HashChain::build(&pixels);
-        let optimal = parse_optimal(&pixels, 1, &greedy, &chain);
+        let optimal = parse_optimal(&pixels, 1, &greedy, &chain, MAX_CHAIN_OPTIMAL);
         assert_eq!(
             optimal,
             vec![
@@ -1211,7 +1218,7 @@ mod tests {
                 distance: 1,
             },
         ];
-        let optimal = parse_optimal(&pixels, 1, &fake_greedy, &chain);
+        let optimal = parse_optimal(&pixels, 1, &fake_greedy, &chain, MAX_CHAIN_OPTIMAL);
         assert_eq!(optimal, vec![Token::Literal(a); 4]);
     }
 
@@ -1283,7 +1290,7 @@ mod tests {
             let pixels = seeded_pixels(seed, len, palette);
             let greedy = parse(&pixels, true);
             let chain = super::HashChain::build(&pixels);
-            let optimal = parse_optimal(&pixels, width, &greedy, &chain);
+            let optimal = parse_optimal(&pixels, width, &greedy, &chain, MAX_CHAIN_OPTIMAL);
             prop_assert_eq!(&decode_tokens(&optimal), &pixels);
         }
 
@@ -1301,7 +1308,7 @@ mod tests {
         ) {
             let pixels = seeded_pixels(seed, len, palette);
             let (greedy, chain) = parse_lz77(&pixels);
-            let shared = parse_optimal(&pixels, width, &greedy, &chain);
+            let shared = parse_optimal(&pixels, width, &greedy, &chain, MAX_CHAIN_OPTIMAL);
             let reference = parse_optimal_reference(&pixels, width, &greedy);
             prop_assert_eq!(shared, reference);
         }
@@ -1324,8 +1331,8 @@ mod tests {
             let mut memo = super::ShiftMemo::default();
             let (mut got, mut want) = (Vec::new(), Vec::new());
             for i in (0..pixels.len()).rev() {
-                chain.find_candidates(&pixels, i, &mut got, &mut memo);
-                find_candidates_reference(&chain, &pixels, i, &mut want);
+                chain.find_candidates(&pixels, i, &mut got, &mut memo, MAX_CHAIN_OPTIMAL);
+                find_candidates_reference(&chain, &pixels, i, &mut want, MAX_CHAIN_OPTIMAL);
                 prop_assert_eq!(&got, &want, "candidate mismatch at position {}", i);
                 memo.advance();
             }
