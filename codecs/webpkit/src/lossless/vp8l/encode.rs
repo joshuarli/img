@@ -527,10 +527,16 @@ fn build_best_tasks(breadth: Breadth) -> Vec<BestTask> {
     tasks.extend(breadth.tile_bits.iter().map(|&b| BestTask::Predictor(b)));
     if breadth.cross_color {
         tasks.extend(breadth.tile_bits.iter().map(|&b| BestTask::CrossColor(b)));
-        // Predictor+cross-color compositions at matching tile granularity —
-        // measured to capture the full byte win on the photographic fixtures
-        // (the (p, p+1) pairings added wall with no byte change on the corpus).
-        tasks.extend(breadth.tile_bits.iter().map(|&p| BestTask::PredictorCross(p, p)));
+        // Predictor+cross-color compositions: matching granularity plus the
+        // next-coarser cross-color grid. Measured — the diagonal captured the
+        // first win, (p, p-1) added ~840 B more on coffee, while (p, p+1) and
+        // deeper coarsening ((p, p-2), cc << p) added wall with no byte change.
+        for &p in breadth.tile_bits {
+            tasks.push(BestTask::PredictorCross(p, p));
+            if p > MIN_TRANSFORM_BITS {
+                tasks.push(BestTask::PredictorCross(p, p - 1));
+            }
+        }
     }
     tasks
 }
