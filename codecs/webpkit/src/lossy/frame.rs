@@ -70,7 +70,7 @@ use crate::lossy::tokens::{
     put_segment_id, put_uvmode, put_ymode16,
 };
 use crate::lossy::trellis::{
-    RD_DISTO_MULT, block_token_cost, trellis_lambda, trellis_quantize_block,
+    RD_DISTO_MULT, RateMemo, block_token_cost, trellis_lambda, trellis_quantize_block,
 };
 use crate::lossy::work::work;
 
@@ -875,6 +875,9 @@ fn plan_frame(
     });
 
     let mut planes = Planes::new(mb_w, mb_h);
+    // One rate memo per pass: `value_rate` is a pure function of the (fixed)
+    // probability table, so the trellis's per-candidate lookups collapse to loads.
+    let rate_memo = gates.uses_trellis.then(|| RateMemo::new(probas));
     let mb_plans = run_mb_planning(
         &mut planes,
         &src,
@@ -884,6 +887,7 @@ fn plan_frame(
         mb_h,
         gates,
         probas,
+        rate_memo.as_ref(),
     );
     FramePlan {
         plans: mb_plans,
@@ -1061,6 +1065,7 @@ fn plan_frame_serial(
     mb_h: usize,
     gates: SearchGates,
     probas: &CoeffProbas,
+    rate: Option<&RateMemo>,
 ) -> Vec<MbPlan> {
     let mut mb_plans = Vec::with_capacity(mb_w * mb_h);
     for mb_y in 0..mb_h {
@@ -1071,6 +1076,7 @@ fn plan_frame_serial(
                 uses_trellis: gates.uses_trellis,
                 sns_strength: gates.sns_strength,
                 probas,
+                rate,
             };
             mb_plans.push(plan_one_mb(
                 planes,
@@ -1107,8 +1113,9 @@ fn run_mb_planning(
     mb_h: usize,
     gates: SearchGates,
     probas: &CoeffProbas,
+    rate: Option<&RateMemo>,
 ) -> Vec<MbPlan> {
-    plan_frame_serial(planes, src, seg_ids, quants, mb_w, mb_h, gates, probas)
+    plan_frame_serial(planes, src, seg_ids, quants, mb_w, mb_h, gates, probas, rate)
 }
 
 /// Below this macroblock count the wavefront's fork/join overhead outweighs the
@@ -1157,6 +1164,7 @@ fn run_mb_planning(
     mb_h: usize,
     gates: SearchGates,
     probas: &CoeffProbas,
+    rate: Option<&RateMemo>,
 ) -> Vec<MbPlan> {
     use rayon::prelude::*;
 
@@ -1167,7 +1175,7 @@ fn run_mb_planning(
     // so the wavefront would only add overhead — it stays serial.
     let n = mb_w * mb_h;
     if n < PARALLEL_MB_THRESHOLD || !gates.search_modes {
-        return plan_frame_serial(planes, src, seg_ids, quants, mb_w, mb_h, gates, probas);
+        return plan_frame_serial(planes, src, seg_ids, quants, mb_w, mb_h, gates, probas, rate);
     }
 
     // Skew 2 pushes the i4x4 top-right neighbor to an earlier diagonal; Balanced
@@ -1194,6 +1202,7 @@ fn run_mb_planning(
                         uses_trellis: gates.uses_trellis,
                         sns_strength: gates.sns_strength,
                         probas,
+                        rate,
                     };
                     // Reuse this worker thread's scratch pair (allocated once) instead
                     // of allocating a mini `Planes`/`SourceYuv` per macroblock.
@@ -1799,6 +1808,9 @@ struct QuantPlan<'a> {
     /// the previous pass's optimized table so the level decisions converge with the
     /// distribution that will actually code them (libwebp's `StatLoop`).
     probas: &'a CoeffProbas,
+    /// The per-pass [`RateMemo`] for `probas` (`Some` iff `uses_trellis`), letting the
+    /// trellis serve each candidate's `value_rate` from one flat load.
+    rate: Option<&'a RateMemo>,
 }
 
 /// Quantize one 4×4 coefficient block, choosing rate-distortion trellis levels
@@ -1814,11 +1826,12 @@ fn quantize_one(
     plane: usize,
     uses_trellis: bool,
     probas: &CoeffProbas,
+    rate: Option<&RateMemo>,
 ) -> Quantized {
     work!(QuantizeCall);
     if uses_trellis {
         let lambda = trellis_lambda(pair.ac.q);
-        trellis_quantize_block(coeffs, pair, first, 0, plane, probas, lambda)
+        trellis_quantize_block(coeffs, pair, first, 0, plane, probas, lambda, rate)
     } else {
         quantize_block(coeffs, pair, first)
     }
@@ -1885,7 +1898,7 @@ fn encode_luma16_residual(
 
     // Y2: forward-WHT the 16 DCs, quantize, and scatter the reconstructed DC into
     // each luma block's DC slot exactly as the decoder does.
-    let y2 = quantize_one(fwht(dcs), quant.y2, 0, 1, uses_trellis, plan.probas);
+    let y2 = quantize_one(fwht(dcs), quant.y2, 0, 1, uses_trellis, plan.probas, plan.rate);
     if y2.last + 1 > 1 {
         transform_wht(y2.recon, &mut coeffs);
     } else {
@@ -1898,7 +1911,7 @@ fn encode_luma16_residual(
     // Luma AC: quantize positions 1..16 with the luma factors (DC carried by Y2).
     let mut blocks = [Block::default(); 16];
     for n in 0..16 {
-        let q = quantize_one(luma_coeffs[n], quant.y1, 1, 0, uses_trellis, plan.probas);
+        let q = quantize_one(luma_coeffs[n], quant.y1, 1, 0, uses_trellis, plan.probas, plan.rate);
         coeffs[n * 16 + 1..n * 16 + 16].copy_from_slice(&q.recon[1..16]);
         blocks[n] = Block {
             levels: q.levels,
@@ -1949,7 +1962,7 @@ fn encode_chroma8_residual(
                 uv_off + by * planes.uv_stride + bx,
                 planes.uv_stride,
             );
-            let q = quantize_one(fdct4x4(residual), quant.uv, 0, 2, uses_trellis, plan.probas);
+            let q = quantize_one(fdct4x4(residual), quant.uv, 0, 2, uses_trellis, plan.probas, plan.rate);
             let idx = which * 4 + n;
             coeffs[idx * 16..idx * 16 + 16].copy_from_slice(&q.recon);
             blocks[idx] = Block {
@@ -2255,7 +2268,7 @@ fn search_luma_i4x4(
             sub,
             stride,
         );
-        let q = quantize_one(fdct4x4(residual), quant.y1, 0, 3, uses_trellis, plan.probas);
+        let q = quantize_one(fdct4x4(residual), quant.y1, 0, 3, uses_trellis, plan.probas, plan.rate);
         cand.coeffs[n * 16..n * 16 + 16].copy_from_slice(&q.recon);
         if q.recon.iter().any(|&c| c != 0) {
             transform_one(&q.recon, &mut planes.y, sub, stride);
@@ -2692,6 +2705,7 @@ mod tests {
             mb_h,
             gates,
             &COEFFS_PROBA_0,
+            None,
         );
         let mut serial_planes = Planes::new(mb_w, mb_h);
         let ser_result = plan_frame_serial(
@@ -2703,6 +2717,7 @@ mod tests {
             mb_h,
             gates,
             &COEFFS_PROBA_0,
+            None,
         );
 
         // Compare only the real reconstructed image region (inside the 1-pixel
@@ -4367,6 +4382,7 @@ horizontal best 222 b5f610902f5cd33d";
             uses_trellis: false,
             sns_strength: 0,
             probas: &COEFFS_PROBA_0,
+            rate: None,
         };
         let (_cand, dist, _bits) =
             super::search_luma_i4x4(&mut planes, y_off, &src, 0, 0, false, true, plan);
@@ -4439,6 +4455,7 @@ horizontal best 222 b5f610902f5cd33d";
             uses_trellis: false,
             sns_strength: 0,
             probas: &COEFFS_PROBA_0,
+            rate: None,
         };
         let result = super::try_i4x4_luma(
             &mut planes,

@@ -41,7 +41,9 @@
               the casts reproduce the decoder's arithmetic exactly"
 )]
 
-use crate::lossy::constants::{BANDS, CAT_3456, CoeffProbas, NUM_PROBAS, Prob, ZIGZAG};
+use crate::lossy::constants::{
+    BANDS, CAT_3456, CoeffProbas, NUM_BANDS, NUM_CTX, NUM_PROBAS, NUM_TYPES, Prob, ZIGZAG,
+};
 use crate::lossy::prob_opt::bit_cost;
 use crate::lossy::quant::{QPair, Quantized};
 use crate::lossy::work::work;
@@ -253,6 +255,51 @@ pub(crate) fn block_token_cost(
     }
 }
 
+/// Largest magnitude served from [`RateMemo`]'s table; larger `m` falls back to
+/// [`value_rate`] (rare — only very small quantizers produce them).
+const RATE_MEMO_MAX: i32 = 64;
+
+/// A per-frame memo of [`value_rate`] over every `(type, band, ctx, m <=
+/// RATE_MEMO_MAX)` the trellis can ask for. `value_rate` is a pure function of the
+/// probability node and magnitude, and the probability table is fixed for a whole
+/// trellis pass, so each eval's rate lookup collapses to one flat load — the same
+/// value, bit-for-bit.
+pub(crate) struct RateMemo {
+    /// Flat `[type][band][ctx][m]` table of `value_rate` results (1/256-bit units).
+    table: Vec<i64>,
+}
+
+impl RateMemo {
+    /// Build the memo for one pass's probability table (`bands`).
+    pub(crate) fn new(bands: &CoeffProbas) -> Self {
+        let stride = (RATE_MEMO_MAX + 1) as usize;
+        let mut table = Vec::with_capacity(NUM_TYPES * NUM_BANDS * NUM_CTX * stride);
+        for t in 0..NUM_TYPES {
+            for b in 0..NUM_BANDS {
+                for c in 0..NUM_CTX {
+                    for m in 0..=RATE_MEMO_MAX {
+                        table.push(value_rate(m, bands[t][b][c]));
+                    }
+                }
+            }
+        }
+        Self { table }
+    }
+
+    /// `value_rate(m, bands[type][band][ctx])`, table-served for `m <=
+    /// RATE_MEMO_MAX` and computed directly above it.
+    #[inline]
+    fn rate(&self, bands: &CoeffProbas, ty: usize, band: usize, ctx: usize, m: i32) -> i64 {
+        if m <= RATE_MEMO_MAX {
+            let stride = (RATE_MEMO_MAX + 1) as usize;
+            let i = ((ty * NUM_BANDS + band) * NUM_CTX + ctx) * stride + m as usize;
+            self.table[i]
+        } else {
+            value_rate(m, bands[ty][band][ctx])
+        }
+    }
+}
+
 /// The Viterbi tables over positions `0..16`: per `(position, outgoing context)` the
 /// best cumulative rate-distortion cost, the magnitude chosen there, and the incoming
 /// context it came from (the backpointer).
@@ -318,6 +365,7 @@ pub(crate) fn trellis_quantize_block(
     plane: usize,
     bands: &CoeffProbas,
     lambda: i64,
+    memo: Option<&RateMemo>,
 ) -> Quantized {
     let pb = &bands[plane];
 
@@ -406,7 +454,11 @@ pub(crate) fn trellis_quantize_block(
                 // Bias the distortion target toward the sharpened coefficient (libwebp's
                 // `kFreqSharpening`); `sharpen == 0` is the plain reconstruction error.
                 let err = i64::from(abs_coeff + sharpen - m * q);
-                let rate = base + extra + value_rate(m, p);
+                let vr = match memo {
+                    Some(mm) => mm.rate(bands, plane, BANDS[n], ci, m),
+                    None => value_rate(m, p),
+                };
+                let rate = base + extra + vr;
                 let cand =
                     prev_cost[ci] + RD_DISTO_MULT * trellis_weight(j) * err * err + lambda * rate;
                 let out = ctx_of(m);
@@ -540,7 +592,7 @@ mod tests {
         coeffs[4] = 12;
         coeffs[8] = 200;
         let lambda = trellis_lambda(q.y1.ac.q);
-        let out = trellis_quantize_block(coeffs, q.y1, 0, 0, 0, &COEFFS_PROBA_0, lambda);
+        let out = trellis_quantize_block(coeffs, q.y1, 0, 0, 0, &COEFFS_PROBA_0, lambda, None);
         assert_valid(q, 0, &out);
     }
 
@@ -555,7 +607,7 @@ mod tests {
         coeffs[4] = -2;
         coeffs[5] = 4;
         let lambda = trellis_lambda(q.y1.ac.q);
-        let out = trellis_quantize_block(coeffs, q.y1, 1, 0, 0, &COEFFS_PROBA_0, lambda);
+        let out = trellis_quantize_block(coeffs, q.y1, 1, 0, 0, &COEFFS_PROBA_0, lambda, None);
         assert_valid(q, 1, &out);
         assert_eq!(
             out.last, 0,
@@ -576,8 +628,8 @@ mod tests {
         coeffs[8] = 8;
         let rn = quantize_block(coeffs, q.y1, 0);
         let lambda = trellis_lambda(q.y1.ac.q);
-        let a = trellis_quantize_block(coeffs, q.y1, 0, 0, 0, &COEFFS_PROBA_0, lambda);
-        let b = trellis_quantize_block(coeffs, q.y1, 0, 0, 0, &COEFFS_PROBA_0, lambda);
+        let a = trellis_quantize_block(coeffs, q.y1, 0, 0, 0, &COEFFS_PROBA_0, lambda, None);
+        let b = trellis_quantize_block(coeffs, q.y1, 0, 0, 0, &COEFFS_PROBA_0, lambda, None);
         assert_eq!(a.levels, b.levels, "trellis must be deterministic");
         assert_eq!(a.recon, b.recon);
         assert!(
@@ -720,7 +772,7 @@ mod tests {
     fn trellis(base_q: i32, coeffs: [i16; 16], first: usize, ctx0: usize) -> super::Quantized {
         let q = Quantizer::new(base_q);
         let lambda = trellis_lambda(q.y1.ac.q);
-        trellis_quantize_block(coeffs, q.y1, first, ctx0, 0, &COEFFS_PROBA_0, lambda)
+        trellis_quantize_block(coeffs, q.y1, first, ctx0, 0, &COEFFS_PROBA_0, lambda, None)
     }
 
     /// The full [`trellis_quantize_block`] result — `levels`, `recon` and `last` — is
@@ -993,7 +1045,7 @@ mod tests {
             }
             let q = Quantizer::new(base_q);
             let lambda = trellis_lambda(q.y1.ac.q);
-            let got = trellis_quantize_block(coeffs, q.y1, first, ctx0, 0, &COEFFS_PROBA_0, lambda);
+            let got = trellis_quantize_block(coeffs, q.y1, first, ctx0, 0, &COEFFS_PROBA_0, lambda, None);
             let want = brute_force(coeffs, q.y1, first, ctx0, lambda);
             assert_eq!(
                 got.last, want.last,
