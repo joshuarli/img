@@ -385,6 +385,21 @@ The [fresh full WebP capture](benchmarks/results/untimed-histogram-2026-11-15.js
 | transparent t80 | 0.428, 0.428–0.429 | 0.337, 0.336–0.339 |
 | large t80 | 10.923, 10.877–11.036 | 10.924, 10.888–11.164 |
 
-Coffee improves 40.1%, grass 24.5% and transparency 21.2%, with disjoint ranges. Large overlaps baseline spread. A separate five-round sparse check passes both load gates and overlaps baseline spread on line, text, flat and gray. All paired output hashes match. The cache adds five short bitmap allocations per initial nonempty cluster, with at most 256 clusters per planner. A separate coffee peak-RSS sample is 68,091,904 bytes versus the retained baseline's 70,828,032; this single-sample comparison establishes no memory-speed tradeoff. Binary size stays 4,490,240 bytes. No dependencies are added.
+Coffee improves 40.1%, grass 24.5% and transparency 21.2%, with disjoint ranges. Large overlaps baseline spread. A separate five-round sparse check passes both load gates and overlaps baseline spread on line, text, flat and gray. All paired output hashes match. The cache adds five short bitmap allocations per initial nonempty cluster, with at most 256 clusters per planner. Separate coffee peak-RSS samples (one per side) are 70,828,032 → 68,091,904 bytes. Binary size stays 4,490,240 bytes. No dependencies are added.
 
 All 914 default-feature codec tests, 49 focused product tests and no_std + alloc pass. The [fresh full WebP capture](benchmarks/results/untimed-support-2026-11-15.json), revision `20f1019`, has clean source, 84 records and 56 completed outputs. Every completed file compares byte-identically with the preceding capture, and all scores, sizes and refusals match. The destination gate remains **NOT met**.
+
+**Weighted entropy lookup (2026-11-15, `639b312`).** An exact `u32` table supplies `count * log2(count)` for small counts, including zero. Dense merge-cost scans use it without a per-bin zero branch. The table derives from the existing fixed-point log values and has a compile-time overflow guard; larger counts retain the prior calculation. Exhaustive lookup tests and the uncached cost oracle verify exactness.
+
+[Five alternating immutable-dist CLI rounds](benchmarks/weighted-log-macos-arm64.json), against `891c708` on the same M1 with one Rayon thread and clean pre/post load gates, measure:
+
+| Input and score | Baseline median, range (s) | Candidate median, range (s) |
+| --- | --- | --- |
+| coffee t80 | 5.320, 5.318–5.338 | 4.566, 4.561–4.576 |
+| grass t95 | 4.833, 4.818–4.836 | 4.657, 4.655–4.707 |
+| transparent t80 | 0.338, 0.337–0.339 | 0.324, 0.322–0.325 |
+| large t80 | 10.872, 10.864–10.903 | 10.914, 10.874–11.166 |
+
+Coffee improves 14.2%, grass 3.6% and transparency 4.1%, with disjoint ranges. Large overlaps baseline spread. A separate five-round sparse check passes both gates and overlaps spread on line, text, flat and gray. Every paired output hash matches. Binary size grows 16,512 bytes, 4,490,240 → 4,506,752 (+0.37%); no runtime allocations or dependencies are added. Coffee peak-RSS samples (one per side) are 68,091,904 → 67,354,624 bytes.
+
+All 915 default-feature codec tests, 49 focused product tests and no_std + alloc pass. The [fresh full WebP capture](benchmarks/results/untimed-weighted-2026-11-15.json), revision `639b312`, has clean source, 84 records and 56 completed outputs. Every completed file compares byte-identically with the preceding capture; scores, sizes and refusals match. The destination gate remains **NOT met**.

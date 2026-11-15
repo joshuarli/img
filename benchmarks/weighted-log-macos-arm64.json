@@ -779,5 +779,23 @@
     "case": "coffee",
     "target": 80,
     "method": "/usr/bin/time -l; baseline sample reused from histogram-support-macos-arm64.json"
+  },
+  "candidateRevision": "639b312",
+  "baselineProfile": {
+    "method": "macOS sample, 10 seconds, separate L6 coffee encode loop",
+    "revision": "891c708",
+    "mainThreadSamples": 7369,
+    "mergeDeltaSelfSamples": 3925
+  },
+  "largeProfile": {
+    "method": "macOS sample, 20 seconds, two separate level-1 large-image encodes",
+    "revision": "639b312",
+    "mainThreadSamples": 12296,
+    "inlinedSearchSelfSamples": 9400,
+    "leadingFunctionOffsets": [
+      8280,
+      8300
+    ],
+    "mechanism": "scalar match_length pixel comparisons with repeated bounds checks"
   }
 }
