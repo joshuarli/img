@@ -395,6 +395,12 @@ fn search_lz77_best(
 /// Tile-bits candidates for the predictor/cross-color families. [`keep_smaller`]
 /// ranks by REAL emitted bytes, so widening this array can only shrink the result.
 const TRANSFORM_TILE_BITS_SWEEP: [u32; 4] = [2, 3, 4, 5];
+/// Extended grid sweep tried only on small images (<= [`SMALL_TILE_SWEEP_MAX_PIXELS`]).
+/// The fine grids capture the sub-megapixel synthetics' gradient structure (the
+/// transparent.png lossless candidate dropped 128 -> 110 B), while for photographic
+/// or large fixtures the extra four grids double the planning wall with no byte win.
+const TRANSFORM_TILE_BITS_SMALL: [u32; 8] = [2, 3, 4, 5, 6, 7, 8, 9];
+const SMALL_TILE_SWEEP_MAX_PIXELS: u64 = 16_384;
 const _: () = {
     let mut i = 0;
     while i < TRANSFORM_TILE_BITS_SWEEP.len() {
@@ -433,6 +439,23 @@ struct Breadth {
 /// cross-color, then meta-Huffman), so the real-byte winner never grows with the
 /// level. Level 9 enables the full search — byte-for-byte the historical
 /// `encode_best` — pinned by `level_nine_is_full_breadth`.
+/// Level-to-breadth map for a specific image: widens the full tile-bit sweep on
+/// small images only. The pure [`schedule`] tier logic is unchanged; only the
+/// tile-bits set widens for tiny inputs, where the extra four grids cost
+/// sub-millisecond planning.
+fn schedule_for(level: u8, pixels: u64) -> Breadth {
+    let breadth = schedule(level);
+    if pixels > SMALL_TILE_SWEEP_MAX_PIXELS
+        || breadth.tile_bits.len() != TRANSFORM_TILE_BITS_SWEEP.len()
+    {
+        return breadth;
+    }
+    Breadth {
+        tile_bits: &TRANSFORM_TILE_BITS_SMALL,
+        ..breadth
+    }
+}
+
 const fn schedule(level: u8) -> Breadth {
     const T4: &[u32] = &[4];
     const T34: &[u32] = &[3, 4];
@@ -801,7 +824,7 @@ fn evaluate_best_tasks(
 /// SUBTRACT_GREEN` order, which the decoder inverts in reverse.
 #[must_use]
 pub(crate) fn encode_best_at(level: u8, width: u32, height: u32, argb: &[u32]) -> Vec<u8> {
-    let breadth = schedule(level);
+    let breadth = schedule_for(level, u64::from(width) * u64::from(height));
     let alpha_used = argb.iter().any(|&p| p >> 24 != 0xff);
     evaluate_best_tasks(
         build_best_tasks(breadth),
