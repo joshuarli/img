@@ -335,7 +335,7 @@ impl ChannelSupport {
             .map(|(&a, &b)| u64::from((a | b).count_ones())).sum();
         if used <= 1 { return (0, used); }
         let mut weighted_logs = 0u64;
-        if used * 4 <= a.len() as u64 {
+        if used * 3 <= a.len() as u64 {
             for (word, (&a_bits, &b_bits)) in self.bits.iter().zip(&other.bits).enumerate() {
                 let mut bits = a_bits | b_bits;
                 while bits != 0 {
