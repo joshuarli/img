@@ -213,6 +213,7 @@ pub(crate) fn block_token_cost(
     plane: usize,
     ctx0: usize,
     bands: &CoeffProbas,
+    memo: Option<&RateMemo>,
 ) -> i64 {
     work!(TokenCostWalk);
     let pb = &bands[plane];
@@ -243,7 +244,10 @@ pub(crate) fn block_token_cost(
             ctx = 1;
         } else {
             cost += i64::from(bit_cost(true, p[2]));
-            cost += large_value_rate(v, p);
+            cost += match memo {
+                Some(mm) => mm.large_rate(bands, plane, band, ctx, v),
+                None => large_value_rate(v, p),
+            };
             ctx = 2;
         }
         cost += 256; // sign bit (probability 128 → exactly 256 units).
@@ -267,35 +271,64 @@ const RATE_MEMO_MAX: i32 = 64;
 pub(crate) struct RateMemo {
     /// Flat `[type][band][ctx][m]` table of `value_rate` results (1/256-bit units).
     table: Vec<i64>,
+    /// Flat `[type][band][ctx][m]` table of `large_value_rate` results, serving
+    /// [`block_token_cost`]'s per-coefficient lookups the same way.
+    large: Vec<i64>,
 }
 
 impl RateMemo {
     /// Build the memo for one pass's probability table (`bands`).
     pub(crate) fn new(bands: &CoeffProbas) -> Self {
         let stride = (RATE_MEMO_MAX + 1) as usize;
-        let mut table = Vec::with_capacity(NUM_TYPES * NUM_BANDS * NUM_CTX * stride);
+        let nodes = NUM_TYPES * NUM_BANDS * NUM_CTX;
+        let mut table = Vec::with_capacity(nodes * stride);
+        let mut large = Vec::with_capacity(nodes * stride);
         for t in 0..NUM_TYPES {
             for b in 0..NUM_BANDS {
                 for c in 0..NUM_CTX {
                     for m in 0..=RATE_MEMO_MAX {
                         table.push(value_rate(m, bands[t][b][c]));
+                        large.push(large_value_rate(m, bands[t][b][c]));
                     }
                 }
             }
         }
-        Self { table }
+        Self { table, large }
     }
 
     /// `value_rate(m, bands[type][band][ctx])`, table-served for `m <=
     /// RATE_MEMO_MAX` and computed directly above it.
     #[inline]
     fn rate(&self, bands: &CoeffProbas, ty: usize, band: usize, ctx: usize, m: i32) -> i64 {
+        self.slot(&self.table, bands, ty, band, ctx, m, |p| value_rate(m, p))
+    }
+
+    /// `large_value_rate(m, bands[type][band][ctx])`, same table/fallback split as
+    /// [`Self::rate`].
+    #[inline]
+    fn large_rate(&self, bands: &CoeffProbas, ty: usize, band: usize, ctx: usize, m: i32) -> i64 {
+        self.slot(&self.large, bands, ty, band, ctx, m, |p| {
+            large_value_rate(m, p)
+        })
+    }
+
+    #[inline]
+    fn slot(
+        &self,
+        table: &[i64],
+        bands: &CoeffProbas,
+        ty: usize,
+        band: usize,
+        ctx: usize,
+        m: i32,
+        direct: impl FnOnce([Prob; NUM_PROBAS]) -> i64,
+    ) -> i64 {
         if m <= RATE_MEMO_MAX {
             let stride = (RATE_MEMO_MAX + 1) as usize;
             let i = ((ty * NUM_BANDS + band) * NUM_CTX + ctx) * stride + m as usize;
-            self.table[i]
+            table[i]
         } else {
-            value_rate(m, bands[ty][band][ctx])
+            direct(bands[ty][band][ctx])
         }
     }
 }
@@ -515,7 +548,7 @@ mod tests {
         // An empty block costs exactly one EOB bit at (plane, band[first], ctx0).
         let (plane, first, ctx0) = (0usize, 1usize, 0usize);
         let empty = [0i16; 16];
-        let got = block_token_cost(empty, first, first as i32 - 1, plane, ctx0, &COEFFS_PROBA_0);
+        let got = block_token_cost(empty, first, first as i32 - 1, plane, ctx0, &COEFFS_PROBA_0, None);
         let p = COEFFS_PROBA_0[plane][BANDS[first]][ctx0];
         assert_eq!(
             got,
@@ -528,7 +561,7 @@ mod tests {
         // the outgoing context 1 (a |level|==1 carries context 1).
         let mut levels = [0i16; 16];
         levels[first] = 1;
-        let got = block_token_cost(levels, first, first as i32, plane, ctx0, &COEFFS_PROBA_0);
+        let got = block_token_cost(levels, first, first as i32, plane, ctx0, &COEFFS_PROBA_0, None);
         let p0 = COEFFS_PROBA_0[plane][BANDS[first]][ctx0];
         let eob = COEFFS_PROBA_0[plane][BANDS[first + 1]][1];
         let want = i64::from(bit_cost(true, p0[0]))
@@ -550,8 +583,8 @@ mod tests {
         busy[1] = -3;
         busy[2] = 17;
         busy[5] = 2;
-        let c_sparse = block_token_cost(sparse, 0, 0, 0, 0, &COEFFS_PROBA_0);
-        let c_busy = block_token_cost(busy, 0, 5, 0, 0, &COEFFS_PROBA_0);
+        let c_sparse = block_token_cost(sparse, 0, 0, 0, 0, &COEFFS_PROBA_0, None);
+        let c_busy = block_token_cost(busy, 0, 5, 0, 0, &COEFFS_PROBA_0, None);
         assert!(
             c_busy > c_sparse,
             "busy {c_busy} should cost more than sparse {c_sparse}"
@@ -744,18 +777,18 @@ mod tests {
         let mut zero_run = [0i16; 16];
         zero_run[2] = 3;
         assert_eq!(
-            block_token_cost(zero_run, 0, 2, 0, 0, &COEFFS_PROBA_0),
+            block_token_cost(zero_run, 0, 2, 0, 0, &COEFFS_PROBA_0, None),
             3893
         );
         // A unit at 0 then a zero then a `-2` (large) at 3.
         let mut mixed = [0i16; 16];
         mixed[0] = 1;
         mixed[3] = -2;
-        assert_eq!(block_token_cost(mixed, 0, 3, 0, 0, &COEFFS_PROBA_0), 4636);
+        assert_eq!(block_token_cost(mixed, 0, 3, 0, 0, &COEFFS_PROBA_0, None), 4636);
         // A single large `4` starting at `first == 1`.
         let mut large = [0i16; 16];
         large[1] = 4;
-        assert_eq!(block_token_cost(large, 1, 1, 0, 0, &COEFFS_PROBA_0), 5941);
+        assert_eq!(block_token_cost(large, 1, 1, 0, 0, &COEFFS_PROBA_0, None), 5941);
     }
 
     /// Build a natural-order coefficient block from `(index, value)` pairs.
@@ -984,7 +1017,7 @@ mod tests {
                     last = n as i32;
                 }
             }
-            let rate = block_token_cost(levels, first, last, 0, ctx0, &COEFFS_PROBA_0);
+            let rate = block_token_cost(levels, first, last, 0, ctx0, &COEFFS_PROBA_0, None);
             let total = super::RD_DISTO_MULT * dist + lambda * rate;
             if total < best_total {
                 best_total = total;

@@ -2130,20 +2130,20 @@ const fn chroma_lambda(q_ac: i32) -> i64 {
 /// coefficients: the Y2 block plus the sixteen luma AC blocks (`first = 1`). The
 /// entry non-zero context of every block is approximated as 0 (it only tunes the rate
 /// estimate for the mode comparison, never self-consistency), matching the trellis.
-fn luma16_token_bits(y2: Block, luma: &[Block; 16], probas: &CoeffProbas) -> i64 {
-    let mut bits = block_token_cost(y2.levels, 0, y2.last, 1, 0, probas);
+fn luma16_token_bits(y2: Block, luma: &[Block; 16], probas: &CoeffProbas, memo: Option<&RateMemo>) -> i64 {
+    let mut bits = block_token_cost(y2.levels, 0, y2.last, 1, 0, probas, memo);
     for b in luma {
-        bits += block_token_cost(b.levels, 1, b.last, 0, 0, probas);
+        bits += block_token_cost(b.levels, 1, b.last, 0, 0, probas, memo);
     }
     bits
 }
 
 /// The exact token-tree bit cost (1/256-bit units) of one macroblock's eight chroma
 /// blocks (`first = 0`), entry context approximated as 0 (see [`luma16_token_bits`]).
-fn chroma8_token_bits(chroma: &[Block; 8], probas: &CoeffProbas) -> i64 {
+fn chroma8_token_bits(chroma: &[Block; 8], probas: &CoeffProbas, memo: Option<&RateMemo>) -> i64 {
     chroma
         .iter()
-        .map(|b| block_token_cost(b.levels, 0, b.last, 2, 0, probas))
+        .map(|b| block_token_cost(b.levels, 0, b.last, 2, 0, probas, memo))
         .sum()
 }
 
@@ -2278,7 +2278,7 @@ fn search_luma_i4x4(
             levels: q.levels,
             last: q.last,
         };
-        bits += block_token_cost(q.levels, 0, q.last, 3, 0, plan.probas) + I4X4_SUBMODE_COST;
+        bits += block_token_cost(q.levels, 0, q.last, 3, 0, plan.probas, plan.rate) + I4X4_SUBMODE_COST;
     }
 
     let mb_src_off = mb_y * 16 * src_stride + mb_x * 16;
@@ -2323,7 +2323,7 @@ fn try_i4x4_luma(
     // overwrites it next).
     let dist16 = luma16_reconstruction_sse(planes, coeffs, y_off, src, mb_x, mb_y);
     let perceptual16 = luma16_perceptual_disto(dist16, planes, y_off, src, mb_x, mb_y, plan);
-    let bits16 = I16X16_MODE_COST + luma16_token_bits(tokens.y2, &tokens.luma, plan.probas);
+    let bits16 = I16X16_MODE_COST + luma16_token_bits(tokens.y2, &tokens.luma, plan.probas, plan.rate);
 
     // i4x4 candidate (leaves its reconstruction in planes.y; the caller's final
     // reconstruct_mb overwrites it with whichever candidate wins).
@@ -2485,7 +2485,7 @@ fn select_luma16_mode_rd(
         }
         predict_luma16(&mut planes.y, y_off, stride, mode, has_top, has_left);
         let enc = encode_luma16_residual(src, planes, mb_x, mb_y, plan);
-        let bits = I16X16_MODE_COST + luma16_token_bits(enc.y2, &enc.blocks, plan.probas);
+        let bits = I16X16_MODE_COST + luma16_token_bits(enc.y2, &enc.blocks, plan.probas, plan.rate);
         // Reconstruct into planes.y (which holds this candidate's prediction) to score
         // the post-quant distortion; the next iteration re-predicts over it.
         let sse = luma16_reconstruction_sse(planes, &enc.coeffs, y_off, src, mb_x, mb_y);
@@ -2534,7 +2534,7 @@ fn select_chroma8_mode_rd(
         predict_chroma8(&mut planes.u, uv_off, stride, mode, has_top, has_left);
         predict_chroma8(&mut planes.v, uv_off, stride, mode, has_top, has_left);
         let enc = encode_chroma8_residual(src, planes, mb_x, mb_y, plan);
-        let bits = chroma8_token_bits(&enc.blocks, plan.probas);
+        let bits = chroma8_token_bits(&enc.blocks, plan.probas, plan.rate);
         let sse = chroma8_reconstruction_sse(planes, &enc.coeffs, uv_off, src, mb_x, mb_y);
         let cost = RD_DISTO_MULT * sse + lambda * bits;
         if cost < best_cost {
