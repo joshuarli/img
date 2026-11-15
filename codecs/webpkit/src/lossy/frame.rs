@@ -768,11 +768,20 @@ fn smooth_segment_map(seg_ids: &mut [u8], mb_w: usize, mb_h: usize) {
 /// delta), anchored on `base_q` and clamped into `0..=127`. A mid-activity segment or a
 /// zero strength leaves the quantizer at `base_q`. Unused segments (`count..4`) keep
 /// `base_q`.
+/// The base-quantizer index at which the SNS delta reaches full strength. Below it the
+/// delta tapers to zero: SNS's benefit is refining flat segments *below* `base_q`, and
+/// near the finest quantizer there is no headroom — a positive delta can only coarsen
+/// (pure quality loss) while a negative one clamps away. libwebp's segment model has the
+/// same property implicitly (all segment quantizers collapse to 0 at quality 100).
+const SNS_FULL_BASE_Q: i32 = 32;
+
 fn segment_base_qs(base_q: i32, count: usize, seg_a: [i64; 4], sns_strength: u8) -> [i32; 4] {
+    let taper = (base_q.clamp(0, SNS_FULL_BASE_Q) * 256 / SNS_FULL_BASE_Q) as u64;
     let mut qs = [base_q; 4];
     for (q, &a) in qs.iter_mut().take(count).zip(&seg_a) {
         let activity = u8::try_from(a.clamp(0, 255)).unwrap_or(NEUTRAL_ACTIVITY);
-        *q = (base_q + sns_quant_delta(activity, sns_strength)).clamp(0, 127);
+        let delta = sns_quant_delta(activity, sns_strength);
+        *q = (base_q + (delta * taper as i32) / 256).clamp(0, 127);
     }
     qs
 }
@@ -3948,8 +3957,8 @@ mixed fast 4363 13644d2cc4723cd5
 mixed balanced 2158 816d363f0b4e162a
 mixed best 2218 db3af9b4c3178f3c
 horizontal fast 667 81e58ac967acf023
-horizontal balanced 282 55f5f5fce28916d0
-horizontal best 222 b5f610902f5cd33d";
+horizontal balanced 228 44a8805702dc56f3
+horizontal best 191 75c2dab8734d1d4a";
 
     /// Golden exact-encode test — THE high-leverage encoder-decision net. Encodes a
     /// diverse set of fixed images (smooth gradient, AC-rich noise, flat blocks,
@@ -4500,7 +4509,7 @@ horizontal best 222 b5f610902f5cd33d";
 rd_rx0_ry5_d0_q48 2bce915f7a05d74e
 rd_rx1_ry0_d0_q8 1daa25995d507435
 rd_rx0_ry2_d0_q24 4ce0d87f48607aa3
-rd_rx0_ry5_d60_q24 cc799f5e244468fc";
+rd_rx0_ry5_d60_q24 0acc155f545eae02";
 
     #[test]
     fn rd_cost_arithmetic_golden() {
