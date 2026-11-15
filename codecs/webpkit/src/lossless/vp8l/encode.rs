@@ -527,14 +527,17 @@ fn build_best_tasks(breadth: Breadth) -> Vec<BestTask> {
     tasks.extend(breadth.tile_bits.iter().map(|&b| BestTask::Predictor(b)));
     if breadth.cross_color {
         tasks.extend(breadth.tile_bits.iter().map(|&b| BestTask::CrossColor(b)));
-        // Predictor+cross-color compositions: matching granularity plus the
-        // next-coarser cross-color grid. Measured — the diagonal captured the
-        // first win, (p, p-1) added ~840 B more on coffee, while (p, p+1) and
-        // deeper coarsening ((p, p-2), cc << p) added wall with no byte change.
+        // Predictor+cross-color compositions over cc in {p-1, p, p+1, p+2} —
+        // cwebp's own picks span both directions (coffee p=3/cc=4, astronaut
+        // p=2/cc=4); each task emits both the SG-first and no-SG compositions.
+        // Measured: dropping p-1 regresses coffee ~800 B; dropping p+1/p+2
+        // regresses astronaut ~9 KB.
         for &p in breadth.tile_bits {
-            tasks.push(BestTask::PredictorCross(p, p));
-            if p > MIN_TRANSFORM_BITS {
-                tasks.push(BestTask::PredictorCross(p, p - 1));
+            for d in -1i32..=2 {
+                let cc = p as i32 + d;
+                if (MIN_TRANSFORM_BITS as i32..=(MIN_TRANSFORM_BITS + 7) as i32).contains(&cc) {
+                    tasks.push(BestTask::PredictorCross(p, cc as u32));
+                }
             }
         }
     }
@@ -720,14 +723,12 @@ fn predictor_cross_streams(
     p_bits: u32,
     cc_bits: u32,
 ) -> Vec<Vec<u8>> {
-    // libwebp's order: subtract-green first, then predictor, then cross-color —
-    // the only ordering that wins bytes on the photographic fixtures (the
-    // predictor→cross-color→subtract-green order measured flat on coffee).
+    // libwebp's order: subtract-green first, then predictor, then cross-color.
     let mut sg_px = argb.to_vec();
     subtract_green::forward(&mut sg_px);
     let (pres, ptile) = predictor::forward(&sg_px, width, height, p_bits);
     let (stored, ctile) = cross_color::forward(&pres, width, height, cc_bits);
-    vec![family_search(
+    let with_sg = family_search(
         breadth,
         width,
         height,
@@ -745,7 +746,30 @@ fn predictor_cross_streams(
         ],
         width,
         &stored,
-    )]
+    );
+    // The same composition without subtract-green — cwebp picks [P, CC] on
+    // astronaut.png where SG hurts rather than helps.
+    let (pres3, ptile3) = predictor::forward(argb, width, height, p_bits);
+    let (stored3, ctile3) = cross_color::forward(&pres3, width, height, cc_bits);
+    let no_sg = family_search(
+        breadth,
+        width,
+        height,
+        alpha_used,
+        &[
+            TransformPlan::Predictor {
+                bits: p_bits,
+                tile_data: ptile3,
+            },
+            TransformPlan::CrossColor {
+                bits: cc_bits,
+                tile_data: ctile3,
+            },
+        ],
+        width,
+        &stored3,
+    );
+    vec![with_sg, no_sg]
 }
 
 /// The cross-color family at one tile size: cross-color alone, then cross-color +
@@ -1792,8 +1816,8 @@ mod tests {
         // predictor family.
         const EXPECTED: [u64; 4] = [
             0xaa74_a8dc_ab4f_7a97,
-            0xaf31_ae3a_741f_809,
-            0x2401_f6da_e437_c4b3,
+            0x415c_5e3d_75bf_08c9,
+            0x7a3c_4465_570a_1131,
             0xa5c5_1ec6_3637_64c7,
         ];
         let got: [u64; 4] =
