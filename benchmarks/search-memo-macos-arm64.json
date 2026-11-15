@@ -377,5 +377,19 @@
   "binaryBytes": {
     "before": 4490224,
     "after": 4490256
+  },
+  "candidateRevision": "560864d",
+  "inputSha256": {
+    "generated/large": "fed143ca8f402a0225dba905ed4487c38055cc6cb1053e380b88b4663f355de4",
+    "coffee": "cc02f8ca188b167c775a7101b5d767d1e71792cf762c33d6fa15a4599b5a8de7",
+    "generated/transparent": "6a1214c3a4191b11946984fc5d0618f669b7b3e3718b965550d794656bb61349"
+  },
+  "peakRssBytes": {
+    "before": 437174272,
+    "after": 437256192,
+    "samplesPerSide": 1,
+    "case": "generated/large",
+    "target": 80,
+    "method": "/usr/bin/time -l, separate from timing rounds"
   }
 }
