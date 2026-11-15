@@ -536,12 +536,19 @@ impl CostModel {
     }
 
     /// Q16-bit cost of coding `argb` as a literal: the sum of its four channel
-    /// self-information (green byte, red byte, blue byte, alpha byte).
+    /// self-information (green byte, red byte, blue byte, alpha byte), damped to
+    /// 70% — libwebp's `AddSingleLiteralWithCostModel` applies the same kind of
+    /// empirical damping (`* 82 / 100`, `backward_references_cost_enc.c`); swept
+    /// {50, 70, 82, 90} on the corpus, 70 gave the smallest emitted bytes
+    /// (coffee L6 −466 B, astronaut −106 B, grass −232 B, gravel −38 B, at the
+    /// cost of +24 B on large.png).
     fn literal_cost(&self, argb: u32) -> u64 {
-        self.green[((argb >> 8) & 0xff) as usize]
+        (self.green[((argb >> 8) & 0xff) as usize]
             + self.red[((argb >> 16) & 0xff) as usize]
             + self.blue[(argb & 0xff) as usize]
-            + self.alpha[((argb >> 24) & 0xff) as usize]
+            + self.alpha[((argb >> 24) & 0xff) as usize])
+            * 70
+            / 100
     }
 
     /// Q16-bit cost of a back-reference: the length prefix symbol and distance
@@ -1030,8 +1037,8 @@ mod tests {
             dist: core::array::from_fn(|i| 20_000 + i as u64),
         };
         // green[0x33] + red[0x22] + blue[0x44] + alpha[0x11]
-        // = 151 + 234 + 368 + 417 = 1170.
-        assert_eq!(cm.literal_cost(0x1122_3344), 1170);
+        // = 151 + 234 + 368 + 417 = 1170, damped to 70% -> 819.
+        assert_eq!(cm.literal_cost(0x1122_3344), 819);
     }
 
     #[test]
@@ -1225,6 +1232,8 @@ mod tests {
         let greedy = parse(&pixels, true);
         let chain = super::HashChain::build(&pixels);
         let optimal = parse_optimal(&pixels, 8, &greedy, &chain, MAX_CHAIN_OPTIMAL);
+        // Under the 70% literal damping every literal beats the marginal copies on
+        // this input, so the DP emits all literals — still not the greedy stream.
         assert_eq!(
             optimal,
             vec![
@@ -1234,10 +1243,12 @@ mod tests {
                 Token::Literal(1),
                 Token::Literal(0),
                 Token::Literal(1),
-                Token::Copy {
-                    length: 6,
-                    distance: 4,
-                },
+                Token::Literal(1),
+                Token::Literal(1),
+                Token::Literal(0),
+                Token::Literal(1),
+                Token::Literal(1),
+                Token::Literal(1),
             ]
         );
         assert_ne!(optimal, greedy);
@@ -1245,9 +1256,10 @@ mod tests {
 
     #[test]
     fn parse_optimal_uses_a_strict_less_than_decision() {
-        // At width 1 the DP keeps Copy{4,3} then a trailing literal. Pin the exact
-        // stream: a `< -> <=` / `== ` / `>` flip in the copy-vs-best comparison, or a
-        // literal seed that adds cost[i] instead of cost[i + 1], all change it.
+        // At width 1 the damped literal costs make every literal win, so the DP
+        // emits all literals. Pin the exact stream: a `< -> <=` / `== ` / `>` flip
+        // in the copy-vs-best comparison, or a literal seed that adds cost[i]
+        // instead of cost[i + 1], all change it.
         let pixels = [1u32, 0, 1, 1, 0, 1, 1, 1];
         let greedy = parse(&pixels, true);
         let chain = super::HashChain::build(&pixels);
@@ -1258,10 +1270,10 @@ mod tests {
                 Token::Literal(1),
                 Token::Literal(0),
                 Token::Literal(1),
-                Token::Copy {
-                    length: 4,
-                    distance: 3,
-                },
+                Token::Literal(1),
+                Token::Literal(0),
+                Token::Literal(1),
+                Token::Literal(1),
                 Token::Literal(1),
             ]
         );
@@ -1270,8 +1282,9 @@ mod tests {
     #[test]
     fn parse_optimal_tiebreak_direction_is_pinned() {
         // A longer input where a `< -> <=` tiebreak flip changes the chosen copy
-        // length (7 here). Pinning the exact optimal token stream asserts the
-        // tiebreak direction, not merely that the result round-trips.
+        // length (7 here, with the damped tail now all literals). Pinning the
+        // exact optimal token stream asserts the tiebreak direction, not merely
+        // that the result round-trips.
         let pixels = [
             1u32, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0,
         ];
@@ -1294,10 +1307,10 @@ mod tests {
                 Token::Literal(0),
                 Token::Literal(1),
                 Token::Literal(0),
-                Token::Copy {
-                    length: 4,
-                    distance: 4,
-                },
+                Token::Literal(0),
+                Token::Literal(0),
+                Token::Literal(1),
+                Token::Literal(0),
             ]
         );
     }
