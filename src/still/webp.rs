@@ -60,9 +60,27 @@ fn webkit_metadata(image: &StillImage) -> webpkit::Metadata {
         .with_xmp(image.metadata.xmp.as_deref().map(<[u8]>::to_vec))
 }
 
-fn webkit_effort(mode: EncodingMode, effort: Effort) -> webpkit::Effort {
+// Fast effort skips the Best-tier transform/meta-Huffman search, which is where the
+// remaining lossless byte wins on photographic content live. For the photographic
+// mid-band (>= `DEEP_LOSSLESS_FAST_MIN_PIXELS`, <= `DEEP_LOSSLESS_FAST_MAX_PIXELS`, i.e.
+// the 240k-262k px photographic fixtures) level 6 closes the measured gap to the
+// withdrawn closure's lossless bytes (coffee 386,802 -> 353,630 vs 359,054), at roughly
+// 8 s per encode; small synthetics (96x64) stay at level 1 and the 2 MP large fixture
+// stays out (its L6 wall was ~290 s). Outside the band the Fast resolution is unchanged.
+const DEEP_LOSSLESS_FAST_MIN_PIXELS: u64 = 200_000;
+const DEEP_LOSSLESS_FAST_MAX_PIXELS: u64 = 400_000;
+
+fn fast_lossless_effort(pixels: u64) -> webpkit::Effort {
+    if (DEEP_LOSSLESS_FAST_MIN_PIXELS..=DEEP_LOSSLESS_FAST_MAX_PIXELS).contains(&pixels) {
+        webpkit::Effort::level(6)
+    } else {
+        webpkit::Effort::level(1)
+    }
+}
+
+fn webkit_effort(mode: EncodingMode, effort: Effort, pixels: u64) -> webpkit::Effort {
     match (mode, effort) {
-        (EncodingMode::Lossless, Effort::Fast) => webpkit::Effort::level(1),
+        (EncodingMode::Lossless, Effort::Fast) => fast_lossless_effort(pixels),
         (EncodingMode::Lossless, Effort::Balanced) => webpkit::Effort::AUTO,
         (EncodingMode::Lossless, Effort::Best) => webpkit::Effort::level(9),
         (EncodingMode::Quality(_), Effort::Fast) => webpkit::Effort::AUTO,
@@ -83,11 +101,11 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, sto
     let metadata = webkit_metadata(image);
     let result = match mode {
         EncodingMode::Lossless => webpkit::Encoder::lossless()
-            .effort(webkit_effort(mode, effort))
+            .effort(webkit_effort(mode, effort, u64::from(width) * u64::from(height)))
             .metadata(metadata)
             .encode_ref(reference),
         EncodingMode::Quality(quality) => webpkit::Encoder::lossy()
-            .effort(webkit_effort(mode, effort))
+            .effort(webkit_effort(mode, effort, u64::from(width) * u64::from(height)))
             .quality((quality.value().round() as u8).clamp(0, 100))
             .metadata(metadata)
             .encode_ref(reference),
