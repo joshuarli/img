@@ -343,9 +343,6 @@ impl HashChain {
 /// two are swapped by [`Self::advance`] once per position. Double-buffering (not a
 /// position-tagged map) means a hit in `read` is *structurally* the `i + 1` value
 /// and never a stale one — the invariant the byte-identity of the DP rests on.
-/// The set of distinct distances probed per position is `<= MAX_CHAIN_OPTIMAL`, so the
-/// buffers stay tiny, and `Vec::clear` keeps their capacity (no per-position
-/// allocation churn), which is why this is a plain association list, not a map.
 #[derive(Default)]
 struct ShiftMemo {
     /// `(distance, capped_len)` recorded at position `i + 1`.
@@ -359,14 +356,15 @@ impl ShiftMemo {
     /// position, if that distance was probed there.
     fn child(&self, dist: u32) -> Option<u32> {
         self.read
-            .iter()
-            .find(|&&(d, _)| d == dist)
-            .map(|&(_, len)| len)
+            .binary_search_by_key(&dist, |&(d, _)| d)
+            .ok()
+            .map(|index| self.read[index].1)
     }
 
     /// Record the capped match length for `dist` at the current position, for the
     /// next (`i - 1`) position to shift from.
     fn record(&mut self, dist: u32, len: u32) {
+        debug_assert!(self.write.last().is_none_or(|&(previous, _)| previous < dist));
         self.write.push((dist, len));
     }
 
@@ -1027,6 +1025,29 @@ mod tests {
         assert_eq!(super::effective_hash_bits(16), 4);
         // The upper clamp: a 2^20-pixel image caps at HASH_BITS_LZ77 = 18.
         assert_eq!(super::effective_hash_bits(1usize << 20), 18);
+    }
+
+    #[test]
+    fn shift_memo_finds_sparse_distances_and_discards_previous_positions() {
+        let mut memo = super::ShiftMemo::default();
+        for distance in 1..=MAX_CHAIN_OPTIMAL {
+            memo.record(distance * 3, distance + 5);
+        }
+        memo.advance();
+        for distance in 0..=MAX_CHAIN_OPTIMAL * 3 + 1 {
+            let expected = if distance > 0 && distance % 3 == 0 {
+                Some(distance / 3 + 5)
+            } else {
+                None
+            };
+            assert_eq!(memo.child(distance), expected);
+        }
+        memo.record(7, 9);
+        memo.advance();
+        assert_eq!(memo.child(3), None);
+        assert_eq!(memo.child(7), Some(9));
+        memo.advance();
+        assert_eq!(memo.child(7), None);
     }
 
     #[test]
