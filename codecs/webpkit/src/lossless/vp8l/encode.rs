@@ -517,6 +517,7 @@ enum BestTask {
     Palette,
     Predictor(u32),
     CrossColor(u32),
+    PredictorCross(u32, u32),
 }
 
 /// The canonical candidate task order for `breadth`: floor, palette, then predictor
@@ -526,6 +527,10 @@ fn build_best_tasks(breadth: Breadth) -> Vec<BestTask> {
     tasks.extend(breadth.tile_bits.iter().map(|&b| BestTask::Predictor(b)));
     if breadth.cross_color {
         tasks.extend(breadth.tile_bits.iter().map(|&b| BestTask::CrossColor(b)));
+        // Predictor+cross-color compositions at matching tile granularity —
+        // measured to capture the full byte win on the photographic fixtures
+        // (the (p, p+1) pairings added wall with no byte change on the corpus).
+        tasks.extend(breadth.tile_bits.iter().map(|&p| BestTask::PredictorCross(p, p)));
     }
     tasks
 }
@@ -549,6 +554,9 @@ fn run_best_task(
         },
         BestTask::CrossColor(bits) => {
             cross_color_streams(breadth, width, height, alpha_used, argb, bits)
+        },
+        BestTask::PredictorCross(p_bits, cc_bits) => {
+            predictor_cross_streams(breadth, width, height, alpha_used, argb, p_bits, cc_bits)
         },
     }
 }
@@ -689,6 +697,49 @@ fn predictor_streams(
         &residual_sg,
     );
     vec![alone, with_sg]
+}
+
+/// The predictor+cross-color composition at one `(predictor, cross-color)` tile
+/// pair — the combination libwebp's `-lossless` stacks (predictor residuals feed
+/// the cross-color multiplier search; standalone cross-color cannot compete with
+/// predictor+subtract-green on photographic content). Emitted in libwebp's
+/// application order — subtract-green, then predictor, then cross-color — and
+/// self-floored by real bytes like every other candidate.
+fn predictor_cross_streams(
+    breadth: Breadth,
+    width: u32,
+    height: u32,
+    alpha_used: bool,
+    argb: &[u32],
+    p_bits: u32,
+    cc_bits: u32,
+) -> Vec<Vec<u8>> {
+    // libwebp's order: subtract-green first, then predictor, then cross-color —
+    // the only ordering that wins bytes on the photographic fixtures (the
+    // predictor→cross-color→subtract-green order measured flat on coffee).
+    let mut sg_px = argb.to_vec();
+    subtract_green::forward(&mut sg_px);
+    let (pres, ptile) = predictor::forward(&sg_px, width, height, p_bits);
+    let (stored, ctile) = cross_color::forward(&pres, width, height, cc_bits);
+    vec![family_search(
+        breadth,
+        width,
+        height,
+        alpha_used,
+        &[
+            TransformPlan::SubtractGreen,
+            TransformPlan::Predictor {
+                bits: p_bits,
+                tile_data: ptile,
+            },
+            TransformPlan::CrossColor {
+                bits: cc_bits,
+                tile_data: ctile,
+            },
+        ],
+        width,
+        &stored,
+    )]
 }
 
 /// The cross-color family at one tile size: cross-color alone, then cross-color +
@@ -1729,12 +1780,13 @@ mod tests {
     fn encode_best_output_is_byte_stable() {
         // Golden FNV-1a-64 of `encode_best`'s exact output — the full Tier-3 search
         // (breadth level 9). This pins the predictor/cross-color/palette forward
-        // transforms and their (integer, deterministic) selection heuristics against
-        // silent byte drift. The scattered case exercises the palette family, the
-        // gradient the predictor family.
+        // transforms, the subtract-green→predictor→cross-color composition, and
+        // their (integer, deterministic) selection heuristics against silent byte
+        // drift. The scattered case exercises the palette family, the gradient the
+        // predictor family.
         const EXPECTED: [u64; 4] = [
             0xaa74_a8dc_ab4f_7a97,
-            0x0e16_a604_b5f2_a267,
+            0xaf31_ae3a_741f_809,
             0x2401_f6da_e437_c4b3,
             0xa5c5_1ec6_3637_64c7,
         ];
