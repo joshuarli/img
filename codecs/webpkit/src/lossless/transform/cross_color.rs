@@ -231,28 +231,32 @@ fn sweep_blue(
     tile_px: &[TilePixel],
     blue_base: &[i32],
     sweep_red: bool,
-    channel: &mut Vec<i8>,
+    channel: &mut Vec<i32>,
 ) -> i8 {
     // The swept channel is invariant across all 256 multiplier evals, so gather it
-    // once into a contiguous `channel` scratch instead of re-reading the strided AoS
+    // once into a contiguous `i32` scratch instead of re-reading the strided AoS
     // `TilePixel` field (and re-branching on `sweep_red`) inside every eval — the
     // same "gather once, sweep many" shape as [`fill_blue_base`], and the reason the
-    // caller threads a reused buffer through. `residual_magnitude <= 128` and a tile
-    // holds at most `2^bits × 2^bits <= 1024` pixels, so the per-eval sum stays far
-    // below `u32::MAX`; folding in `u32` (widened once to the `u64` the cost key
-    // wants) is bit-identical to a flat `u64` fold.
+    // caller threads a reused buffer through. Widening to `i32` here keeps the
+    // per-eval multiply in the same domain `color_transform_delta` used, so the
+    // result is byte-identical while dropping the per-pixel `i8` sign-extension.
+    // `residual_magnitude <= 128` and a tile holds at most `2^bits × 2^bits <= 1024`
+    // pixels, so the per-eval sum stays far below `u32::MAX`; folding in `u32`
+    // (widened once to the `u64` the cost key wants) is bit-identical to a flat
+    // `u64` fold.
     channel.clear();
     channel.extend(tile_px.iter().map(|px| {
-        if sweep_red {
+        i32::from(if sweep_red {
             i8::from_le_bytes([px.r])
         } else {
             px.green
-        }
+        })
     }));
     best_multiplier(|m| {
+        let m = i32::from(m);
         let mut sum = 0u32;
         for (&ch, &base) in channel.iter().zip(blue_base) {
-            let sb = low_u8(base - color_transform_delta(m, ch));
+            let sb = low_u8(base - ((m * ch) >> 5));
             sum += residual_magnitude(sb);
         }
         u64::from(sum)
@@ -297,7 +301,7 @@ pub(crate) fn bench_sweep_blue(
     red: &[u8],
     blue_base: &[i32],
     sweep_red: bool,
-    channel: &mut Vec<i8>,
+    channel: &mut Vec<i32>,
 ) -> i8 {
     let tile: Vec<TilePixel> = green
         .iter()
@@ -397,8 +401,12 @@ pub(crate) fn forward(argb: &[u32], width: u32, height: u32, bits: u32) -> (Vec<
     let mut tile_px: Vec<TilePixel> = Vec::new();
     // Reused fixed-axis blue base for the coordinate-descent sweeps (see below).
     let mut blue_base: Vec<i32> = Vec::new();
-    // Reused swept-channel gather for `sweep_blue` (invariant across its 256 evals).
-    let mut channel: Vec<i8> = Vec::new();
+    // Reused `i32` channel gathers: `channel` holds the green->red sweep's green
+    // lane and then each `sweep_blue` call's swept axis; `red_channel` holds the
+    // green->red sweep's red lane. Widening once per tile keeps the 256-value
+    // multiplier sweeps in `i32` instead of re-sign-extending `i8` per eval.
+    let mut channel: Vec<i32> = Vec::new();
+    let mut red_channel: Vec<i32> = Vec::new();
 
     for ty in 0..tiles_per_col {
         for tx in 0..tiles_per_row {
@@ -424,11 +432,21 @@ pub(crate) fn forward(argb: &[u32], width: u32, height: u32, bits: u32) -> (Vec<
                 }
             }
 
-            // Greedy per-axis selection over the tile the multiplier governs.
+            // Greedy per-axis selection over the tile the multiplier governs. The
+            // green/red lanes are gathered as `i32` once so the 256-value sweep
+            // multiplies in the same domain `stored_red` used, byte-identically.
+            channel.clear();
+            red_channel.clear();
+            for px in &tile_px {
+                channel.push(i32::from(px.green));
+                red_channel.push(i32::from(px.r));
+            }
             let green_to_red = best_multiplier(|m| {
+                let m = i32::from(m);
                 let mut sum = 0u64;
-                for px in &tile_px {
-                    sum += u64::from(residual_magnitude(stored_red(px.r, px.green, m)));
+                for (&g, &r) in channel.iter().zip(&red_channel) {
+                    let sr = low_u8(r - ((m * g) >> 5));
+                    sum += u64::from(residual_magnitude(sr));
                 }
                 sum
             });

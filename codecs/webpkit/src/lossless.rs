@@ -85,7 +85,7 @@ pub mod bench {
         red: &[u8],
         blue_base: &[i32],
         sweep_red: bool,
-        channel: &mut alloc::vec::Vec<i8>,
+        channel: &mut alloc::vec::Vec<i32>,
     ) -> i8 {
         crate::lossless::transform::cross_color::bench_sweep_blue(
             green, red, blue_base, sweep_red, channel,
