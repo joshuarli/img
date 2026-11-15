@@ -305,24 +305,18 @@ pub(crate) fn shannon_bits(total: u64, used_counts: &[u32]) -> u64 {
 /// equal-length bin slices — the pairwise sibling of [`channel_bits`].
 fn channel_bits_pair(a: &[u32], b: &[u32]) -> (u64, u64) {
     debug_assert_eq!(a.len(), b.len());
-    let total: u64 = a
-        .iter()
-        .zip(b)
-        .map(|(&x, &y)| u64::from(x) + u64::from(y))
-        .sum();
-    if total == 0 {
-        return (0, 0);
-    }
-    let mut acc = total * fixed_log2(total);
+    let mut total = 0u64;
+    let mut weighted_logs = 0u64;
     let mut used = 0u64;
     for (&x, &y) in a.iter().zip(b) {
         let s = u64::from(x) + u64::from(y);
+        total += s;
         if s > 0 {
-            acc -= s * fixed_log2(s);
+            weighted_logs += s * fixed_log2(s);
             used += 1;
         }
     }
-    (acc >> LOG2_FRAC_BITS, used)
+    ((total * fixed_log2(total) - weighted_logs) >> LOG2_FRAC_BITS, used)
 }
 
 /// Approximate the code-length header cost of a channel with `used` symbols. A
@@ -551,6 +545,16 @@ mod tests {
     }
 
     proptest! {
+        #[test]
+        fn paired_channel_cost_matches_materialized_sum(
+            bins in prop::collection::vec((0u32..=1_000_000, 0u32..=1_000_000), 0..=80),
+        ) {
+            let a: Vec<u32> = bins.iter().map(|&(a, _)| a).collect();
+            let b: Vec<u32> = bins.iter().map(|&(_, b)| b).collect();
+            let merged: Vec<u32> = bins.iter().map(|&(a, b)| a + b).collect();
+            prop_assert_eq!(super::channel_bits_pair(&a, &b), channel_bits(&merged));
+        }
+
         /// `shannon_bits(total, used_counts)` — fed the total and just the nonzero
         /// bins — must equal the pixel-data term of the full-slice `channel_bits`.
         #[test]
