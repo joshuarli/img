@@ -188,6 +188,8 @@ These are one corpus (14 fixtures), one host, fast effort, startup-inclusive pro
 
 ## WebP parity iteration — 2026-11-15 capture (made 2026-11-14, quiet host)
 
+> The lossy cells of this table are superseded by the [2026-11-15-lambda capture](#webp-matched-score-capture-after-cap-9-the-dp-tier-gate-and-the-q²-trellis-lambda-2026-11-15-quiet-host) below (cap 9, DP tier-gate, `q_ac²` trellis lambda); the lossless and cwebp cells are unchanged.
+
 The largest remaining lossless gap closed: the optimal-parse DP's monotonically improving hash-chain staircase walk now probes up to 256 hops instead of 64 (`MAX_CHAIN_OPTIMAL`, `5a0c65e`), while the greedy seed keeps the 64-hop cap so floor streams and ordinary-photo walls are unchanged. `large.png` at level 1 goes 12,682 → **4,846 B** (−61.8%), beating the withdrawn closure's 7,014 by −30.9%; `text.png` 72 → 58, `line.png` 64 → 62, `transparent.png` 196 → 194, `astronaut.png` −142, coffee −14; `ui.png`/`compressed.webp` +2 B (the DP candidate is self-floored against greedy, never against the previous DP). Photographic chains exhaust long before the cap, so the lossy wall is unchanged (coffee ≈460 ms, grass 0.82 s, gravel 1.08 s at level 1); the 2048×1024 smooth gradient is the worst case and rises ~4.5× on the lossless path (≈25 s), the case this landing targets. `ui.png`/`compressed.webp` parity note: both remain lossless-exact and two bytes above the 2026-11-14 capture; named and bounded.
 
 A fresh matched-score single-run capture is committed as [untimed-2026-11-15.json](benchmarks/results/untimed-2026-11-15.json) with prefixed `2026-11-15-*.webp` outputs (tools `img,cwebp`; 84 records, 56 completed; refusal set byte-identical to 2026-11-14; cwebp cells byte-identical). Tool label is `img` post-rename. Scores by the same PerceptualReference; cwebp passes the same gate independently.
@@ -230,7 +232,7 @@ Decode-side competitiveness vs `dwebp` 1.6.0 (one interleaved warm-host comparis
 
 img decodes 2.8–4.0× fewer instructions on real files with equal footprint on large.png and +0.2–0.9 MB on small ones (smaller-file cells are startup-tied). dwebp writes a file sink and img decodes to memory then drops, so this is directional evidence that img's decoder is competitive, not a release claim.
 
-Lossy t90/t95 cells still fall back to lossless on grass/gravel (cwebp passes lossy there at 92–96); the lossy encoder's RD efficiency is the open gap, with SNS and the trellis lambda already refuted/measured-and-rejected. `cargo test --locked --all-features --test benchmark_verify` passes.
+Lossy t90/t95 cells historically fell back to lossless on grass/gravel. The trellis lambda was then relaxed to `q_ac^2` (`d6b22c2`, see the 2026-11-15-lambda section below), which flips gravel t95 to lossy; SNS remains refuted as the cause (the ceiling is encoder RD efficiency, not coarsening). `cargo test --locked --all-features --test benchmark_verify` passes.
 
 ## WebP matched-score baseline vs the withdrawn zenwebp stack (harness-direct, 2026-11-14)
 
@@ -258,6 +260,35 @@ Verdict: the withdrawn stack also falls back to lossless on coffee t90/t95 (scor
 ## Full-matrix re-score vs the original toolchain (2026-11-15 prefix, quiet host)
 
 Committed as [untimed-full-2026-11-15.json](benchmarks/results/untimed-full-2026-11-15.json) with prefixed `2026-11-15-full-*` outputs: flags `IMG_BENCH_TOOLS` unset (all six tools), `IMG_ORIGINAL_BIN=.work/wt/original/target/release/rimage`. 196 records, 100 completed; `perf-gate-ready` 0 pre/post not required (capture mode records no timings); revision `f043b4f`, `sourceDirty: false`. Refusal set identical to the retained 2026-11-13 records (astronaut/icc/deep both stacks; img-png astronaut/coffee t80; cwebp coffee/large t90/t95 and ui/compressed; original-ravif completes zero cells, ten-bit refusal). img-WebP beats original-mozjpeg on **17 of 18** matched-score cells where both pass (mozjpeg takes gravel t90: 110,756 @ 90.7 vs 130,144 @ 92.7) — a WebP-vs-JPEGCLI-level comparison, not a like-for-like container claim. The fresh capture re-covers cwebp byte-identically. `cargo test --locked --all-features --test benchmark_verify` re-verifies every retained and fresh record (sizes, scores, exact samples).
+
+## WebP matched-score capture after cap 9, the DP tier-gate and the q² trellis lambda (2026-11-15, quiet host)
+
+Committed as [untimed-lambda-2026-11-15.json](benchmarks/results/untimed-lambda-2026-11-15.json) with prefixed `2026-11-15-lambda-*.webp` outputs (tools `img,cwebp`, 84 records, 56 completed; `perf-gate-ready` 0 pre/post; revision `73da8c2`, `sourceDirty: false`; refusal set byte-identical; cwebp cells deterministic and byte-identical to the 2026-11-15 capture). Scores by the same PerceptualReference. This capture supersedes the lossy cells of the 2026-11-15 table. The changes landed in sequence: **`d89b390`** tier-gates the optimal-parse DP staircase walk (level ≥ 3 or ≥ 1 MP), restoring the small-cell walls (ui/compressed 66, line 64, text 72; large.png stays 4,846 @ 100 at all targets); **`4f00b19`** raises Fast to cap 9 (no measured byte effect on the named cells — the binding constraint was the lossy score curve); **`d6b22c2`** relaxes the trellis rate weight to `q_ac^2` (the committed `(7·q_ac^2)>>2` was measured too aggressive on the gates; `>>3` regressed gravel t80 and was rejected earlier). `benchmark_verify` passes.
+
+| Fixture | Target | img bytes @ score | cwebp bytes @ score | img Δ vs cwebp | img Δ vs 2026-11-15 |
+| --- | --- | --- | --- | --- | --- |
+| coffee.png | 80 | 67,296 @ 82.0 | 87,502 @ 85.8 | −23.1% | +8.2% (regression, named; still beats both oracles) |
+| grass.png | 80 | 76,818 @ 81.6 | 82,802 @ 84.2 | −7.2% | −9.2% (beats cwebp) |
+| gravel.png | 80 | 50,566 @ 80.8 | 59,728 @ 83.5 | −15.4% | +1.2% |
+| large.png | 80 | 4,846 @ 100.0 (lossless) | 42,032 @ 84.1 | −88.5% | 0 |
+| transparent.png | 80 | 174 @ 81.0 | 168 @ 81.3 | +3.6% | −11.2% (still 64% above the withdrawn 118) |
+| line.png | 80 | 64 @ 100.0 (lossless) | 1,308 @ 88.2 | −95.1% | +3.2% |
+| text.png | 80 | 72 @ 100.0 (lossless) | 490 @ 81.2 | −85.3% | +24.1% |
+| ui.png | 80 | 66 @ 100.0 (lossless) | refused | — | 0 |
+| compressed.webp | 80 | 66 @ 100.0 (lossless) | refused | — | 0 |
+| grass.png | 90 | 128,872 @ 90.0 | 146,582 @ 94.4 | −12.1% | −11.7% (beats cwebp) |
+| gravel.png | 90 | 98,420 @ 90.6 | 124,510 @ 94.2 | −20.9% | −24.4% (beats cwebp) |
+| transparent.png | 90 | 200 @ 100.0 (lossless) | 254 @ 92.0 | −21.3% | 0 |
+| large.png | 90 | 4,846 @ 100.0 (lossless) | refused | — | 0 |
+| coffee.png | 95 | 386,802 @ 100.0 (lossless fallback) | refused | — | 0 |
+| grass.png | 95 | 212,590 @ 100.0 (lossless fallback) | 176,330 @ 95.7 | +20.6% | 0 |
+| gravel.png | 95 | **176,698 @ 95.04 (lossy)** | 152,426 @ 95.6 | +15.9% | flips from the 188,642 lossless fallback (−6.3%) |
+| transparent.png | 95 | 200 @ 100.0 (lossless) | 770 @ 95.2 | −74.0% | 0 |
+| large.png | 95 | 4,846 @ 100.0 (lossless) | refused | — | 0 |
+
+vs the withdrawn closure (`5424df8`) after this landing: grass t80 76,818 < 81,068; grass t90 128,872 < 143,080; gravel t90 98,420 < 127,486 — all three flip from losses to wins. Remaining losses vs the withdrawn stack: coffee t90/t95 and grass t95 (lossless-to-lossless, the VP8L entropy-stage gap: 386,802 vs 359,054, +7.7%; grass fallback 212,590 vs 177,586 @ 95.53, +19.7%), gravel t95 lossy-to-lossy (176,698 @ 95.04 vs 157,330 @ 95.41, +12.3%), transparent t80/t90/t95 (174/200/200 vs 118, +47%/+64%/+64%). Encode wall is unchanged (3.6–5.7× cwebp process walls on photographic cells; 3.3–4.4× the withdrawn closure; a vectorized-kernel program). Decode stays competitive. **The destination gate is NOT met and is not claimed.**
+
+The intervening capture `untimed-2026-11-15-r2.json` (cap 9 + tier-gate, pre-lambda) was measured, confirmed refusal-identical and discarded as byte-redundant with this one; the retained 2026-11-13/14 records and the 2026-11-15 records are untouched.
 
 ## Remaining proofs
 
