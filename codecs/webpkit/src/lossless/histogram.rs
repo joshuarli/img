@@ -341,14 +341,14 @@ impl ChannelSupport {
                 while bits != 0 {
                     let index = word * 64 + bits.trailing_zeros() as usize;
                     let count = u64::from(a[index]) + u64::from(b[index]);
-                    weighted_logs += count * fixed_log2(count);
+                    weighted_logs += weighted_log2(count);
                     bits &= bits - 1;
                 }
             }
         } else {
             for (&a, &b) in a.iter().zip(b) {
                 let count = u64::from(a) + u64::from(b);
-                if count > 0 { weighted_logs += count * fixed_log2(count); }
+                weighted_logs += weighted_log2(count);
             }
         }
         let total = self.total + other.total;
@@ -423,6 +423,27 @@ const fn header_bits(used: u64) -> u64 {
 /// LOG2_SMALL_MAX` is unchanged.
 const LOG2_SMALL_MAX: u64 = 4096;
 const LOG2_SMALL: [u64; (LOG2_SMALL_MAX + 1) as usize] = build_log2_small();
+const WEIGHTED_LOG2_SMALL: [u32; (LOG2_SMALL_MAX + 1) as usize] = build_weighted_log2_small();
+
+const fn build_weighted_log2_small() -> [u32; (LOG2_SMALL_MAX + 1) as usize] {
+    let mut table = [0u32; (LOG2_SMALL_MAX + 1) as usize];
+    let mut x = 0usize;
+    while x < table.len() {
+        let weighted = x as u64 * LOG2_SMALL[x];
+        assert!(weighted <= u32::MAX as u64);
+        table[x] = weighted as u32;
+        x += 1;
+    }
+    table
+}
+
+fn weighted_log2(x: u64) -> u64 {
+    if x <= LOG2_SMALL_MAX {
+        u64::from(WEIGHTED_LOG2_SMALL[x as usize])
+    } else {
+        x * fixed_log2(x)
+    }
+}
 
 const fn build_log2_small() -> [u64; (LOG2_SMALL_MAX + 1) as usize] {
     let mut table = [0u64; (LOG2_SMALL_MAX + 1) as usize];
@@ -485,6 +506,16 @@ mod tests {
     /// Pack a native ARGB pixel (opaque).
     fn argb(r: u32, g: u32, b: u32) -> u32 {
         0xff00_0000 | (r << 16) | (g << 8) | b
+    }
+
+    #[test]
+    fn weighted_log_lookup_matches_integer_product() {
+        for x in 0..=super::LOG2_SMALL_MAX + 1 {
+            assert_eq!(super::weighted_log2(x), x * fixed_log2(x));
+        }
+        for x in [8192, 65535, 65536, 1 << 20, 1 << 28] {
+            assert_eq!(super::weighted_log2(x), x * fixed_log2(x));
+        }
     }
 
     #[test]
