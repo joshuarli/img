@@ -896,6 +896,20 @@ fn plan_frame(
     }
 }
 
+/// Whether a macroblock's quantized tokens are all empty — it reconstructs to pure
+/// prediction, so it can be coded with a skip flag instead of residual tokens. A
+/// 16×16 macroblock is skippable when every quantized coefficient is zero: the Y2
+/// block (first=0) empty (`last < 0`), all 16 luma AC blocks (first=1) with no AC
+/// (`last < 1`), and all 8 chroma blocks (first=0) empty (`last < 0`). An i4x4
+/// macroblock is never coded skippable (its DC is per-sub-block, not in a Y2 block),
+/// mirroring the decoder's `skip_residuals` clearing `nz_dc` only for `!is_i4x4`.
+pub(super) fn is_skippable(is_i4x4: bool, tokens: &crate::lossy::tokens::MbTokens) -> bool {
+    !is_i4x4
+        && tokens.y2.last < 0
+        && tokens.luma.iter().all(|b| b.last < 1)
+        && tokens.chroma.iter().all(|b| b.last < 0)
+}
+
 /// Plan one macroblock: run its intra-mode / i4x4 rate-distortion search, quantize,
 /// reconstruct it into `planes`, and return the buffered [`MbPlan`]. This is a pure
 /// function of the source macroblock, the segment quantizer, and the *reconstructed
@@ -990,18 +1004,7 @@ fn plan_one_mb(
         tokens.luma = i4.luma;
     }
 
-    // A 16×16 macroblock is skippable when every quantized coefficient is
-    // zero: the Y2 block (first=0) empty (last < 0), all 16 luma AC blocks
-    // (first=1) empty (last < 1), and all 8 chroma blocks (first=0) empty
-    // (last < 0). Such a block reconstructs to pure prediction, so it can be
-    // coded with a skip flag instead of all-zero residual tokens. An i4x4
-    // macroblock is never coded skippable (its DC is per-sub-block, not in a
-    // Y2 block), mirroring the decoder's `skip_residuals` clearing `nz_dc`
-    // only for `!is_i4x4`.
-    let skippable = !is_i4x4
-        && tokens.y2.last < 0
-        && tokens.luma.iter().all(|b| b.last < 1)
-        && tokens.chroma.iter().all(|b| b.last < 0);
+    let skippable = is_skippable(is_i4x4, &tokens);
 
     // Whether the dequantized block carries any non-zero coefficient — the
     // decoder computes the same `(non_zero_y | non_zero_uv) != 0` from these
@@ -3909,14 +3912,14 @@ mod tests {
     /// (it prints the actual table on mismatch) and pasting the printed block here.
     const GOLDEN_EXPECTED: &str = "\
 gradient fast 190 fdbe0b6ce4ec645c
-gradient balanced 89 44cc4831e2b014b5
-gradient best 113 f507b9cd3a89366e
+gradient balanced 104 8ded861974c278bc
+gradient best 105 794ee2ab27bff891
 noisy fast 7975 f970e253b081638d
-noisy balanced 3551 01eb533d4d1d4989
-noisy best 3157 2a63efd863fa841d
+noisy balanced 3881 618441a165a040b1
+noisy best 3506 2532e298498da030
 flat fast 40 66b6a4ee87e184a3
-flat balanced 39 2f5a1f125c0a5180
-flat best 39 2f5a1f125c0a5180
+flat balanced 39 345288bf6a40e2d0
+flat best 39 345288bf6a40e2d0
 checker fast 65 a42deaf46567ecd9
 checker balanced 56 6b05842252d1046e
 checker best 56 6b05842252d1046e
@@ -3924,14 +3927,14 @@ stripe fast 1680 145aef26907ace38
 stripe balanced 322 d0284fcbb5c77800
 stripe best 118 00cc0a30e8a48b20
 diagonal fast 415 46ac66199192122b
-diagonal balanced 274 54c3293234733cd4
-diagonal best 337 462b55975bc359f2
+diagonal balanced 293 36aa8a54dc5eb621
+diagonal best 355 eb15872e686537e0
 mixed fast 4363 13644d2cc4723cd5
-mixed balanced 1953 656fe4c084dd5c45
-mixed best 2044 c347fc85c019f5f0
+mixed balanced 2158 816d363f0b4e162a
+mixed best 2218 db3af9b4c3178f3c
 horizontal fast 667 81e58ac967acf023
-horizontal balanced 278 b98f0c9e1dfbcc25
-horizontal best 213 2e6a76a653010c3a";
+horizontal balanced 282 55f5f5fce28916d0
+horizontal best 222 b5f610902f5cd33d";
 
     /// Golden exact-encode test — THE high-leverage encoder-decision net. Encodes a
     /// diverse set of fixed images (smooth gradient, AC-rich noise, flat blocks,
@@ -4241,8 +4244,8 @@ horizontal best 213 2e6a76a653010c3a";
         };
         let (_p0, _t, default_total, optimized_total, _probas) =
             emit_best_partitions(&mb_plans, mb_w, mb_h, header, skip);
-        assert_eq!(default_total, 4979, "default candidate byte-length sum");
-        assert_eq!(optimized_total, 3538, "optimized candidate byte-length sum");
+        assert_eq!(default_total, 5687, "default candidate byte-length sum");
+        assert_eq!(optimized_total, 3868, "optimized candidate byte-length sum");
     }
 
     #[test]
@@ -4280,38 +4283,45 @@ horizontal best 213 2e6a76a653010c3a";
     #[test]
     fn skippable_luma_last_index_boundary_is_strict() {
         // `skippable` requires every luma block's `last < 1` (no AC beyond DC-position).
-        // A macroblock with an empty Y2, empty chroma, and every luma block `last <= 1`
+        // A macroblock with an empty Y2, empty chroma, and luma blocks at `last <= 1`
         // with at least one exactly 1 sits on that boundary: the strict `< 1` keeps it
-        // NON-skippable; the `<= 1` mutant would wrongly mark it skippable. Scan a range
-        // of qualities over mixed flat-vs-noise content for such a witness (robust to
-        // which macroblock/quality the mode/quant choice lands it on — the boundary MB
-        // recurs across the whole q=107..=127 band under the tuned trellis lambda).
-        let rgba = mixed_image(96, 96);
-        let witness = (2..=127)
-            .find_map(|q| {
-                let FramePlan {
-                    plans: mb_plans, ..
-                } = plan_frame(
-                    &rgba,
-                    96,
-                    96,
-                    q,
-                    FULL_GATES,
-                    true,
-                    FrameTuning::AUTO,
-                    &COEFFS_PROBA_0,
-                );
-                mb_plans.into_iter().find(|p| {
-                    p.tokens.y2.last < 0
-                        && p.tokens.chroma.iter().all(|b| b.last < 0)
-                        && p.tokens.luma.iter().all(|b| b.last <= 1)
-                        && p.tokens.luma.iter().any(|b| b.last == 1)
-                })
-            })
-            .expect("mixed content must contain a luma-last==1 boundary macroblock");
+        // NON-skippable; a `<= 1` condition would wrongly mark it skippable. Pinned over
+        // the exact token shape so the property holds at any trellis lambda (the encoder's
+        // chosen levels move with the lambda, but the predicate boundary must not).
+        use crate::lossy::tokens::{Block, MbTokens};
+        let block = |last: i32| Block {
+            last,
+            ..Block::default()
+        };
+        let boundary = MbTokens {
+            is_i4x4: false,
+            y2: block(-1),
+            luma: std::array::from_fn(|i| if i == 5 { block(1) } else { block(0) }),
+            chroma: [block(-1); 8],
+        };
         assert!(
-            !witness.skippable,
+            !super::is_skippable(false, &boundary),
             "a luma last==1 block must not be skippable"
+        );
+        let empty = MbTokens {
+            is_i4x4: false,
+            y2: block(-1),
+            luma: [block(-1); 16],
+            chroma: [block(-1); 8],
+        };
+        assert!(super::is_skippable(false, &empty));
+        assert!(
+            !super::is_skippable(true, &empty),
+            "an i4x4 macroblock is never skippable"
+        );
+        let y2_live = MbTokens {
+            is_i4x4: false,
+            y2: block(0),
+            ..boundary
+        };
+        assert!(
+            !super::is_skippable(false, &y2_live),
+            "a non-empty Y2 must not be skippable"
         );
     }
 
@@ -4327,7 +4337,7 @@ horizontal best 213 2e6a76a653010c3a";
         let payload = encode_frame(&rgba, 16, 16, 24, BALANCED);
         assert_eq!(
             golden_digest(&payload),
-            0x6e07_e15d_6c4e_0924,
+            0x56cc_6d7b_a58f_d6dd,
             "at a size tie the encoder must keep the default probability table"
         );
     }
@@ -4470,10 +4480,10 @@ horizontal best 213 2e6a76a653010c3a";
     /// under each of those mutations. Regenerate by running this test (it prints the
     /// actual table on mismatch) and pasting the block.
     const RD_GOLDEN_EXPECTED: &str = "\
-rd_rx0_ry5_d0_q48 c03bd74b0b752939
-rd_rx1_ry0_d0_q8 2dbc60b6031d7af4
-rd_rx0_ry2_d0_q24 b6e5b4d5e6bc4ab2
-rd_rx0_ry5_d60_q24 a788b70bb1dfc28e";
+rd_rx0_ry5_d0_q48 2bce915f7a05d74e
+rd_rx1_ry0_d0_q8 1daa25995d507435
+rd_rx0_ry2_d0_q24 4ce0d87f48607aa3
+rd_rx0_ry5_d60_q24 cc799f5e244468fc";
 
     #[test]
     fn rd_cost_arithmetic_golden() {

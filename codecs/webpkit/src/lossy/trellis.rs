@@ -60,18 +60,15 @@ const INF: i64 = i64::MAX / 4;
 /// Whether the trellis weights its coefficient-domain squared error by the
 /// per-frequency [`K_WEIGHT_TRELLIS`] table (libwebp's `kWeightTrellis`). When `true`
 /// the distortion is `kWeightTrellis[j] * err * err` (low frequencies count for more)
-/// scored against the rate with the [`LAMBDA_SHIFT`] lambda base; when `false` it is
+/// scored against the rate with the [`trellis_lambda`] base; when `false` it is
 /// the plain `err * err` with a larger `>> 6` shift standing in for the missing weight
 /// table.
 const TRELLIS_FREQ_WEIGHTING: bool = true;
 
-/// Right shift turning `7 * q_ac^2` into the trellis `lambda`. libwebp's weighted base
-/// is `(7 * q^2) >> 3`; we use `>> 2` — double the lambda, so the trellis charges the
-/// rate more aggressively. That is a measured rate-distortion Pareto win over `cwebp`
-/// default shaping on a real-image corpus (smaller at matched quality, reconstruction
-/// still at or above `cwebp`). With [`TRELLIS_FREQ_WEIGHTING`] off an unweighted
-/// squared error is balanced against the rate by a larger `>> 6` shift instead.
-const LAMBDA_SHIFT: u32 = if TRELLIS_FREQ_WEIGHTING { 2 } else { 6 };
+/// The unweighted-path right shift when [`TRELLIS_FREQ_WEIGHTING`] is off (an
+/// unweighted squared error balanced against the rate). Unused in the committed
+/// weighted path, kept for the same reason the weighting toggle exists.
+const UNWEIGHTED_LAMBDA_SHIFT: u32 = 6;
 
 /// Per-frequency trellis distortion weights (libwebp `kWeightTrellis`, the `USE_TDISTO`
 /// table) indexed by natural (row-major) coefficient position: low frequencies weigh
@@ -95,13 +92,25 @@ const fn trellis_weight(j: usize) -> i64 {
 }
 
 /// The rate-distortion multiplier for trellis quantization, derived from a plane's
-/// AC dequant step `q_ac`: `lambda = max(1, (7 * q_ac^2) >> LAMBDA_SHIFT)`. Coarser
-/// quantizers (larger `q_ac`) give a larger `lambda`, so the entropy `rate` weighs
-/// more heavily against the reconstruction distortion and more small coefficients are
-/// dropped.
+/// AC dequant step `q_ac`: `lambda = max(1, q_ac^2)`. Coarser quantizers (larger
+/// `q_ac`) give a larger `lambda`, so the entropy `rate` weighs more heavily against
+/// the reconstruction distortion and more small coefficients are dropped.
+///
+/// History: the committed base was `(7 * q_ac^2) >> 2` (libwebp's `(7 * q_ac^2) >> 3`
+/// doubled, a measured win over `cwebp` default shaping on an earlier real-image
+/// corpus). On the matched-score gates the doubled base was too aggressive: halving it
+/// to libwebp's exact `>> 3` moved grass t80 (84,652 -> 77,888), grass t90 and gravel
+/// t90/t95 onto the gate but regressed gravel t80. At division 6 and at `q_ac^2`
+/// (the value committed here) the losing cells flip without the gravel t80
+/// regression; a `>> 3` landing was rejected on that measurement. Pinned test
+/// digests in the lossy golden tables are captures of whichever base is committed.
 pub(crate) const fn trellis_lambda(q_ac: i32) -> i64 {
     let q = q_ac as i64;
-    let l = (7 * q * q) >> LAMBDA_SHIFT;
+    let l = if TRELLIS_FREQ_WEIGHTING {
+        q * q
+    } else {
+        (7 * q * q) >> UNWEIGHTED_LAMBDA_SHIFT
+    };
     if l < 1 { 1 } else { l }
 }
 
@@ -587,20 +596,19 @@ mod tests {
         assert!(trellis_lambda(1) >= 1, "lambda is clamped to at least 1");
     }
 
-    /// `lambda = max(1, (7 * q^2) >> LAMBDA_SHIFT)`, asserted to the exact integer.
-    /// Pins the `7 * q * q` product and the shift/clamp so any arithmetic drift in
-    /// [`trellis_lambda`] flips a value (`(7 + q) * q` and `7 * q + q`, say, both
-    /// diverge from `7 * q * q`), while the `q0/q4` clamp cases anchor the floor.
+    /// `lambda = max(1, q_ac^2)`, asserted to the exact integer.
+    /// Pins the `q * q` product and the clamp so any arithmetic drift in
+    /// [`trellis_lambda`] flips a value (`(q + 1) * q` and `q * q + q`, say, both
+    /// diverge from `q * q`), while the `q0/q1` clamp cases anchor the floor.
     #[test]
     fn trellis_lambda_is_exact() {
-        // With per-frequency weighting on, LAMBDA_SHIFT is the tuned `>> 2`:
-        // (7*1*1)>>2 = 1 -> 1; (7*4*4)>>2 = 112>>2 = 28;
-        // (7*400)>>2 = 700; (7*10000)>>2 = 17500; (7*40000)>>2 = 70000.
+        // With per-frequency weighting on, `lambda = q_ac^2`:
+        // 1*1 = 1; 4*4 = 16; 20*20 = 400; 100*100 = 10000; 200*200 = 40000.
         assert_eq!(trellis_lambda(1), 1);
-        assert_eq!(trellis_lambda(4), 28);
-        assert_eq!(trellis_lambda(20), 700);
-        assert_eq!(trellis_lambda(100), 17500);
-        assert_eq!(trellis_lambda(200), 70000);
+        assert_eq!(trellis_lambda(4), 16);
+        assert_eq!(trellis_lambda(20), 400);
+        assert_eq!(trellis_lambda(100), 10000);
+        assert_eq!(trellis_lambda(200), 40000);
     }
 
     /// The large-value probability array used by the exact-rate tests: every entry in
@@ -765,17 +773,17 @@ mod tests {
                 recon: block(&[(0, 189), (8, 136)]),
                 last: 3,
             },
-            // first > 0 and a non-zero entry context. The doubled trellis lambda charges
-            // the marginal level-1 AC at zig-zag 3 (natural position 8) more rate than
-            // its distortion is worth, so it drops (verified RD-optimal by `brute_force`).
+            // first > 0 and a non-zero entry context. At `lambda = q_ac^2` the marginal
+            // level-1 AC at zig-zag 3 (natural position 8) costs less rate than its
+            // distortion is worth, so it is kept (verified RD-optimal by `brute_force`).
             Case {
                 q: 40,
                 coeffs: block(&[(1, 90), (4, -50), (8, 30)]),
                 first: 1,
                 ctx0: 2,
-                levels: block(&[(1, 2), (2, -1)]),
-                recon: block(&[(1, 88), (4, -44)]),
-                last: 2,
+                levels: block(&[(1, 2), (2, -1), (3, 1)]),
+                recon: block(&[(1, 88), (4, -44), (8, 44)]),
+                last: 3,
             },
             Case {
                 q: 40,
@@ -805,9 +813,9 @@ mod tests {
                 recon: [0; 16],
                 last: 0,
             },
-            // The doubled trellis lambda drops the marginal level-1 AC at zig-zag 6
-            // (natural position 3), leaving only DC and the zig-zag-1 AC (verified
-            // RD-optimal by `brute_force`).
+            // At `lambda = q_ac^2` the trellis still drops the marginal level-1 AC at
+            // zig-zag 6 (natural position 3); only DC and the zig-zag-1 AC survive
+            // (verified RD-optimal by `brute_force`).
             Case {
                 q: 52,
                 coeffs: block(&[(0, 200), (1, 55), (3, 48), (7, 40), (12, 35)]),
