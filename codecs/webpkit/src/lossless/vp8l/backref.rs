@@ -421,17 +421,26 @@ fn length_at(
 /// Length of the exact match of the pixels at `dst` against those at `src`
 /// (`src < dst`), capped at `max_len`. Overlapping matches (`dst - src < len`)
 /// extend naturally against the known source, reproducing run-length fills.
-#[cfg_attr(
-    not(feature = "work-count"),
-    expect(
-        clippy::missing_const_for_fn,
-        reason = "work-count instrumentation calls an atomic counter and cannot run in const context"
-    )
-)]
 fn match_length(pixels: &[u32], src: usize, dst: usize, max_len: usize) -> usize {
+    const CHUNK_PIXELS: usize = 4;
+    if max_len == 0 { return 0; }
+    let source = &pixels[src..src + max_len];
+    let destination = &pixels[dst..dst + max_len];
+    let prefix = max_len.min(CHUNK_PIXELS);
     let mut len = 0usize;
-    while len < max_len && pixels[src + len] == pixels[dst + len] {
+    while len < prefix && source[len] == destination[len] {
         len += 1;
+    }
+    if len == prefix {
+        for (a, b) in source[prefix..].chunks_exact(CHUNK_PIXELS)
+            .zip(destination[prefix..].chunks_exact(CHUNK_PIXELS))
+        {
+            if a != b { break; }
+            len += CHUNK_PIXELS;
+        }
+        while len < max_len && source[len] == destination[len] {
+            len += 1;
+        }
     }
     work!(MatchCompare, len as u64);
     len
@@ -679,6 +688,35 @@ mod tests {
     use crate::lossless::constants::MAX_CHAIN_OPTIMAL;
     use crate::lossless::color_cache::ColorCache;
     use proptest::prelude::*;
+
+    #[test]
+    fn match_length_respects_first_mismatch_and_caps_across_chunks() {
+        let caps = [0usize, 1, 2, 3, 4, 5, 7, 8, 9, 15, 16, 17, 4095, 4096];
+        for cap in caps {
+            for mismatch in caps {
+                let mut pixels = vec![7u32; 8200];
+                pixels[4100 + mismatch] = 9;
+                assert_eq!(super::match_length(&pixels, 0, 4100, cap), mismatch.min(cap));
+            }
+        }
+        assert_eq!(super::match_length(&[], 0, 0, 0), 0);
+    }
+
+    #[test]
+    fn match_length_matches_scalar_reference_for_overlapping_runs() {
+        for period in [1usize, 2, 3, 4, 5, 7, 8, 15] {
+            let pixels: Vec<u32> = (0..5000).map(|i| (i % period) as u32).collect();
+            for distance in 1..=32 {
+                for cap in [0usize, 1, 3, 4, 5, 7, 8, 9, 16, 4095, 4096] {
+                    let mut expected = 0;
+                    while expected < cap && pixels[expected] == pixels[distance + expected] {
+                        expected += 1;
+                    }
+                    assert_eq!(super::match_length(&pixels, 0, distance, cap), expected);
+                }
+            }
+        }
+    }
 
     /// Reproduce a token list the way the decoder would (forward element-wise
     /// copies, overlap-safe) — the oracle that `parse` is lossless.
