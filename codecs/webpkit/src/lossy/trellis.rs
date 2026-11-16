@@ -41,6 +41,8 @@
               the casts reproduce the decoder's arithmetic exactly"
 )]
 
+use alloc::vec::Vec;
+
 use crate::lossy::constants::{
     BANDS, CAT_3456, CoeffProbas, NUM_BANDS, NUM_CTX, NUM_PROBAS, NUM_TYPES, Prob, ZIGZAG,
 };
