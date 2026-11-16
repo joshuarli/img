@@ -380,4 +380,61 @@ pre-`a0e5a30` ~12.9 s baseline. Raw comparison records: `.work/tmp/select-
 Next per the brief: the representative reproducible baseline (P0 corpus +
 two measurement lanes), then structural repeated-work reductions. The
 workflow-speed gate now measures the exact selector, so fresh timed captures
-must use this revision or later.
+must use this repaired schedule.
+
+## Checkpoint — 2026-11-15 (representative untimed baseline landed)
+
+Harness repairs (`1a90dc1`, `c23125f`, `c1781ab`, `3d690ec`): every tool
+executable is SHA-256'd into `toolSha256`; `rustc`, `cargoProfile` and
+`rayonThreads` are recorded; `cwebp-lossless` (`-lossless -z 9 -exact
+-metadata all`) is a distinct tool whose records carry `quality: null`;
+JPEG-source lossless records verify in the libjpeg/libwebp domain
+(`djpeg`/`dwebp` PNM raster equality) because img's JPEG decoder and
+libjpeg legitimately differ by ±2 per channel — PNG sources keep canonical
+`StillImage` sample equality, and `verify_saved` applies the same domain
+rule. Benchmark scratch directories are pid-scoped after a concurrent
+capture read another run's in-flight `output.webp`.
+
+Validation corpus (`benchmarks/corpus/validation/manifest.json`): 34 pinned
+inputs — 20 licensed photographs (CC0/public-domain, skimage + Wikimedia
+Commons, hashes verified), real UI/text/alpha assets, and 12 deterministic
+boundary fixtures straddling 16,384 / 200,000 / 400,000 / 1,048,576 pixels
+plus odd dimensions and a 13.7 MP workload. Every entry records file,
+dimensions, SHA-256, license, author, source and evidence URLs.
+
+Untimed captures at `773dfd3` (repaired selector, `dist` profile, one
+Rayon thread), both verified by `benchmark_verify`:
+
+- [Dev corpus](../benchmarks/results/untimed-repaired-2026-11-15.json):
+  280 records, 140 completed. astronaut.png refuses scored processing on
+  every tool (SDR gamut); img-png refuses coffee.png on unsafe-to-copy PNG
+  metadata; original mozjpeg/oxipng/ravif binaries are absent in this
+  checkout (explicit gap, not a pass).
+- [Validation corpus](../benchmarks/results/untimed-validation-2026-11-15.json):
+  680 records, 321 completed.
+
+Untimed frontier observations (bytes at matched minimum score; lossless
+records are exact-sample, score null):
+
+- Where img completes lossy, it wins the size frontier at every matched
+  target on both strata — e.g. dev coffee t80 53,874 B vs cwebp 87,502 B
+  (score 85.8) and withdrawn 93,198 B (score 85.6); validation utrecht
+  t80 741,644 B vs cwebp 976,436 B and withdrawn 1,065,772 B; retina t80
+  110,648 B vs 184,610/213,876 B.
+- Lossless bytes trail libwebp `-z9` on several strata: dev coffee t90/95
+  img 343,922 B vs cwebp-lossless 336,030 B (+2.3%); validation
+  mm-logo-alpha 33,566 B vs 23,696 B (+42%), photopea-ui 32,834 B vs
+  28,792 B (+14%), utrecht 4,093,780 B vs 3,903,928 B (+4.9%). img beats
+  cwebp-lossless on dev grass/gravel and validation retina. The alpha/UI
+  and >400K-px bands encode at codec level 1 — the lossless gap concentrates
+  exactly where `fast_lossless_effort` does not reach level 6.
+- **Coverage gap (product policy, not encoder):** the scored path refuses
+  most saturated ICC JPEGs — "color transform leaves the SDR sRGB gamut"
+  via `checked_sdr` in `StillImage::prepare` — on 10 of 15 validation
+  photographs plus chelsea.png; `--lossless` still encodes them. Only
+  cwebp-lossless completes on marmolada/piraeus/portrait-woman. Recorded
+  as an honest limitation; relaxing `checked_sdr` is a color-fidelity
+  contract decision, not a benchmark fix.
+
+Timed five-round capture at the same revision is in flight; the workflow
+speed gate still measures the exact selector (~12 s grass t90 wall).
