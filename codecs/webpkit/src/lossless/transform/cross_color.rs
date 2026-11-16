@@ -185,12 +185,13 @@ fn residual_magnitude(byte: u8) -> u32 {
 
 /// Sweep every `i8` multiplier and return the cost-minimizing one, breaking ties
 /// toward zero then toward the lower value. The key `(cost, |m|, m)` is unique per
-/// `m`, so the minimum is well-defined.
+/// `m`, so the minimum is well-defined. `step` strides the candidate grid — 1 is
+/// the exact sweep; larger steps are for ranking estimates only.
 #[must_use]
-fn best_multiplier(cost: impl Fn(i8) -> u64) -> i8 {
+fn best_multiplier_step(cost: impl Fn(i8) -> u64, step: usize) -> i8 {
     let mut best = 0i8;
     let mut best_key = (u64::MAX, u32::MAX, i32::MAX);
-    for m in i8::MIN..=i8::MAX {
+    for m in (i8::MIN..=i8::MAX).step_by(step) {
         work!(CrossColorEval);
         let key = (cost(m), i32::from(m).unsigned_abs(), i32::from(m));
         if key < best_key {
@@ -233,6 +234,17 @@ fn sweep_blue(
     sweep_red: bool,
     channel: &mut Vec<i32>,
 ) -> i8 {
+    sweep_blue_step(tile_px, blue_base, sweep_red, channel, 1)
+}
+
+#[must_use]
+fn sweep_blue_step(
+    tile_px: &[TilePixel],
+    blue_base: &[i32],
+    sweep_red: bool,
+    channel: &mut Vec<i32>,
+    step: usize,
+) -> i8 {
     // The swept channel is invariant across all 256 multiplier evals, so gather it
     // once into a contiguous `i32` scratch instead of re-reading the strided AoS
     // `TilePixel` field (and re-branching on `sweep_red`) inside every eval — the
@@ -252,15 +264,18 @@ fn sweep_blue(
             px.green
         })
     }));
-    best_multiplier(|m| {
-        let m = i32::from(m);
-        let mut sum = 0u32;
-        for (&ch, &base) in channel.iter().zip(blue_base) {
-            let sb = low_u8(base - ((m * ch) >> 5));
-            sum += residual_magnitude(sb);
-        }
-        u64::from(sum)
-    })
+    best_multiplier_step(
+        |m| {
+            let m = i32::from(m);
+            let mut sum = 0u32;
+            for (&ch, &base) in channel.iter().zip(blue_base) {
+                let sb = low_u8(base - ((m * ch) >> 5));
+                sum += residual_magnitude(sb);
+            }
+            u64::from(sum)
+        },
+        step,
+    )
 }
 
 /// The pre-scratch [`sweep_blue`] verbatim: it re-reads the swept channel from the
@@ -274,7 +289,8 @@ fn sweep_blue(
 #[cfg(any(test, feature = "bench"))]
 #[must_use]
 fn sweep_blue_reference(tile_px: &[TilePixel], blue_base: &[i32], sweep_red: bool) -> i8 {
-    best_multiplier(|m| {
+    best_multiplier_step(
+        |m| {
         let mut sum = 0u64;
         for (px, &base) in tile_px.iter().zip(blue_base) {
             let ch = if sweep_red {
@@ -286,7 +302,9 @@ fn sweep_blue_reference(tile_px: &[TilePixel], blue_base: &[i32], sweep_red: boo
             sum += u64::from(residual_magnitude(sb));
         }
         sum
-    })
+        },
+        1,
+    )
 }
 
 /// Bench-only driver for the `kernels` microbench: build a tile from parallel
@@ -368,6 +386,32 @@ pub(crate) fn bench_sweep_blue_reference(
 /// exact packing [`code_to_multipliers`] unpacks.
 #[must_use]
 pub(crate) fn forward(argb: &[u32], width: u32, height: u32, bits: u32) -> (Vec<u32>, Vec<u32>) {
+    forward_impl(argb, width, height, bits, 1, MAX_CC_REFINE_ROUNDS)
+}
+
+/// Estimate-only [`forward`]: the same per-tile transform on a coarser
+/// multiplier grid (every fourth `i8` candidate) with the first-round blue
+/// sweeps only. The stored pixels are a close approximation of the real
+/// forward's, which is all the entropy pre-score needs — callers must not
+/// emit them, and the real [`forward`] still runs for any kept candidate.
+#[must_use]
+pub(crate) fn forward_estimate(
+    argb: &[u32],
+    width: u32,
+    height: u32,
+    bits: u32,
+) -> (Vec<u32>, Vec<u32>) {
+    forward_impl(argb, width, height, bits, 4, 1)
+}
+
+fn forward_impl(
+    argb: &[u32],
+    width: u32,
+    height: u32,
+    bits: u32,
+    mult_step: usize,
+    refine_rounds: u32,
+) -> (Vec<u32>, Vec<u32>) {
     /// Stored red = `(red - delta(green_to_red, green)) & 0xff` — the exact term
     /// [`transform_pixel`] adds back.
     fn stored_red(red: u8, green: i8, green_to_red: i8) -> u8 {
@@ -441,28 +485,33 @@ pub(crate) fn forward(argb: &[u32], width: u32, height: u32, bits: u32) -> (Vec<
                 channel.push(i32::from(px.green));
                 red_channel.push(i32::from(px.r));
             }
-            let green_to_red = best_multiplier(|m| {
-                let m = i32::from(m);
-                let mut sum = 0u64;
-                for (&g, &r) in channel.iter().zip(&red_channel) {
-                    let sr = low_u8(r - ((m * g) >> 5));
-                    sum += u64::from(residual_magnitude(sr));
-                }
-                sum
-            });
+            let green_to_red = best_multiplier_step(
+                |m| {
+                    let m = i32::from(m);
+                    let mut sum = 0u64;
+                    for (&g, &r) in channel.iter().zip(&red_channel) {
+                        let sr = low_u8(r - ((m * g) >> 5));
+                        sum += u64::from(residual_magnitude(sr));
+                    }
+                    sum
+                },
+                mult_step,
+            );
             // Blue depends on BOTH multipliers, so descend on the coupled pair; each
             // sweep holds one axis fixed, hoisting its per-pixel delta into
             // `blue_base` so the 256-value sweep adds only the swept axis's delta.
             // Round 1 reproduces the historical passes: g2b with r2b=0, then r2b.
             fill_blue_base(&mut blue_base, &tile_px, true, 0); // hold red_to_blue = 0
-            let mut green_to_blue = sweep_blue(&tile_px, &blue_base, false, &mut channel);
+            let mut green_to_blue =
+                sweep_blue_step(&tile_px, &blue_base, false, &mut channel, mult_step);
             fill_blue_base(&mut blue_base, &tile_px, false, green_to_blue); // hold g2b
-            let mut red_to_blue = sweep_blue(&tile_px, &blue_base, true, &mut channel);
-            for _ in 1..MAX_CC_REFINE_ROUNDS {
+            let mut red_to_blue =
+                sweep_blue_step(&tile_px, &blue_base, true, &mut channel, mult_step);
+            for _ in 1..refine_rounds {
                 fill_blue_base(&mut blue_base, &tile_px, true, red_to_blue); // hold r2b
-                let g2b = sweep_blue(&tile_px, &blue_base, false, &mut channel);
+                let g2b = sweep_blue_step(&tile_px, &blue_base, false, &mut channel, mult_step);
                 fill_blue_base(&mut blue_base, &tile_px, false, g2b); // hold g2b
-                let r2b = sweep_blue(&tile_px, &blue_base, true, &mut channel);
+                let r2b = sweep_blue_step(&tile_px, &blue_base, true, &mut channel, mult_step);
                 if g2b == green_to_blue && r2b == red_to_blue {
                     break;
                 }

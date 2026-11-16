@@ -571,7 +571,7 @@ fn run_best_task(
     if matches!(task, BestTask::Floor) {
         return floor_streams(breadth, width, height, alpha_used, argb);
     }
-    task_specs(task, width, height, argb, planes, cc)
+    task_specs(task, width, height, argb, planes, cc, false)
         .into_iter()
         .map(|spec| {
             family_search(
@@ -596,16 +596,17 @@ fn task_specs(
     argb: &[u32],
     planes: Option<&PlaneCache>,
     cc: Option<&CrossColorCache>,
+    cheap_cc: bool,
 ) -> Vec<BufferSpec> {
     match task {
         BestTask::Floor => Vec::new(),
         BestTask::Palette => palette_specs(width, argb),
         BestTask::Predictor(bits) => predictor_specs(width, height, argb, bits, planes),
         BestTask::CrossColor(bits) => {
-            cross_color_specs(width, height, argb, bits, cc)
+            cross_color_specs(width, height, argb, bits, cc, cheap_cc)
         },
         BestTask::PredictorCross(p_bits, cc_bits) => {
-            predictor_cross_specs(width, height, argb, p_bits, cc_bits, planes, cc)
+            predictor_cross_specs(width, height, argb, p_bits, cc_bits, planes, cc, cheap_cc)
         },
     }
 }
@@ -949,6 +950,7 @@ fn predictor_cross_specs(
     cc_bits: u32,
     planes: Option<&PlaneCache>,
     cc: Option<&CrossColorCache>,
+    cheap_cc: bool,
 ) -> Vec<BufferSpec> {
     // libwebp's order: subtract-green first, then predictor, then cross-color.
     let sg_hit = planes.and_then(|p| p.sg_pred(p_bits));
@@ -958,7 +960,11 @@ fn predictor_cross_specs(
         predictor::forward(&sg_px, width, height, p_bits)
     });
     let (pres, ptile) = plane(sg_hit, &sg_owned);
-    let (stored, ctile) = cc_forward(cc, 2, p_bits, cc_bits, pres, width, height);
+    let (stored, ctile) = if cheap_cc {
+        cross_color::forward_estimate(pres, width, height, cc_bits)
+    } else {
+        cc_forward(cc, 2, p_bits, cc_bits, pres, width, height)
+    };
     let with_sg = BufferSpec {
         plans: vec![
             TransformPlan::SubtractGreen,
@@ -981,7 +987,11 @@ fn predictor_cross_specs(
         .is_none()
         .then(|| predictor::forward(argb, width, height, p_bits));
     let (pres3, ptile3) = plane(raw_hit, &raw_owned);
-    let (stored3, ctile3) = cc_forward(cc, 1, p_bits, cc_bits, pres3, width, height);
+    let (stored3, ctile3) = if cheap_cc {
+        cross_color::forward_estimate(pres3, width, height, cc_bits)
+    } else {
+        cc_forward(cc, 1, p_bits, cc_bits, pres3, width, height)
+    };
     let no_sg = BufferSpec {
         plans: vec![
             TransformPlan::Predictor {
@@ -1007,8 +1017,13 @@ fn cross_color_specs(
     argb: &[u32],
     bits: u32,
     cc: Option<&CrossColorCache>,
+    cheap_cc: bool,
 ) -> Vec<BufferSpec> {
-    let (stored, tile_data) = cc_forward(cc, 0, 0, bits, argb, width, height);
+    let (stored, tile_data) = if cheap_cc {
+        cross_color::forward_estimate(argb, width, height, bits)
+    } else {
+        cc_forward(cc, 0, 0, bits, argb, width, height)
+    };
     let mut stored_sg = stored.clone();
     subtract_green::forward(&mut stored_sg);
     vec![
@@ -1081,8 +1096,9 @@ fn estimate_task(
     argb: &[u32],
     planes: Option<&PlaneCache>,
     cc: Option<&CrossColorCache>,
+    cheap_cc: bool,
 ) -> Option<u64> {
-    task_specs(task, width, height, argb, planes, cc)
+    task_specs(task, width, height, argb, planes, cc, cheap_cc)
         .iter()
         .map(|spec| stream_entropy(&spec.pixels))
         .reduce(u64::min)
@@ -1129,6 +1145,57 @@ fn select_from_estimates(tasks: &[BestTask], estimates: &[Option<u64>]) -> Vec<b
     keep
 }
 
+/// Provisional keep mask from the cheap coarse-forward estimates: `Floor`/
+/// `Palette` always, plus each family's [`PROVISIONAL_CAP`] best tasks. Only
+/// provisionally-kept tasks pay for a real cross-color forward + entropy in
+/// the second estimate pass; the final [`select_from_estimates`] then runs on
+/// real estimates exactly as before. The cap is deliberately wider than
+/// [`FAMILY_CAP`] — the coarse multipliers shift entropy estimates by a few
+/// percent, so finalists need margin the real pass then trims.
+const PROVISIONAL_CAP: usize = 8;
+
+/// Whether the cheap pass can actually prune: it pays only when some family has
+/// more members than [`PROVISIONAL_CAP`]. Below that every task is provisional
+/// anyway, so the real estimates run directly and the coarse pass is skipped.
+fn provisional_prunes(tasks: &[BestTask]) -> bool {
+    let mut counts = [0usize; 3];
+    for task in tasks {
+        match task {
+            BestTask::Predictor(_) => counts[0] += 1,
+            BestTask::CrossColor(_) => counts[1] += 1,
+            BestTask::PredictorCross(..) => counts[2] += 1,
+            _ => {}
+        }
+    }
+    counts.iter().any(|&c| c > PROVISIONAL_CAP)
+}
+
+fn select_provisional(tasks: &[BestTask], estimates: &[Option<u64>]) -> Vec<bool> {
+    let mut keep = vec![false; tasks.len()];
+    let mut scored: [Vec<(u64, usize)>; 3] = [Vec::new(), Vec::new(), Vec::new()];
+    for (i, task) in tasks.iter().enumerate() {
+        if matches!(task, BestTask::Floor | BestTask::Palette) {
+            keep[i] = true;
+            continue;
+        }
+        let Some(est) = estimates[i] else { continue };
+        let family = match task {
+            BestTask::Predictor(_) => 0,
+            BestTask::CrossColor(_) => 1,
+            BestTask::PredictorCross(..) => 2,
+            _ => unreachable!(),
+        };
+        scored[family].push((est, i));
+    }
+    for candidates in scored.iter_mut() {
+        candidates.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
+        for &(_, i) in candidates.iter().take(PROVISIONAL_CAP) {
+            keep[i] = true;
+        }
+    }
+    keep
+}
+
 /// Run every task serially (default) or across a rayon thread pool (feature
 /// `rayon`), folding each family to its own minimum and then across families, so
 /// the peak never holds every candidate stream at once — only the running best
@@ -1152,9 +1219,25 @@ fn evaluate_best_tasks(
     // are produced, folded to one, and dropped before the next family runs.
     let planes = PlaneCache::build(breadth, width, height, argb);
     let cc = CrossColorCache::new(&tasks, argb.len());
+    let prov = if provisional_prunes(&tasks) {
+        let cheap: Vec<Option<u64>> = tasks
+            .iter()
+            .map(|t| estimate_task(*t, width, height, argb, planes.as_ref(), None, true))
+            .collect();
+        select_provisional(&tasks, &cheap)
+    } else {
+        vec![true; tasks.len()]
+    };
     let estimates: Vec<Option<u64>> = tasks
         .iter()
-        .map(|t| estimate_task(*t, width, height, argb, planes.as_ref(), cc.as_ref()))
+        .zip(&prov)
+        .map(|(t, &p)| {
+            if p {
+                estimate_task(*t, width, height, argb, planes.as_ref(), cc.as_ref(), false)
+            } else {
+                None
+            }
+        })
         .collect();
     let keep = select_from_estimates(&tasks, &estimates);
     reduce_task_minima(
@@ -1194,9 +1277,25 @@ fn evaluate_best_tasks(
     // keeps task order, so the fold below resolves ties identically to serial.
     let planes = PlaneCache::build(breadth, width, height, argb);
     let cc = CrossColorCache::new(&tasks, argb.len());
+    let prov = if provisional_prunes(&tasks) {
+        let cheap: Vec<Option<u64>> = tasks
+            .par_iter()
+            .map(|t| estimate_task(*t, width, height, argb, planes.as_ref(), None, true))
+            .collect();
+        select_provisional(&tasks, &cheap)
+    } else {
+        vec![true; tasks.len()]
+    };
     let estimates: Vec<Option<u64>> = tasks
         .par_iter()
-        .map(|t| estimate_task(*t, width, height, argb, planes.as_ref(), cc.as_ref()))
+        .zip(&prov)
+        .map(|(t, &p)| {
+            if p {
+                estimate_task(*t, width, height, argb, planes.as_ref(), cc.as_ref(), false)
+            } else {
+                None
+            }
+        })
         .collect();
     let keep = select_from_estimates(&tasks, &estimates);
     let minima: Vec<Option<Vec<u8>>> = tasks
@@ -2319,7 +2418,7 @@ mod tests {
         use super::{
             CrossColorCache, PlaneCache, build_best_tasks, encode_best, estimate_task,
             evaluate_best_tasks, keep_smallest, reduce_task_minima, run_best_task, schedule,
-            select_from_estimates,
+            select_from_estimates, select_provisional, provisional_prunes,
         };
         let breadth = schedule(crate::effort::MAX_LEVEL);
         for (w, h, pixels) in byte_stability_cases() {
@@ -2330,10 +2429,24 @@ mod tests {
             let planes = PlaneCache::build(breadth, w, h, &pixels);
             let tasks = build_best_tasks(breadth);
             let cc = CrossColorCache::new(&tasks, pixels.len());
+            let prov = if provisional_prunes(&tasks) {
+                let cheap: Vec<Option<u64>> = tasks
+                    .iter()
+                    .map(|t| estimate_task(*t, w, h, &pixels, planes.as_ref(), None, true))
+                    .collect();
+                select_provisional(&tasks, &cheap)
+            } else {
+                vec![true; tasks.len()]
+            };
             let estimates: Vec<Option<u64>> = tasks
                 .iter()
-                .map(|t| {
-                    estimate_task(*t, w, h, &pixels, planes.as_ref(), cc.as_ref())
+                .zip(&prov)
+                .map(|(t, &p)| {
+                    if p {
+                        estimate_task(*t, w, h, &pixels, planes.as_ref(), cc.as_ref(), false)
+                    } else {
+                        None
+                    }
                 })
                 .collect();
             let keep = select_from_estimates(&tasks, &estimates);
