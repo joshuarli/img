@@ -297,3 +297,12 @@ The separate 20-second large-image profile (two level-1 encodes) attributes 9,40
 3. **Coefficient probability adaptation** — we optimize probas once per frame (`emit_best_partitions`); VP8's bool coder adapts probabilities *during* the stream, so static-vs-adaptive divergence could cost several % on heterogeneous frames.
 
 **Gate remains NOT met.**
+
+**2026-11-15 — lossy hypothesis elimination round 2 (grass q95/q100).**
+
+- **`pass` (StatLoop) re-planning is inert even at q100**: pass=2/3/5 → 164,416 / 261,492 / 261,396 / 261,366 B (pass=1: 164,416 / 261,782). Whole-frame re-planning against optimized probas moves ≤0.16% — the RD decisions are not proba-table-sensitive. Hypothesis "static-vs-adaptive probas" closed.
+- **i4 mode-cost diff is small**: libwebp `PickBestIntra4` scores `SSE4x4*256 + mode_costs[mode]*lambda_d_i4` (context-adaptive bmode bit cost, `lambda_d_i4=11`); webpkit picks pure argmin-SSE. Mode-bit delta is a few bits/sub-block — cannot explain ~83 KB.
+- **Defaults match**: cwebp `method=4, sns=50, filter=60, pass=1, partitions=0` ≡ our `LossyTuning::DEFAULT`.
+- **Reframed the q100 gap — it is coding efficiency, not fidelity**: decoded-diff probe (`scratch-diff`, mean-abs vs source): cwebp q100 **0.578** (max 3), ours **0.657** (max 4) — both essentially lossless (VP8 q0 step ≈ 4). SSIMULACRA2 delta (95.52 vs 95.73) is perceptual-model noise at this error floor. We spend **+48% bits to reach the same near-lossless state** → the gap is residual-stream *rate*, i.e., prediction-residual energy (mode-search quality) or coefficient-token efficiency, not quantization tables, partitions, chroma deltas, or proba adaptation.
+
+**Remaining live hypotheses** (all multi-day coefficient/prediction-path R&D): (a) per-MB i4-vs-i16 and bmode decisions vs libwebp's `VP8Decimate` cost model; (b) whether our i4/i16 candidate *evaluation* quantizes with the same trellis-lambda schedule libwebp uses inside `ReconstructIntra4/16`; (c) coefficient token emission order/context vs `token_enc.c`. No cheap arm identified; gate remains **NOT met**.
