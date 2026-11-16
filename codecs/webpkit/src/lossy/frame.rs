@@ -959,9 +959,12 @@ fn plan_one_mb(
     // coefficients. For Full/Best this is a full rate-distortion search that
     // folds in quantization (each candidate is transformed, quantized and
     // reconstructed); the winner's prediction is left committed in the planes
-    // and its coefficients/tokens are returned directly, so the winner is never
-    // re-encoded. The fast path skips the search, commits fixed DC prediction
-    // and encodes it. `coeffs` carries the whole macroblock; `tokens` holds its
+    // and its coefficients/tokens are returned directly. On the trellis path
+    // the mode searches first score candidates with round-to-nearest levels and
+    // re-encode only the cheap-ranking leaders, so the returned encode is the
+    // exact winner rather than a re-run of the full candidate set. The fast
+    // path skips the search, commits fixed DC prediction and encodes it.
+    // `coeffs` carries the whole macroblock; `tokens` holds its
     // 16×16 luma / Y2 / chroma blocks.
     let (ymode, uvmode, mut coeffs, mut tokens) = if gates.search_modes {
         let (ymode, luma) =
@@ -2105,6 +2108,11 @@ const I4X4_SUBMODE_COST: i64 = 2 * 256;
 /// How many prediction-SSE-ranked B_PRED modes get the full per-mode RD eval in
 /// [`search_luma_i4x4`] — the rest are discarded by the cheap prefilter.
 const I4_RD_CANDIDATES: usize = 8;
+/// How many of the cheap-score leaders get the exact trellis re-score in
+/// [`search_luma_i4x4`]'s second phase. The round-to-nearest ranking almost
+/// always contains the trellis winner; three covers the observed reorderings
+/// while cutting per-sub-block trellis calls from 8 to 3.
+const I4_TRELLIS_KEEPS: usize = 3;
 
 /// The fixed-point (1/256-bit) cost of signaling `mode` given the top/left
 /// sub-block modes, mirroring [`put_bmode`]'s tree walk over `BMODES_PROBA`.
@@ -2370,15 +2378,24 @@ fn search_luma_i4x4(
         }
         ranked.sort_unstable_by_key(|&(sse, mode)| (sse, mode));
 
-        let mut best_mode = B_DC_PRED;
-        let mut best_q = Quantized {
+        // Phase 1 scores every RD candidate with round-to-nearest levels — the
+        // trellis DP is the dominant encode cost and plain levels rank modes
+        // almost identically. `scored` keeps each candidate's coefficients so
+        // phase 2 need not re-transform. The array stays in `ranked` order, so
+        // a stable sort by score reproduces the strict-`<` first-best tie-break
+        // of the single-pass walk exactly.
+        let mut scored = [(i64::MAX, 0u8, [0i16; 16]); I4_RD_CANDIDATES];
+        // Inline first-best tracking: on the round-to-nearest path the phase-1
+        // score is already exact, so the winner is taken straight from here.
+        let mut fast_mode = B_DC_PRED;
+        let mut fast_q = Quantized {
             levels: [0; 16],
             recon: [0; 16],
             last: -1,
         };
-        let mut best_score = i64::MAX;
-        let mut best_rate = 0i64;
-        for &(_, mode) in ranked.iter().take(I4_RD_CANDIDATES) {
+        let mut fast_score = i64::MAX;
+        let mut fast_rate = 0i64;
+        for (ci, &(_, mode)) in ranked.iter().take(I4_RD_CANDIDATES).enumerate() {
             predict_luma4(&mut planes.y, sub, stride, mode);
             let residual = residual_block(
                 &src.y,
@@ -2389,15 +2406,8 @@ fn search_luma_i4x4(
                 sub,
                 stride,
             );
-            let q = quantize_one(
-                fdct4x4(residual),
-                quant.y1,
-                0,
-                3,
-                uses_trellis,
-                plan.probas,
-                plan.rate,
-            );
+            let coeffs = fdct4x4(residual);
+            let q = quantize_block(coeffs, quant.y1, 0);
             // Reconstruct this candidate into `scratch` (prediction + IDCT) and
             // score post-quantization distortion plus true token and mode cost.
             for r in 0..4 {
@@ -2410,12 +2420,53 @@ fn search_luma_i4x4(
                 as i64
                 + i4_bmode_cost(top_ctx, left_ctx, mode) as i64;
             let score = RD_DISTO_MULT * dist + lambda * rate;
-            if score < best_score {
-                best_score = score;
-                best_mode = mode;
-                best_q = q;
-                best_rate = rate;
+            scored[ci] = (score, mode, coeffs);
+            if score < fast_score {
+                fast_score = score;
+                fast_mode = mode;
+                fast_q = q;
+                fast_rate = rate;
             }
+        }
+        scored.sort_by_key(|&(score, _, _)| score);
+
+        let mut best_mode = B_DC_PRED;
+        let mut best_q = Quantized {
+            levels: [0; 16],
+            recon: [0; 16],
+            last: -1,
+        };
+        let mut best_score = i64::MAX;
+        let mut best_rate = 0i64;
+        if uses_trellis {
+            // Phase 2 re-scores only the cheap-ranking leaders under the trellis:
+            // the DP optimum can reorder close candidates, so the top
+            // `I4_TRELLIS_KEEPS` get the exact eval and the rest stay discarded.
+            for &(_, mode, coeffs) in scored.iter().take(I4_TRELLIS_KEEPS.min(I4_RD_CANDIDATES)) {
+                predict_luma4(&mut planes.y, sub, stride, mode);
+                for r in 0..4 {
+                    scratch[r * 4..r * 4 + 4]
+                        .copy_from_slice(&planes.y[sub + r * stride..sub + r * stride + 4]);
+                }
+                let q = quantize_one(coeffs, quant.y1, 0, 3, true, plan.probas, plan.rate);
+                transform_one(&q.recon, &mut scratch, 0, 4);
+                let dist = sse_block(&src.y, src_off, src_stride, &scratch, 0, 4, 4);
+                let rate = block_token_cost(q.levels, 0, q.last, 3, nz_ctx0, plan.probas, plan.rate)
+                    as i64
+                    + i4_bmode_cost(top_ctx, left_ctx, mode) as i64;
+                let score = RD_DISTO_MULT * dist + lambda * rate;
+                if score < best_score {
+                    best_score = score;
+                    best_mode = mode;
+                    best_q = q;
+                    best_rate = rate;
+                }
+            }
+        } else {
+            // Round-to-nearest path: the phase-1 scores are already exact.
+            best_mode = fast_mode;
+            best_q = fast_q;
+            best_rate = fast_rate;
         }
         bits += best_rate;
 
@@ -2492,6 +2543,11 @@ fn try_i4x4_luma(
 /// `DC_PRED` leads so it wins ties (it is the only always-available mode and the
 /// strict-`<` comparison keeps the earliest of equal scores).
 const WHOLE_BLOCK_MODES: [u8; 4] = [DC_PRED, V_PRED, H_PRED, TM_PRED];
+/// How many cheap-score leaders get the exact trellis re-encode/re-score in the
+/// whole-block mode searches ([`select_luma16_mode_rd`],
+/// [`select_chroma8_mode_rd`]). Two of four covers the observed plain-vs-trellis
+/// reorderings while halving per-mode trellis calls.
+const WHOLE_BLOCK_TRELLIS_KEEPS: usize = 2;
 
 /// Whether a whole-block predictor can run given neighbor availability: `V` needs
 /// the top row, `H` the left column, `TM` both; `DC` is always available (its
@@ -2627,6 +2683,15 @@ fn select_luma16_mode_rd(
     let (mb_x, mb_y) = mb;
     let stride = planes.y_stride;
     let lambda = luma16_lambda(plan.quant.y1.ac.q);
+    // Phase 1 scores every whole-block mode with round-to-nearest quantization:
+    // the trellis DP is the dominant encode cost and plain levels rank modes
+    // almost identically. `scored` collects (cost, mode) in evaluation order.
+    let score_plan = QuantPlan {
+        uses_trellis: false,
+        ..plan
+    };
+    let mut scored = [(i64::MAX, 0u8); WHOLE_BLOCK_MODES.len()];
+    let mut ns = 0usize;
     let mut best_mode = DC_PRED;
     let mut best_cost = i64::MAX;
     let mut best = None;
@@ -2635,23 +2700,47 @@ fn select_luma16_mode_rd(
             continue;
         }
         predict_luma16(&mut planes.y, y_off, stride, mode, has_top, has_left);
-        let enc = encode_luma16_residual(src, planes, mb_x, mb_y, plan);
-        let bits = I16X16_MODE_COST + luma16_token_bits(enc.y2, &enc.blocks, plan.probas, plan.rate);
+        let enc = encode_luma16_residual(src, planes, mb_x, mb_y, score_plan);
+        let bits =
+            I16X16_MODE_COST + luma16_token_bits(enc.y2, &enc.blocks, plan.probas, plan.rate);
         // Reconstruct into planes.y (which holds this candidate's prediction) to score
         // the post-quant distortion; the next iteration re-predicts over it.
         let sse = luma16_reconstruction_sse(planes, &enc.coeffs, y_off, src, mb_x, mb_y);
         let disto = luma16_perceptual_disto(sse, planes, y_off, src, mb_x, mb_y, plan);
         let cost = RD_DISTO_MULT * disto + lambda * bits;
+        scored[ns] = (cost, mode);
+        ns += 1;
         if cost < best_cost {
             best_cost = cost;
             best_mode = mode;
-            best = Some(enc);
+            // On the round-to-nearest path the scored encode is already exact.
+            best = (!plan.uses_trellis).then_some(enc);
         }
     }
     // Re-commit the winner's prediction (overwriting the last candidate's scribble) so
     // downstream reads pure prediction.
+    if plan.uses_trellis {
+        // Phase 2: the cheap ranking can misorder close modes, so the top
+        // `WHOLE_BLOCK_TRELLIS_KEEPS` are re-encoded and re-scored exactly.
+        scored[..ns].sort_by_key(|&(cost, _)| cost);
+        let mut trellis_best: Option<(i64, Luma16Encode)> = None;
+        for &(_, mode) in scored[..ns].iter().take(WHOLE_BLOCK_TRELLIS_KEEPS) {
+            predict_luma16(&mut planes.y, y_off, stride, mode, has_top, has_left);
+            let enc = encode_luma16_residual(src, planes, mb_x, mb_y, plan);
+            let bits =
+                I16X16_MODE_COST + luma16_token_bits(enc.y2, &enc.blocks, plan.probas, plan.rate);
+            let sse = luma16_reconstruction_sse(planes, &enc.coeffs, y_off, src, mb_x, mb_y);
+            let disto = luma16_perceptual_disto(sse, planes, y_off, src, mb_x, mb_y, plan);
+            let cost = RD_DISTO_MULT * disto + lambda * bits;
+            if trellis_best.as_ref().is_none_or(|(c, _)| cost < *c) {
+                trellis_best = Some((cost, enc));
+                best_mode = mode;
+            }
+        }
+        // DC is always available, so `trellis_best` is always Some here.
+        best = trellis_best.map(|(_, enc)| enc);
+    }
     predict_luma16(&mut planes.y, y_off, stride, best_mode, has_top, has_left);
-    // DC is always available, so `best` is always Some.
     (
         best_mode,
         best.unwrap_or_else(|| encode_luma16_residual(src, planes, mb_x, mb_y, plan)),
@@ -2675,6 +2764,15 @@ fn select_chroma8_mode_rd(
     let (mb_x, mb_y) = mb;
     let stride = planes.uv_stride;
     let lambda = chroma_lambda(plan.quant.uv.ac.q);
+    // Score candidates with round-to-nearest quantization (see
+    // [`select_luma16_mode_rd`]): only the winning mode is re-encoded under the
+    // real trellis plan after the loop.
+    let score_plan = QuantPlan {
+        uses_trellis: false,
+        ..plan
+    };
+    let mut scored = [(i64::MAX, 0u8); WHOLE_BLOCK_MODES.len()];
+    let mut ns = 0usize;
     let mut best_mode = DC_PRED;
     let mut best_cost = i64::MAX;
     let mut best = None;
@@ -2684,15 +2782,34 @@ fn select_chroma8_mode_rd(
         }
         predict_chroma8(&mut planes.u, uv_off, stride, mode, has_top, has_left);
         predict_chroma8(&mut planes.v, uv_off, stride, mode, has_top, has_left);
-        let enc = encode_chroma8_residual(src, planes, mb_x, mb_y, plan);
+        let enc = encode_chroma8_residual(src, planes, mb_x, mb_y, score_plan);
         let bits = chroma8_token_bits(&enc.blocks, plan.probas, plan.rate);
         let sse = chroma8_reconstruction_sse(planes, &enc.coeffs, uv_off, src, mb_x, mb_y);
         let cost = RD_DISTO_MULT * sse + lambda * bits;
+        scored[ns] = (cost, mode);
+        ns += 1;
         if cost < best_cost {
             best_cost = cost;
             best_mode = mode;
-            best = Some(enc);
+            best = (!plan.uses_trellis).then_some(enc);
         }
+    }
+    if plan.uses_trellis {
+        scored[..ns].sort_by_key(|&(cost, _)| cost);
+        let mut trellis_best: Option<(i64, Chroma8Encode)> = None;
+        for &(_, mode) in scored[..ns].iter().take(WHOLE_BLOCK_TRELLIS_KEEPS) {
+            predict_chroma8(&mut planes.u, uv_off, stride, mode, has_top, has_left);
+            predict_chroma8(&mut planes.v, uv_off, stride, mode, has_top, has_left);
+            let enc = encode_chroma8_residual(src, planes, mb_x, mb_y, plan);
+            let bits = chroma8_token_bits(&enc.blocks, plan.probas, plan.rate);
+            let sse = chroma8_reconstruction_sse(planes, &enc.coeffs, uv_off, src, mb_x, mb_y);
+            let cost = RD_DISTO_MULT * sse + lambda * bits;
+            if trellis_best.as_ref().is_none_or(|(c, _)| cost < *c) {
+                trellis_best = Some((cost, enc));
+                best_mode = mode;
+            }
+        }
+        best = trellis_best.map(|(_, enc)| enc);
     }
     // Commit the winner into both chroma planes.
     predict_chroma8(&mut planes.u, uv_off, stride, best_mode, has_top, has_left);
@@ -4079,10 +4196,10 @@ mod tests {
     const GOLDEN_EXPECTED: &str = "\
 gradient fast 190 fdbe0b6ce4ec645c
 gradient balanced 105 c3fa10bfb22fa948
-gradient best 100 a36107b25defee71
+gradient best 101 b3c9b9229186e5dd
 noisy fast 7975 f970e253b081638d
 noisy balanced 3541 c35696f4c09907a1
-noisy best 3352 513358281835aacc
+noisy best 3371 8b461c3c5aa1c15b
 flat fast 40 66b6a4ee87e184a3
 flat balanced 39 2f5a1f125c0a5180
 flat best 39 2f5a1f125c0a5180
@@ -4094,10 +4211,10 @@ stripe balanced 140 9ecdb25e5705f399
 stripe best 92 b96f70472c8c4f5e
 diagonal fast 415 46ac66199192122b
 diagonal balanced 293 36aa8a54dc5eb621
-diagonal best 338 5b89969e06ec132a
+diagonal best 338 db4feb2a688f782c
 mixed fast 4363 13644d2cc4723cd5
 mixed balanced 1982 f8cf1f16872cddc8
-mixed best 2012 632cda60c641945e
+mixed best 2009 79b48e93f8b1939d
 horizontal fast 667 81e58ac967acf023
 horizontal balanced 211 0777f88b6ba66c87
 horizontal best 171 91b074ccc6e6f73f";
