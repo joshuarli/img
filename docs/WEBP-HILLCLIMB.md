@@ -569,3 +569,22 @@ L6 14.43 s -> 11.06 s (~23% faster). Bytes: 24/24 corpus images at L6
 plus grass/coffee/astronaut/generated_transparent at L1 and L9 all
 byte-identical vs `bc9140a`; serial/rayon byte-identical; 922 lib
 tests + doc tests + alloc-only check green.
+
+Spec-level pruning LANDED (`dda39c0`): the real-estimate pass already
+scores every BufferSpec's order-0 entropy but kept only the minimum —
+while `run_best_task` searched ALL of a kept task's specs (each a full
+`family_search`: literal parse, greedy LZ77, optimal-parse DP,
+meta-Huffman shots). Per-spec dump on the corpus showed sibling specs
+split bimodally: predictor and cross-color with/without-subtract-green
+pairs sit 8-200% apart in entropy (clear losers), while the
+predictor+cross-color SG choice ties within ~0.5% (must keep both —
+LZ77 structure, not order-0 entropy, decides those). `estimate_specs`
+returns the per-spec vector; `spec_keep_masks` keeps every spec within
+~5% of the task min (`est * 20 <= min * 21`, ties always survive);
+`run_best_task` filters specs through the mask before `family_search`.
+Gated A/B vs `1abcc0c` (pre-gate 0, 5 interleaved rounds): coffee L6
+4.05 s -> 3.76 s (~7%), grass L6 11.00 s -> 9.03 s (~18%). Cumulative
+vs pre-two-phase `bc9140a`: coffee 6.61 -> 3.76 s (~43%), grass
+14.43 -> 9.03 s (~37%). Bytes: 24/24 L6 + L1/L9 spot checks
+byte-identical; serial/rayon identical; 922 lib + doc + alloc-only
+green.
