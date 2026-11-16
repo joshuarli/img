@@ -118,7 +118,7 @@ combine its default-parallel measurements with the serial table above.
 | --- | --- | --- |
 | Product migration and permissive closure | Already integrated; encoder experimental | Retain dependency/linkage proofs when affected |
 | Independent sample/alpha/metadata correctness | Existing root and codec oracle tests; partial campaign coverage | Fresh current-source output validation on expanded inputs |
-| Lazy selector equivalence | Unproven empirical pruning contradicts recorded constraint | P0 reference-selector comparison and sound scheduling |
+| Lazy selector equivalence | Repaired at `b06f91b`: exact pre-`a0e5a30` schedule restored, probe removed | Retain on regression; qualification sweep still owed |
 | Size/quality frontier | Promising narrow minimum-target workflow result | Retained refined frontier points and held-out strata |
 | Workflow speed | Material measured deficit | Fresh exact-selector baseline, then structural reductions |
 | Isolated encoder/decoder, CPU, memory, tail | Incomplete or older revision evidence | Separate measurements tied to each artifact/configuration |
@@ -349,3 +349,35 @@ complete correctness, harness, provenance or analysis tasks; never loop on
 health checks or repeatedly recapture unchanged state. Report the exact blocker
 and the next executable step. Do not ask again for decisions already recorded
 above.
+
+## Checkpoint — 2026-11-15 (P0 selector repair landed)
+
+`b06f91b` restores the exact pre-`a0e5a30` score-search schedule: exact PNG/WebP
+candidates evaluate first inside the effort cap, then the fixed quality grid and
+deterministic refinement (`refine_step`, extracted unchanged). The level-0 probe
+skip, the deferred-lossless pass, its cap-slot reservation, and
+`StillImage::encode_webp_lossless_probe`/`webp::encode_probe` are deleted, so
+every encode is counted in `evaluations` and the advertised cap. `docs/
+OPTIMIZATION.md` now states the owner-approved 10/24/64 caps correctly.
+
+Evidence: `examples/scratch-select.rs` ran 60 requests (14 corpus/generated
+inputs × convert-webp t80/90/95 Fast, plus auto and Balanced-webp on
+coffee/grass/large) against the heuristic build (`add6519`) and the repaired
+tree — winning format, bytes, score and `unchanged` identical on all 60; only
+evaluation order/refinement paths differ, which the restored schedule intends.
+New unit tests cover `better` tie order and `refine_step` straddle/gap/center
+choices; integration tests pin exact-candidate-first ordering and a deep
+lossless win where no lossy candidate qualifies. `cargo test --locked
+--all-features --test benchmark_verify` and the optimizer/webp_codec/
+color_fidelity/codec_boundary/cli suites are green.
+
+Restored wall cost (serial, `RAYON_NUM_THREADS=1`, release): grass t90 Fast
+convert 1.51 s → 11.95 s with byte-identical 112,946 B output — the price of
+the exact-selection guarantee on the calibrated 200–400K px band, matching the
+pre-`a0e5a30` ~12.9 s baseline. Raw comparison records: `.work/tmp/select-
+{before,after}.json` (disposable scratch, not committed evidence).
+
+Next per the brief: the representative reproducible baseline (P0 corpus +
+two measurement lanes), then structural repeated-work reductions. The
+workflow-speed gate now measures the exact selector, so fresh timed captures
+must use this revision or later.
