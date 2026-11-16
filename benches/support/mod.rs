@@ -4,15 +4,19 @@ use img::still::{Effort,EncodingMode,Format,SampleLayout,StillImage};
 use serde_json::{Value,json};
 use sha2::{Digest,Sha256};
 pub fn root()->PathBuf {Path::new(env!("CARGO_MANIFEST_DIR")).join("benchmarks")}
-pub fn photographic()->Vec<(String,Vec<u8>)> {
-    let manifest:Value=serde_json::from_slice(&fs::read(root().join("corpus/manifest.json")).unwrap()).unwrap();
+fn load_corpus(dir:&Path)->Vec<(String,Vec<u8>)> {
+    let manifest:Value=serde_json::from_slice(&fs::read(dir.join("manifest.json")).unwrap()).unwrap();
     manifest["sources"].as_array().unwrap().iter().map(|entry| {
-        let name=entry["file"].as_str().unwrap();let bytes=fs::read(root().join("corpus").join(name)).unwrap();
+        let name=entry["file"].as_str().unwrap();let bytes=fs::read(dir.join(name)).unwrap();
         assert_eq!(format!("{:x}",Sha256::digest(&bytes)),entry["sha256"].as_str().unwrap());
         assert!(!entry["license"].as_str().unwrap().is_empty());assert!(!entry["evidence"].as_str().unwrap().is_empty());
         let decoded=StillImage::decode(&bytes).unwrap();assert_eq!(decoded.dimensions(),(entry["width"].as_u64().unwrap() as u32,entry["height"].as_u64().unwrap() as u32));
         (name.to_owned(),bytes)
     }).collect()
+}
+pub fn photographic()->Vec<(String,Vec<u8>)> {load_corpus(&root().join("corpus"))}
+pub fn validation()->Vec<(String,Vec<u8>,String)> {
+    load_corpus(&root().join("corpus/validation")).into_iter().map(|(name,bytes)|(name,bytes,String::from("corpus/validation"))).collect()
 }
 pub fn generated()->Vec<(String,Vec<u8>)> {
     let mut cases=vec![];

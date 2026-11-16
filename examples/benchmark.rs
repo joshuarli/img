@@ -22,11 +22,14 @@ fn run()->Result<(),Box<dyn std::error::Error>> {
     let repository=Path::new(env!("CARGO_MANIFEST_DIR"));let benchmark=support::root();let output_dir=benchmark.join("results");fs::create_dir_all(&output_dir)?;
     let scratch=repository.join(".work/tmp/benchmark-capture");fs::create_dir_all(&scratch)?;
     let generated=benchmark.join("corpus/generated");fs::create_dir_all(&generated)?;
-    let mut cases=support::photographic().into_iter().map(|(name,bytes)|(name,bytes,String::from("corpus"))).collect::<Vec<_>>();
-    for (name,bytes) in support::generated() {
-        let path=generated.join(&name);
-        let bytes=if path.exists() {let stored=fs::read(&path)?;if !img::optimizer::samples_equal(&StillImage::decode(&bytes)?,&StillImage::decode(&stored)?) {return Err(format!("generated fixture changed; update {name} explicitly").into());}stored} else {fs::write(path,&bytes)?;bytes};
-        cases.push((name,bytes,"corpus/generated".into()));
+    let validation_corpus=std::env::var("IMG_BENCH_CORPUS").is_ok_and(|v|v=="validation");
+    let mut cases=if validation_corpus {support::validation()} else {support::photographic().into_iter().map(|(name,bytes)|(name,bytes,String::from("corpus"))).collect::<Vec<_>>()};
+    if !validation_corpus {
+        for (name,bytes) in support::generated() {
+            let path=generated.join(&name);
+            let bytes=if path.exists() {let stored=fs::read(&path)?;if !img::optimizer::samples_equal(&StillImage::decode(&bytes)?,&StillImage::decode(&stored)?) {return Err(format!("generated fixture changed; update {name} explicitly").into());}stored} else {fs::write(path,&bytes)?;bytes};
+            cases.push((name,bytes,"corpus/generated".into()));
+        }
     }
     let current=std::env::var_os("IMG_BENCH_BIN").map(PathBuf::from).unwrap_or_else(||repository.join("target/dist/img"));
     let original=std::env::var_os("IMG_ORIGINAL_BIN").map(PathBuf::from).unwrap_or_else(||repository.join(".work/tmp/original-target/release/img"));

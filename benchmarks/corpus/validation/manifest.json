@@ -1,0 +1,345 @@
+{
+ "schemaVersion": 1,
+ "sources": [
+  {
+   "file": "camera.png",
+   "width": 512,
+   "height": 512,
+   "sha256": "b0793d2adda0fa6ae899c03989482bff9a42d3d5690fc7e3648f2795d730c23a",
+   "license": "CC0-1.0",
+   "author": "Lav Varshney",
+   "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/camera.png",
+   "evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py#L339"
+  },
+  {
+   "file": "brick.png",
+   "width": 512,
+   "height": 512,
+   "sha256": "7966caf324f6ba843118d98f7a07746d22f6a343430add0233eca5f6eaaa8fcf",
+   "license": "CC0-1.0",
+   "author": "CC0Textures",
+   "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/brick.png",
+   "evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py#L404"
+  },
+  {
+   "file": "cell.png",
+   "width": 550,
+   "height": 660,
+   "sha256": "8d23a7fb81f7cc877cd09f330357fc7f595651306e84e17252f6e0a1b3f61515",
+   "license": "CC0-1.0",
+   "author": "scikit-image contributors (quantitative phase holography)",
+   "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/cell.png",
+   "evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py#L665"
+  },
+  {
+   "file": "chelsea.png",
+   "width": 451,
+   "height": 300,
+   "sha256": "596aa1e7cb875eb79f437e310381d26b338a81c2da23439704a73c4651e8c4bb",
+   "license": "CC0-1.0",
+   "author": "Stefan van der Walt",
+   "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/chelsea.png",
+   "evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py#L890"
+  },
+  {
+   "file": "clock_motion.png",
+   "width": 400,
+   "height": 300,
+   "sha256": "f029226b28b642e80113d86622e9b215ee067a0966feaf5e60604a1e05733955",
+   "license": "public-domain",
+   "author": "Stefan van der Walt",
+   "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/clock_motion.png",
+   "evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py#L853"
+  },
+  {
+   "file": "coins.png",
+   "width": 384,
+   "height": 303,
+   "sha256": "f8d773fc9cfa6f4d8e5942dc34d0a0788fcaed2a4fefbbed0aef5398d7ef4cba",
+   "license": "no-known-copyright-restrictions",
+   "author": "Brooklyn Museum Collection",
+   "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/coins.png",
+   "evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py#L696"
+  },
+  {
+   "file": "horse.png",
+   "width": 400,
+   "height": 328,
+   "sha256": "c7fb60789fe394c485f842291ea3b21e50d140f39d6dcb5fb9917cc178225455",
+   "license": "CC0-1.0",
+   "author": "Andreas Preuss (marauder)",
+   "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/horse.png",
+   "evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py#L837"
+  },
+  {
+   "file": "hubble_deep_field.jpg",
+   "width": 1000,
+   "height": 872,
+   "sha256": "3a19c5dd8a927a9334bb1229a6d63711b1c0c767fb27e2286e7c84a3e2c2f5f4",
+   "license": "public-domain",
+   "author": "NASA (HubbleSite)",
+   "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/hubble_deep_field.jpg",
+   "evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py#L931"
+  },
+  {
+   "file": "microaneurysms.png",
+   "width": 102,
+   "height": 102,
+   "sha256": "a1e1be59aa447f8ce082f7fa809997ab369a2b137cb6c4202abc647c7ccf6456",
+   "license": "CC0-1.0",
+   "author": "Andreas Maier",
+   "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/microaneurysms.png",
+   "evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py#L781"
+  },
+  {
+   "file": "retina.jpg",
+   "width": 1411,
+   "height": 1411,
+   "sha256": "38a07f36f27f095e818aea7b96d34202c05176d30253c66733f2e00379e9e0e6",
+   "license": "CC0-1.0",
+   "author": "Mikael H\u00e4ggstr\u00f6m",
+   "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/retina.jpg",
+   "evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py#L955"
+  },
+  {
+   "file": "rocket.jpg",
+   "width": 640,
+   "height": 427,
+   "sha256": "c2dd0de7c538df8d111e479619b129464d0269d0ae5fd18ca91d33a7fdfea95c",
+   "license": "public-domain",
+   "author": "SpaceX",
+   "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/rocket.jpg",
+   "evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py#L1032"
+  },
+  {
+   "file": "text.png",
+   "width": 448,
+   "height": 172,
+   "sha256": "bd84aa3a6e3c9887850d45d606c96b2e59433fbef50338570b63c319e668e6d1",
+   "license": "public-domain",
+   "author": "Wikipedia File:Corner.png",
+   "source": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.25.2/skimage/data/text.png",
+   "evidence": "https://github.com/scikit-image/scikit-image/blob/v0.25.2/skimage/data/_fetchers.py#L573"
+  },
+  {
+   "file": "marmolada.jpg",
+   "width": 3904,
+   "height": 2604,
+   "sha256": "be834b795e32b38b3a33a890566ac7b3a8a8e4be03a29be52147b8f8aad6dfc2",
+   "license": "CC0-1.0",
+   "author": "Marco Bonomo",
+   "source": "https://commons.wikimedia.org/wiki/File:Marmolada,_Italy.jpg",
+   "evidence": "https://commons.wikimedia.org/wiki/File:Marmolada,_Italy.jpg"
+  },
+  {
+   "file": "mountain-landscape-met.jpg",
+   "width": 3015,
+   "height": 2277,
+   "sha256": "1ed90a57f863c6cde3c9f3b0a60f3d9930888458e9f28aed0342918e3c7ea899",
+   "license": "CC0-1.0",
+   "author": "Anonymous, Netherlandish (Met Museum)",
+   "source": "https://commons.wikimedia.org/wiki/File:Mountain_Landscape_MET_DP875191.jpg",
+   "evidence": "https://commons.wikimedia.org/wiki/File:Mountain_Landscape_MET_DP875191.jpg"
+  },
+  {
+   "file": "piraeus-ferry.jpg",
+   "width": 4545,
+   "height": 3025,
+   "sha256": "afe1ba8a750cb0e3d4e0e0b06e564f79b794222b829062db7907700a27fa21b2",
+   "license": "CC0-1.0",
+   "author": "Jebulon",
+   "source": "https://commons.wikimedia.org/wiki/File:Piraeus_from_ferry_to_Aegina,_Greece.jpg",
+   "evidence": "https://commons.wikimedia.org/wiki/File:Piraeus_from_ferry_to_Aegina,_Greece.jpg"
+  },
+  {
+   "file": "portrait-woman-met.jpg",
+   "width": 3099,
+   "height": 3851,
+   "sha256": "3c2856238e9bd4dc885f59a651dd98088139e4b9097209ec779958a8e0b95f66",
+   "license": "CC0-1.0",
+   "author": "William Beechey (Met Museum)",
+   "source": "https://commons.wikimedia.org/wiki/File:Portrait_of_a_Woman_MET_DP162139.jpg",
+   "evidence": "https://commons.wikimedia.org/wiki/File:Portrait_of_a_Woman_MET_DP162139.jpg"
+  },
+  {
+   "file": "food-tokyu.jpg",
+   "width": 4080,
+   "height": 3072,
+   "sha256": "baa7b2c20bd742e5f280120b6d7b24eee8208a2f076a2c4e571a0bf21a3d2616",
+   "license": "CC0-1.0",
+   "author": "Syced",
+   "source": "https://commons.wikimedia.org/wiki/File:Food_at_Tokyu_Plaza_C%C3%A9lavi.jpg",
+   "evidence": "https://commons.wikimedia.org/wiki/File:Food_at_Tokyu_Plaza_C%C3%A9lavi.jpg"
+  },
+  {
+   "file": "charolais-cattle.jpg",
+   "width": 3000,
+   "height": 2485,
+   "sha256": "dc18c39d9417953f3be95ef692212781534dcbde287c7ab6edc2d0ab22b35b8a",
+   "license": "CC0-1.0",
+   "author": "Wilfredor",
+   "source": "https://commons.wikimedia.org/wiki/File:Charolais_cattle,_Sierra_Nevada,_Venezuela.jpg",
+   "evidence": "https://commons.wikimedia.org/wiki/File:Charolais_cattle,_Sierra_Nevada,_Venezuela.jpg"
+  },
+  {
+   "file": "sous-tour-eiffel.jpg",
+   "width": 2935,
+   "height": 2013,
+   "sha256": "f484d30dba4d0cc87dd9f45568eee4efc136b58d90c58a4eca2722c43437ae0d",
+   "license": "CC0-1.0",
+   "author": "Jebulon",
+   "source": "https://commons.wikimedia.org/wiki/File:Sous_la_Tour_Eiffel_1.jpg",
+   "evidence": "https://commons.wikimedia.org/wiki/File:Sous_la_Tour_Eiffel_1.jpg"
+  },
+  {
+   "file": "goose-head.jpg",
+   "width": 2500,
+   "height": 1660,
+   "sha256": "162c64e13d639a4f915a904577f27d2800649c2d52e0eadfa44ebd25f67e4170",
+   "license": "CC0-1.0",
+   "author": "Wilfredor",
+   "source": "https://commons.wikimedia.org/wiki/File:Domesticated_goose_head,_Chaguaramal,_Venezuela.jpg",
+   "evidence": "https://commons.wikimedia.org/wiki/File:Domesticated_goose_head,_Chaguaramal,_Venezuela.jpg"
+  },
+  {
+   "file": "mm-logo-alpha.png",
+   "width": 3583,
+   "height": 1318,
+   "sha256": "cb074b83a60d70217fe6ec0bed7e72b5662c9692eee59b6ddbe81ff9f1ec511d",
+   "license": "CC0-1.0",
+   "author": "User:Colcsc",
+   "source": "https://commons.wikimedia.org/wiki/File:MM_logo_black_text_-_transparent_back.png",
+   "evidence": "https://commons.wikimedia.org/wiki/File:MM_logo_black_text_-_transparent_back.png"
+  },
+  {
+   "file": "photopea-ui.png",
+   "width": 1919,
+   "height": 941,
+   "sha256": "7a5cf81cb09a6438adf41b2829d012cd8c8b9cc547808e2611c7346f6d5382c2",
+   "license": "CC0-1.0",
+   "author": "TechnoKittyCat",
+   "source": "https://commons.wikimedia.org/wiki/File:Screenshot_of_Photopea_interface.png",
+   "evidence": "https://commons.wikimedia.org/wiki/File:Screenshot_of_Photopea_interface.png"
+  },
+  {
+   "file": "boundary-16383.png",
+   "width": 127,
+   "height": 129,
+   "sha256": "e7cbac031af64ff5a58f62f4cbe0ace5b24368215a18c1d2fd356df74f932add",
+   "license": "CC0-1.0",
+   "author": "img project (procedural fixture)",
+   "source": "in-repo generated PNG",
+   "evidence": "examples/scratch-boundary.rs deterministic value noise; pixel counts straddle lossless effort bands 16384/200000/400000/1048576"
+  },
+  {
+   "file": "boundary-16384.png",
+   "width": 128,
+   "height": 128,
+   "sha256": "139a3c83ed5add7927bbf95bdf0f5fb0a04cb640923e6ee83e56fef1140f29e1",
+   "license": "CC0-1.0",
+   "author": "img project (procedural fixture)",
+   "source": "in-repo generated PNG",
+   "evidence": "examples/scratch-boundary.rs deterministic value noise; pixel counts straddle lossless effort bands 16384/200000/400000/1048576"
+  },
+  {
+   "file": "boundary-16512.png",
+   "width": 129,
+   "height": 128,
+   "sha256": "1cbf7cc465be291af9b6adec0eb0f603c9390275d31d634fd51ed3f511ad33da",
+   "license": "CC0-1.0",
+   "author": "img project (procedural fixture)",
+   "source": "in-repo generated PNG",
+   "evidence": "examples/scratch-boundary.rs deterministic value noise; pixel counts straddle lossless effort bands 16384/200000/400000/1048576"
+  },
+  {
+   "file": "boundary-199809.png",
+   "width": 447,
+   "height": 447,
+   "sha256": "ff9c61e5d68e14c12c80e08201786507cff2540f6abcecc55d8b1593e78e66cb",
+   "license": "CC0-1.0",
+   "author": "img project (procedural fixture)",
+   "source": "in-repo generated PNG",
+   "evidence": "examples/scratch-boundary.rs deterministic value noise; pixel counts straddle lossless effort bands 16384/200000/400000/1048576"
+  },
+  {
+   "file": "boundary-200000.png",
+   "width": 500,
+   "height": 400,
+   "sha256": "b524ccf575a576255140044bacfaf62f28de4a69d5423e6fbb923cac9986e42a",
+   "license": "CC0-1.0",
+   "author": "img project (procedural fixture)",
+   "source": "in-repo generated PNG",
+   "evidence": "examples/scratch-boundary.rs deterministic value noise; pixel counts straddle lossless effort bands 16384/200000/400000/1048576"
+  },
+  {
+   "file": "boundary-200704.png",
+   "width": 448,
+   "height": 448,
+   "sha256": "3dbb489b34a75aef0868627803577b2c1b554e31501d5bfa5e00499a3c3be52f",
+   "license": "CC0-1.0",
+   "author": "img project (procedural fixture)",
+   "source": "in-repo generated PNG",
+   "evidence": "examples/scratch-boundary.rs deterministic value noise; pixel counts straddle lossless effort bands 16384/200000/400000/1048576"
+  },
+  {
+   "file": "boundary-399424.png",
+   "width": 632,
+   "height": 632,
+   "sha256": "98ad9ec7070ed3e206663ec650cf43eebf0be24ab053422db8475bd4396fe78a",
+   "license": "CC0-1.0",
+   "author": "img project (procedural fixture)",
+   "source": "in-repo generated PNG",
+   "evidence": "examples/scratch-boundary.rs deterministic value noise; pixel counts straddle lossless effort bands 16384/200000/400000/1048576"
+  },
+  {
+   "file": "boundary-400000.png",
+   "width": 625,
+   "height": 640,
+   "sha256": "08cf9040e235a27ac2d710ca5bcfb6adb2187a1a95588834b54a81a1ba9da344",
+   "license": "CC0-1.0",
+   "author": "img project (procedural fixture)",
+   "source": "in-repo generated PNG",
+   "evidence": "examples/scratch-boundary.rs deterministic value noise; pixel counts straddle lossless effort bands 16384/200000/400000/1048576"
+  },
+  {
+   "file": "boundary-400689.png",
+   "width": 633,
+   "height": 633,
+   "sha256": "499f1b7bbac4ec72a1c6412e3f1d8ef411c1d2e4afdb1c181969adf0cb662a82",
+   "license": "CC0-1.0",
+   "author": "img project (procedural fixture)",
+   "source": "in-repo generated PNG",
+   "evidence": "examples/scratch-boundary.rs deterministic value noise; pixel counts straddle lossless effort bands 16384/200000/400000/1048576"
+  },
+  {
+   "file": "boundary-1048575.png",
+   "width": 1023,
+   "height": 1025,
+   "sha256": "e3db195a04336972935a5bdd0867cbd20f3fe3525e4a87fab9070f964371d4ca",
+   "license": "CC0-1.0",
+   "author": "img project (procedural fixture)",
+   "source": "in-repo generated PNG",
+   "evidence": "examples/scratch-boundary.rs deterministic value noise; pixel counts straddle lossless effort bands 16384/200000/400000/1048576"
+  },
+  {
+   "file": "boundary-1048576.png",
+   "width": 1024,
+   "height": 1024,
+   "sha256": "e455955b2e99f8629a511d6f906df012453a33e5fba1c627f4bd4058b6585f17",
+   "license": "CC0-1.0",
+   "author": "img project (procedural fixture)",
+   "source": "in-repo generated PNG",
+   "evidence": "examples/scratch-boundary.rs deterministic value noise; pixel counts straddle lossless effort bands 16384/200000/400000/1048576"
+  },
+  {
+   "file": "boundary-1050625.png",
+   "width": 1025,
+   "height": 1025,
+   "sha256": "313afc11f82989620504c598d53ffc1d048b6892f4459d5a9d154fb35fd564a1",
+   "license": "CC0-1.0",
+   "author": "img project (procedural fixture)",
+   "source": "in-repo generated PNG",
+   "evidence": "examples/scratch-boundary.rs deterministic value noise; pixel counts straddle lossless effort bands 16384/200000/400000/1048576"
+  }
+ ]
+}
