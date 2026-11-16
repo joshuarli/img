@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use std::{fs,path::{Path,PathBuf}};
+use std::{fs,path::{Path,PathBuf},process::Command};
 use img::still::{Effort,EncodingMode,Format,SampleLayout,StillImage};
 use serde_json::{Value,json};
 use sha2::{Digest,Sha256};
@@ -80,7 +80,44 @@ pub fn verify_saved(directory:&Path)->usize {
 }
 fn verify_record(record:&Value) {
     validate_record(record).unwrap();
-    if record["completed"]==true {let input=root().join(record["sourcePath"].as_str().unwrap());let output=root().join(record["outputPath"].as_str().unwrap());let source_bytes=fs::read(input).unwrap();assert_eq!(source_bytes.len() as u64,record["inputBytes"].as_u64().unwrap());let a=StillImage::decode(&source_bytes).unwrap();let bytes=fs::read(output).unwrap();let b=StillImage::decode(&bytes).unwrap();assert_eq!(a.dimensions(),b.dimensions());assert_eq!(a.dimensions(),(record["width"].as_u64().unwrap() as u32,record["height"].as_u64().unwrap() as u32));assert_eq!(bytes.len() as u64,record["outputBytes"].as_u64().unwrap());if record["lossless"]==true {assert!(img::optimizer::samples_equal(&a,&b));}else {let actual=img::perceptual::PerceptualReference::new(&a).unwrap().score_encoded(&bytes).unwrap();assert!(actual>=record["target"].as_f64().unwrap());assert!((actual-record["score"].as_f64().unwrap()).abs()<0.0001,"{} {}: actual={actual} saved={}",record["fixture"],record["tool"],record["score"]);}}
+    if record["completed"]==true {let input=root().join(record["sourcePath"].as_str().unwrap());let output=root().join(record["outputPath"].as_str().unwrap());let source_bytes=fs::read(&input).unwrap();assert_eq!(source_bytes.len() as u64,record["inputBytes"].as_u64().unwrap());let a=StillImage::decode(&source_bytes).unwrap();let bytes=fs::read(&output).unwrap();let b=StillImage::decode(&bytes).unwrap();assert_eq!(a.dimensions(),b.dimensions());assert_eq!(a.dimensions(),(record["width"].as_u64().unwrap() as u32,record["height"].as_u64().unwrap() as u32));assert_eq!(bytes.len() as u64,record["outputBytes"].as_u64().unwrap());if record["lossless"]==true {
+        if record["tool"]=="cwebp-lossless" && input.extension().is_some_and(|e|e=="jpg"||e=="jpeg") {
+            assert!(libwebp_domain_exact(&input,&output).unwrap(),"{} {}: libwebp-domain samples differ",record["fixture"],record["tool"]);
+        } else {assert!(img::optimizer::samples_equal(&a,&b));}
+    }else {let actual=img::perceptual::PerceptualReference::new(&a).unwrap().score_encoded(&bytes).unwrap();assert!(actual>=record["target"].as_f64().unwrap());assert!((actual-record["score"].as_f64().unwrap()).abs()<0.0001,"{} {}: actual={actual} saved={}",record["fixture"],record["tool"],record["score"]);}}
+}
+fn pnm_rgb(bytes:&[u8])->Result<(u32,u32,Vec<u8>),String> {
+    fn token(bytes:&[u8],pos:&mut usize)->Result<String,String> {
+        loop {
+            while bytes.get(*pos).is_some_and(|b|b.is_ascii_whitespace()) {*pos+=1;}
+            if bytes.get(*pos)==Some(&b'#') {while bytes.get(*pos).is_some_and(|b|*b!=b'\n') {*pos+=1;}}
+            else {break;}
+        }
+        let start=*pos;
+        while bytes.get(*pos).is_some_and(|b|!b.is_ascii_whitespace()&&*b!=b'#') {*pos+=1;}
+        String::from_utf8(bytes[start..*pos].to_vec()).map_err(|e|e.to_string())
+    }
+    let mut pos=0;
+    let magic=token(bytes,&mut pos)?;
+    let (w,h):(u32,u32)=(token(bytes,&mut pos)?.parse::<u32>().map_err(|e|e.to_string())?,token(bytes,&mut pos)?.parse::<u32>().map_err(|e|e.to_string())?);
+    let _max: u32=token(bytes,&mut pos)?.parse::<u32>().map_err(|e|e.to_string())?;
+    pos+=1;
+    let channels=match magic.as_str() {"P6"=>3,"P5"=>1,_=>return Err(format!("unsupported PNM magic {magic}"))};
+    let count=(w as usize)*(h as usize)*channels as usize;
+    let raster=bytes.get(pos..pos+count).ok_or("truncated PNM raster")?.to_vec();
+    if channels==1 {
+        let mut rgb=Vec::with_capacity(count*3);
+        for g in raster {rgb.extend_from_slice(&[g,g,g]);}
+        Ok((w,h,rgb))
+    } else {Ok((w,h,raster))}
+}
+pub fn libwebp_domain_exact(input:&Path,candidate:&Path)->Result<bool,String> {
+    let reference=Command::new("djpeg").arg("-pnm").arg(input).output().map_err(|e|format!("djpeg unavailable: {e}"))?;
+    if !reference.status.success() {return Err(format!("djpeg failed: {}",String::from_utf8_lossy(&reference.stderr)));}
+    let output=Command::new("dwebp").arg("-ppm").arg(candidate).args(["-o","-"]).output().map_err(|e|format!("dwebp unavailable: {e}"))?;
+    if !output.status.success() {return Err(format!("dwebp failed: {}",String::from_utf8_lossy(&output.stderr)));}
+    let a=pnm_rgb(&reference.stdout)?;let b=pnm_rgb(&output.stdout)?;
+    Ok(a==b)
 }
 pub fn record_base(tool:&str,name:&str,revision:&str)->Value {json!({"schemaVersion":1,"tool":tool,"fixture":name,"revision":revision,"threads":1,"architecture":std::env::consts::ARCH,"timingAccepted":false,"elapsedMs":null,"completed":false})}
 pub fn summarize(records:&[Value])->Value {
