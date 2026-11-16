@@ -5,8 +5,10 @@
 This is the authoritative operating brief for the next unattended run in
 `joshuarli/img`, branch `master`. The previous runner paused; this documentation
 review does not claim to have restarted it or measured a new binary. Reviewed
-source: `6141369e1648494d8eb3c4d50d424c4e3cd1a04b`; latest encoder change:
-`c3c1abe`. Start from the current default branch, preserving intervening work.
+source: `c0e1085`; latest encoder change: `c3c1abe` (`c0e1085` adds the
+owner-granted host-scoped `target-cpu=native` flag and this brief's note;
+docs/config only). Start from the current default branch, preserving
+intervening work.
 
 **Verdict: useful codec improvements, unfinished qualification, and a search-cost
 problem that small kernel changes alone cannot close.** The next priorities are
@@ -61,8 +63,16 @@ the owning document with the corresponding implementation change.
   "The pixels still pass" is insufficient for this selection guarantee.
 - The aarch64 `lossless::vp8l::match_kernel` NEON exception is already authorized.
   The crate uses `deny(unsafe_code)` with that local exemption and a scalar
-  fallback. This is not a blanket grant for new unsafe code or native-only
-  release settings. Keep the standalone scalar/`no_std + alloc` path viable.
+  fallback. Keep the standalone scalar/`no_std + alloc` path viable.
+- The owner granted **`target-cpu=native` for aarch64-apple-darwin host builds**
+  (`.cargo/config.toml`, host triple only; linux/musl/qemu cross targets keep
+  generic codegen). The hot kernels are scalar-bound — trellis DP branches,
+  hash-chain walks, the bit-writer — and none autovectorize; `match_length`
+  already has hand NEON. Native codegen can still help future arms and
+  non-codec paths (ravif/png decode), so it is kept per the owner's call;
+  it does **not** move the encode-wall verdict (~4× serial vs the oracles on
+  lossy photos). This is a specific grant for that host triple, not a blanket
+  approval for native-only or unsafe code anywhere else.
 - Codec `Fast` and product `--effort fast` are different: product lossy Fast
   maps to codec AUTO, which resolves to Best on images <=1 MP. Report both
   resolved settings; unchanged codec-Fast goldens do not prove CLI-Fast stability.
@@ -116,7 +126,9 @@ combine its default-parallel measurements with the serial table above.
 | Broader conformance/fuzz/resource qualification | Existing tests, no complete campaign closure evidence | Bounded product-relevant qualification with recorded coverage |
 
 **Destination gate: NOT met.** Wall time is the largest measured performance gap,
-not the only unfinished technical obligation. A passing saved-output verifier
+not the only unfinished technical obligation. The verdict remains ~4× serial vs
+the oracles on lossy photos, gated by scalar trellis-DP and `parse_optimal`
+work — `target-cpu=native` does not move it. A passing saved-output verifier
 does not certify fresh encodes at current HEAD.
 
 ## P0 — Restore the promised selection semantics
@@ -251,6 +263,14 @@ the new baseline:
   dominates and why. Explore less repeated transform/context/trellis work,
   shared decode/preparation, or an explicitly measured encoder search frontier.
   Distinguish product AUTO/Best paths from the codec's minimal Fast path.
+
+Keep this ordering from the resumption assessment: the next real lever is the
+**lossless transform×bitstream architecture** — libwebp `EncodeImageNoHuffman`-style
+joint scoring of transform candidates by estimated final bitstream cost, the one
+mechanism the campaign's cost-model probes point at — or **owner-approved
+effort-tier changes**. Scalar kernel work (trellis DP branches, hash-chain walks,
+the bit-writer) is not expected to close the remaining deficit, and a
+`target-cpu`-style codegen flag demonstrably does not.
 
 A local 8% hotspot has at most an approximately 1.09x end-to-end speedup even if
 eliminated; it cannot explain away a 4–32x deficit. Small proven changes remain
