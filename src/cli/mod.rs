@@ -9,7 +9,7 @@ fn option_help(text:&mut String, option:&command::OptionSpec) {
 }
 fn help()->String {
     let mut text=String::from("img — verified still-image optimization\n\nUsage: img COMMAND [OPTIONS]\n       img help\n\nCommon options:\n");
-    for option in command::OPTIONS.iter().filter(|option| option.scope=="common") { option_help(&mut text,option); }
+    for option in command::OPTIONS.iter().filter(|option| option.scope==command::OptionScope::Common) { option_help(&mut text,option); }
     text.push_str("\nCommands:\n");
     for spec in command::COMMANDS {
         text.push_str(&format!("\n  img {} {} [OPTIONS]\n    {}\n",spec.name,spec.usage,spec.description));
@@ -19,10 +19,10 @@ fn help()->String {
         }
         for option in command::OPTIONS {
             let applies=match option.scope {
-                "transform"=>matches!(spec.command,Command::Optimize|Command::Convert),
-                "input"=>!matches!(spec.command,Command::Compare),
-                "optimize"=>spec.command==Command::Optimize,
-                _=>false,
+                command::OptionScope::Transform=>matches!(spec.command,Command::Optimize|Command::Convert),
+                command::OptionScope::Input=>!matches!(spec.command,Command::Compare),
+                command::OptionScope::Optimize=>spec.command==Command::Optimize,
+                command::OptionScope::Common=>false,
             };
             if applies { option_help(&mut text,option); }
         }

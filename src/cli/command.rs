@@ -1,4 +1,6 @@
-pub(crate) struct OptionSpec { pub name: &'static str, pub short: Option<char>, pub value: &'static str, pub description: &'static str, pub scope: &'static str }
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum OptionScope { Common, Transform, Input, Optimize }
+pub(crate) struct OptionSpec { pub name: &'static str, pub short: Option<char>, pub value: &'static str, pub description: &'static str, pub scope: OptionScope }
 const HELP_SHORT: char = 'h';
 const OUTPUT_SHORT: char = 'o';
 const JOBS_SHORT: char = 'j';
@@ -22,25 +24,25 @@ const RECURSIVE: &str = "recursive";
 const FILE_LIST: &str = "file-list";
 const IN_PLACE: &str = "in-place";
 pub(crate) const OPTIONS: &[OptionSpec] = &[
-    OptionSpec { name: HELP, short: Some(HELP_SHORT), value: "", description: "Show this reference", scope: "common" },
-    OptionSpec { name: VERSION, short: None, value: "", description: "Show version", scope: "common" },
-    OptionSpec { name: JOBS, short: Some(JOBS_SHORT), value: "N", description: "Workers, positive (default 1; CPU/memory bounded)", scope: "common" },
-    OptionSpec { name: QUIET, short: None, value: "", description: "Suppress success diagnostics", scope: "common" },
-    OptionSpec { name: VERBOSE, short: None, value: "", description: "Include candidate settings on stderr; conflicts with --quiet", scope: "common" },
-    OptionSpec { name: JSON, short: None, value: "", description: "Emit one ordered schemaVersion:1 object", scope: "common" },
-    OptionSpec { name: OUTPUT, short: Some(OUTPUT_SHORT), value: "PATH", description: "One output; '-' writes binary stdout", scope: "transform" },
-    OptionSpec { name: OUT_DIR, short: None, value: "DIR", description: "Batch destination; conflicts with --output and --in-place", scope: "transform" },
-    OptionSpec { name: FORMAT, short: None, value: "FORMAT", description: "jpeg, png, webp, avif; optimize defaults to source format and permits auto", scope: "transform" },
-    OptionSpec { name: SCORE, short: None, value: "NUMBER", description: "Minimum SSIMULACRA2 0..100 (default 95)", scope: "transform" },
-    OptionSpec { name: QUALITY, short: None, value: "NUMBER", description: "Encoder control 0..100; conflicts with --score", scope: "transform" },
-    OptionSpec { name: LOSSLESS, short: None, value: "", description: "Exact samples; conflicts with score, quality and resize", scope: "transform" },
-    OptionSpec { name: EFFORT, short: None, value: "LEVEL", description: "fast, balanced (default), best", scope: "transform" },
-    OptionSpec { name: MAX_DIMENSION, short: None, value: "N", description: "Positive maximum dimension; never enlarge", scope: "transform" },
-    OptionSpec { name: STRIP_METADATA, short: None, value: "", description: "Remove private metadata (default: keep)", scope: "transform" },
-    OptionSpec { name: PRESERVE_TIMESTAMPS, short: None, value: "", description: "Copy input modification time", scope: "transform" },
-    OptionSpec { name: RECURSIVE, short: None, value: "", description: "Descend into directories", scope: "input" },
-    OptionSpec { name: FILE_LIST, short: None, value: "PATH", description: "Read newline-separated UTF-8 paths relative to file (repeatable)", scope: "input" },
-    OptionSpec { name: IN_PLACE, short: None, value: "", description: "Replace source; conflicts with destinations and auto", scope: "optimize" },
+    OptionSpec { name: HELP, short: Some(HELP_SHORT), value: "", description: "Show this reference", scope: OptionScope::Common },
+    OptionSpec { name: VERSION, short: None, value: "", description: "Show version", scope: OptionScope::Common },
+    OptionSpec { name: JOBS, short: Some(JOBS_SHORT), value: "N", description: "Workers, positive (default 1; CPU/memory bounded)", scope: OptionScope::Common },
+    OptionSpec { name: QUIET, short: None, value: "", description: "Suppress success diagnostics", scope: OptionScope::Common },
+    OptionSpec { name: VERBOSE, short: None, value: "", description: "Include candidate settings on stderr; conflicts with --quiet", scope: OptionScope::Common },
+    OptionSpec { name: JSON, short: None, value: "", description: "Emit one ordered schemaVersion:1 object", scope: OptionScope::Common },
+    OptionSpec { name: OUTPUT, short: Some(OUTPUT_SHORT), value: "PATH", description: "One output; '-' writes binary stdout", scope: OptionScope::Transform },
+    OptionSpec { name: OUT_DIR, short: None, value: "DIR", description: "Batch destination; conflicts with --output and --in-place", scope: OptionScope::Transform },
+    OptionSpec { name: FORMAT, short: None, value: "FORMAT", description: "jpeg, png, webp, avif; optimize defaults to source format and permits auto", scope: OptionScope::Transform },
+    OptionSpec { name: SCORE, short: None, value: "NUMBER", description: "Minimum SSIMULACRA2 0..100 (default 95)", scope: OptionScope::Transform },
+    OptionSpec { name: QUALITY, short: None, value: "NUMBER", description: "Encoder control 0..100; conflicts with --score", scope: OptionScope::Transform },
+    OptionSpec { name: LOSSLESS, short: None, value: "", description: "Exact samples; conflicts with score, quality and resize", scope: OptionScope::Transform },
+    OptionSpec { name: EFFORT, short: None, value: "LEVEL", description: "fast, balanced (default), best", scope: OptionScope::Transform },
+    OptionSpec { name: MAX_DIMENSION, short: None, value: "N", description: "Positive maximum dimension; never enlarge", scope: OptionScope::Transform },
+    OptionSpec { name: STRIP_METADATA, short: None, value: "", description: "Remove private metadata (default: keep)", scope: OptionScope::Transform },
+    OptionSpec { name: PRESERVE_TIMESTAMPS, short: None, value: "", description: "Copy input modification time", scope: OptionScope::Transform },
+    OptionSpec { name: RECURSIVE, short: None, value: "", description: "Descend into directories", scope: OptionScope::Input },
+    OptionSpec { name: FILE_LIST, short: None, value: "PATH", description: "Read newline-separated UTF-8 paths relative to file (repeatable)", scope: OptionScope::Input },
+    OptionSpec { name: IN_PLACE, short: None, value: "", description: "Replace source; conflicts with destinations and auto", scope: OptionScope::Optimize },
 ];
 use std::{ffi::OsString, num::NonZeroU32, path::PathBuf};
 use img::{optimizer::{Fidelity,MetadataPolicy},perceptual::ScoreTarget,still::{Effort,Format,Quality}};
