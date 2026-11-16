@@ -4081,26 +4081,26 @@ gradient fast 190 fdbe0b6ce4ec645c
 gradient balanced 105 c3fa10bfb22fa948
 gradient best 100 a36107b25defee71
 noisy fast 7975 f970e253b081638d
-noisy balanced 3710 36c5b31737c8aa75
-noisy best 3371 d67f248e7c983a85
+noisy balanced 3541 c35696f4c09907a1
+noisy best 3352 513358281835aacc
 flat fast 40 66b6a4ee87e184a3
 flat balanced 39 2f5a1f125c0a5180
 flat best 39 2f5a1f125c0a5180
 checker fast 65 a42deaf46567ecd9
-checker balanced 56 6b05842252d1046e
-checker best 56 6b05842252d1046e
+checker balanced 49 98405e2401d40899
+checker best 49 98405e2401d40899
 stripe fast 1680 145aef26907ace38
-stripe balanced 322 d0284fcbb5c77800
-stripe best 122 ed1ba5b248552494
+stripe balanced 140 9ecdb25e5705f399
+stripe best 92 b96f70472c8c4f5e
 diagonal fast 415 46ac66199192122b
 diagonal balanced 293 36aa8a54dc5eb621
 diagonal best 338 5b89969e06ec132a
 mixed fast 4363 13644d2cc4723cd5
-mixed balanced 1994 bb7283282f345f85
-mixed best 2012 1fd465a4186a52e2
+mixed balanced 1982 f8cf1f16872cddc8
+mixed best 2012 632cda60c641945e
 horizontal fast 667 81e58ac967acf023
-horizontal balanced 228 0f91560a730ee795
-horizontal best 179 a6e45cac896f8df8";
+horizontal balanced 211 0777f88b6ba66c87
+horizontal best 171 91b074ccc6e6f73f";
 
     /// Golden exact-encode test — THE high-leverage encoder-decision net. Encodes a
     /// diverse set of fixed images (smooth gradient, AC-rich noise, flat blocks,
@@ -4411,7 +4411,7 @@ horizontal best 179 a6e45cac896f8df8";
         let (_p0, _t, default_total, optimized_total, _probas) =
             emit_best_partitions(&mb_plans, mb_w, mb_h, header, skip);
         assert_eq!(default_total, 5387, "default candidate byte-length sum");
-        assert_eq!(optimized_total, 3697, "optimized candidate byte-length sum");
+        assert_eq!(optimized_total, 3528, "optimized candidate byte-length sum");
     }
 
     #[test]
@@ -4653,8 +4653,8 @@ horizontal best 179 a6e45cac896f8df8";
     const RD_GOLDEN_EXPECTED: &str = "\
 rd_rx0_ry5_d0_q48 685d8884eeb80688
 rd_rx1_ry0_d0_q8 27366a70a419ee38
-rd_rx0_ry2_d0_q24 899390d297f5b6e8
-rd_rx0_ry5_d60_q24 079a9f9b95bdd452";
+rd_rx0_ry2_d0_q24 253b408df3e3af2c
+rd_rx0_ry5_d60_q24 879e9814b6207fed";
 
     #[test]
     fn rd_cost_arithmetic_golden() {

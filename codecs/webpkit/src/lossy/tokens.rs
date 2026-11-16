@@ -359,10 +359,11 @@ pub(crate) fn count_mb_residuals(
 
 /// Record one 4×4 block's main-tree node decisions into `stats`, returning
 /// `nz = last + 1` (the decoder's `GetCoeffs` value) so the caller threads the
-/// non-zero context identically to [`put_coeffs`]. Only nodes 0 (EOB / more),
-/// 1 (zero-run) and 2 (one-vs-large) are counted — the large-value sub-nodes and
-/// sign bit are entropy-neutral for the probability search — walking `(band, ctx)`
-/// in lockstep with `put_coeffs`.
+/// non-zero context identically to [`put_coeffs`]. Every probability-indexed node
+/// is counted — 0 (EOB / more), 1 (zero-run), 2 (one-vs-large) and the large-value
+/// sub-tree 3..=10 — while the constant-probability bits (sign, the 159/165/145
+/// literals and `CAT_3456` extra bits) carry no slot and are skipped, walking
+/// `(band, ctx)` in lockstep with `put_coeffs` / `put_large_value`.
 fn count_coeffs(
     stats: &mut CoeffStats,
     plane: usize,
@@ -397,6 +398,32 @@ fn count_coeffs(
             ctx = 1;
         } else {
             stats[plane][band][ctx][2][1] += 1; // node 2, bit 1: magnitude >= 2
+            // The large-value sub-tree, mirroring `put_large_value` node for node.
+            let v = i32::from(levels[n]).abs();
+            if v <= 4 {
+                stats[plane][band][ctx][3][0] += 1; // node 3, bit 0: v <= 4
+                if v == 2 {
+                    stats[plane][band][ctx][4][0] += 1; // node 4, bit 0: v == 2
+                } else {
+                    stats[plane][band][ctx][4][1] += 1; // node 4, bit 1: v != 2
+                    stats[plane][band][ctx][5][usize::from(v == 4)] += 1; // node 5: v == 4
+                }
+            } else if v <= 10 {
+                stats[plane][band][ctx][3][1] += 1; // node 3, bit 1: v > 4
+                stats[plane][band][ctx][6][0] += 1; // node 6, bit 0: v <= 10
+                stats[plane][band][ctx][7][usize::from(v > 6)] += 1; // node 7: v > 6
+            } else {
+                stats[plane][band][ctx][3][1] += 1; // node 3, bit 1: v > 4
+                stats[plane][band][ctx][6][1] += 1; // node 6, bit 1: v > 10
+                let cat = match v {
+                    11..=18 => 0usize,
+                    19..=34 => 1,
+                    35..=66 => 2,
+                    _ => 3,
+                };
+                stats[plane][band][ctx][8][usize::from((cat >> 1) & 1)] += 1;
+                stats[plane][band][ctx][9 + (cat >> 1)][usize::from(cat & 1)] += 1;
+            }
             n += 1;
             if n == 16 {
                 return 16;
@@ -769,11 +796,11 @@ mod tests {
         }
     }
 
-    /// Independent reference: the number of main-tree node-0/1/2 `put_bool` events
-    /// one block would emit. It mirrors the token-tree walk but drops all `(band,
-    /// ctx)` bookkeeping, so it cross-checks the *event count* `count_coeffs`
-    /// records without duplicating the attribution logic under test.
-    fn node012_events(levels: [i16; 16], first: usize, last: i32) -> u64 {
+    /// Independent per-block count of every probability-indexed main-tree event
+    /// `count_coeffs` records: node 0 (EOB / more), node 1 (zero-run / nonzero),
+    /// node 2 (one-vs-large) and, for `|v| >= 2`, the `put_large_value` sub-tree —
+    /// 2 events for `v == 2`, 3 for `v in {3,4}` or `5 <= v <= 10`, 4 for `v > 10`.
+    fn tree_events(levels: [i16; 16], first: usize, last: i32) -> u64 {
         let mut n = first;
         let mut count = 0u64;
         loop {
@@ -787,7 +814,21 @@ mod tests {
                 n += 1;
             }
             count += 1; // node 1: non-zero
+            let v = i32::from(levels[n]).abs();
             count += 1; // node 2: one-vs-large
+            if v >= 2 {
+                count += 1; // node 3: v > 4?
+                if v <= 4 {
+                    count += 1; // node 4: v != 2?
+                    if v != 2 {
+                        count += 1; // node 5: v == 4?
+                    }
+                } else if v <= 10 {
+                    count += 2; // nodes 6 (v > 10?) and 7 (v > 6?)
+                } else {
+                    count += 3; // nodes 6, 8 and 9/10 (category tree)
+                }
+            }
             n += 1;
             if n == 16 {
                 break;
@@ -799,9 +840,9 @@ mod tests {
     #[test]
     fn count_records_exactly_the_main_tree_events_emit_would_code() {
         // A 16×16-predicted MB (with a Y2 block) whose luma/chroma exercise empty
-        // blocks, zero-runs, unit levels and large values. The total node-0/1/2
-        // count recorded by count_mb_residuals must equal an independent per-block
-        // event count summed over the identical block order.
+        // blocks, zero-runs, unit levels and large values. The total main-tree
+        // event count recorded by count_mb_residuals must equal an independent
+        // per-block event count summed over the identical block order.
         let y2 = block_from_natural([1, 2, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 0);
         let mut luma = [Block::default(); 16];
         for b in &mut luma {
@@ -834,12 +875,12 @@ mod tests {
             }
         }
 
-        let mut expected = node012_events(mb.y2.levels, 0, mb.y2.last);
+        let mut expected = tree_events(mb.y2.levels, 0, mb.y2.last);
         for b in &mb.luma {
-            expected += node012_events(b.levels, 1, b.last);
+            expected += tree_events(b.levels, 1, b.last);
         }
         for b in &mb.chroma {
-            expected += node012_events(b.levels, 0, b.last);
+            expected += tree_events(b.levels, 0, b.last);
         }
 
         assert_eq!(
