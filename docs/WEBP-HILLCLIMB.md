@@ -312,3 +312,17 @@ The separate 20-second large-image profile (two level-1 encodes) attributes 9,40
 webpkit `search_luma_i4x4` (`frame.rs:2223`) instead picks argmin **prediction SSE** over the 10 modes, then trellis-quantizes once — mode choice never sees quantized distortion, token rate, bmode context cost, or perceptual weighting. At q100 (quantizer 0, dense ±1/±2 coefficients) prediction-SSE ranking diverges most from post-quant RD ranking → plausibly the bulk of the ~83 KB residual-token gap. Same structural gap likely applies to `PickBestIntra16`/`PickBestUV` (they reconstruct+score every mode candidate too, incl. `VP8TDisto` and flatness doubling) vs our whole-block mode search.
 
 **Next arm**: restructure `search_luma_i4x4` (and audit `select_*_mode_rd` for i16/UV) to per-mode trellis-quantize → reconstruct-scratch → full RD score, keeping the sequential best-reconstruction dependency. Cost: ~10× i4-search trellis calls (160 vs 16 per MB) — needs early-out (`score >= best → skip rate`) and possibly top-k candidate prefilter to hold encode wall; measure bytes first, wall second. Goldens will shift (mode choices legitimately change). Gate remains **NOT met**.
+
+**2026-11-15 — LANDED: per-mode RD intra-4×4 sub-block selection (libwebp `PickBestIntra4` port).** `search_luma_i4x4` previously picked each 4×4 sub-block's B_PRED mode by argmin **prediction SSE** then quantized once; libwebp trellis-quantizes **all 10 modes per sub-block** and scores `(rate+mode_bits)*lambda + 256*recon_distortion`. Ported that structure: per mode → predict → FDCT → `quantize_one` (trellis) → IDCT into a 16-byte scratch → post-quant SSE + `block_token_cost` + new `i4_bmode_cost` (context-adaptive BMODES_PROBA tree walk, in-MB top/left contexts; cross-MB edges approximated as B_DC since wavefront planning lacks neighbor modes — rate estimate only, never emitted). Winner's quantized levels/recon are reused for commit (no re-quantize). Sub-mode lambda = `i4x4_lambda(q_ac) * 4` — swept {1,4,16}: ×1 regressed mid-q (+9.2 KB @ grass q90), ×16 pushed too far down the RD curve; **×4 won every measured cell**:
+
+| cell | before | after (λ×4) | score before→after |
+|---|---|---|---|
+| grass q90 | 119,512 | **118,728** | 90.21→90.60 |
+| grass q95 | 164,416 | **161,170** | 93.46→93.54 |
+| grass q100 | 261,782 | **252,966** | 95.52→95.49 |
+| gravel q90 | 97,864 | **96,746** | — |
+| gravel q95 | 129,740 | **126,898** | ~93.40→93.43 |
+| coffee q90 | ~63,928 | **62,388** | — |
+| coffee q95 | ~86,580 | **84,064** | ~85.81→85.87 |
+
+Cost: ~10× i4-search trellis calls (160 vs 16/MB), Best tier only; wall stayed sub-100 ms/encode on grass via wavefront rayon (needs a proper quiet-window timing pass). `Quantized` gained `Copy`. Goldens regenerated (best-tier fixtures shift both directions on synthetic content); the engineered i4/i16 cost-tie test was rewritten — exact ties are no longer constructible now that cost4 is a real RD value; it now pins the strict-`<` direction on a strictly-cheaper candidate. Tests: 63/63 frame, ~914 lib ok, no failures. **Gate remains NOT met** — but this is the first arm to move the high-end lossy frontier itself. Follow-ups: same per-mode RD treatment for `select_luma16_mode_rd`/`select_chroma8_mode_rd` candidates, top-k prefilter to recover wall, true cross-MB bmode contexts if planner gains neighbor access.

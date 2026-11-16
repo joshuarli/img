@@ -141,6 +141,7 @@ impl Quantizer {
 }
 
 /// The result of quantizing one 4×4 coefficient block.
+#[derive(Clone, Copy)]
 pub(crate) struct Quantized {
     /// Signed levels in **zig-zag** order (the token-emission order); positions
     /// below `first` are zero.

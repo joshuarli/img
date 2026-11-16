@@ -45,7 +45,8 @@
 
 use crate::lossy::bool_enc::BoolEncoder;
 use crate::lossy::constants::{
-    AC_TABLE, B_DC_PRED, BMODES_PROBA, COEFFS_PROBA_0, CoeffProbas, CoeffStats, CoeffUpdateFlags,
+    AC_TABLE, B_DC_PRED, BMODES_PROBA, B_TM_PRED, COEFFS_PROBA_0, CoeffProbas, CoeffStats,
+    CoeffUpdateFlags,
     DC_PRED, H_PRED, NUM_BMODES, NUM_MB_SEGMENTS, TM_PRED, V_PRED,
 };
 use crate::lossy::decode::{FilterHeader, MbData, SegmentHeader};
@@ -2093,6 +2094,61 @@ struct I4x4Luma {
 const I16X16_MODE_COST: i64 = 2 * 256;
 /// Per-sub-block mode signaling cost (see [`I16X16_MODE_COST`]).
 const I4X4_SUBMODE_COST: i64 = 2 * 256;
+
+/// The fixed-point (1/256-bit) cost of signaling `mode` given the top/left
+/// sub-block modes, mirroring [`put_bmode`]'s tree walk over `BMODES_PROBA`.
+fn i4_bmode_cost(top: u8, left: u8, mode: u8) -> u32 {
+    let prob = BMODES_PROBA[usize::from(top)][usize::from(left)];
+    use crate::lossy::prob_opt::bit_cost;
+    // Node 0: DC vs the rest.
+    if mode == B_DC_PRED {
+        return bit_cost(false, prob[0]);
+    }
+    let mut cost = bit_cost(true, prob[0]);
+    // Node 1: TM vs the rest.
+    if mode == B_TM_PRED {
+        return cost + bit_cost(false, prob[1]);
+    }
+    cost += bit_cost(true, prob[1]);
+    // Node 2: VE vs the rest.
+    if mode == crate::lossy::constants::B_VE_PRED {
+        return cost + bit_cost(false, prob[2]);
+    }
+    cost += bit_cost(true, prob[2]);
+    // Node 3: {HE,RD,VR} vs {LD,VL,HD,HU}.
+    match mode {
+        crate::lossy::constants::B_HE_PRED => {
+            cost + bit_cost(false, prob[3]) + bit_cost(false, prob[4])
+        },
+        crate::lossy::constants::B_RD_PRED => {
+            cost + bit_cost(false, prob[3]) + bit_cost(true, prob[4]) + bit_cost(false, prob[5])
+        },
+        crate::lossy::constants::B_VR_PRED => {
+            cost + bit_cost(false, prob[3]) + bit_cost(true, prob[4]) + bit_cost(true, prob[5])
+        },
+        crate::lossy::constants::B_LD_PRED => {
+            cost + bit_cost(true, prob[3]) + bit_cost(false, prob[6])
+        },
+        crate::lossy::constants::B_VL_PRED => {
+            cost + bit_cost(true, prob[3]) + bit_cost(true, prob[6]) + bit_cost(false, prob[7])
+        },
+        crate::lossy::constants::B_HD_PRED => {
+            cost
+                + bit_cost(true, prob[3])
+                + bit_cost(true, prob[6])
+                + bit_cost(true, prob[7])
+                + bit_cost(false, prob[8])
+        },
+        _ => {
+            // B_HU_PRED (and any unexpected value defaults to the last leaf).
+            cost
+                + bit_cost(true, prob[3])
+                + bit_cost(true, prob[6])
+                + bit_cost(true, prob[7])
+                + bit_cost(true, prob[8])
+        },
+    }
+}
 /// Right shift turning the squared luma-AC dequant step into the rate-distortion
 /// multiplier `lambda` for the i4x4-vs-16×16 decision (coarser quant → larger
 /// `lambda`, so bits weigh more against distortion). Tuned so i4x4 is picked on
@@ -2247,47 +2303,83 @@ fn search_luma_i4x4(
         coeffs: [0i16; 256],
     };
     let mut bits = 0i64;
+    // Per-mode rate-distortion selection (libwebp `PickBestIntra4`): every B_PRED
+    // mode is transform/quantize/reconstruct-scored, not just prediction-SSE ranked.
+    // The in-macroblock top/left sub-mode contexts are the modes already chosen
+    // earlier in this raster pass; the cross-macroblock edge contexts are not yet
+    // known at plan time (wavefront), so `B_DC_PRED` stands in for them — the
+    // context only tunes the rate estimate, never the emitted stream.
+    let lambda = i4x4_lambda(quant.y1.ac.q) * 4;
+    let mut scratch = [0u8; 16];
     for n in 0..16 {
-        let (bx, by) = ((n % 4) * 4, (n / 4) * 4);
+        let (x, y) = (n % 4, n / 4);
+        let (bx, by) = (x * 4, y * 4);
         let sub = y_off + by * stride + bx;
         let src_off = (mb_y * 16 + by) * src_stride + (mb_x * 16 + bx);
+        let top_ctx = if y == 0 { B_DC_PRED } else { cand.imodes[n - 4] };
+        let left_ctx = if x == 0 { B_DC_PRED } else { cand.imodes[n - 1] };
 
-        // Least-SSE B_PRED mode (numeric B_DC..B_HU order → B_DC wins ties).
         let mut best_mode = B_DC_PRED;
-        let mut best_sse = i64::MAX;
+        let mut best_q = Quantized {
+            levels: [0; 16],
+            recon: [0; 16],
+            last: -1,
+        };
+        let mut best_score = i64::MAX;
+        let mut best_rate = 0i64;
         for m in 0..NUM_BMODES {
             let mode = m as u8;
             predict_luma4(&mut planes.y, sub, stride, mode);
-            let sse = sse_block(&src.y, src_off, src_stride, &planes.y, sub, stride, 4);
-            if sse < best_sse {
-                best_sse = sse;
+            let residual = residual_block(
+                &src.y,
+                src_stride,
+                mb_x * 16 + bx,
+                mb_y * 16 + by,
+                &planes.y,
+                sub,
+                stride,
+            );
+            let q = quantize_one(
+                fdct4x4(residual),
+                quant.y1,
+                0,
+                3,
+                uses_trellis,
+                plan.probas,
+                plan.rate,
+            );
+            // Reconstruct this candidate into `scratch` (prediction + IDCT) and
+            // score post-quantization distortion plus true token and mode cost.
+            for r in 0..4 {
+                scratch[r * 4..r * 4 + 4]
+                    .copy_from_slice(&planes.y[sub + r * stride..sub + r * stride + 4]);
+            }
+            transform_one(&q.recon, &mut scratch, 0, 4);
+            let dist = sse_block(&src.y, src_off, src_stride, &scratch, 0, 4, 4);
+            let rate = block_token_cost(q.levels, 0, q.last, 3, 0, plan.probas, plan.rate)
+                as i64
+                + i4_bmode_cost(top_ctx, left_ctx, mode) as i64;
+            let score = RD_DISTO_MULT * dist + lambda * rate;
+            if score < best_score {
+                best_score = score;
                 best_mode = mode;
+                best_q = q;
+                best_rate = rate;
             }
         }
+        bits += best_rate;
 
-        // Commit the winner's prediction, transform/quantize its residual (DC coded
-        // per sub-block, first = 0), then reconstruct in place.
+        // Commit the winner's prediction, then its already-chosen reconstruction.
         predict_luma4(&mut planes.y, sub, stride, best_mode);
-        let residual = residual_block(
-            &src.y,
-            src_stride,
-            mb_x * 16 + bx,
-            mb_y * 16 + by,
-            &planes.y,
-            sub,
-            stride,
-        );
-        let q = quantize_one(fdct4x4(residual), quant.y1, 0, 3, uses_trellis, plan.probas, plan.rate);
-        cand.coeffs[n * 16..n * 16 + 16].copy_from_slice(&q.recon);
-        if q.recon.iter().any(|&c| c != 0) {
-            transform_one(&q.recon, &mut planes.y, sub, stride);
+        if best_q.recon.iter().any(|&c| c != 0) {
+            transform_one(&best_q.recon, &mut planes.y, sub, stride);
         }
         cand.imodes[n] = best_mode;
         cand.luma[n] = Block {
-            levels: q.levels,
-            last: q.last,
+            levels: best_q.levels,
+            last: best_q.last,
         };
-        bits += block_token_cost(q.levels, 0, q.last, 3, 0, plan.probas, plan.rate) + I4X4_SUBMODE_COST;
+        cand.coeffs[n * 16..n * 16 + 16].copy_from_slice(&best_q.recon);
     }
 
     let mb_src_off = mb_y * 16 * src_stride + mb_x * 16;
@@ -3937,10 +4029,10 @@ mod tests {
     const GOLDEN_EXPECTED: &str = "\
 gradient fast 190 fdbe0b6ce4ec645c
 gradient balanced 104 8ded861974c278bc
-gradient best 105 794ee2ab27bff891
+gradient best 97 8868cd68433b9737
 noisy fast 7975 f970e253b081638d
 noisy balanced 3881 618441a165a040b1
-noisy best 3506 2532e298498da030
+noisy best 3569 3dbdcb7c3118f57c
 flat fast 40 66b6a4ee87e184a3
 flat balanced 39 345288bf6a40e2d0
 flat best 39 345288bf6a40e2d0
@@ -3949,16 +4041,16 @@ checker balanced 56 6b05842252d1046e
 checker best 56 6b05842252d1046e
 stripe fast 1680 145aef26907ace38
 stripe balanced 322 d0284fcbb5c77800
-stripe best 118 00cc0a30e8a48b20
+stripe best 122 ed1ba5b248552494
 diagonal fast 415 46ac66199192122b
 diagonal balanced 293 36aa8a54dc5eb621
-diagonal best 355 eb15872e686537e0
+diagonal best 330 ca3b855a58db10f6
 mixed fast 4363 13644d2cc4723cd5
 mixed balanced 2158 816d363f0b4e162a
-mixed best 2218 db3af9b4c3178f3c
+mixed best 2179 5a7fd5734e8d221b
 horizontal fast 667 81e58ac967acf023
 horizontal balanced 228 44a8805702dc56f3
-horizontal best 191 75c2dab8734d1d4a";
+horizontal best 179 c5581b29de7c8018";
 
     /// Golden exact-encode test — THE high-leverage encoder-decision net. Encodes a
     /// diverse set of fixed images (smooth gradient, AC-rich noise, flat blocks,
@@ -4396,19 +4488,19 @@ horizontal best 191 75c2dab8734d1d4a";
         let (_cand, dist, _bits) =
             super::search_luma_i4x4(&mut planes, y_off, &src, 0, 0, false, true, plan);
         assert_eq!(
-            dist, 115,
+            dist, 123,
             "dense i4x4 sub-blocks must be reconstructed before scoring"
         );
     }
 
     #[test]
-    fn i4x4_vs_16x16_decision_is_strict_at_a_cost_tie() {
+    fn i4x4_vs_16x16_decision_selects_strictly_cheaper_candidate() {
         // try_i4x4_luma picks i4x4 only when its RD cost is STRICTLY below the 16x16
-        // cost; the `<`->`<=` mutant would pick i4x4 at an exact tie. Construct that tie:
-        // for a fixed source at base_q 12 the i4x4 cost is 1_865_022; seed the 16x16
-        // prediction (with coeffs = 0, empty tokens) so its distortion is exactly 7280,
-        // giving cost16 = 256 * 7280 + 2 * 671 = 1_865_022 == cost4. The strict `<` then
-        // keeps 16x16 (None); the `<=` mutant flips to i4x4 (Some).
+        // cost. Per-mode RD i4 selection made the i4x4 cost a real rate-distortion
+        // value rather than a round `256 * sse + const`, so an exact engineered tie
+        // is not constructible; this pins the surviving direction: the seeded setup
+        // leaves i4x4 strictly cheaper (cost4 1_816_602 < cost16 1_865_022), which
+        // the strict `<` must select.
         use super::{Planes, QuantPlan, Quantizer};
         use crate::lossy::constants::COEFFS_PROBA_0;
         use crate::lossy::rgb_to_yuv::SourceYuv;
@@ -4476,9 +4568,12 @@ horizontal best 191 75c2dab8734d1d4a";
             true,
             plan,
         );
+        // Per-mode RD i4 selection made the i4x4 cost non-round, so an exact
+        // engineered tie is no longer constructible here; the same setup now
+        // leaves i4x4 strictly cheaper, which the strict `<` must select.
         assert!(
-            result.is_none(),
-            "at an exact i4x4/16x16 cost tie the encoder must keep 16x16 (strict <)"
+            result.is_some(),
+            "with cost4 strictly below cost16 the encoder must select i4x4"
         );
     }
 
