@@ -511,3 +511,27 @@ a busy host (perf gate deferred): coffee L6 ~6.6 s -> ~6.4 s, grass
 doc tests green, alloc-only check green, serial/rayon byte-identical,
 and 24/24 sweep images (dev + validation, L6) byte-identical vs the
 pre-cache HEAD.
+
+Phase instrumentation (temporary `Instant` probes, since removed;
+rayon `work-count` scratch build, busy host — directional only): at L6
+the estimate phase and the kept-task search phase split roughly
+evenly but asymmetrically — grass 512x512: est ~5.8 s / eval ~8.9 s
+(kept 13/25 tasks); coffee 600x400: est ~5.4 s / eval ~1.0 s (kept
+10/25). The estimate phase is dominated by the ~36 distinct
+`cross_color::forward` jobs the task set implies (each costs
+~pixels x 256 multiplier evals x ~7 sweeps, roughly independent of
+`bits`); `CrossColorCache` already makes each run once, so eval pays
+only searches. Consequence for the next lever: a cheaper estimate-only
+forward does NOT pay — kept tasks still need the real forward in eval,
+so total forward work is ~conserved. Real options are (a) prune
+candidate tasks BEFORE any cross-color forward using a signal that does
+not need the transformed pixels (the current order-0 entropy needs them
+by construction — a pre-forward statistic such as inter-channel
+correlation or predictor-residual entropy would have to rank
+cross-color families, which is exactly where order-0 is blindest), or
+(b) make the multiplier sweep itself cheaper — it is the largest single
+kernel (`cross_color_eval` work counter) and its inner loops are
+integer-only and vectorization-friendly, though the campaign brief
+deprioritizes scalar kernels vs architecture. Within one spec the
+pipeline is already deduplicated: `parse_lz77` runs once and its hash
+chain feeds `parse_optimal`; meta-Huffman shots reuse tokens.
