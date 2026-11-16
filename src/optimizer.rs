@@ -153,6 +153,15 @@ fn strip_compliant(bytes: &[u8], format: Format) -> bool {
         Format::Avif => false,
     }
 }
+/// Skip margin for the lossless-WebP probe: the level-0 probe's byte length
+/// must exceed the incumbent's by this factor before the level-6 candidate is
+/// skipped. Level 0's candidate set is a subset of level 6's, so the real
+/// result is always `<=` the probe; the measured level-0 → level-6 breadth gain
+/// on corpus content is at most ~11% (coffee), so a 1.25 margin tolerates a
+/// gain up to 20% before a skip could drop a winner. A wrong skip can only
+/// cost bytes (the lossy incumbent still qualifies), never correctness.
+const LOSSLESS_PROBE_SKIP_MARGIN: f64 = 1.25;
+
 fn warnings(image: &StillImage, format: Format, policy: MetadataPolicy) -> Vec<String> {
     if policy == MetadataPolicy::Keep && format != image.format() {
         image.png_metadata.iter().filter(|p| !matches!(&p[4..8], b"iCCP"|b"eXIf") && !( &p[4..8] == b"iTXt" && image.metadata.xmp.is_some()))
@@ -215,17 +224,88 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
         Fidelity::Lossless => for &f in &formats { settings.push((f,None)); },
         Fidelity::Quality(q) => for &f in &formats { settings.push((f,Some(q.value()))); },
         Fidelity::Score(_) => {
-            for format in [Format::Png,Format::Webp] {if formats.contains(&format) {settings.push((format,None));}}
             for q in [95.0,50.0,0.0,100.0,75.0,25.0] {
                 for &f in &formats { if f != Format::Png || !image.is_grayscale() { settings.push((f,Some(q))); } }
             }
         },
     }
+    // Lossless candidates are held out of `settings` and evaluated after the
+    // lossy search settles: on photographic sources they almost never beat a
+    // qualifying lossy output, yet their encode dominates the wall, and only
+    // the final incumbent gives the skip probe its tightest bound.
+    let mut lossless_settings = Vec::new();
+    if matches!(request.fidelity, Fidelity::Score(_)) {
+        for format in [Format::Png,Format::Webp] {
+            if formats.contains(&format) { lossless_settings.push(format); }
+        }
+    }
+    // Cheap lossless-WebP probe for the score search: a level-0 encode whose
+    // byte length upper-bounds the level-6 candidate. When it already exceeds
+    // the incumbent by [`LOSSLESS_PROBE_SKIP_MARGIN`], the real lossless encode
+    // (the dominant wall on mid-size photographs) cannot win and is skipped.
+    // `None` outside the calibrated band or on probe failure — never skips.
+    let lossless_probe = if matches!(request.fidelity, Fidelity::Score(_))
+        && request.effort == Effort::Fast
+        && formats.contains(&Format::Webp)
+    {
+        image
+            .encode_webp_lossless_probe(cancelled)
+            .ok()
+            .flatten()
+            .map(|bytes| bytes.len())
+    } else {
+        None
+    };
     let mut evaluations = Vec::new();
     let mut encoded_any = false;
     let mut encode_error = false;
     let mut next = 0;
-    while evaluations.len() < cap {
+    // One candidate evaluation, shared by the lossy loop and the deferred
+    // lossless pass. `best`/`evaluations`/`encoded_any`/`encode_error` are
+    // threaded explicitly so the closure can run after the loop borrows end.
+    let run_eval = |format: Format,
+                        quality: Option<f32>,
+                        best: &mut Option<Outcome>,
+                        evaluations: &mut Vec<Evaluation>,
+                        encoded_any: &mut bool,
+                        encode_error: &mut bool| {
+        let start=Instant::now();
+        let encoded=image.encode_cancellable(format,quality.map(|q|EncodingMode::Quality(Quality::new(q).unwrap())).unwrap_or(EncodingMode::Lossless),request.effort,cancelled);
+        let mut evaluation=Evaluation { format,quality,bytes:None,score:None,encode_ms:start.elapsed().as_secs_f64()*1000.0,failure:None };
+        match encoded {
+            Err(error) => { *encode_error |= error.kind() == ErrorKind::Encode; evaluation.failure=Some(error.to_string()); },
+            Ok(candidate_bytes) => {
+                *encoded_any=true; evaluation.bytes=Some(candidate_bytes.len());
+                let validated=(|| {
+                    let candidate=StillImage::decode_cancellable(&candidate_bytes,cancelled)?;
+                    validate_metadata(&image,&candidate,format)?;
+                    if matches!(request.fidelity,Fidelity::Lossless) {
+                        if !samples_equal(&image,&candidate) { return Err(Error::new(ErrorKind::Score,"exact decoded samples differ")); }
+                        Ok(None)
+                    } else {
+                        let score=metric.as_ref().unwrap().score_encoded(&candidate_bytes)?;
+                        evaluation.score=Some(score);
+                        if let Fidelity::Score(target)=request.fidelity && score < target.value() { return Err(Error::new(ErrorKind::Score,"candidate is below requested score")); }
+                        Ok(Some(score))
+                    }
+                })();
+                match validated {
+                    Err(error) => { *encode_error |= error.kind() == ErrorKind::Encode; evaluation.failure=Some(error.to_string()); },
+                    Ok(score) => if (!optimize || candidate_bytes.len() < bytes.len()) && best.as_ref().is_none_or(|b|better(candidate_bytes.len(),score,format,b)) {
+                        *best=Some(Outcome { bytes:candidate_bytes,format,unchanged:false,score,evaluations:vec![],warnings:warnings(&image,format,request.metadata) });
+                    },
+                }
+            },
+        }
+        evaluations.push(evaluation);
+    };
+    // The deferred lossless pass still consumes `cap` slots exactly as it did
+    // when it sat first in `settings`: reserve its entries up front so the
+    // lossy search cannot spend the whole budget and push total evaluations
+    // past the effort contract. A skipped WebP candidate simply leaves its
+    // reservation unused.
+    let eval_cap = cap.saturating_sub(lossless_settings.len());
+    while evaluations.len() < eval_cap {
         if cancelled.is_cancelled() { return Err(Error::new(ErrorKind::Invalid,"processing cancelled")); }
         if next >= settings.len() {
             if !matches!(request.fidelity,Fidelity::Score(_)) { break; }
@@ -250,35 +330,24 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
             if !refined { break; }
         }
         let (format,quality) = settings[next]; next+=1;
-        let start=Instant::now();
-        let encoded=image.encode_cancellable(format,quality.map(|q|EncodingMode::Quality(Quality::new(q).unwrap())).unwrap_or(EncodingMode::Lossless),request.effort,cancelled);
-        let mut evaluation=Evaluation { format,quality,bytes:None,score:None,encode_ms:start.elapsed().as_secs_f64()*1000.0,failure:None };
-        match encoded {
-            Err(error) => { encode_error |= error.kind() == ErrorKind::Encode; evaluation.failure=Some(error.to_string()); },
-            Ok(candidate_bytes) => {
-                encoded_any=true; evaluation.bytes=Some(candidate_bytes.len());
-                let validated=(|| {
-                    let candidate=StillImage::decode_cancellable(&candidate_bytes,cancelled)?;
-                    validate_metadata(&image,&candidate,format)?;
-                    if matches!(request.fidelity,Fidelity::Lossless) {
-                        if !samples_equal(&image,&candidate) { return Err(Error::new(ErrorKind::Score,"exact decoded samples differ")); }
-                        Ok(None)
-                    } else {
-                        let score=metric.as_ref().unwrap().score_encoded(&candidate_bytes)?;
-                        evaluation.score=Some(score);
-                        if let Fidelity::Score(target)=request.fidelity && score < target.value() { return Err(Error::new(ErrorKind::Score,"candidate is below requested score")); }
-                        Ok(Some(score))
-                    }
-                })();
-                match validated {
-                    Err(error) => { encode_error |= error.kind() == ErrorKind::Encode; evaluation.failure=Some(error.to_string()); },
-                    Ok(score) => if (!optimize || candidate_bytes.len() < bytes.len()) && best.as_ref().is_none_or(|b|better(candidate_bytes.len(),score,format,b)) {
-                        best=Some(Outcome { bytes:candidate_bytes,format,unchanged:false,score,evaluations:vec![],warnings:warnings(&image,format,request.metadata) });
-                    },
-                }
-            },
+        run_eval(format, quality, &mut best, &mut evaluations, &mut encoded_any, &mut encode_error);
+    }
+    // Deferred lossless pass (score search only): evaluated against the final
+    // lossy incumbent. The WebP candidate is skipped when the level-0 probe
+    // already exceeds that incumbent by the calibrated margin — the level-6
+    // result cannot then win, and skipping avoids the dominant encode wall.
+    // PNG lossless is cheap and always evaluated, matching prior semantics.
+    for format in lossless_settings {
+        if cancelled.is_cancelled() { return Err(Error::new(ErrorKind::Invalid,"processing cancelled")); }
+        if format == Format::Webp
+            && best.as_ref().is_some_and(|b| {
+                lossless_probe
+                    .is_some_and(|p| p as f64 > b.bytes.len() as f64 * LOSSLESS_PROBE_SKIP_MARGIN)
+            })
+        {
+            continue;
         }
-        evaluations.push(evaluation);
+        run_eval(format, None, &mut best, &mut evaluations, &mut encoded_any, &mut encode_error);
     }
     let mut best=best.ok_or_else(|| Error::new(if encoded_any { ErrorKind::Score } else if encode_error { ErrorKind::Encode } else { ErrorKind::Unsupported },format!("no qualifying output: {}",evaluations.iter().filter_map(|e|e.failure.as_deref()).next().unwrap_or("no compatible candidates"))))?;
     best.evaluations=evaluations;

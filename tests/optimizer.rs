@@ -19,7 +19,9 @@ fn search_finishes_coarse_grid_before_refining_and_does_not_assume_monotonicity(
     let bytes=StillImage::from_rgb8(48,32,(0..32u8).flat_map(|y|(0..48u8).flat_map(move|x|[x*4,y*6,100])).collect()).unwrap().encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
     let result=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Score(ScoreTarget::new(40.0).unwrap()),effort:Effort::Balanced,..Request::default() }).unwrap();
     assert_eq!(result.evaluations.len(),24);
-    assert_eq!(result.evaluations[1..7].iter().map(|e|e.quality.unwrap()).collect::<Vec<_>>(),[95.0,50.0,0.0,100.0,75.0,25.0]);
+    assert_eq!(result.evaluations[..6].iter().map(|e|e.quality.unwrap()).collect::<Vec<_>>(),[95.0,50.0,0.0,100.0,75.0,25.0]);
+    assert_eq!(result.evaluations.last().unwrap().quality,None);
+    assert_eq!(result.evaluations.last().unwrap().format,Format::Webp);
     assert_eq!(result.bytes.len(),result.evaluations.iter().filter(|e|e.failure.is_none()).map(|e|e.bytes.unwrap()).min().unwrap());
     let impossible=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Jpeg),fidelity:Fidelity::Score(ScoreTarget::new(100.0).unwrap()),effort:Effort::Fast,..Request::default() });
     assert!(impossible.is_err());

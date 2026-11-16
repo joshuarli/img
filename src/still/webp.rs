@@ -95,6 +95,37 @@ fn webkit_effort(mode: EncodingMode, effort: Effort, pixels: u64) -> webpkit::Ef
     }
 }
 
+/// A cheap lower-tier lossless encode used by the score search to decide whether
+/// the full-effort lossless candidate can still win. Runs webpkit effort level 0
+/// (greedy parse only, no transform breadth) — roughly 5–15% of the level-6 wall —
+/// and returns the encoded bytes so the caller can compare against the incumbent.
+/// The result is never published; it only feeds the skip decision.
+pub(super) fn encode_probe(image: &StillImage, stop: &crate::cancellation::Cancellation) -> Result<Option<Vec<u8>>, Error> {
+    if stop.is_cancelled() { return Err(Error::new(ErrorKind::Invalid, "operation cancelled")); }
+    let (width, height) = image.dimensions();
+    let pixels = u64::from(width) * u64::from(height);
+    // The skip bound is calibrated only for the fast-effort deep band, where the
+    // real candidate runs webpkit level 6 and the level-0 probe stays within
+    // ~11% of it on measured content. Outside the band the candidate effort
+    // differs (level 1 above it, cheaper levels below) and the probe is not a
+    // safe bound, so no probe is produced.
+    if !(DEEP_LOSSLESS_FAST_MIN_PIXELS..=DEEP_LOSSLESS_FAST_MAX_PIXELS).contains(&pixels) {
+        return Ok(None);
+    }
+    if image.bit_depth() != 8 { return Err(Error::new(ErrorKind::Unsupported, "WebP encoding requires eight-bit samples")); }
+    let samples = rgba(image);
+    let dims = webpkit::Dimensions::new(width, height)
+        .map_err(|_| Error::new(ErrorKind::Limit, "WebP dimensions are outside 1..=16384"))?;
+    let reference = webpkit::ImageRef::new(dims, webpkit::PixelLayout::Rgba8, &samples)
+        .map_err(|e| Error::new(ErrorKind::Invalid, e.to_string()))?;
+    let bytes = webpkit::Encoder::lossless()
+        .effort(webpkit::Effort::level(0))
+        .metadata(webpkit::Metadata::none())
+        .encode_ref(reference)
+        .map_err(|e| Error::new(ErrorKind::Encode, e.to_string()))?;
+    Ok(Some(bytes))
+}
+
 pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
     if stop.is_cancelled() { return Err(Error::new(ErrorKind::Invalid, "operation cancelled")); }
     if image.bit_depth() != 8 { return Err(Error::new(ErrorKind::Unsupported, "WebP encoding requires eight-bit samples")); }
