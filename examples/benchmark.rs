@@ -20,7 +20,7 @@ fn run()->Result<(),Box<dyn std::error::Error>> {
     let timed=mode=="run";
     if timed && !Command::new("perf-gate-ready").status()?.success() {return Err("perf gate deferred: host busy".into());}
     let repository=Path::new(env!("CARGO_MANIFEST_DIR"));let benchmark=support::root();let output_dir=benchmark.join("results");fs::create_dir_all(&output_dir)?;
-    let scratch=repository.join(".work/tmp/benchmark-capture");fs::create_dir_all(&scratch)?;
+    let scratch=repository.join(format!(".work/tmp/benchmark-capture-{}",std::process::id()));fs::create_dir_all(&scratch)?;
     let generated=benchmark.join("corpus/generated");fs::create_dir_all(&generated)?;
     let validation_corpus=std::env::var("IMG_BENCH_CORPUS").is_ok_and(|v|v=="validation");
     let mut cases=if validation_corpus {support::validation()} else {support::photographic().into_iter().map(|(name,bytes)|(name,bytes,String::from("corpus"))).collect::<Vec<_>>()};
