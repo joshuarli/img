@@ -539,3 +539,10 @@ integer-only and vectorization-friendly, though the campaign brief
 deprioritizes scalar kernels vs architecture. Within one spec the
 pipeline is already deduplicated: `parse_lz77` runs once and its hash
 chain feeds `parse_optimal`; meta-Huffman shots reuse tokens.
+Multiplier-sweep vectorization checked and closed: the released binary
+already emits NEON `mul.4s`/vector ops inside `cross_color::forward`,
+so LLVM autovectorized the 256-eval inner loops — scalar/kernel work
+there is not the remaining lever. Lossy side profiled for contrast
+(coffee q90 193 ms / q100 268 ms, `trellis_eval` top counter): lossy
+is ~30x faster than lossless on the same input, so the frontier gap
+stays lossless-side.
