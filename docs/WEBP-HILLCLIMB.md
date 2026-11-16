@@ -602,7 +602,7 @@ reverted to raw entropy. Coverage remains a plausible ORDERING signal
 only if used at coarse granularity (family standing), never inside the
 per-spec ordering the cap depends on.
 
-Family-best global band LANDED (pending commit): `select_from_estimates`
+Family-best global band LANDED (`15562c5`): `select_from_estimates`
 kept each family's entropy-best task unconditionally as the hedge
 against order-0 entropy missing LZ77 structure — but on the corpus
 that best never won from >~1.5x the global best estimate
