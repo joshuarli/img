@@ -556,18 +556,21 @@ fn run_best_task(
     height: u32,
     alpha_used: bool,
     argb: &[u32],
+    planes: Option<&PlaneCache>,
 ) -> Vec<Vec<u8>> {
     match task {
         BestTask::Floor => floor_streams(breadth, width, height, alpha_used, argb),
         BestTask::Palette => palette_streams(breadth, width, height, alpha_used, argb),
         BestTask::Predictor(bits) => {
-            predictor_streams(breadth, width, height, alpha_used, argb, bits)
+            predictor_streams(breadth, width, height, alpha_used, argb, bits, planes)
         },
         BestTask::CrossColor(bits) => {
             cross_color_streams(breadth, width, height, alpha_used, argb, bits)
         },
         BestTask::PredictorCross(p_bits, cc_bits) => {
-            predictor_cross_streams(breadth, width, height, alpha_used, argb, p_bits, cc_bits)
+            predictor_cross_streams(
+                breadth, width, height, alpha_used, argb, p_bits, cc_bits, planes,
+            )
         },
     }
 }
@@ -670,6 +673,96 @@ fn palette_streams(
     }
 }
 
+/// Predictor-forward results shared across best-tasks. `Predictor(b)` and every
+/// `PredictorCross(b, _)` composition need `predictor::forward(argb, b)`, and the
+/// composed legs need `predictor::forward(subtract_green(argb), b)`; at full
+/// breadth those forwards run 5x/4x redundantly per tile size. The cache computes
+/// each `(source, bits)` pair once and the tasks borrow the planes. `None` when
+/// the planes would exceed [`PLANE_CACHE_MAX_PIXELS`]; callers then compute
+/// inline exactly as before.
+struct PlaneCache {
+    /// `(bits, residual, tile_data)` for `predictor::forward(argb, bits)`.
+    raw: Vec<(u32, Vec<u32>, Vec<u32>)>,
+    /// Same for `predictor::forward(subtract_green(argb), bits)`; empty unless
+    /// the breadth composes cross-color.
+    sg_pred: Vec<(u32, Vec<u32>, Vec<u32>)>,
+}
+
+/// Bound on cached predictor planes (in pixels) so huge images keep the old
+/// compute-per-task memory profile instead of holding `2 * tile_bits` planes.
+const PLANE_CACHE_MAX_PIXELS: usize = 1 << 26;
+
+fn forward_all(
+    source: &[u32],
+    width: u32,
+    height: u32,
+    tile_bits: &[u32],
+) -> Vec<(u32, Vec<u32>, Vec<u32>)> {
+    #[cfg(feature = "rayon")]
+    return {
+        use rayon::prelude::*;
+        tile_bits
+            .par_iter()
+            .map(|&b| {
+                let (residual, tile_data) = predictor::forward(source, width, height, b);
+                (b, residual, tile_data)
+            })
+            .collect()
+    };
+    #[cfg(not(feature = "rayon"))]
+    return tile_bits
+        .iter()
+        .map(|&b| {
+            let (residual, tile_data) = predictor::forward(source, width, height, b);
+            (b, residual, tile_data)
+        })
+        .collect();
+}
+
+impl PlaneCache {
+    fn build(breadth: Breadth, width: u32, height: u32, argb: &[u32]) -> Option<Self> {
+        let planes = breadth
+            .tile_bits
+            .len()
+            .saturating_mul(if breadth.cross_color { 2 } else { 1 });
+        if argb.len().saturating_mul(planes) > PLANE_CACHE_MAX_PIXELS {
+            return None;
+        }
+        let sg_px = breadth.cross_color.then(|| {
+            let mut px = argb.to_vec();
+            subtract_green::forward(&mut px);
+            px
+        });
+        let raw = forward_all(argb, width, height, breadth.tile_bits);
+        let sg_pred = match &sg_px {
+            Some(px) => forward_all(px, width, height, breadth.tile_bits),
+            None => Vec::new(),
+        };
+        Some(Self { raw, sg_pred })
+    }
+
+    fn raw(&self, bits: u32) -> Option<&(u32, Vec<u32>, Vec<u32>)> {
+        self.raw.iter().find(|e| e.0 == bits)
+    }
+
+    fn sg_pred(&self, bits: u32) -> Option<&(u32, Vec<u32>, Vec<u32>)> {
+        self.sg_pred.iter().find(|e| e.0 == bits)
+    }
+}
+
+/// Borrow the cached `(residual, tile_data)` for `bits`, or the freshly computed
+/// `owned` fallback. Exactly one of `hit`/`owned` is `Some`.
+fn plane<'a>(
+    hit: Option<&'a (u32, Vec<u32>, Vec<u32>)>,
+    owned: &'a Option<(Vec<u32>, Vec<u32>)>,
+) -> (&'a [u32], &'a [u32]) {
+    match (hit, owned) {
+        (Some((_, px, td)), _) => (px.as_slice(), td.as_slice()),
+        (None, Some(o)) => (o.0.as_slice(), o.1.as_slice()),
+        (None, None) => unreachable!("predictor plane neither cached nor computed"),
+    }
+}
+
 /// The predictor family at one tile size: predictor alone, then predictor +
 /// subtract-green (spatial before pointwise).
 fn predictor_streams(
@@ -679,8 +772,13 @@ fn predictor_streams(
     alpha_used: bool,
     argb: &[u32],
     bits: u32,
+    planes: Option<&PlaneCache>,
 ) -> Vec<Vec<u8>> {
-    let (residual, tile_data) = predictor::forward(argb, width, height, bits);
+    let hit = planes.and_then(|p| p.raw(bits));
+    let owned = hit
+        .is_none()
+        .then(|| predictor::forward(argb, width, height, bits));
+    let (residual, tile_data) = plane(hit, &owned);
     let alone = family_search(
         breadth,
         width,
@@ -688,12 +786,12 @@ fn predictor_streams(
         alpha_used,
         &[TransformPlan::Predictor {
             bits,
-            tile_data: tile_data.clone(),
+            tile_data: tile_data.to_vec(),
         }],
         width,
-        &residual,
+        residual,
     );
-    let mut residual_sg = residual;
+    let mut residual_sg = residual.to_vec();
     subtract_green::forward(&mut residual_sg);
     let with_sg = family_search(
         breadth,
@@ -701,7 +799,10 @@ fn predictor_streams(
         height,
         alpha_used,
         &[
-            TransformPlan::Predictor { bits, tile_data },
+            TransformPlan::Predictor {
+                bits,
+                tile_data: tile_data.to_vec(),
+            },
             TransformPlan::SubtractGreen,
         ],
         width,
@@ -724,12 +825,17 @@ fn predictor_cross_streams(
     argb: &[u32],
     p_bits: u32,
     cc_bits: u32,
+    planes: Option<&PlaneCache>,
 ) -> Vec<Vec<u8>> {
     // libwebp's order: subtract-green first, then predictor, then cross-color.
-    let mut sg_px = argb.to_vec();
-    subtract_green::forward(&mut sg_px);
-    let (pres, ptile) = predictor::forward(&sg_px, width, height, p_bits);
-    let (stored, ctile) = cross_color::forward(&pres, width, height, cc_bits);
+    let sg_hit = planes.and_then(|p| p.sg_pred(p_bits));
+    let sg_owned = sg_hit.is_none().then(|| {
+        let mut sg_px = argb.to_vec();
+        subtract_green::forward(&mut sg_px);
+        predictor::forward(&sg_px, width, height, p_bits)
+    });
+    let (pres, ptile) = plane(sg_hit, &sg_owned);
+    let (stored, ctile) = cross_color::forward(pres, width, height, cc_bits);
     let with_sg = family_search(
         breadth,
         width,
@@ -739,7 +845,7 @@ fn predictor_cross_streams(
             TransformPlan::SubtractGreen,
             TransformPlan::Predictor {
                 bits: p_bits,
-                tile_data: ptile,
+                tile_data: ptile.to_vec(),
             },
             TransformPlan::CrossColor {
                 bits: cc_bits,
@@ -751,8 +857,12 @@ fn predictor_cross_streams(
     );
     // The same composition without subtract-green — cwebp picks [P, CC] on
     // astronaut.png where SG hurts rather than helps.
-    let (pres3, ptile3) = predictor::forward(argb, width, height, p_bits);
-    let (stored3, ctile3) = cross_color::forward(&pres3, width, height, cc_bits);
+    let raw_hit = planes.and_then(|p| p.raw(p_bits));
+    let raw_owned = raw_hit
+        .is_none()
+        .then(|| predictor::forward(argb, width, height, p_bits));
+    let (pres3, ptile3) = plane(raw_hit, &raw_owned);
+    let (stored3, ctile3) = cross_color::forward(pres3, width, height, cc_bits);
     let no_sg = family_search(
         breadth,
         width,
@@ -761,7 +871,7 @@ fn predictor_cross_streams(
         &[
             TransformPlan::Predictor {
                 bits: p_bits,
-                tile_data: ptile3,
+                tile_data: ptile3.to_vec(),
             },
             TransformPlan::CrossColor {
                 bits: cc_bits,
@@ -866,10 +976,21 @@ fn evaluate_best_tasks(
 ) -> Vec<u8> {
     // Serial: `reduce_task_minima` drives the lazy map, so each family's streams
     // are produced, folded to one, and dropped before the next family runs.
+    let planes = PlaneCache::build(breadth, width, height, argb);
     reduce_task_minima(
         tasks
             .into_iter()
-            .map(|t| keep_smallest(run_best_task(t, breadth, width, height, alpha_used, argb))),
+            .map(|t| {
+                keep_smallest(run_best_task(
+                    t,
+                    breadth,
+                    width,
+                    height,
+                    alpha_used,
+                    argb,
+                    planes.as_ref(),
+                ))
+            }),
     )
 }
 #[cfg(feature = "rayon")]
@@ -885,9 +1006,20 @@ fn evaluate_best_tasks(
     // Parallel: each worker folds its family to a single stream, so the collected
     // vec holds one stream per non-empty family (not every candidate); `collect`
     // keeps task order, so the fold below resolves ties identically to serial.
+    let planes = PlaneCache::build(breadth, width, height, argb);
     let minima: Vec<Option<Vec<u8>>> = tasks
         .into_par_iter()
-        .map(|t| keep_smallest(run_best_task(t, breadth, width, height, alpha_used, argb)))
+        .map(|t| {
+            keep_smallest(run_best_task(
+                t,
+                breadth,
+                width,
+                height,
+                alpha_used,
+                argb,
+                planes.as_ref(),
+            ))
+        })
         .collect();
     reduce_task_minima(minima)
 }
@@ -1944,18 +2076,29 @@ mod tests {
     #[test]
     fn serial_and_parallel_evaluation_agree() {
         use super::{
-            build_best_tasks, evaluate_best_tasks, keep_smallest, reduce_task_minima,
-            run_best_task, schedule,
+            PlaneCache, build_best_tasks, evaluate_best_tasks, keep_smallest,
+            reduce_task_minima, run_best_task, schedule,
         };
         let breadth = schedule(crate::effort::MAX_LEVEL);
         for (w, h, pixels) in byte_stability_cases() {
             let alpha = pixels.iter().any(|&p| p >> 24 != 0xff);
             // Independent serial reference: fold each family's own minimum in task
             // order (the serial `evaluate_best_tasks` is not compiled under rayon).
+            let planes = PlaneCache::build(breadth, w, h, &pixels);
             let serial = reduce_task_minima(
                 build_best_tasks(breadth)
                     .into_iter()
-                    .map(|t| keep_smallest(run_best_task(t, breadth, w, h, alpha, &pixels))),
+                    .map(|t| {
+                        keep_smallest(run_best_task(
+                            t,
+                            breadth,
+                            w,
+                            h,
+                            alpha,
+                            &pixels,
+                            planes.as_ref(),
+                        ))
+                    }),
             );
             // The rayon evaluator (feature on) must match the serial reference and
             // the public entry point, byte-for-byte.
