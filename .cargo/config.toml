@@ -6,3 +6,8 @@ linker = 'aarch64-linux-gnu-gcc'
 
 [target.aarch64-unknown-linux-musl]
 linker = 'aarch64-linux-musl-gcc'
+
+# Host-only native codegen for local perf work; cross targets (linux/musl
+# via qemu/gcc above) keep generic codegen so binaries stay portable there.
+[target.aarch64-apple-darwin]
+rustflags = ["-C", "target-cpu=native"]
