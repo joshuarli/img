@@ -5,7 +5,7 @@ Requests select optimization or conversion, score/direct-quality/exact fidelity,
 metadata policy, effort, and optional aspect-preserving resize. Lossless resize
 is refused. Optimize requires strictly fewer bytes; conversion permits growth.
 
-Fast, balanced and best allow 8, 24 and 64 encodes in total. Search tries exact
+Fast, balanced and best allow 10, 24 and 64 encodes in total. Search tries exact
 PNG and WebP first where eligible, then a fixed round-robin grid of 95, 50, 0, 100, 75,
 and 25 across compatible formats. Every eligible format receives an attempt.
 After the complete grid, deterministic midpoint refinement prioritizes gaps

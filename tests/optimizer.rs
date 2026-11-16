@@ -19,9 +19,7 @@ fn search_finishes_coarse_grid_before_refining_and_does_not_assume_monotonicity(
     let bytes=StillImage::from_rgb8(48,32,(0..32u8).flat_map(|y|(0..48u8).flat_map(move|x|[x*4,y*6,100])).collect()).unwrap().encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
     let result=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Score(ScoreTarget::new(40.0).unwrap()),effort:Effort::Balanced,..Request::default() }).unwrap();
     assert_eq!(result.evaluations.len(),24);
-    assert_eq!(result.evaluations[..6].iter().map(|e|e.quality.unwrap()).collect::<Vec<_>>(),[95.0,50.0,0.0,100.0,75.0,25.0]);
-    assert_eq!(result.evaluations.last().unwrap().quality,None);
-    assert_eq!(result.evaluations.last().unwrap().format,Format::Webp);
+    assert_eq!(result.evaluations[1..7].iter().map(|e|e.quality.unwrap()).collect::<Vec<_>>(),[95.0,50.0,0.0,100.0,75.0,25.0]);
     assert_eq!(result.bytes.len(),result.evaluations.iter().filter(|e|e.failure.is_none()).map(|e|e.bytes.unwrap()).min().unwrap());
     let impossible=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Jpeg),fidelity:Fidelity::Score(ScoreTarget::new(100.0).unwrap()),effort:Effort::Fast,..Request::default() });
     assert!(impossible.is_err());
@@ -106,4 +104,30 @@ fn lossless_cross_format_cannot_discard_hdr_color_signaling() {
     let image=StillImage::from_rgb8(16,16,common::pixels(16,16)).unwrap();let mut bytes=image.encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
     let mut chunk=4u32.to_be_bytes().to_vec();chunk.extend_from_slice(b"cICP");chunk.extend_from_slice(&[9,16,0,1]);let crc=crc32fast::hash(&chunk[4..]);chunk.extend_from_slice(&crc.to_be_bytes());bytes.splice(33..33,chunk);
     assert!(optimizer::process(&bytes,Request {operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Lossless,..Request::default()}).is_err(),"destination has no representation of the source HDR transfer");
+}
+
+#[test]
+fn score_search_evaluates_exact_candidates_before_the_quality_grid() {
+    let bytes=source();
+    let auto=optimizer::process(&bytes,Request { operation:Operation::Optimize(FormatSelection::Auto),fidelity:Fidelity::Score(ScoreTarget::new(70.0).unwrap()),effort:Effort::Fast,..Request::default() }).unwrap();
+    assert_eq!(auto.evaluations[0].format,Format::Png); assert_eq!(auto.evaluations[0].quality,None);
+    assert_eq!(auto.evaluations[1].format,Format::Webp); assert_eq!(auto.evaluations[1].quality,None);
+    assert_eq!(auto.evaluations[2..6].iter().map(|e|(format!("{:?}",e.format),e.quality.unwrap())).collect::<Vec<_>>(),[("Jpeg".to_string(),95.0),("Png".to_string(),95.0),("Webp".to_string(),95.0),("Avif".to_string(),95.0)]);
+    let webp=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Score(ScoreTarget::new(70.0).unwrap()),effort:Effort::Fast,..Request::default() }).unwrap();
+    assert_eq!(webp.evaluations[0].format,Format::Webp); assert_eq!(webp.evaluations[0].quality,None);
+    assert!(webp.evaluations.iter().all(|e|e.format==Format::Webp));
+}
+
+#[test]
+fn score_search_selects_the_deep_lossless_candidate_when_lossy_cannot_qualify() {
+    let mut state=0x9e3779b9u32;
+    let samples=(0..64*64*3).map(|_|{state=state.wrapping_mul(1664525).wrapping_add(1013904223);(state>>24)as u8}).collect();
+    let image=StillImage::from_rgb8(64,64,samples).unwrap();
+    let bytes=image.encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
+    let result=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Score(ScoreTarget::new(100.0).unwrap()),effort:Effort::Fast,..Request::default() }).unwrap();
+    assert_eq!(result.format,Format::Webp); assert!(!result.unchanged);
+    let winner=result.evaluations.iter().find(|e|e.bytes==Some(result.bytes.len()) && e.failure.is_none()).unwrap();
+    assert_eq!(winner.format,Format::Webp); assert_eq!(winner.quality,None);
+    assert!(result.evaluations.iter().filter(|e|e.quality.is_some()).all(|e|e.failure.is_some()));
+    assert_eq!(result.evaluations[0].quality,None);
 }

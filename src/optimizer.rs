@@ -129,6 +129,27 @@ fn better(size: usize, score: Option<f64>, format: Format, best: &Outcome) -> bo
         && (score.unwrap_or(f64::NEG_INFINITY) > best.score.unwrap_or(f64::NEG_INFINITY)
         || (score == best.score && format < best.format)))
 }
+fn refine_step(formats: &[Format], evaluations: &[Evaluation], settings: &mut Vec<(Format,Option<f32>)>) -> bool {
+    let mut refined = false;
+    for &f in formats {
+        let mut qualities: Vec<f32> = evaluations.iter().filter(|e| e.format == f).filter_map(|e|e.quality).collect();
+        qualities.sort_by(f32::total_cmp); qualities.dedup();
+        let pass = |q: f32| evaluations.iter().any(|e| e.format == f && e.quality == Some(q) && e.failure.is_none());
+        let center = evaluations.iter().filter(|e|e.format==f && e.failure.is_none()).min_by_key(|e|e.bytes.unwrap_or(usize::MAX)).and_then(|e|e.quality).unwrap_or(75.0);
+        let mut straddle: Vec<(f32,f32)> = qualities.windows(2).filter(|p|p[1]-p[0]>=0.5 && pass(p[0]) != pass(p[1])).map(|p|(p[0],p[1])).collect();
+        if straddle.is_empty() {
+            let mut gaps: Vec<_> = qualities.windows(2).filter(|p|p[1]-p[0]>=0.5).map(|p|((p[0]+p[1])*0.5,((p[0]+p[1])*0.5-center).abs())).collect();
+            gaps.sort_by(|a,b|a.1.total_cmp(&b.1).then(a.0.total_cmp(&b.0)));
+            if let Some(&(q,_))=gaps.first() { settings.push((f,Some(q))); refined=true; }
+        } else {
+            straddle.sort_by(|a,b|(b.1-b.0).total_cmp(&(a.1-a.0)).then(((a.0+a.1)*0.5-center).abs().total_cmp(&((b.0+b.1)*0.5-center).abs())));
+            let (lo,hi)=straddle[0];
+            settings.push((f,Some((lo+hi)*0.5)));
+            refined=true;
+        }
+    }
+    refined
+}
 fn strip_compliant(bytes: &[u8], format: Format) -> bool {
     match format {
         Format::Png => {
@@ -153,15 +174,6 @@ fn strip_compliant(bytes: &[u8], format: Format) -> bool {
         Format::Avif => false,
     }
 }
-/// Skip margin for the lossless-WebP probe: the level-0 probe's byte length
-/// must exceed the incumbent's by this factor before the level-6 candidate is
-/// skipped. Level 0's candidate set is a subset of level 6's, so the real
-/// result is always `<=` the probe; the measured level-0 → level-6 breadth gain
-/// on corpus content is at most ~11% (coffee), so a 1.25 margin tolerates a
-/// gain up to 20% before a skip could drop a winner. A wrong skip can only
-/// cost bytes (the lossy incumbent still qualifies), never correctness.
-const LOSSLESS_PROBE_SKIP_MARGIN: f64 = 1.25;
-
 fn warnings(image: &StillImage, format: Format, policy: MetadataPolicy) -> Vec<String> {
     if policy == MetadataPolicy::Keep && format != image.format() {
         image.png_metadata.iter().filter(|p| !matches!(&p[4..8], b"iCCP"|b"eXIf") && !( &p[4..8] == b"iTXt" && image.metadata.xmp.is_some()))
@@ -224,58 +236,30 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
         Fidelity::Lossless => for &f in &formats { settings.push((f,None)); },
         Fidelity::Quality(q) => for &f in &formats { settings.push((f,Some(q.value()))); },
         Fidelity::Score(_) => {
+            for format in [Format::Png,Format::Webp] {if formats.contains(&format) {settings.push((format,None));}}
             for q in [95.0,50.0,0.0,100.0,75.0,25.0] {
                 for &f in &formats { if f != Format::Png || !image.is_grayscale() { settings.push((f,Some(q))); } }
             }
         },
     }
-    // Lossless candidates are held out of `settings` and evaluated after the
-    // lossy search settles: on photographic sources they almost never beat a
-    // qualifying lossy output, yet their encode dominates the wall, and only
-    // the final incumbent gives the skip probe its tightest bound.
-    let mut lossless_settings = Vec::new();
-    if matches!(request.fidelity, Fidelity::Score(_)) {
-        for format in [Format::Png,Format::Webp] {
-            if formats.contains(&format) { lossless_settings.push(format); }
-        }
-    }
-    // Cheap lossless-WebP probe for the score search: a level-0 encode whose
-    // byte length upper-bounds the level-6 candidate. When it already exceeds
-    // the incumbent by [`LOSSLESS_PROBE_SKIP_MARGIN`], the real lossless encode
-    // (the dominant wall on mid-size photographs) cannot win and is skipped.
-    // `None` outside the calibrated band or on probe failure — never skips.
-    let lossless_probe = if matches!(request.fidelity, Fidelity::Score(_))
-        && request.effort == Effort::Fast
-        && formats.contains(&Format::Webp)
-    {
-        image
-            .encode_webp_lossless_probe(cancelled)
-            .ok()
-            .flatten()
-            .map(|bytes| bytes.len())
-    } else {
-        None
-    };
     let mut evaluations = Vec::new();
     let mut encoded_any = false;
     let mut encode_error = false;
     let mut next = 0;
-    // One candidate evaluation, shared by the lossy loop and the deferred
-    // lossless pass. `best`/`evaluations`/`encoded_any`/`encode_error` are
-    // threaded explicitly so the closure can run after the loop borrows end.
-    let run_eval = |format: Format,
-                        quality: Option<f32>,
-                        best: &mut Option<Outcome>,
-                        evaluations: &mut Vec<Evaluation>,
-                        encoded_any: &mut bool,
-                        encode_error: &mut bool| {
+    while evaluations.len() < cap {
+        if cancelled.is_cancelled() { return Err(Error::new(ErrorKind::Invalid,"processing cancelled")); }
+        if next >= settings.len() {
+            if !matches!(request.fidelity,Fidelity::Score(_)) { break; }
+            if !refine_step(&formats,&evaluations,&mut settings) { break; }
+        }
+        let (format,quality) = settings[next]; next+=1;
         let start=Instant::now();
         let encoded=image.encode_cancellable(format,quality.map(|q|EncodingMode::Quality(Quality::new(q).unwrap())).unwrap_or(EncodingMode::Lossless),request.effort,cancelled);
         let mut evaluation=Evaluation { format,quality,bytes:None,score:None,encode_ms:start.elapsed().as_secs_f64()*1000.0,failure:None };
         match encoded {
-            Err(error) => { *encode_error |= error.kind() == ErrorKind::Encode; evaluation.failure=Some(error.to_string()); },
+            Err(error) => { encode_error |= error.kind() == ErrorKind::Encode; evaluation.failure=Some(error.to_string()); },
             Ok(candidate_bytes) => {
-                *encoded_any=true; evaluation.bytes=Some(candidate_bytes.len());
+                encoded_any=true; evaluation.bytes=Some(candidate_bytes.len());
                 let validated=(|| {
                     let candidate=StillImage::decode_cancellable(&candidate_bytes,cancelled)?;
                     validate_metadata(&image,&candidate,format)?;
@@ -290,66 +274,72 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
                     }
                 })();
                 match validated {
-                    Err(error) => { *encode_error |= error.kind() == ErrorKind::Encode; evaluation.failure=Some(error.to_string()); },
+                    Err(error) => { encode_error |= error.kind() == ErrorKind::Encode; evaluation.failure=Some(error.to_string()); },
                     Ok(score) => if (!optimize || candidate_bytes.len() < bytes.len()) && best.as_ref().is_none_or(|b|better(candidate_bytes.len(),score,format,b)) {
-                        *best=Some(Outcome { bytes:candidate_bytes,format,unchanged:false,score,evaluations:vec![],warnings:warnings(&image,format,request.metadata) });
+                        best=Some(Outcome { bytes:candidate_bytes,format,unchanged:false,score,evaluations:vec![],warnings:warnings(&image,format,request.metadata) });
                     },
                 }
             },
         }
         evaluations.push(evaluation);
-    };
-    // The deferred lossless pass still consumes `cap` slots exactly as it did
-    // when it sat first in `settings`: reserve its entries up front so the
-    // lossy search cannot spend the whole budget and push total evaluations
-    // past the effort contract. A skipped WebP candidate simply leaves its
-    // reservation unused.
-    let eval_cap = cap.saturating_sub(lossless_settings.len());
-    while evaluations.len() < eval_cap {
-        if cancelled.is_cancelled() { return Err(Error::new(ErrorKind::Invalid,"processing cancelled")); }
-        if next >= settings.len() {
-            if !matches!(request.fidelity,Fidelity::Score(_)) { break; }
-            let mut refined = false;
-            for &f in &formats {
-                let mut qualities: Vec<f32> = evaluations.iter().filter(|e: &&Evaluation| e.format == f).filter_map(|e|e.quality).collect();
-                qualities.sort_by(f32::total_cmp); qualities.dedup();
-                let pass = |q: f32| evaluations.iter().any(|e| e.format == f && e.quality == Some(q) && e.failure.is_none());
-                let center = evaluations.iter().filter(|e|e.format==f && e.failure.is_none()).min_by_key(|e|e.bytes.unwrap_or(usize::MAX)).and_then(|e|e.quality).unwrap_or(75.0);
-                let mut straddle: Vec<(f32,f32)> = qualities.windows(2).filter(|p|p[1]-p[0]>=0.5 && pass(p[0]) != pass(p[1])).map(|p|(p[0],p[1])).collect();
-                if straddle.is_empty() {
-                    let mut gaps: Vec<_> = qualities.windows(2).filter(|p|p[1]-p[0]>=0.5).map(|p|((p[0]+p[1])*0.5,((p[0]+p[1])*0.5-center).abs())).collect();
-                    gaps.sort_by(|a,b|a.1.total_cmp(&b.1).then(a.0.total_cmp(&b.0)));
-                    if let Some(&(q,_))=gaps.first() { settings.push((f,Some(q))); refined=true; }
-                } else {
-                    straddle.sort_by(|a,b|(b.1-b.0).total_cmp(&(a.1-a.0)).then(((a.0+a.1)*0.5-center).abs().total_cmp(&((b.0+b.1)*0.5-center).abs())));
-                    let (lo,hi)=straddle[0];
-                    settings.push((f,Some((lo+hi)*0.5)));
-                    refined=true;
-                }
-            }
-            if !refined { break; }
-        }
-        let (format,quality) = settings[next]; next+=1;
-        run_eval(format, quality, &mut best, &mut evaluations, &mut encoded_any, &mut encode_error);
-    }
-    // Deferred lossless pass (score search only): evaluated against the final
-    // lossy incumbent. The WebP candidate is skipped when the level-0 probe
-    // already exceeds that incumbent by the calibrated margin — the level-6
-    // result cannot then win, and skipping avoids the dominant encode wall.
-    // PNG lossless is cheap and always evaluated, matching prior semantics.
-    for format in lossless_settings {
-        if cancelled.is_cancelled() { return Err(Error::new(ErrorKind::Invalid,"processing cancelled")); }
-        if format == Format::Webp
-            && best.as_ref().is_some_and(|b| {
-                lossless_probe
-                    .is_some_and(|p| p as f64 > b.bytes.len() as f64 * LOSSLESS_PROBE_SKIP_MARGIN)
-            })
-        {
-            continue;
-        }
-        run_eval(format, None, &mut best, &mut evaluations, &mut encoded_any, &mut encode_error);
     }
     let mut best=best.ok_or_else(|| Error::new(if encoded_any { ErrorKind::Score } else if encode_error { ErrorKind::Encode } else { ErrorKind::Unsupported },format!("no qualifying output: {}",evaluations.iter().filter_map(|e|e.failure.as_deref()).next().unwrap_or("no compatible candidates"))))?;
     best.evaluations=evaluations;
     Ok(best)
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn outcome(size: usize, score: Option<f64>, format: Format) -> Outcome {
+        Outcome { bytes: vec![0; size], format, unchanged: false, score, evaluations: vec![], warnings: vec![] }
+    }
+    fn eval(format: Format, quality: Option<f32>, bytes: usize, score: Option<f64>, failure: Option<&str>) -> Evaluation {
+        Evaluation { format, quality, bytes: Some(bytes), score, encode_ms: 0.0, failure: failure.map(str::to_string) }
+    }
+    #[test]
+    fn better_prefers_size_then_score_then_format_then_incumbent() {
+        let best = outcome(100, Some(90.0), Format::Webp);
+        assert!(better(99, None, Format::Avif, &best));
+        assert!(better(100, Some(95.0), Format::Avif, &best));
+        assert!(better(100, Some(90.0), Format::Png, &best));
+        assert!(!better(100, Some(90.0), Format::Webp, &best));
+        assert!(!better(100, Some(89.0), Format::Jpeg, &best));
+        assert!(!better(100, None, Format::Webp, &best));
+        assert!(better(100, None, Format::Png, &outcome(100, None, Format::Webp)));
+    }
+    #[test]
+    fn refine_step_centers_gap_choice_on_the_smallest_successful_candidate() {
+        let mut evaluations = vec![
+            eval(Format::Webp, None, 50, Some(100.0), None),
+            eval(Format::Webp, Some(0.0), 100, Some(10.0), None),
+            eval(Format::Webp, Some(50.0), 160, Some(50.0), None),
+            eval(Format::Webp, Some(95.0), 200, Some(90.0), None),
+        ];
+        let mut settings = vec![];
+        assert!(refine_step(&[Format::Webp], &evaluations, &mut settings));
+        assert_eq!(settings, vec![(Format::Webp, Some(72.5))]);
+        evaluations.remove(0);
+        let mut settings = vec![];
+        assert!(refine_step(&[Format::Webp], &evaluations, &mut settings));
+        assert_eq!(settings, vec![(Format::Webp, Some(25.0))]);
+    }
+    #[test]
+    fn refine_step_bisects_the_widest_passing_failing_straddle() {
+        let evaluations = vec![
+            eval(Format::Webp, Some(0.0), 300, Some(10.0), Some("below")),
+            eval(Format::Webp, Some(50.0), 200, Some(50.0), None),
+            eval(Format::Webp, Some(95.0), 190, Some(90.0), None),
+            eval(Format::Webp, Some(100.0), 180, Some(99.0), Some("below")),
+        ];
+        let mut settings = vec![];
+        assert!(refine_step(&[Format::Webp], &evaluations, &mut settings));
+        assert_eq!(settings, vec![(Format::Webp, Some(25.0))]);
+    }
+    #[test]
+    fn refine_step_returns_false_without_a_usable_gap() {
+        let evaluations = vec![eval(Format::Webp, Some(50.0), 100, Some(50.0), None)];
+        let mut settings = vec![];
+        assert!(!refine_step(&[Format::Webp], &evaluations, &mut settings));
+        assert!(settings.is_empty());
+    }
 }

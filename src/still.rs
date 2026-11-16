@@ -275,15 +275,6 @@ impl StillImage {
         }
     }
 
-    /// Crate-internal: a cheap lossless-WebP probe encode (webpkit effort level 0)
-    /// used by the score search to decide whether the full-effort lossless
-    /// candidate can still win. Returns `None` outside the fast-effort deep
-    /// band where the probe bound is calibrated. Never published; feeds the
-    /// skip decision only.
-    pub(crate) fn encode_webp_lossless_probe(&self, stop: &crate::cancellation::Cancellation) -> Result<Option<Vec<u8>>, Error> {
-        webp::encode_probe(self, stop)
-    }
-
     fn without_opaque_alpha(&self) -> Result<Cow<'_ , Self>, Error> {
         if !self.has_alpha() { return Ok(Cow::Borrowed(self)); }
         let channels = self.pixels.descriptor().channels();
