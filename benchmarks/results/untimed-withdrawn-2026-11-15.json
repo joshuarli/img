@@ -1,0 +1,4492 @@
+{
+  "architecture": "aarch64",
+  "binarySha256": "337f4a8c0079080b92abce1cf39d52ba84e8c1d6a2f230ab7e73c4bd29988152",
+  "records": [
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.00014944337",
+      "fixture": "astronaut.png",
+      "height": 512,
+      "inputBytes": 791555,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/astronaut.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.00014944337",
+      "fixture": "astronaut.png",
+      "height": 512,
+      "inputBytes": 791555,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/astronaut.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.00014944337",
+      "fixture": "astronaut.png",
+      "height": 512,
+      "inputBytes": 791555,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/astronaut.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.00014944337",
+      "fixture": "astronaut.png",
+      "height": 512,
+      "inputBytes": 791555,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/astronaut.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.00014944337",
+      "fixture": "astronaut.png",
+      "height": 512,
+      "inputBytes": 791555,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/astronaut.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.00014944337",
+      "fixture": "astronaut.png",
+      "height": 512,
+      "inputBytes": 791555,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/astronaut.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 53478,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/coffee.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 80.36808534113658,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\nwarning: \"cross-format metadata loss: PNG tIME\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "coffee.png",
+      "height": 400,
+      "inputBytes": 466706,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 53478,
+      "outputHeight": 400,
+      "outputPath": "results/2026-11-15-withdrawn-coffee_png-img-80-0.webp",
+      "outputWidth": 600,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 80.36808534113658,
+      "sourcePath": "corpus/coffee.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 600
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 93198,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/coffee.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 85.61683015419776,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\nwarning: \"cross-format metadata loss: PNG tIME\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "coffee.png",
+      "height": 400,
+      "inputBytes": 466706,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 93198,
+      "outputHeight": 400,
+      "outputPath": "results/2026-11-15-withdrawn-coffee_png-withdrawn-80-0.webp",
+      "outputWidth": 600,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 85.61683015419776,
+      "sourcePath": "corpus/coffee.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 600
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 343922,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/coffee.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\nwarning: \"cross-format metadata loss: PNG tIME\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "coffee.png",
+      "height": 400,
+      "inputBytes": 466706,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 343922,
+      "outputHeight": 400,
+      "outputPath": "results/2026-11-15-withdrawn-coffee_png-img-90-0.webp",
+      "outputWidth": 600,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/coffee.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 600
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 359054,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/coffee.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\nwarning: \"cross-format metadata loss: PNG tIME\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "coffee.png",
+      "height": 400,
+      "inputBytes": 466706,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 359054,
+      "outputHeight": 400,
+      "outputPath": "results/2026-11-15-withdrawn-coffee_png-withdrawn-90-0.webp",
+      "outputWidth": 600,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/coffee.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 600
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 343922,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/coffee.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\nwarning: \"cross-format metadata loss: PNG tIME\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "coffee.png",
+      "height": 400,
+      "inputBytes": 466706,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 343922,
+      "outputHeight": 400,
+      "outputPath": "results/2026-11-15-withdrawn-coffee_png-img-95-0.webp",
+      "outputWidth": 600,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/coffee.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 600
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 359054,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/coffee.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\nwarning: \"cross-format metadata loss: PNG tIME\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "coffee.png",
+      "height": 400,
+      "inputBytes": 466706,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 359054,
+      "outputHeight": 400,
+      "outputPath": "results/2026-11-15-withdrawn-coffee_png-withdrawn-95-0.webp",
+      "outputWidth": 600,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/coffee.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 600
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 75028,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/grass.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 82.12002576488311,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "grass.png",
+      "height": 512,
+      "inputBytes": 217893,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 75028,
+      "outputHeight": 512,
+      "outputPath": "results/2026-11-15-withdrawn-grass_png-img-80-0.webp",
+      "outputWidth": 512,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 82.12002576488311,
+      "sourcePath": "corpus/grass.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 81068,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/grass.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 82.42438852533945,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "grass.png",
+      "height": 512,
+      "inputBytes": 217893,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 81068,
+      "outputHeight": 512,
+      "outputPath": "results/2026-11-15-withdrawn-grass_png-withdrawn-80-0.webp",
+      "outputWidth": 512,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 82.42438852533945,
+      "sourcePath": "corpus/grass.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 112876,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/grass.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 90.63655390887153,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "grass.png",
+      "height": 512,
+      "inputBytes": 217893,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 112876,
+      "outputHeight": 512,
+      "outputPath": "results/2026-11-15-withdrawn-grass_png-img-90-0.webp",
+      "outputWidth": 512,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 90.63655390887153,
+      "sourcePath": "corpus/grass.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 143080,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/grass.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 93.74692739713409,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "grass.png",
+      "height": 512,
+      "inputBytes": 217893,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 143080,
+      "outputHeight": 512,
+      "outputPath": "results/2026-11-15-withdrawn-grass_png-withdrawn-90-0.webp",
+      "outputWidth": 512,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 93.74692739713409,
+      "sourcePath": "corpus/grass.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 165478,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/grass.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 95.1729248082182,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "grass.png",
+      "height": 512,
+      "inputBytes": 217893,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 165478,
+      "outputHeight": 512,
+      "outputPath": "results/2026-11-15-withdrawn-grass_png-img-95-0.webp",
+      "outputWidth": 512,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 95.1729248082182,
+      "sourcePath": "corpus/grass.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 177586,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/grass.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 95.53410083395124,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "grass.png",
+      "height": 512,
+      "inputBytes": 217893,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 177586,
+      "outputHeight": 512,
+      "outputPath": "results/2026-11-15-withdrawn-grass_png-withdrawn-95-0.webp",
+      "outputWidth": 512,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 95.53410083395124,
+      "sourcePath": "corpus/grass.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 47210,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/gravel.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 80.42050584957803,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "gravel.png",
+      "height": 512,
+      "inputBytes": 194247,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 47210,
+      "outputHeight": 512,
+      "outputPath": "results/2026-11-15-withdrawn-gravel_png-img-80-0.webp",
+      "outputWidth": 512,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 80.42050584957803,
+      "sourcePath": "corpus/gravel.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 65226,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/gravel.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 83.33877996833023,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "gravel.png",
+      "height": 512,
+      "inputBytes": 194247,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 65226,
+      "outputHeight": 512,
+      "outputPath": "results/2026-11-15-withdrawn-gravel_png-withdrawn-80-0.webp",
+      "outputWidth": 512,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 83.33877996833023,
+      "sourcePath": "corpus/gravel.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 86112,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/gravel.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 90.00680170831582,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "gravel.png",
+      "height": 512,
+      "inputBytes": 194247,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 86112,
+      "outputHeight": 512,
+      "outputPath": "results/2026-11-15-withdrawn-gravel_png-img-90-0.webp",
+      "outputWidth": 512,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 90.00680170831582,
+      "sourcePath": "corpus/gravel.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 127486,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/gravel.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 93.82837959826591,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "gravel.png",
+      "height": 512,
+      "inputBytes": 194247,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 127486,
+      "outputHeight": 512,
+      "outputPath": "results/2026-11-15-withdrawn-gravel_png-withdrawn-90-0.webp",
+      "outputWidth": 512,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 93.82837959826591,
+      "sourcePath": "corpus/gravel.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 140550,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/gravel.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 95.03618405275427,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "gravel.png",
+      "height": 512,
+      "inputBytes": 194247,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 140550,
+      "outputHeight": 512,
+      "outputPath": "results/2026-11-15-withdrawn-gravel_png-img-95-0.webp",
+      "outputWidth": 512,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 95.03618405275427,
+      "sourcePath": "corpus/gravel.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 157330,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/gravel.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 95.41179244671599,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "gravel.png",
+      "height": 512,
+      "inputBytes": 194247,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 157330,
+      "outputHeight": 512,
+      "outputPath": "results/2026-11-15-withdrawn-gravel_png-withdrawn-95-0.webp",
+      "outputWidth": 512,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 95.41179244671599,
+      "sourcePath": "corpus/gravel.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 512
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 68,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/ui.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "ui.png",
+      "height": 64,
+      "inputBytes": 142,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 68,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-ui_png-img-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/ui.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 82,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/ui.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "ui.png",
+      "height": 64,
+      "inputBytes": 142,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 82,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-ui_png-withdrawn-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/ui.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 68,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/ui.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "ui.png",
+      "height": 64,
+      "inputBytes": 142,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 68,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-ui_png-img-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/ui.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 82,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/ui.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "ui.png",
+      "height": 64,
+      "inputBytes": 142,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 82,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-ui_png-withdrawn-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/ui.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 68,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/ui.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "ui.png",
+      "height": 64,
+      "inputBytes": 142,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 68,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-ui_png-img-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/ui.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 82,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/ui.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "ui.png",
+      "height": 64,
+      "inputBytes": 142,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 82,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-ui_png-withdrawn-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/ui.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 58,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/text.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "text.png",
+      "height": 64,
+      "inputBytes": 134,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 58,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-text_png-img-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/text.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 76,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/text.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "text.png",
+      "height": 64,
+      "inputBytes": 134,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 76,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-text_png-withdrawn-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/text.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 58,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/text.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "text.png",
+      "height": 64,
+      "inputBytes": 134,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 58,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-text_png-img-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/text.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 76,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/text.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "text.png",
+      "height": 64,
+      "inputBytes": 134,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 76,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-text_png-withdrawn-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/text.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 58,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/text.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "text.png",
+      "height": 64,
+      "inputBytes": 134,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 58,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-text_png-img-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/text.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 76,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/text.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "text.png",
+      "height": 64,
+      "inputBytes": 134,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 76,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-text_png-withdrawn-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/text.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 62,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/line.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "line.png",
+      "height": 64,
+      "inputBytes": 163,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 62,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-line_png-img-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/line.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 102,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/line.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "line.png",
+      "height": 64,
+      "inputBytes": 163,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 102,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-line_png-withdrawn-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/line.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 62,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/line.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "line.png",
+      "height": 64,
+      "inputBytes": 163,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 62,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-line_png-img-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/line.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 102,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/line.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "line.png",
+      "height": 64,
+      "inputBytes": 163,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 102,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-line_png-withdrawn-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/line.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 62,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/line.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "line.png",
+      "height": 64,
+      "inputBytes": 163,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 62,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-line_png-img-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/line.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 102,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/line.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "line.png",
+      "height": 64,
+      "inputBytes": 163,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 102,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-line_png-withdrawn-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/line.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 32,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/flat.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "flat.png",
+      "height": 64,
+      "inputBytes": 95,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 32,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-flat_png-img-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/flat.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 44,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/flat.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "flat.png",
+      "height": 64,
+      "inputBytes": 95,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 44,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-flat_png-withdrawn-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/flat.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 32,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/flat.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "flat.png",
+      "height": 64,
+      "inputBytes": 95,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 32,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-flat_png-img-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/flat.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 44,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/flat.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "flat.png",
+      "height": 64,
+      "inputBytes": 95,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 44,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-flat_png-withdrawn-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/flat.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 32,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/flat.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "flat.png",
+      "height": 64,
+      "inputBytes": 95,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 32,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-flat_png-img-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/flat.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 44,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/flat.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "flat.png",
+      "height": 64,
+      "inputBytes": 95,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 44,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-flat_png-withdrawn-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/flat.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 110,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/transparent.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "transparent.png",
+      "height": 64,
+      "inputBytes": 1162,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 110,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-transparent_png-img-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/transparent.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 118,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/transparent.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "transparent.png",
+      "height": 64,
+      "inputBytes": 1162,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 118,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-transparent_png-withdrawn-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/transparent.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 110,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/transparent.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "transparent.png",
+      "height": 64,
+      "inputBytes": 1162,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 110,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-transparent_png-img-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/transparent.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 118,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/transparent.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "transparent.png",
+      "height": 64,
+      "inputBytes": 1162,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 118,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-transparent_png-withdrawn-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/transparent.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 110,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/transparent.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "transparent.png",
+      "height": 64,
+      "inputBytes": 1162,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 110,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-transparent_png-img-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/transparent.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 118,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/transparent.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "transparent.png",
+      "height": 64,
+      "inputBytes": 1162,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 118,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-transparent_png-withdrawn-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/transparent.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 56,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/gray.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "gray.png",
+      "height": 64,
+      "inputBytes": 139,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 56,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-gray_png-img-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/gray.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 62,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/gray.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "gray.png",
+      "height": 64,
+      "inputBytes": 139,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 62,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-gray_png-withdrawn-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/gray.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 56,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/gray.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "gray.png",
+      "height": 64,
+      "inputBytes": 139,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 56,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-gray_png-img-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/gray.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 62,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/gray.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "gray.png",
+      "height": 64,
+      "inputBytes": 139,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 62,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-gray_png-withdrawn-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/gray.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 56,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/gray.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "gray.png",
+      "height": 64,
+      "inputBytes": 139,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 56,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-gray_png-img-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/gray.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 62,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/gray.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "gray.png",
+      "height": 64,
+      "inputBytes": 139,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 62,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-gray_png-withdrawn-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/gray.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 4674,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/large.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "large.png",
+      "height": 1024,
+      "inputBytes": 79758,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 4674,
+      "outputHeight": 1024,
+      "outputPath": "results/2026-11-15-withdrawn-large_png-img-80-0.webp",
+      "outputWidth": 2048,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/large.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 2048
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 7014,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/large.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "large.png",
+      "height": 1024,
+      "inputBytes": 79758,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 7014,
+      "outputHeight": 1024,
+      "outputPath": "results/2026-11-15-withdrawn-large_png-withdrawn-80-0.webp",
+      "outputWidth": 2048,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/large.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 2048
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 4674,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/large.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "large.png",
+      "height": 1024,
+      "inputBytes": 79758,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 4674,
+      "outputHeight": 1024,
+      "outputPath": "results/2026-11-15-withdrawn-large_png-img-90-0.webp",
+      "outputWidth": 2048,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/large.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 2048
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 7014,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/large.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "large.png",
+      "height": 1024,
+      "inputBytes": 79758,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 7014,
+      "outputHeight": 1024,
+      "outputPath": "results/2026-11-15-withdrawn-large_png-withdrawn-90-0.webp",
+      "outputWidth": 2048,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/large.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 2048
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 4674,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/large.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "large.png",
+      "height": 1024,
+      "inputBytes": 79758,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 4674,
+      "outputHeight": 1024,
+      "outputPath": "results/2026-11-15-withdrawn-large_png-img-95-0.webp",
+      "outputWidth": 2048,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/large.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 2048
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 7014,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/large.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "large.png",
+      "height": 1024,
+      "inputBytes": 79758,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 7014,
+      "outputHeight": 1024,
+      "outputPath": "results/2026-11-15-withdrawn-large_png-withdrawn-95-0.webp",
+      "outputWidth": 2048,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/large.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 2048
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000010390528",
+      "fixture": "icc.png",
+      "height": 64,
+      "inputBytes": 761,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/generated/icc.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000010390528",
+      "fixture": "icc.png",
+      "height": 64,
+      "inputBytes": 761,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/generated/icc.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000010390528",
+      "fixture": "icc.png",
+      "height": 64,
+      "inputBytes": 761,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/generated/icc.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000010390528",
+      "fixture": "icc.png",
+      "height": 64,
+      "inputBytes": 761,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/generated/icc.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000010390528",
+      "fixture": "icc.png",
+      "height": 64,
+      "inputBytes": 761,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/generated/icc.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000010390528",
+      "fixture": "icc.png",
+      "height": 64,
+      "inputBytes": 761,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/generated/icc.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "quality comparison excludes high-depth samples; exact proof is separate",
+      "fixture": "deep.png",
+      "height": 64,
+      "inputBytes": 175,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/generated/deep.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "quality comparison excludes high-depth samples; exact proof is separate",
+      "fixture": "deep.png",
+      "height": 64,
+      "inputBytes": 175,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/generated/deep.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "quality comparison excludes high-depth samples; exact proof is separate",
+      "fixture": "deep.png",
+      "height": 64,
+      "inputBytes": 175,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/generated/deep.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "quality comparison excludes high-depth samples; exact proof is separate",
+      "fixture": "deep.png",
+      "height": 64,
+      "inputBytes": 175,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/generated/deep.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "quality comparison excludes high-depth samples; exact proof is separate",
+      "fixture": "deep.png",
+      "height": 64,
+      "inputBytes": 175,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/generated/deep.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "quality comparison excludes high-depth samples; exact proof is separate",
+      "fixture": "deep.png",
+      "height": 64,
+      "inputBytes": 175,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/generated/deep.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 68,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/compressed.webp",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "compressed.webp",
+      "height": 64,
+      "inputBytes": 82,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 68,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-compressed_webp-img-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/compressed.webp",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 82,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/compressed.webp",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "compressed.webp",
+      "height": 64,
+      "inputBytes": 82,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 82,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-compressed_webp-withdrawn-80-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 80.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/compressed.webp",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 68,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/compressed.webp",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "compressed.webp",
+      "height": 64,
+      "inputBytes": 82,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 68,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-compressed_webp-img-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/compressed.webp",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 82,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/compressed.webp",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "compressed.webp",
+      "height": 64,
+      "inputBytes": 82,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 82,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-compressed_webp-withdrawn-90-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 90.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/compressed.webp",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 68,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/compressed.webp",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "compressed.webp",
+      "height": 64,
+      "inputBytes": 82,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 68,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-compressed_webp-img-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/compressed.webp",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 96
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 82,
+          "command": [
+            "/Users/josh/d/img/.work/wt/withdrawn/target/release/rimage",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/compressed.webp",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture/withdrawn-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "compressed.webp",
+      "height": 64,
+      "inputBytes": 82,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 82,
+      "outputHeight": 64,
+      "outputPath": "results/2026-11-15-withdrawn-compressed_webp-withdrawn-95-0.webp",
+      "outputWidth": 96,
+      "parameters": {
+        "effort": "fast",
+        "oracle": "rimage 5424df8 zenwebp 0.4.6",
+        "target": 95.0
+      },
+      "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/compressed.webp",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "withdrawn",
+      "width": 96
+    }
+  ],
+  "revision": "77429f30573f4bea554752000d8f0bbab74b703d",
+  "runsPerSide": 1,
+  "schemaVersion": 1,
+  "sourceDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "sourceDirty": false,
+  "summary": {
+    "img:astronaut.png:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:astronaut.png:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:astronaut.png:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:coffee.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 53478.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:coffee.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 343922.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:coffee.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 343922.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:compressed.webp:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 68.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:compressed.webp:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 68.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:compressed.webp:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 68.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:deep.png:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:deep.png:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:deep.png:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:flat.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 32.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:flat.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 32.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:flat.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 32.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:grass.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 75028.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:grass.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 112876.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:grass.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 165478.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:gravel.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 47210.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:gravel.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 86112.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:gravel.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 140550.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:gray.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 56.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:gray.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 56.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:gray.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 56.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:icc.png:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:icc.png:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:icc.png:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:large.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 4674.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:large.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 4674.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:large.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 4674.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:line.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 62.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:line.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 62.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:line.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 62.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:text.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 58.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:text.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 58.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:text.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 58.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:transparent.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 110.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:transparent.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 110.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:transparent.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 110.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:ui.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 68.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:ui.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 68.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:ui.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 68.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:astronaut.png:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:astronaut.png:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:astronaut.png:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:coffee.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 93198.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:coffee.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 359054.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:coffee.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 359054.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:compressed.webp:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 82.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:compressed.webp:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 82.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:compressed.webp:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 82.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:deep.png:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:deep.png:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:deep.png:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:flat.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 44.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:flat.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 44.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:flat.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 44.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:grass.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 81068.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:grass.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 143080.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:grass.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 177586.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:gravel.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 65226.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:gravel.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 127486.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:gravel.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 157330.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:gray.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 62.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:gray.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 62.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:gray.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 62.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:icc.png:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:icc.png:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:icc.png:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:large.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 7014.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:large.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 7014.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:large.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 7014.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:line.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 102.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:line.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 102.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:line.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 102.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:text.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 76.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:text.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 76.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:text.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 76.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:transparent.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 118.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:transparent.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 118.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:transparent.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 118.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:ui.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 82.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:ui.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 82.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "withdrawn:ui.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 82.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    }
+  },
+  "timingGate": "not measured: capture mode",
+  "tools": {
+    "cwebp": "1.6.0, single-threaded",
+    "dedicatedAvif": "standalone unavailable; original ravif 0.13.0 included but emits unsupported 10-bit",
+    "img": "locked repository dist",
+    "jpegli": "unavailable",
+    "original": "66fc0fc plus docs/original-build.patch, release; mozjpeg 0.10.13 (mozjpeg-sys 2.2.3), oxipng 10.2.1, ravif 0.13.0",
+    "withdrawn": "pre-merge master 5424df8 (zenwebp 0.4.6), IMG_WITHDRAWN_BIN or .work/wt/withdrawn"
+  }
+}
