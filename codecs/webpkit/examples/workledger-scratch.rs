@@ -23,6 +23,9 @@ fn main() {
     work_count::reset();
     let t = std::time::Instant::now();
     let out = Encoder::lossless().effort(Effort::level(level)).metadata(Metadata::none()).encode_ref(img).unwrap();
+    if let Some(path) = args.get(3) {
+        std::fs::write(path, &out).unwrap();
+    }
     let ms = t.elapsed().as_secs_f64() * 1000.0;
     let snap = work_count::snapshot();
     println!("time = {ms:.1} ms, bytes = {}", out.len());

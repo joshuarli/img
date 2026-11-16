@@ -32,7 +32,7 @@ use crate::lossless::constants::{
     NUM_LITERAL_CODES, NUM_TRANSFORM_BITS, PREDICTOR_TRANSFORM, SUBTRACT_GREEN_TRANSFORM,
     VP8L_IMAGE_SIZE_BITS, VP8L_MAGIC_BYTE, VP8L_VERSION_BITS, subsample_size,
 };
-use crate::lossless::histogram::Histogram;
+use crate::lossless::histogram::{Histogram, shannon_bits};
 use crate::lossless::huffman::build::build_code_lengths;
 use crate::lossless::huffman::canonical::emit_codes;
 use crate::lossless::huffman::serialize::write_huffman_code;
@@ -566,11 +566,12 @@ fn run_best_task(
     alpha_used: bool,
     argb: &[u32],
     planes: Option<&PlaneCache>,
+    cc: Option<&CrossColorCache>,
 ) -> Vec<Vec<u8>> {
     if matches!(task, BestTask::Floor) {
         return floor_streams(breadth, width, height, alpha_used, argb);
     }
-    task_specs(task, width, height, argb, planes)
+    task_specs(task, width, height, argb, planes, cc)
         .into_iter()
         .map(|spec| {
             family_search(
@@ -594,14 +595,17 @@ fn task_specs(
     height: u32,
     argb: &[u32],
     planes: Option<&PlaneCache>,
+    cc: Option<&CrossColorCache>,
 ) -> Vec<BufferSpec> {
     match task {
         BestTask::Floor => Vec::new(),
         BestTask::Palette => palette_specs(width, argb),
         BestTask::Predictor(bits) => predictor_specs(width, height, argb, bits, planes),
-        BestTask::CrossColor(bits) => cross_color_specs(width, height, argb, bits),
+        BestTask::CrossColor(bits) => {
+            cross_color_specs(width, height, argb, bits, cc)
+        },
         BestTask::PredictorCross(p_bits, cc_bits) => {
-            predictor_cross_specs(width, height, argb, p_bits, cc_bits, planes)
+            predictor_cross_specs(width, height, argb, p_bits, cc_bits, planes, cc)
         },
     }
 }
@@ -618,22 +622,17 @@ fn effective_chain_cap(breadth_cap: u32, pixels: usize) -> u32 {
 
 /// Order-0 entropy (bits) of the four byte planes of a transformed pixel
 /// stream — the cheap pre-score that ranks transform candidates before any
-/// LZ77/DP work runs.
-fn stream_entropy(pixels: &[u32]) -> f64 {
-    let mut counts = [[0u64; 256]; 4];
+/// LZ77/DP work runs. Fixed-point via [`shannon_bits`], so the score is an
+/// exact integer identical on every target and `no_std` build.
+fn stream_entropy(pixels: &[u32]) -> u64 {
+    let mut counts = [[0u32; 256]; 4];
     for &p in pixels {
         for (i, b) in p.to_le_bytes().iter().enumerate() {
             counts[i][*b as usize] += 1;
         }
     }
-    let n = pixels.len() as f64;
-    let mut bits = 0.0;
-    for plane in counts {
-        for &c in plane.iter().filter(|&&c| c > 0) {
-            bits -= (c as f64) * ((c as f64) / n).log2();
-        }
-    }
-    bits
+    let total = pixels.len() as u64;
+    counts.iter().map(|plane| shannon_bits(total, plane)).sum()
 }
 
 /// Run one transform family's search at `breadth`: adds the optimal-parse and
@@ -789,6 +788,101 @@ impl PlaneCache {
     }
 }
 
+/// Cross-color forward results shared across the entropy pre-score and the
+/// kept-task search, mirroring [`PlaneCache`]: every spec production needs
+/// `cross_color::forward` outputs, and that forward dominates transform cost
+/// on photo-like content. Entries compute lazily on first use inside the
+/// parallel estimate pass — no barrier — and the kept-task search clones
+/// them. `None` when the distinct forwards would exceed the pixel bound;
+/// callers then compute inline exactly as before.
+struct CrossColorCache {
+    #[cfg(feature = "std")]
+    map: std::sync::Mutex<
+        alloc::collections::BTreeMap<(u8, u32, u32), (Vec<u32>, Vec<u32>)>,
+    >,
+    #[cfg(not(feature = "std"))]
+    map: core::cell::RefCell<
+        alloc::collections::BTreeMap<(u8, u32, u32), (Vec<u32>, Vec<u32>)>,
+    >,
+}
+
+const CROSS_COLOR_CACHE_MAX_PIXELS: usize = 1 << 26;
+
+impl CrossColorCache {
+    fn new(tasks: &[BestTask], pixels: usize) -> Option<Self> {
+        let mut jobs: Vec<(u8, u32, u32)> = Vec::new();
+        for task in tasks {
+            match task {
+                BestTask::CrossColor(bits) => jobs.push((0, 0, *bits)),
+                BestTask::PredictorCross(p_bits, cc_bits) => {
+                    jobs.push((1, *p_bits, *cc_bits));
+                    jobs.push((2, *p_bits, *cc_bits));
+                },
+                _ => {},
+            }
+        }
+        jobs.sort_unstable();
+        jobs.dedup();
+        if jobs.is_empty() || jobs.len().saturating_mul(pixels) > CROSS_COLOR_CACHE_MAX_PIXELS {
+            return None;
+        }
+        #[cfg(feature = "std")]
+        let map = std::sync::Mutex::new(alloc::collections::BTreeMap::new());
+        #[cfg(not(feature = "std"))]
+        let map = core::cell::RefCell::new(alloc::collections::BTreeMap::new());
+        Some(Self { map })
+    }
+
+    fn forward(
+        &self,
+        kind: u8,
+        a: u32,
+        bits: u32,
+        input: &[u32],
+        width: u32,
+        height: u32,
+    ) -> (Vec<u32>, Vec<u32>) {
+        let key = (kind, a, bits);
+        #[cfg(feature = "std")]
+        {
+            if let Some(hit) = self.map.lock().unwrap().get(&key) {
+                return (hit.0.clone(), hit.1.clone());
+            }
+            let out = cross_color::forward(input, width, height, bits);
+            self.map
+                .lock()
+                .unwrap()
+                .insert(key, (out.0.clone(), out.1.clone()));
+            out
+        }
+        #[cfg(not(feature = "std"))]
+        {
+            let mut map = self.map.borrow_mut();
+            if let Some(hit) = map.get(&key) {
+                return (hit.0.clone(), hit.1.clone());
+            }
+            let out = cross_color::forward(input, width, height, bits);
+            map.insert(key, (out.0.clone(), out.1.clone()));
+            out
+        }
+    }
+}
+
+fn cc_forward(
+    cc: Option<&CrossColorCache>,
+    kind: u8,
+    a: u32,
+    bits: u32,
+    input: &[u32],
+    width: u32,
+    height: u32,
+) -> (Vec<u32>, Vec<u32>) {
+    match cc {
+        Some(c) => c.forward(kind, a, bits, input, width, height),
+        None => cross_color::forward(input, width, height, bits),
+    }
+}
+
 /// Borrow the cached `(residual, tile_data)` for `bits`, or the freshly computed
 /// `owned` fallback. Exactly one of `hit`/`owned` is `Some`.
 fn plane<'a>(
@@ -854,6 +948,7 @@ fn predictor_cross_specs(
     p_bits: u32,
     cc_bits: u32,
     planes: Option<&PlaneCache>,
+    cc: Option<&CrossColorCache>,
 ) -> Vec<BufferSpec> {
     // libwebp's order: subtract-green first, then predictor, then cross-color.
     let sg_hit = planes.and_then(|p| p.sg_pred(p_bits));
@@ -863,7 +958,7 @@ fn predictor_cross_specs(
         predictor::forward(&sg_px, width, height, p_bits)
     });
     let (pres, ptile) = plane(sg_hit, &sg_owned);
-    let (stored, ctile) = cross_color::forward(pres, width, height, cc_bits);
+    let (stored, ctile) = cc_forward(cc, 2, p_bits, cc_bits, pres, width, height);
     let with_sg = BufferSpec {
         plans: vec![
             TransformPlan::SubtractGreen,
@@ -886,7 +981,7 @@ fn predictor_cross_specs(
         .is_none()
         .then(|| predictor::forward(argb, width, height, p_bits));
     let (pres3, ptile3) = plane(raw_hit, &raw_owned);
-    let (stored3, ctile3) = cross_color::forward(pres3, width, height, cc_bits);
+    let (stored3, ctile3) = cc_forward(cc, 1, p_bits, cc_bits, pres3, width, height);
     let no_sg = BufferSpec {
         plans: vec![
             TransformPlan::Predictor {
@@ -906,8 +1001,14 @@ fn predictor_cross_specs(
 
 /// The cross-color family at one tile size: cross-color alone, then cross-color +
 /// subtract-green.
-fn cross_color_specs(width: u32, height: u32, argb: &[u32], bits: u32) -> Vec<BufferSpec> {
-    let (stored, tile_data) = cross_color::forward(argb, width, height, bits);
+fn cross_color_specs(
+    width: u32,
+    height: u32,
+    argb: &[u32],
+    bits: u32,
+    cc: Option<&CrossColorCache>,
+) -> Vec<BufferSpec> {
+    let (stored, tile_data) = cc_forward(cc, 0, 0, bits, argb, width, height);
     let mut stored_sg = stored.clone();
     subtract_green::forward(&mut stored_sg);
     vec![
@@ -964,13 +1065,11 @@ fn reduce_task_minima(minima: impl IntoIterator<Item = Option<Vec<u8>>>) -> Vec<
 /// Transform candidates fully searched per encode after the entropy
 /// pre-score ranks them. Selection is per transform family — each family's
 /// est-best task always runs, and further tasks run while their estimate
-/// stays within [`FAMILY_BAND`] of the family best, within
-/// [`GLOBAL_BAND`] of the global best, and under [`FAMILY_CAP`]. Family
-/// diversity matters because order-0 entropy cannot see LZ77 match
-/// structure: on flat synthetic content a pure-predictor residual can
-/// out-encode every cross-color composition while scoring slightly worse.
-const FAMILY_BAND: f64 = 1.06;
-const GLOBAL_BAND: f64 = 2.5;
+/// stays within 6% of the family best and 2.5x of the global best, under
+/// [`FAMILY_CAP`]. Family diversity matters because order-0 entropy cannot
+/// see LZ77 match structure: on flat synthetic content a pure-predictor
+/// residual can out-encode every cross-color composition while scoring
+/// slightly worse.
 const FAMILY_CAP: usize = 4;
 
 /// One task's pre-search score: the cheapest order-0 entropy among its
@@ -981,11 +1080,12 @@ fn estimate_task(
     height: u32,
     argb: &[u32],
     planes: Option<&PlaneCache>,
-) -> Option<f64> {
-    task_specs(task, width, height, argb, planes)
+    cc: Option<&CrossColorCache>,
+) -> Option<u64> {
+    task_specs(task, width, height, argb, planes, cc)
         .iter()
         .map(|spec| stream_entropy(&spec.pixels))
-        .reduce(f64::min)
+        .reduce(u64::min)
 }
 
 /// Turn per-task estimates into the keep mask: `Floor`/`Palette` always
@@ -993,10 +1093,10 @@ fn estimate_task(
 /// estimate, then each family keeps its best task plus near-ties under the
 /// bands above. Ties resolve to the earlier task so selection is
 /// deterministic and identical on the serial and rayon paths.
-fn select_from_estimates(tasks: &[BestTask], estimates: &[Option<f64>]) -> Vec<bool> {
+fn select_from_estimates(tasks: &[BestTask], estimates: &[Option<u64>]) -> Vec<bool> {
     let mut keep = vec![false; tasks.len()];
-    let mut scored: [Vec<(f64, usize)>; 3] = [Vec::new(), Vec::new(), Vec::new()];
-    let mut global_best = f64::INFINITY;
+    let mut scored: [Vec<(u64, usize)>; 3] = [Vec::new(), Vec::new(), Vec::new()];
+    let mut global_best = u64::MAX;
     for (i, task) in tasks.iter().enumerate() {
         if matches!(task, BestTask::Floor | BestTask::Palette) {
             keep[i] = true;
@@ -1013,12 +1113,14 @@ fn select_from_estimates(tasks: &[BestTask], estimates: &[Option<f64>]) -> Vec<b
         scored[family].push((est, i));
     }
     for candidates in scored.iter_mut() {
-        candidates.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+        candidates.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
         let Some(&(best_est, first)) = candidates.first() else { continue };
         keep[first] = true;
-        let band = (best_est * FAMILY_BAND).min(global_best * GLOBAL_BAND);
         for &(est, i) in candidates.iter().skip(1).take(FAMILY_CAP.saturating_sub(1)) {
-            if est > band {
+            // est <= best_est * 1.06 and est <= global_best * 2.5, in integers.
+            if est.saturating_mul(50) > best_est.saturating_mul(53)
+                || est.saturating_mul(2) > global_best.saturating_mul(5)
+            {
                 break;
             }
             keep[i] = true;
@@ -1049,9 +1151,10 @@ fn evaluate_best_tasks(
     // Serial: `reduce_task_minima` drives the lazy map, so each family's streams
     // are produced, folded to one, and dropped before the next family runs.
     let planes = PlaneCache::build(breadth, width, height, argb);
-    let estimates: Vec<Option<f64>> = tasks
+    let cc = CrossColorCache::new(&tasks, argb.len());
+    let estimates: Vec<Option<u64>> = tasks
         .iter()
-        .map(|t| estimate_task(*t, width, height, argb, planes.as_ref()))
+        .map(|t| estimate_task(*t, width, height, argb, planes.as_ref(), cc.as_ref()))
         .collect();
     let keep = select_from_estimates(&tasks, &estimates);
     reduce_task_minima(
@@ -1068,6 +1171,7 @@ fn evaluate_best_tasks(
                         alpha_used,
                         argb,
                         planes.as_ref(),
+                        cc.as_ref(),
                     ))
                 } else {
                     None
@@ -1089,9 +1193,10 @@ fn evaluate_best_tasks(
     // vec holds one stream per non-empty family (not every candidate); `collect`
     // keeps task order, so the fold below resolves ties identically to serial.
     let planes = PlaneCache::build(breadth, width, height, argb);
-    let estimates: Vec<Option<f64>> = tasks
+    let cc = CrossColorCache::new(&tasks, argb.len());
+    let estimates: Vec<Option<u64>> = tasks
         .par_iter()
-        .map(|t| estimate_task(*t, width, height, argb, planes.as_ref()))
+        .map(|t| estimate_task(*t, width, height, argb, planes.as_ref(), cc.as_ref()))
         .collect();
     let keep = select_from_estimates(&tasks, &estimates);
     let minima: Vec<Option<Vec<u8>>> = tasks
@@ -1107,6 +1212,7 @@ fn evaluate_best_tasks(
                     alpha_used,
                     argb,
                     planes.as_ref(),
+                    cc.as_ref(),
                 ))
             } else {
                 None
@@ -2181,15 +2287,15 @@ mod tests {
         ];
         let mut estimates = vec![
             None,
-            Some(100.0),
-            Some(50.0),
-            Some(52.0),
-            Some(500.0),
-            Some(600.0),
+            Some(100_000),
+            Some(50_000),
+            Some(52_000),
+            Some(500_000),
+            Some(600_000),
         ];
         for k in 0..(FAMILY_CAP + 1) {
             tasks.push(BestTask::PredictorCross(4, 4 + k as u32));
-            estimates.push(Some(30.0 + k as f64 * 0.4));
+            estimates.push(Some(30_000 + k as u64 * 400));
         }
         let keep = select_from_estimates(&tasks, &estimates);
         assert!(keep[0] && keep[1], "floor and palette always run");
@@ -2211,8 +2317,8 @@ mod tests {
     #[test]
     fn serial_and_parallel_evaluation_agree() {
         use super::{
-            PlaneCache, build_best_tasks, encode_best, estimate_task, evaluate_best_tasks,
-            keep_smallest, reduce_task_minima, run_best_task, schedule,
+            CrossColorCache, PlaneCache, build_best_tasks, encode_best, estimate_task,
+            evaluate_best_tasks, keep_smallest, reduce_task_minima, run_best_task, schedule,
             select_from_estimates,
         };
         let breadth = schedule(crate::effort::MAX_LEVEL);
@@ -2223,9 +2329,12 @@ mod tests {
             // minimum in task order.
             let planes = PlaneCache::build(breadth, w, h, &pixels);
             let tasks = build_best_tasks(breadth);
-            let estimates: Vec<Option<f64>> = tasks
+            let cc = CrossColorCache::new(&tasks, pixels.len());
+            let estimates: Vec<Option<u64>> = tasks
                 .iter()
-                .map(|t| estimate_task(*t, w, h, &pixels, planes.as_ref()))
+                .map(|t| {
+                    estimate_task(*t, w, h, &pixels, planes.as_ref(), cc.as_ref())
+                })
                 .collect();
             let keep = select_from_estimates(&tasks, &estimates);
             let serial = reduce_task_minima(
@@ -2242,6 +2351,7 @@ mod tests {
                                 alpha,
                                 &pixels,
                                 planes.as_ref(),
+                                cc.as_ref(),
                             ))
                         } else {
                             None
@@ -2508,6 +2618,7 @@ mod tests {
             8,
             alpha_used(&pixels),
             &pixels,
+            None,
             None,
         );
         assert_eq!(
