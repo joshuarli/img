@@ -2094,6 +2094,9 @@ struct I4x4Luma {
 const I16X16_MODE_COST: i64 = 2 * 256;
 /// Per-sub-block mode signaling cost (see [`I16X16_MODE_COST`]).
 const I4X4_SUBMODE_COST: i64 = 2 * 256;
+/// How many prediction-SSE-ranked B_PRED modes get the full per-mode RD eval in
+/// [`search_luma_i4x4`] — the rest are discarded by the cheap prefilter.
+const I4_RD_CANDIDATES: usize = 6;
 
 /// The fixed-point (1/256-bit) cost of signaling `mode` given the top/left
 /// sub-block modes, mirroring [`put_bmode`]'s tree walk over `BMODES_PROBA`.
@@ -2319,6 +2322,21 @@ fn search_luma_i4x4(
         let top_ctx = if y == 0 { B_DC_PRED } else { cand.imodes[n - 4] };
         let left_ctx = if x == 0 { B_DC_PRED } else { cand.imodes[n - 1] };
 
+        // Prefilter: rank the ten modes by prediction SSE (cheap — no transform or
+        // quantization) and run the expensive per-mode RD eval on only the best
+        // `I4_RD_CANDIDATES`. The post-quant RD winner is almost always among the
+        // lowest-SSE predictors; ties resolve to the lower mode index.
+        let mut ranked = [(i64::MAX, 0u8); NUM_BMODES];
+        for m in 0..NUM_BMODES {
+            let mode = m as u8;
+            predict_luma4(&mut planes.y, sub, stride, mode);
+            ranked[m] = (
+                sse_block(&src.y, src_off, src_stride, &planes.y, sub, stride, 4),
+                mode,
+            );
+        }
+        ranked.sort_unstable_by_key(|&(sse, mode)| (sse, mode));
+
         let mut best_mode = B_DC_PRED;
         let mut best_q = Quantized {
             levels: [0; 16],
@@ -2327,8 +2345,7 @@ fn search_luma_i4x4(
         };
         let mut best_score = i64::MAX;
         let mut best_rate = 0i64;
-        for m in 0..NUM_BMODES {
-            let mode = m as u8;
+        for &(_, mode) in ranked.iter().take(I4_RD_CANDIDATES) {
             predict_luma4(&mut planes.y, sub, stride, mode);
             let residual = residual_block(
                 &src.y,
@@ -4032,7 +4049,7 @@ gradient balanced 104 8ded861974c278bc
 gradient best 97 8868cd68433b9737
 noisy fast 7975 f970e253b081638d
 noisy balanced 3881 618441a165a040b1
-noisy best 3569 3dbdcb7c3118f57c
+noisy best 3551 102c8a24e5fb8c2e
 flat fast 40 66b6a4ee87e184a3
 flat balanced 39 345288bf6a40e2d0
 flat best 39 345288bf6a40e2d0
@@ -4041,13 +4058,13 @@ checker balanced 56 6b05842252d1046e
 checker best 56 6b05842252d1046e
 stripe fast 1680 145aef26907ace38
 stripe balanced 322 d0284fcbb5c77800
-stripe best 122 ed1ba5b248552494
+stripe best 122 50504b62fe65220a
 diagonal fast 415 46ac66199192122b
 diagonal balanced 293 36aa8a54dc5eb621
-diagonal best 330 ca3b855a58db10f6
+diagonal best 347 67bbae9e85790a98
 mixed fast 4363 13644d2cc4723cd5
 mixed balanced 2158 816d363f0b4e162a
-mixed best 2179 5a7fd5734e8d221b
+mixed best 2179 3ed16ab9b9a77cda
 horizontal fast 667 81e58ac967acf023
 horizontal balanced 228 44a8805702dc56f3
 horizontal best 179 c5581b29de7c8018";
@@ -4488,7 +4505,7 @@ horizontal best 179 c5581b29de7c8018";
         let (_cand, dist, _bits) =
             super::search_luma_i4x4(&mut planes, y_off, &src, 0, 0, false, true, plan);
         assert_eq!(
-            dist, 123,
+            dist, 124,
             "dense i4x4 sub-blocks must be reconstructed before scoring"
         );
     }
