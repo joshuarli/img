@@ -29,7 +29,10 @@
 //! and [`Encoder::lossless`]'s `near_lossless` preprocessing trades a bounded
 //! per-channel error for a smaller VP8L payload.
 #![doc = include_str!("../README.md")]
-#![forbid(unsafe_code)]
+// `deny`, not `forbid`: the owner granted exactly one `unsafe` module — the
+// aarch64 NEON match-length kernel in `lossless::vp8l::match_kernel` — which
+// carries a local `#[allow(unsafe_code)]`. Every other module stays denied.
+#![deny(unsafe_code)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(
     clippy::float_arithmetic,

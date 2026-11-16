@@ -8,4 +8,6 @@ pub(crate) mod backref;
 pub(crate) mod decode;
 pub(crate) mod decode_incr;
 pub(crate) mod encode;
+#[cfg(target_arch = "aarch64")]
+mod match_kernel;
 pub(crate) mod meta;

@@ -446,10 +446,18 @@ fn length_at(
     )
 )]
 fn match_length(pixels: &[u32], src: usize, dst: usize, max_len: usize) -> usize {
-    let mut len = 0usize;
-    while len < max_len && pixels[src + len] == pixels[dst + len] {
-        len += 1;
-    }
+    // aarch64 takes the owner-granted NEON kernel (byte-identical first-mismatch
+    // index, four pixels per step); every other target keeps the scalar walk.
+    #[cfg(target_arch = "aarch64")]
+    let len = super::match_kernel::match_length_neon(pixels, src, dst, max_len);
+    #[cfg(not(target_arch = "aarch64"))]
+    let len = {
+        let mut len = 0usize;
+        while len < max_len && pixels[src + len] == pixels[dst + len] {
+            len += 1;
+        }
+        len
+    };
     work!(MatchCompare, len as u64);
     len
 }
