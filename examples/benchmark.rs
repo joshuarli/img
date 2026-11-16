@@ -2,6 +2,41 @@
 use std::{fs,path::{Path,PathBuf},process::Command,time::Instant};
 use img::{perceptual::PerceptualReference,still::StillImage};
 use serde_json::{json,Value};
+fn pnm_rgb(bytes:&[u8])->Result<(u32,u32,Vec<u8>),String> {
+    fn token(bytes:&[u8],pos:&mut usize)->Result<String,String> {
+        loop {
+            while bytes.get(*pos).is_some_and(|b|b.is_ascii_whitespace()) {*pos+=1;}
+            if bytes.get(*pos)==Some(&b'#') {while bytes.get(*pos).is_some_and(|b|*b!=b'\n') {*pos+=1;}}
+            else {break;}
+        }
+        let start=*pos;
+        while bytes.get(*pos).is_some_and(|b|!b.is_ascii_whitespace()&&*b!=b'#') {*pos+=1;}
+        String::from_utf8(bytes[start..*pos].to_vec()).map_err(|e|e.to_string())
+    }
+    let mut pos=0;
+    let magic=token(bytes,&mut pos)?;
+    let (w,h):(u32,u32)=(token(bytes,&mut pos)?.parse::<u32>().map_err(|e|e.to_string())?,token(bytes,&mut pos)?.parse::<u32>().map_err(|e|e.to_string())?);
+    let _max: u32=token(bytes,&mut pos)?.parse::<u32>().map_err(|e|e.to_string())?;
+    pos+=1;
+    let channels=match magic.as_str() {"P6"=>3,"P5"=>1,_=>return Err(format!("unsupported PNM magic {magic}"))};
+    let count=(w as usize)*(h as usize)*channels as usize;
+    let raster=bytes.get(pos..pos+count).ok_or("truncated PNM raster")?.to_vec();
+    if channels==1 {
+        let mut rgb=Vec::with_capacity(count*3);
+        for g in raster {rgb.extend_from_slice(&[g,g,g]);}
+        Ok((w,h,rgb))
+    } else {Ok((w,h,raster))}
+}
+
+fn libwebp_domain_exact(input:&Path,candidate:&Path)->Result<bool,String> {
+    let reference=Command::new("djpeg").arg("-pnm").arg(input).output().map_err(|e|format!("djpeg unavailable: {e}"))?;
+    if !reference.status.success() {return Err(format!("djpeg failed: {}",String::from_utf8_lossy(&reference.stderr)));}
+    let output=Command::new("dwebp").arg("-ppm").arg(candidate).args(["-o","-"]).output().map_err(|e|format!("dwebp unavailable: {e}"))?;
+    if !output.status.success() {return Err(format!("dwebp failed: {}",String::from_utf8_lossy(&output.stderr)));}
+    let a=pnm_rgb(&reference.stdout)?;let b=pnm_rgb(&output.stdout)?;
+    Ok(a==b)
+}
+
 fn main() {
     if let Err(error)=run() {eprintln!("benchmark: {error}");std::process::exit(1);}
 }
@@ -92,10 +127,14 @@ fn run()->Result<(),Box<dyn std::error::Error>> {
                             let output=command.output().map_err(|e|format!("tool unavailable: {e}"))?;
                             record["attempts"].as_array_mut().unwrap().push(json!({"quality":if kind.ends_with("png")||*kind=="cwebp-lossless" {None} else {Some(quality)},"command":invocation,"exitCode":output.status.code(),"stderr":String::from_utf8_lossy(&output.stderr)}));
                             if !output.status.success() {continue;}
-                            let bytes=fs::read(candidate).map_err(|e|e.to_string())?;let decoded=StillImage::decode(&bytes).map_err(|e|e.to_string())?;
+                            let bytes=fs::read(&candidate).map_err(|e|e.to_string())?;let decoded=StillImage::decode(&bytes).map_err(|e|e.to_string())?;
                             if decoded.dimensions()!=image.dimensions() {return Err("output dimensions differ".into());}
                             record["attempts"].as_array_mut().unwrap().last_mut().unwrap()["bytes"]=json!(bytes.len());
-                            let samples_match=img::optimizer::samples_equal(&image,&decoded);
+                            let samples_match=if *kind=="cwebp-lossless" && input.extension().is_some_and(|e|e=="jpg"||e=="jpeg") {
+                                libwebp_domain_exact(&input,&candidate)?
+                            } else {
+                                img::optimizer::samples_equal(&image,&decoded)
+                            };
                             if exact_kind&&!samples_match {continue;}
                             let score=if exact_kind {None} else {let score=reference.as_ref().unwrap().score_encoded(&bytes).map_err(|e|e.to_string())?;record["attempts"].as_array_mut().unwrap().last_mut().unwrap()["score"]=json!(score);if score<target {continue;}Some(score)};
                             if winner.as_ref().is_none_or(|w|bytes.len()<w.0.len()) {winner=Some((bytes,score,samples_match));}

@@ -10,7 +10,7 @@ fn load_corpus(dir:&Path)->Vec<(String,Vec<u8>)> {
         let name=entry["file"].as_str().unwrap();let bytes=fs::read(dir.join(name)).unwrap();
         assert_eq!(format!("{:x}",Sha256::digest(&bytes)),entry["sha256"].as_str().unwrap());
         assert!(!entry["license"].as_str().unwrap().is_empty());assert!(!entry["evidence"].as_str().unwrap().is_empty());
-        let decoded=StillImage::decode(&bytes).unwrap();assert_eq!(decoded.dimensions(),(entry["width"].as_u64().unwrap() as u32,entry["height"].as_u64().unwrap() as u32));
+        let decoded=StillImage::decode(&bytes).unwrap_or_else(|e|panic!("{name}: {e}"));assert_eq!(decoded.dimensions(),(entry["width"].as_u64().unwrap() as u32,entry["height"].as_u64().unwrap() as u32));
         (name.to_owned(),bytes)
     }).collect()
 }
