@@ -620,3 +620,25 @@ the ungated variant, fixed by the `wide` gate). Gated A/B vs
 coffee L6 ~3.76 s -> ~3.76 s (neutral — its pruned family bests
 were already spec-masked), grass L6 ~9.31 s -> ~8.56 s (~8%
 faster).
+
+Greedy-estimate task band REJECTED (uncommitted, reverted): the
+libwebp `EncodeImageNoHuffman` analog — score each kept task by its
+best spec's greedy-parse token-stream bit estimate, then run
+`family_search` only inside a ~3-10% band of the best score. The
+signal itself is excellent: offline replay on four corpus dumps put
+the byte winner in the top 4 of 8-11 kept tasks at a 3% band, and the
+cross-color-alone family trailed by 12-50% (always prunable). The
+economics fail: the probe costs a full `parse_lz77` + `RefModel` +
+histogram pass per spec — roughly 40-50% of `family_search` — and the
+banded specs then re-pay the entire search, so net savings need the
+band to cut nearly half of all specs. It does on coffee/astronaut
+(~50%) but NOT on tie-heavy content (grass keeps 7/11 genuinely
+near-identical tasks), where the probe is pure overhead: grass L6
+regressed ~9% even with the probe reduced to a single no-cache
+histogram pass. Carrying parse state across the band decision would
+fix the double-parse but needs per-spec tokens+chain resident for
+every kept task simultaneously — prohibitive on multi-MP images.
+Recorded so the next attempt doesn't re-derive it: a viable version
+needs a match probe that costs << one greedy parse (subsampled or
+capped-chain), or a band applied inside `run_best_task` where spec
+count is already small.
