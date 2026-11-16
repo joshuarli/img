@@ -1,5 +1,6 @@
 # CLI reference
 
+`img --help` prints the complete command reference and examples; `img` alone prints the same help. Each command accepts `-h` and `--help`.
 The commands are `optimize`, `convert`, `inspect` and `compare`.
 Old codec commands, aliases, backup, suffix, arbitrary transforms and report-file
 options are removed. JPEG, PNG, WebP and AVIF are the accepted containers.
@@ -39,7 +40,7 @@ Direct quality selects native encoder controls, not equivalent visual quality:
 JPEG uses progressive mozjpeg quality, WebP uses lossy quality with lossless
 alpha, PNG selects 2–256 palette colors, and AVIF maps the interval to native 1–100.
 Scored search may evaluate exact PNG and WebP as well as lossy candidates.
-Fast, balanced and best permit 8, 24 and 64 total encode attempts respectively.
+Fast, balanced and best permit up to 10, 24 and 64 candidates respectively.
 
 Keep is the metadata default. Strip is intended to retain required color signaling and
 normalizes orientation once. Lossless refuses a strip that must reorder samples.

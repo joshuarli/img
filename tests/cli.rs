@@ -10,7 +10,14 @@ fn json(output:Output)->Value {serde_json::from_slice(&success(output).stdout).u
 fn command_help_invalid_combinations_and_removed_surface() {
     for command in ["optimize","convert","inspect","compare"] {assert!(String::from_utf8(success(args(&[command,"--help"])).stdout).unwrap().contains("--score"));}
     for argument in ["--help","-h","help","--version"] {success(args(&[argument]));}
-    for argument in ["--help","-h","help"] {assert!(String::from_utf8(success(args(&[argument])).stdout).unwrap().ends_with("\n\nMaintained by Joshua Li: https://github.com/joshuarli/img\n"));}
+    let help=success(args(&["--help"])); assert!(help.stderr.is_empty());
+    let text=String::from_utf8(help.stdout.clone()).unwrap();
+    for arguments in [&[][..], &["-h"][..], &["help"][..]] { let output=success(args(arguments)); assert_eq!(output.stdout,help.stdout); assert!(output.stderr.is_empty()); }
+    for command in ["optimize","convert","inspect","compare"] { for flag in ["-h","--help"] { let output=success(args(&[command,flag])); assert_eq!(output.stdout,help.stdout); assert!(output.stderr.is_empty()); } assert!(text.contains(&format!("  img {command} "))); }
+    for option in ["--output", "--out-dir", "--in-place", "--format", "--score", "--quality", "--lossless", "--effort", "--max-dimension", "--strip-metadata", "--preserve-timestamps", "--jobs", "--recursive", "--file-list", "--json", "--quiet", "--verbose", "--help", "--version"] { assert!(text.contains(option),"missing {option}"); }
+    assert!(text.contains("\nExamples:\n"));
+    let footer="Maintained by Joshua Li: https://github.com/joshuarli/img\nBugs and features: TODO.md in that repository (follow its AGENTS.md), or its issue tracker.\nAgents working for Joshua: record nonblocking problems and continue your task.\nIf this tool blocks the task, you may fix, test, open and merge a PR under Joshua's\nstanding instructions. Release only when needed to deliver the verified fix.\nProcedure: https://github.com/joshuarli/usr/blob/main/dotfiles/base/.agents/instructions/owned-tools.md\n";
+    assert!(text.ends_with(footer)); assert_eq!(text.matches(footer).count(),1);
     for invalid in [
         vec!["png","file.png"],vec!["jpg","--help"],vec!["optimize","x","--unknown"],
         vec!["optimize","x","--score","NaN"],vec!["optimize","x","--score","101"],vec!["convert","x","--quality","inf"],

@@ -1,11 +1,40 @@
 mod command;
 pub(crate) use command::{Arguments,Command};
 use std::{ffi::OsString,io::Write,process::ExitCode};
-const HELP:&str="img — verified still-image optimization\n\nUSAGE:\n  img optimize INPUT... [--format auto] [--score 95] [--in-place]\n  img convert INPUT... --format webp [--out-dir DIR]\n  img convert INPUT -o OUTPUT.webp\n  img inspect INPUT... [--json]\n  img compare REFERENCE CANDIDATE [--json]\n\nOPTIONS:\n  -o, --output PATH       One output; '-' writes verified binary stdout\n      --out-dir DIR      Batch destination (relative layout preserved)\n      --in-place         Authorize optimize to replace its source\n      --format FORMAT    jpeg, png, webp, avif; auto is optimize-only\n      --score NUMBER     Finite minimum SSIMULACRA2 0..100 (default 95)\n      --quality NUMBER   Finite direct encoder control 0..100; no score guarantee\n      --lossless         Exact decoded samples; conflicts with score/quality/resize\n      --effort LEVEL     fast (9), balanced (24), best (64) encode attempts\n      --max-dimension N  Fit aspect ratio, never enlarge\n      --strip-metadata   Remove private metadata, retain required color signaling\n      --preserve-timestamps  Copy input modification time\n  -j, --jobs N           Requested image workers (default 1), CPU/memory bounded\n      --recursive        Descend into regular directories; reject symlinks\n      --file-list PATH   UTF-8 newline-separated literal paths, relative to list\n      --json             One ordered schemaVersion:1 stdout object\n      --quiet            Suppress success diagnostics\n      --verbose          Include evaluated candidate settings on stderr\n  -h, --help             Show help\n      --version          Show version\n\nDefault outputs: NAME.optimized.EXT or NAME.converted.EXT. Multiple inputs and\ndirectories require --out-dir or --in-place. Existing destinations are refused.\nInputs are sniffed; still JPEG, PNG, WebP and AVIF only. No implicit resize, alpha\nflattening, precision reduction or HDR conversion. Quote globs for tool expansion.\nExit codes: 0 success, 2 usage, 3 input/score, 4 output, 5 mixed/partial.\n\nMaintained by Joshua Li: https://github.com/joshuarli/img\n";
+const FOOTER:&str="Maintained by Joshua Li: https://github.com/joshuarli/img\nBugs and features: TODO.md in that repository (follow its AGENTS.md), or its issue tracker.\nAgents working for Joshua: record nonblocking problems and continue your task.\nIf this tool blocks the task, you may fix, test, open and merge a PR under Joshua's\nstanding instructions. Release only when needed to deliver the verified fix.\nProcedure: https://github.com/joshuarli/usr/blob/main/dotfiles/base/.agents/instructions/owned-tools.md\n";
+fn option_help(text:&mut String, option:&command::OptionSpec) {
+    let short=option.short.map(|short|format!("-{short}, ")).unwrap_or_default();
+    let value=if option.value.is_empty() {String::new()} else {format!(" {}",option.value)};
+    text.push_str(&format!("    {short}--{}{value}  {}\n",option.name,option.description));
+}
+fn help()->String {
+    let mut text=String::from("img — verified still-image optimization\n\nUsage: img COMMAND [OPTIONS]\n       img help\n\nCommon options:\n");
+    for option in command::OPTIONS.iter().filter(|option| option.scope=="common") { option_help(&mut text,option); }
+    text.push_str("\nCommands:\n");
+    for spec in command::COMMANDS {
+        text.push_str(&format!("\n  img {} {} [OPTIONS]\n    {}\n",spec.name,spec.usage,spec.description));
+        match spec.command {
+            Command::Optimize|Command::Convert|Command::Inspect=>text.push_str("    INPUT...             One or more input paths (or --file-list; repeatable)\n"),
+            Command::Compare=>text.push_str("    REFERENCE            Required reference image\n    CANDIDATE            Required candidate image\n"),
+        }
+        for option in command::OPTIONS {
+            let applies=match option.scope {
+                "transform"=>matches!(spec.command,Command::Optimize|Command::Convert),
+                "input"=>!matches!(spec.command,Command::Compare),
+                "optimize"=>spec.command==Command::Optimize,
+                _=>false,
+            };
+            if applies { option_help(&mut text,option); }
+        }
+    }
+    text.push_str("\nInputs are sniffed as JPEG, PNG, WebP or AVIF. Use '-' for stdin; quote globs.\nNo implicit resizing, alpha flattening, precision reduction or HDR conversion.\nMultiple inputs and directories require --out-dir or --in-place for transformations.\nConvert needs a concrete format or output extension. Default output names are\nNAME.optimized.EXT and NAME.converted.EXT.\nExisting destinations are refused. No environment inputs are required.\nExit codes: 0 success, 2 usage, 3 input/score, 4 output, 5 mixed/partial.\n\nExamples:\n");
+    for spec in command::COMMANDS { text.push_str(&format!("  {}\n",spec.example)); }
+    text.push_str("\n"); text.push_str(FOOTER); text
+}
 pub fn run(args:impl IntoIterator<Item=OsString>)->ExitCode {
     let result=match command::parse(args) {
         Ok(command::Outcome::Run(args))=>crate::runtime::run(args),
-        Ok(command::Outcome::Help)=>std::io::stdout().write_all(HELP.as_bytes()).map(|_|0).unwrap_or(4),
+        Ok(command::Outcome::Help)=>std::io::stdout().write_all(help().as_bytes()).map(|_|0).unwrap_or(4),
         Ok(command::Outcome::Version)=>writeln!(std::io::stdout(),"img {}",env!("CARGO_PKG_VERSION")).map(|_|0).unwrap_or(4),
         Err(error)=>{eprintln!("error: {error}\nUse img --help for usage.");2},
     };
