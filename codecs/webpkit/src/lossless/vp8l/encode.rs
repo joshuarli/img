@@ -567,13 +567,16 @@ fn run_best_task(
     argb: &[u32],
     planes: Option<&PlaneCache>,
     cc: Option<&CrossColorCache>,
+    spec_mask: &[bool],
 ) -> Vec<Vec<u8>> {
     if matches!(task, BestTask::Floor) {
         return floor_streams(breadth, width, height, alpha_used, argb);
     }
     task_specs(task, width, height, argb, planes, cc, false)
         .into_iter()
-        .map(|spec| {
+        .zip(spec_mask.iter().copied().chain(core::iter::repeat(true)))
+        .filter(|(_, keep)| *keep)
+        .map(|(spec, _)| {
             family_search(
                 breadth,
                 width,
@@ -1098,10 +1101,26 @@ fn estimate_task(
     cc: Option<&CrossColorCache>,
     cheap_cc: bool,
 ) -> Option<u64> {
+    estimate_specs(task, width, height, argb, planes, cc, cheap_cc)
+        .into_iter()
+        .reduce(u64::min)
+}
+
+/// Per-spec order-0 entropy estimates, aligned with [`task_specs`] order —
+/// empty for `Floor` (and palette-less `Palette`), which carry no specs.
+fn estimate_specs(
+    task: BestTask,
+    width: u32,
+    height: u32,
+    argb: &[u32],
+    planes: Option<&PlaneCache>,
+    cc: Option<&CrossColorCache>,
+    cheap_cc: bool,
+) -> Vec<u64> {
     task_specs(task, width, height, argb, planes, cc, cheap_cc)
         .iter()
         .map(|spec| stream_entropy(&spec.pixels))
-        .reduce(u64::min)
+        .collect()
 }
 
 /// Turn per-task estimates into the keep mask: `Floor`/`Palette` always
@@ -1196,6 +1215,24 @@ fn select_provisional(tasks: &[BestTask], estimates: &[Option<u64>]) -> Vec<bool
     keep
 }
 
+/// Per-spec keep masks from the real estimates, aligned with [`task_specs`]
+/// order per task: a spec survives when its order-0 entropy is within ~5% of
+/// the task's best spec (`est * 20 <= min * 21`). Sibling specs that tie on
+/// entropy — the predictor+cross-color with/without-subtract-green pair —
+/// always both survive; only clear losers skip `family_search`.
+fn spec_keep_masks(spec_ests: &[Option<Vec<u64>>]) -> Vec<Vec<bool>> {
+    spec_ests
+        .iter()
+        .map(|opt| match opt {
+            Some(ests) => {
+                let min = ests.iter().copied().min().unwrap_or(0);
+                ests.iter().map(|&e| e * 20 <= min * 21).collect()
+            }
+            None => Vec::new(),
+        })
+        .collect()
+}
+
 /// Run every task serially (default) or across a rayon thread pool (feature
 /// `rayon`), folding each family to its own minimum and then across families, so
 /// the peak never holds every candidate stream at once — only the running best
@@ -1228,23 +1265,29 @@ fn evaluate_best_tasks(
     } else {
         vec![true; tasks.len()]
     };
-    let estimates: Vec<Option<u64>> = tasks
+    let spec_ests: Vec<Option<Vec<u64>>> = tasks
         .iter()
         .zip(&prov)
         .map(|(t, &p)| {
-            if p {
-                estimate_task(*t, width, height, argb, planes.as_ref(), cc.as_ref(), false)
-            } else {
-                None
+            if !p {
+                return None;
             }
+            let ests = estimate_specs(*t, width, height, argb, planes.as_ref(), cc.as_ref(), false);
+            (!ests.is_empty()).then_some(ests)
         })
         .collect();
+    let estimates: Vec<Option<u64>> = spec_ests
+        .iter()
+        .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
+        .collect();
     let keep = select_from_estimates(&tasks, &estimates);
+    let spec_masks = spec_keep_masks(&spec_ests);
     reduce_task_minima(
         tasks
             .into_iter()
             .zip(keep)
-            .map(|(t, k)| {
+            .zip(spec_masks)
+            .map(|((t, k), mask)| {
                 if k {
                     keep_smallest(run_best_task(
                         t,
@@ -1255,6 +1298,7 @@ fn evaluate_best_tasks(
                         argb,
                         planes.as_ref(),
                         cc.as_ref(),
+                        &mask,
                     ))
                 } else {
                     None
@@ -1286,22 +1330,28 @@ fn evaluate_best_tasks(
     } else {
         vec![true; tasks.len()]
     };
-    let estimates: Vec<Option<u64>> = tasks
+    let spec_ests: Vec<Option<Vec<u64>>> = tasks
         .par_iter()
         .zip(&prov)
         .map(|(t, &p)| {
-            if p {
-                estimate_task(*t, width, height, argb, planes.as_ref(), cc.as_ref(), false)
-            } else {
-                None
+            if !p {
+                return None;
             }
+            let ests = estimate_specs(*t, width, height, argb, planes.as_ref(), cc.as_ref(), false);
+            (!ests.is_empty()).then_some(ests)
         })
         .collect();
+    let estimates: Vec<Option<u64>> = spec_ests
+        .iter()
+        .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
+        .collect();
     let keep = select_from_estimates(&tasks, &estimates);
+    let spec_masks = spec_keep_masks(&spec_ests);
     let minima: Vec<Option<Vec<u8>>> = tasks
         .into_par_iter()
         .zip(keep)
-        .map(|(t, k)| {
+        .zip(spec_masks)
+        .map(|((t, k), mask)| {
             if k {
                 keep_smallest(run_best_task(
                     t,
@@ -1312,6 +1362,7 @@ fn evaluate_best_tasks(
                     argb,
                     planes.as_ref(),
                     cc.as_ref(),
+                    &mask,
                 ))
             } else {
                 None
@@ -2416,9 +2467,10 @@ mod tests {
     #[test]
     fn serial_and_parallel_evaluation_agree() {
         use super::{
-            CrossColorCache, PlaneCache, build_best_tasks, encode_best, estimate_task,
-            evaluate_best_tasks, keep_smallest, reduce_task_minima, run_best_task, schedule,
-            select_from_estimates, select_provisional, provisional_prunes,
+            CrossColorCache, PlaneCache, build_best_tasks, encode_best, estimate_specs,
+            estimate_task, evaluate_best_tasks, keep_smallest, reduce_task_minima,
+            run_best_task, schedule, select_from_estimates, select_provisional,
+            spec_keep_masks, provisional_prunes,
         };
         let breadth = schedule(crate::effort::MAX_LEVEL);
         for (w, h, pixels) in byte_stability_cases() {
@@ -2438,23 +2490,29 @@ mod tests {
             } else {
                 vec![true; tasks.len()]
             };
-            let estimates: Vec<Option<u64>> = tasks
+            let spec_ests: Vec<Option<Vec<u64>>> = tasks
                 .iter()
                 .zip(&prov)
                 .map(|(t, &p)| {
-                    if p {
-                        estimate_task(*t, w, h, &pixels, planes.as_ref(), cc.as_ref(), false)
-                    } else {
-                        None
+                    if !p {
+                        return None;
                     }
+                    let ests = estimate_specs(*t, w, h, &pixels, planes.as_ref(), cc.as_ref(), false);
+                    (!ests.is_empty()).then_some(ests)
                 })
                 .collect();
+            let estimates: Vec<Option<u64>> = spec_ests
+                .iter()
+                .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
+                .collect();
             let keep = select_from_estimates(&tasks, &estimates);
+            let spec_masks = spec_keep_masks(&spec_ests);
             let serial = reduce_task_minima(
                 tasks
                     .into_iter()
                     .zip(keep)
-                    .map(|(t, k)| {
+                    .zip(spec_masks)
+                    .map(|((t, k), mask)| {
                         if k {
                             keep_smallest(run_best_task(
                                 t,
@@ -2465,6 +2523,7 @@ mod tests {
                                 &pixels,
                                 planes.as_ref(),
                                 cc.as_ref(),
+                                &mask,
                             ))
                         } else {
                             None
@@ -2733,6 +2792,7 @@ mod tests {
             &pixels,
             None,
             None,
+            &[],
         );
         assert_eq!(
             streams.len(),
