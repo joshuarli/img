@@ -2200,8 +2200,14 @@ const fn chroma_lambda(q_ac: i32) -> i64 {
 /// estimate for the mode comparison, never self-consistency), matching the trellis.
 fn luma16_token_bits(y2: Block, luma: &[Block; 16], probas: &CoeffProbas, memo: Option<&RateMemo>) -> i64 {
     let mut bits = block_token_cost(y2.levels, 0, y2.last, 1, 0, probas, memo);
-    for b in luma {
-        bits += block_token_cost(b.levels, 1, b.last, 0, 0, probas, memo);
+    // Intra-MB non-zero context per 4x4-grid block (see `emit_mb_residuals`):
+    // `ctx = left_nz + top_nz` from committed row/column neighbors; border
+    // blocks keep the cross-MB approximation of 0. Flag = `last + 1 > first`.
+    for (n, b) in luma.iter().enumerate() {
+        let (x, y) = (n % 4, n / 4);
+        let ctx0 = usize::from(x > 0 && luma[n - 1].last + 1 > 1)
+            + usize::from(y > 0 && luma[n - 4].last + 1 > 1);
+        bits += block_token_cost(b.levels, 1, b.last, 0, ctx0, probas, memo);
     }
     bits
 }
@@ -2209,9 +2215,22 @@ fn luma16_token_bits(y2: Block, luma: &[Block; 16], probas: &CoeffProbas, memo: 
 /// The exact token-tree bit cost (1/256-bit units) of one macroblock's eight chroma
 /// blocks (`first = 0`), entry context approximated as 0 (see [`luma16_token_bits`]).
 fn chroma8_token_bits(chroma: &[Block; 8], probas: &CoeffProbas, memo: Option<&RateMemo>) -> i64 {
+    // Same intra-MB non-zero context as [`luma16_token_bits`], on each plane's
+    // 2x2 block grid (`first = 0`, so the flag is `last + 1 > 0`).
     chroma
         .iter()
-        .map(|b| block_token_cost(b.levels, 0, b.last, 2, 0, probas, memo))
+        .enumerate()
+        .map(|(n, b)| {
+            let local = n % 4;
+            let (x, y) = (local % 2, local / 2);
+            let left = if x == 0 { 0 } else { usize::from(chroma[n - 1].last + 1 > 0) };
+            let top = if y == 0 {
+                0
+            } else {
+                usize::from(chroma[n - 2].last + 1 > 0)
+            };
+            block_token_cost(b.levels, 0, b.last, 2, left + top, probas, memo)
+        })
         .sum()
 }
 
@@ -2321,6 +2340,12 @@ fn search_luma_i4x4(
         let src_off = (mb_y * 16 + by) * src_stride + (mb_x * 16 + bx);
         let top_ctx = if y == 0 { B_DC_PRED } else { cand.imodes[n - 4] };
         let left_ctx = if x == 0 { B_DC_PRED } else { cand.imodes[n - 1] };
+        // Intra-MB non-zero context for the token-rate estimate: the emit walk
+        // (`tokens::emit_mb_residuals`) gives each 4x4 block `ctx = left_nz +
+        // top_nz` from its already-committed row/column neighbors; border blocks
+        // fall back to 0 (cross-MB context is unknowable at plan time).
+        let nz_ctx0 = usize::from(x > 0 && cand.luma[n - 1].last >= 0)
+            + usize::from(y > 0 && cand.luma[n - 4].last >= 0);
 
         // Prefilter: rank the ten modes by prediction SSE (cheap — no transform or
         // quantization) and run the expensive per-mode RD eval on only the best
@@ -2373,7 +2398,7 @@ fn search_luma_i4x4(
             }
             transform_one(&q.recon, &mut scratch, 0, 4);
             let dist = sse_block(&src.y, src_off, src_stride, &scratch, 0, 4, 4);
-            let rate = block_token_cost(q.levels, 0, q.last, 3, 0, plan.probas, plan.rate)
+            let rate = block_token_cost(q.levels, 0, q.last, 3, nz_ctx0, plan.probas, plan.rate)
                 as i64
                 + i4_bmode_cost(top_ctx, left_ctx, mode) as i64;
             let score = RD_DISTO_MULT * dist + lambda * rate;
@@ -4046,10 +4071,10 @@ mod tests {
     const GOLDEN_EXPECTED: &str = "\
 gradient fast 190 fdbe0b6ce4ec645c
 gradient balanced 104 8ded861974c278bc
-gradient best 97 8868cd68433b9737
+gradient best 104 8ded861974c278bc
 noisy fast 7975 f970e253b081638d
 noisy balanced 3881 618441a165a040b1
-noisy best 3551 102c8a24e5fb8c2e
+noisy best 3547 a5e43ed54aded19c
 flat fast 40 66b6a4ee87e184a3
 flat balanced 39 345288bf6a40e2d0
 flat best 39 345288bf6a40e2d0
@@ -4061,10 +4086,10 @@ stripe balanced 322 d0284fcbb5c77800
 stripe best 122 50504b62fe65220a
 diagonal fast 415 46ac66199192122b
 diagonal balanced 293 36aa8a54dc5eb621
-diagonal best 347 67bbae9e85790a98
+diagonal best 349 2ba2e2781061fdf2
 mixed fast 4363 13644d2cc4723cd5
-mixed balanced 2158 816d363f0b4e162a
-mixed best 2179 3ed16ab9b9a77cda
+mixed balanced 2159 3af8b6ed8eccb0fd
+mixed best 2174 582833946b84b7ff
 horizontal fast 667 81e58ac967acf023
 horizontal balanced 228 44a8805702dc56f3
 horizontal best 179 c5581b29de7c8018";
@@ -4505,7 +4530,7 @@ horizontal best 179 c5581b29de7c8018";
         let (_cand, dist, _bits) =
             super::search_luma_i4x4(&mut planes, y_off, &src, 0, 0, false, true, plan);
         assert_eq!(
-            dist, 124,
+            dist, 127,
             "dense i4x4 sub-blocks must be reconstructed before scoring"
         );
     }
@@ -4620,7 +4645,7 @@ horizontal best 179 c5581b29de7c8018";
     const RD_GOLDEN_EXPECTED: &str = "\
 rd_rx0_ry5_d0_q48 2bce915f7a05d74e
 rd_rx1_ry0_d0_q8 1daa25995d507435
-rd_rx0_ry2_d0_q24 4ce0d87f48607aa3
+rd_rx0_ry2_d0_q24 8604d11657ea072d
 rd_rx0_ry5_d60_q24 0acc155f545eae02";
 
     #[test]
