@@ -546,3 +546,21 @@ there is not the remaining lever. Lossy side profiled for contrast
 (coffee q90 193 ms / q100 268 ms, `trellis_eval` top counter): lossy
 is ~30x faster than lossless on the same input, so the frontier gap
 stays lossless-side.
+
+Next experiment sketched (two-phase estimate): a single global
+multiplier does NOT cheapen the forward — sweep evals scale with
+pixels either way (~256 x n x ~7 sweeps). The cheap phase must cut
+per-eval work: subsample tile pixels (e.g. stride 2-4) inside the
+multiplier sweeps for a provisional entropy ranking only, then run
+real forwards + `stream_entropy` just for provisional keepers (wide
+bands, e.g. family-best + ~30-50% near-ties + global ~4x, cap ~8-10
+per family) and apply the existing `select_from_estimates` bands on
+the REAL estimates so finalist selection is unchanged. `CrossColorCache`
+keeps serving real forwards only (cheap-phase results must not enter
+it); eval path unchanged. Expected est-phase ~30-50% reduction on
+estimate-bound strata (coffee-like), near-zero on search-bound
+(grass-like); provisional pruning is the only byte-risk surface —
+validate with the 24-image L6 sweep plus frontier size check, keep only
+if bytes hold or improve. Rough cost: ~100 lines across
+`transform/cross_color.rs` (subsampled sweep entry) and
+`vp8l/encode.rs` (provisional mask + second estimate pass).
