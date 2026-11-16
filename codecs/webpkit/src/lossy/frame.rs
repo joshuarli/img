@@ -2104,7 +2104,7 @@ const I16X16_MODE_COST: i64 = 2 * 256;
 const I4X4_SUBMODE_COST: i64 = 2 * 256;
 /// How many prediction-SSE-ranked B_PRED modes get the full per-mode RD eval in
 /// [`search_luma_i4x4`] — the rest are discarded by the cheap prefilter.
-const I4_RD_CANDIDATES: usize = 6;
+const I4_RD_CANDIDATES: usize = 8;
 
 /// The fixed-point (1/256-bit) cost of signaling `mode` given the top/left
 /// sub-block modes, mirroring [`put_bmode`]'s tree walk over `BMODES_PROBA`.
@@ -4079,10 +4079,10 @@ mod tests {
     const GOLDEN_EXPECTED: &str = "\
 gradient fast 190 fdbe0b6ce4ec645c
 gradient balanced 105 c3fa10bfb22fa948
-gradient best 105 c3fa10bfb22fa948
+gradient best 100 a36107b25defee71
 noisy fast 7975 f970e253b081638d
 noisy balanced 3710 36c5b31737c8aa75
-noisy best 3374 79d0f255b1caa4d9
+noisy best 3371 d67f248e7c983a85
 flat fast 40 66b6a4ee87e184a3
 flat balanced 39 2f5a1f125c0a5180
 flat best 39 2f5a1f125c0a5180
@@ -4091,13 +4091,13 @@ checker balanced 56 6b05842252d1046e
 checker best 56 6b05842252d1046e
 stripe fast 1680 145aef26907ace38
 stripe balanced 322 d0284fcbb5c77800
-stripe best 122 50504b62fe65220a
+stripe best 122 ed1ba5b248552494
 diagonal fast 415 46ac66199192122b
 diagonal balanced 293 36aa8a54dc5eb621
-diagonal best 349 2ba2e2781061fdf2
+diagonal best 338 5b89969e06ec132a
 mixed fast 4363 13644d2cc4723cd5
 mixed balanced 1994 bb7283282f345f85
-mixed best 2008 d0610ce471febf65
+mixed best 2012 1fd465a4186a52e2
 horizontal fast 667 81e58ac967acf023
 horizontal balanced 228 0f91560a730ee795
 horizontal best 179 a6e45cac896f8df8";
@@ -4538,7 +4538,7 @@ horizontal best 179 a6e45cac896f8df8";
         let (_cand, dist, _bits) =
             super::search_luma_i4x4(&mut planes, y_off, &src, 0, 0, false, true, plan);
         assert_eq!(
-            dist, 127,
+            dist, 126,
             "dense i4x4 sub-blocks must be reconstructed before scoring"
         );
     }
