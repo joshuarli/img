@@ -457,3 +457,40 @@ large were already deep-search-bound. Wall time remains the dominant
 measured gap: ~12–35x on photos, ~18x on tiny UI, ~12x on the 2 MP
 fixture. Next per the brief: profile the repaired pipeline and attack the
 repeated transform/parse/trellis work structurally.
+
+## Checkpoint — 2026-11-16 (VP8L transform pre-score prune)
+
+L6 work counters on 512x512 photographs showed ~26 transform tasks each
+running a full greedy/optimal parse plus entropy plan; transform families
+predominated by near-duplicate predictor/cross-color compositions. The
+encode now pre-scores every task's transformed buffers with an order-0
+byte-plane entropy estimate (`stream_entropy`, ~O(pixels) per spec, no
+LZ77/DP work) and keeps a deterministic subset before any
+`family_search` runs: `Floor`/`Palette` unconditionally, plus per-family
+selection — each family's est-best task always runs, near-ties within
+`FAMILY_BAND` (6%) of the family best and `GLOBAL_BAND` (2.5x) of the
+global best are kept up to `FAMILY_CAP` (4). Estimation itself parallelizes
+under `rayon`; the keep mask is computed before the parallel fold so
+serial/rayon output stays byte-identical (pinned by
+`serial_and_parallel_evaluation_agree`).
+
+This is an **encoder search/RD change, not equivalent work**: the entropy
+estimate is a heuristic ranking, not a bound, and can in principle discard
+the true byte winner. The family-best hedge exists because order-0 entropy
+cannot see LZ77 match structure — a pure-predictor residual can
+out-encode every cross-color composition while scoring slightly worse
+(observed: `generated_transparent` 96x64, where naive global top-8 pruning
+regressed 110 -> 114 B and family-aware selection restored 110 B).
+
+Evidence so far (serial `work-count` scratch builds, not product rayon
+timings): grass L6 10.8 s -> 7.4 s, coffee L6 9.2 s -> 5.6 s; kept-task
+count ~13 of ~46 on grass. Byte sweep vs the pre-change HEAD worktree:
+24 diverse inputs (dev photos, generated synthetics incl. flat/text/ui/
+transparent, validation PNGs incl. boundary sizes, alpha logo, UI
+screenshot) all byte-identical at L6; L1 and L9 byte-identical on
+grass/coffee. `cargo test --locked --features work-count` (918 tests)
+green, including `transform_selection_keeps_family_best_and_respects_bands`
+and the rayon agreement test. Byte-identity on this sweep is evidence,
+not a proof — broader dev/validation frontier recapture is required
+before claiming the change is frontier-neutral, and per-image byte
+regressions remain possible on untested strata.

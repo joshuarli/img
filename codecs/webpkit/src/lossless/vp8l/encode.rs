@@ -546,9 +546,18 @@ fn build_best_tasks(breadth: Breadth) -> Vec<BestTask> {
     tasks
 }
 
+/// One transformed pixel stream awaiting its [`family_search`]: the transform
+/// plans to transmit and the working-width pixel buffer they produce. Specs are
+/// breadth-independent — the effort level only chooses which specs get searched.
+struct BufferSpec {
+    plans: Vec<TransformPlan>,
+    working_width: u32,
+    pixels: Vec<u32>,
+}
+
 /// Evaluate one task into its ordered candidate streams at `breadth`. The four
-/// `*_streams` helpers hold the family logic once, shared by the serial and rayon
-/// evaluators.
+/// `*_specs` helpers hold the family transform logic once; the serial and rayon
+/// evaluators share them through [`run_best_task`].
 fn run_best_task(
     task: BestTask,
     breadth: Breadth,
@@ -558,19 +567,41 @@ fn run_best_task(
     argb: &[u32],
     planes: Option<&PlaneCache>,
 ) -> Vec<Vec<u8>> {
-    match task {
-        BestTask::Floor => floor_streams(breadth, width, height, alpha_used, argb),
-        BestTask::Palette => palette_streams(breadth, width, height, alpha_used, argb),
-        BestTask::Predictor(bits) => {
-            predictor_streams(breadth, width, height, alpha_used, argb, bits, planes)
-        },
-        BestTask::CrossColor(bits) => {
-            cross_color_streams(breadth, width, height, alpha_used, argb, bits)
-        },
-        BestTask::PredictorCross(p_bits, cc_bits) => {
-            predictor_cross_streams(
-                breadth, width, height, alpha_used, argb, p_bits, cc_bits, planes,
+    if matches!(task, BestTask::Floor) {
+        return floor_streams(breadth, width, height, alpha_used, argb);
+    }
+    task_specs(task, width, height, argb, planes)
+        .into_iter()
+        .map(|spec| {
+            family_search(
+                breadth,
+                width,
+                height,
+                alpha_used,
+                &spec.plans,
+                spec.working_width,
+                &spec.pixels,
             )
+        })
+        .collect()
+}
+
+/// The transformed streams one task would search, in emission order. `Floor`
+/// has no specs — it is the [`encode_with`] floor evaluated unconditionally.
+fn task_specs(
+    task: BestTask,
+    width: u32,
+    height: u32,
+    argb: &[u32],
+    planes: Option<&PlaneCache>,
+) -> Vec<BufferSpec> {
+    match task {
+        BestTask::Floor => Vec::new(),
+        BestTask::Palette => palette_specs(width, argb),
+        BestTask::Predictor(bits) => predictor_specs(width, height, argb, bits, planes),
+        BestTask::CrossColor(bits) => cross_color_specs(width, height, argb, bits),
+        BestTask::PredictorCross(p_bits, cc_bits) => {
+            predictor_cross_specs(width, height, argb, p_bits, cc_bits, planes)
         },
     }
 }
@@ -583,6 +614,26 @@ fn effective_chain_cap(breadth_cap: u32, pixels: usize) -> u32 {
     } else {
         breadth_cap
     }
+}
+
+/// Order-0 entropy (bits) of the four byte planes of a transformed pixel
+/// stream — the cheap pre-score that ranks transform candidates before any
+/// LZ77/DP work runs.
+fn stream_entropy(pixels: &[u32]) -> f64 {
+    let mut counts = [[0u64; 256]; 4];
+    for &p in pixels {
+        for (i, b) in p.to_le_bytes().iter().enumerate() {
+            counts[i][*b as usize] += 1;
+        }
+    }
+    let n = pixels.len() as f64;
+    let mut bits = 0.0;
+    for plane in counts {
+        for &c in plane.iter().filter(|&&c| c > 0) {
+            bits -= (c as f64) * ((c as f64) / n).log2();
+        }
+    }
+    bits
 }
 
 /// Run one transform family's search at `breadth`: adds the optimal-parse and
@@ -646,28 +697,16 @@ fn floor_streams(
 }
 
 /// The palette family (empty when the image has > 256 distinct colors).
-fn palette_streams(
-    breadth: Breadth,
-    width: u32,
-    height: u32,
-    alpha_used: bool,
-    argb: &[u32],
-) -> Vec<Vec<u8>> {
+fn palette_specs(width: u32, argb: &[u32]) -> Vec<BufferSpec> {
     if let Some(p) = palette::forward(argb, width) {
-        let working_width = subsample_size(width, p.bits);
-        let plans = [TransformPlan::ColorIndexing {
-            num_colors: p.num_colors,
-            colormap: p.colormap,
-        }];
-        vec![family_search(
-            breadth,
-            width,
-            height,
-            alpha_used,
-            &plans,
-            working_width,
-            &p.bundled,
-        )]
+        vec![BufferSpec {
+            plans: vec![TransformPlan::ColorIndexing {
+                num_colors: p.num_colors,
+                colormap: p.colormap,
+            }],
+            working_width: subsample_size(width, p.bits),
+            pixels: p.bundled,
+        }]
     } else {
         Vec::new()
     }
@@ -765,50 +804,41 @@ fn plane<'a>(
 
 /// The predictor family at one tile size: predictor alone, then predictor +
 /// subtract-green (spatial before pointwise).
-fn predictor_streams(
-    breadth: Breadth,
+fn predictor_specs(
     width: u32,
     height: u32,
-    alpha_used: bool,
     argb: &[u32],
     bits: u32,
     planes: Option<&PlaneCache>,
-) -> Vec<Vec<u8>> {
+) -> Vec<BufferSpec> {
     let hit = planes.and_then(|p| p.raw(bits));
     let owned = hit
         .is_none()
         .then(|| predictor::forward(argb, width, height, bits));
     let (residual, tile_data) = plane(hit, &owned);
-    let alone = family_search(
-        breadth,
-        width,
-        height,
-        alpha_used,
-        &[TransformPlan::Predictor {
-            bits,
-            tile_data: tile_data.to_vec(),
-        }],
-        width,
-        residual,
-    );
     let mut residual_sg = residual.to_vec();
     subtract_green::forward(&mut residual_sg);
-    let with_sg = family_search(
-        breadth,
-        width,
-        height,
-        alpha_used,
-        &[
-            TransformPlan::Predictor {
+    vec![
+        BufferSpec {
+            plans: vec![TransformPlan::Predictor {
                 bits,
                 tile_data: tile_data.to_vec(),
-            },
-            TransformPlan::SubtractGreen,
-        ],
-        width,
-        &residual_sg,
-    );
-    vec![alone, with_sg]
+            }],
+            working_width: width,
+            pixels: residual.to_vec(),
+        },
+        BufferSpec {
+            plans: vec![
+                TransformPlan::Predictor {
+                    bits,
+                    tile_data: tile_data.to_vec(),
+                },
+                TransformPlan::SubtractGreen,
+            ],
+            working_width: width,
+            pixels: residual_sg,
+        },
+    ]
 }
 
 /// The predictor+cross-color composition at one `(predictor, cross-color)` tile
@@ -817,16 +847,14 @@ fn predictor_streams(
 /// predictor+subtract-green on photographic content). Emitted in libwebp's
 /// application order — subtract-green, then predictor, then cross-color — and
 /// self-floored by real bytes like every other candidate.
-fn predictor_cross_streams(
-    breadth: Breadth,
+fn predictor_cross_specs(
     width: u32,
     height: u32,
-    alpha_used: bool,
     argb: &[u32],
     p_bits: u32,
     cc_bits: u32,
     planes: Option<&PlaneCache>,
-) -> Vec<Vec<u8>> {
+) -> Vec<BufferSpec> {
     // libwebp's order: subtract-green first, then predictor, then cross-color.
     let sg_hit = planes.and_then(|p| p.sg_pred(p_bits));
     let sg_owned = sg_hit.is_none().then(|| {
@@ -836,12 +864,8 @@ fn predictor_cross_streams(
     });
     let (pres, ptile) = plane(sg_hit, &sg_owned);
     let (stored, ctile) = cross_color::forward(pres, width, height, cc_bits);
-    let with_sg = family_search(
-        breadth,
-        width,
-        height,
-        alpha_used,
-        &[
+    let with_sg = BufferSpec {
+        plans: vec![
             TransformPlan::SubtractGreen,
             TransformPlan::Predictor {
                 bits: p_bits,
@@ -852,9 +876,9 @@ fn predictor_cross_streams(
                 tile_data: ctile,
             },
         ],
-        width,
-        &stored,
-    );
+        working_width: width,
+        pixels: stored,
+    };
     // The same composition without subtract-green — cwebp picks [P, CC] on
     // astronaut.png where SG hurts rather than helps.
     let raw_hit = planes.and_then(|p| p.raw(p_bits));
@@ -863,12 +887,8 @@ fn predictor_cross_streams(
         .then(|| predictor::forward(argb, width, height, p_bits));
     let (pres3, ptile3) = plane(raw_hit, &raw_owned);
     let (stored3, ctile3) = cross_color::forward(pres3, width, height, cc_bits);
-    let no_sg = family_search(
-        breadth,
-        width,
-        height,
-        alpha_used,
-        &[
+    let no_sg = BufferSpec {
+        plans: vec![
             TransformPlan::Predictor {
                 bits: p_bits,
                 tile_data: ptile3.to_vec(),
@@ -878,50 +898,36 @@ fn predictor_cross_streams(
                 tile_data: ctile3,
             },
         ],
-        width,
-        &stored3,
-    );
+        working_width: width,
+        pixels: stored3,
+    };
     vec![with_sg, no_sg]
 }
 
 /// The cross-color family at one tile size: cross-color alone, then cross-color +
 /// subtract-green.
-fn cross_color_streams(
-    breadth: Breadth,
-    width: u32,
-    height: u32,
-    alpha_used: bool,
-    argb: &[u32],
-    bits: u32,
-) -> Vec<Vec<u8>> {
+fn cross_color_specs(width: u32, height: u32, argb: &[u32], bits: u32) -> Vec<BufferSpec> {
     let (stored, tile_data) = cross_color::forward(argb, width, height, bits);
-    let alone = family_search(
-        breadth,
-        width,
-        height,
-        alpha_used,
-        &[TransformPlan::CrossColor {
-            bits,
-            tile_data: tile_data.clone(),
-        }],
-        width,
-        &stored,
-    );
-    let mut stored_sg = stored;
+    let mut stored_sg = stored.clone();
     subtract_green::forward(&mut stored_sg);
-    let with_sg = family_search(
-        breadth,
-        width,
-        height,
-        alpha_used,
-        &[
-            TransformPlan::CrossColor { bits, tile_data },
-            TransformPlan::SubtractGreen,
-        ],
-        width,
-        &stored_sg,
-    );
-    vec![alone, with_sg]
+    vec![
+        BufferSpec {
+            plans: vec![TransformPlan::CrossColor {
+                bits,
+                tile_data: tile_data.clone(),
+            }],
+            working_width: width,
+            pixels: stored,
+        },
+        BufferSpec {
+            plans: vec![
+                TransformPlan::CrossColor { bits, tile_data },
+                TransformPlan::SubtractGreen,
+            ],
+            working_width: width,
+            pixels: stored_sg,
+        },
+    ]
 }
 
 /// Fold one family's ordered candidate streams into that family's minimum by REAL
@@ -955,6 +961,72 @@ fn reduce_task_minima(minima: impl IntoIterator<Item = Option<Vec<u8>>>) -> Vec<
         .unwrap_or_default()
 }
 
+/// Transform candidates fully searched per encode after the entropy
+/// pre-score ranks them. Selection is per transform family — each family's
+/// est-best task always runs, and further tasks run while their estimate
+/// stays within [`FAMILY_BAND`] of the family best, within
+/// [`GLOBAL_BAND`] of the global best, and under [`FAMILY_CAP`]. Family
+/// diversity matters because order-0 entropy cannot see LZ77 match
+/// structure: on flat synthetic content a pure-predictor residual can
+/// out-encode every cross-color composition while scoring slightly worse.
+const FAMILY_BAND: f64 = 1.06;
+const GLOBAL_BAND: f64 = 2.5;
+const FAMILY_CAP: usize = 4;
+
+/// One task's pre-search score: the cheapest order-0 entropy among its
+/// transformed buffers, or `None` for the spec-less floor.
+fn estimate_task(
+    task: BestTask,
+    width: u32,
+    height: u32,
+    argb: &[u32],
+    planes: Option<&PlaneCache>,
+) -> Option<f64> {
+    task_specs(task, width, height, argb, planes)
+        .iter()
+        .map(|spec| stream_entropy(&spec.pixels))
+        .reduce(f64::min)
+}
+
+/// Turn per-task estimates into the keep mask: `Floor`/`Palette` always
+/// kept; every other task ranked by its best buffer's order-0 entropy
+/// estimate, then each family keeps its best task plus near-ties under the
+/// bands above. Ties resolve to the earlier task so selection is
+/// deterministic and identical on the serial and rayon paths.
+fn select_from_estimates(tasks: &[BestTask], estimates: &[Option<f64>]) -> Vec<bool> {
+    let mut keep = vec![false; tasks.len()];
+    let mut scored: [Vec<(f64, usize)>; 3] = [Vec::new(), Vec::new(), Vec::new()];
+    let mut global_best = f64::INFINITY;
+    for (i, task) in tasks.iter().enumerate() {
+        if matches!(task, BestTask::Floor | BestTask::Palette) {
+            keep[i] = true;
+            continue;
+        }
+        let Some(est) = estimates[i] else { continue };
+        let family = match task {
+            BestTask::Predictor(_) => 0,
+            BestTask::CrossColor(_) => 1,
+            BestTask::PredictorCross(..) => 2,
+            _ => unreachable!(),
+        };
+        global_best = global_best.min(est);
+        scored[family].push((est, i));
+    }
+    for candidates in scored.iter_mut() {
+        candidates.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+        let Some(&(best_est, first)) = candidates.first() else { continue };
+        keep[first] = true;
+        let band = (best_est * FAMILY_BAND).min(global_best * GLOBAL_BAND);
+        for &(est, i) in candidates.iter().skip(1).take(FAMILY_CAP.saturating_sub(1)) {
+            if est > band {
+                break;
+            }
+            keep[i] = true;
+        }
+    }
+    keep
+}
+
 /// Run every task serially (default) or across a rayon thread pool (feature
 /// `rayon`), folding each family to its own minimum and then across families, so
 /// the peak never holds every candidate stream at once — only the running best
@@ -977,19 +1049,29 @@ fn evaluate_best_tasks(
     // Serial: `reduce_task_minima` drives the lazy map, so each family's streams
     // are produced, folded to one, and dropped before the next family runs.
     let planes = PlaneCache::build(breadth, width, height, argb);
+    let estimates: Vec<Option<f64>> = tasks
+        .iter()
+        .map(|t| estimate_task(*t, width, height, argb, planes.as_ref()))
+        .collect();
+    let keep = select_from_estimates(&tasks, &estimates);
     reduce_task_minima(
         tasks
             .into_iter()
-            .map(|t| {
-                keep_smallest(run_best_task(
-                    t,
-                    breadth,
-                    width,
-                    height,
-                    alpha_used,
-                    argb,
-                    planes.as_ref(),
-                ))
+            .zip(keep)
+            .map(|(t, k)| {
+                if k {
+                    keep_smallest(run_best_task(
+                        t,
+                        breadth,
+                        width,
+                        height,
+                        alpha_used,
+                        argb,
+                        planes.as_ref(),
+                    ))
+                } else {
+                    None
+                }
             }),
     )
 }
@@ -1007,18 +1089,28 @@ fn evaluate_best_tasks(
     // vec holds one stream per non-empty family (not every candidate); `collect`
     // keeps task order, so the fold below resolves ties identically to serial.
     let planes = PlaneCache::build(breadth, width, height, argb);
+    let estimates: Vec<Option<f64>> = tasks
+        .par_iter()
+        .map(|t| estimate_task(*t, width, height, argb, planes.as_ref()))
+        .collect();
+    let keep = select_from_estimates(&tasks, &estimates);
     let minima: Vec<Option<Vec<u8>>> = tasks
         .into_par_iter()
-        .map(|t| {
-            keep_smallest(run_best_task(
-                t,
-                breadth,
-                width,
-                height,
-                alpha_used,
-                argb,
-                planes.as_ref(),
-            ))
+        .zip(keep)
+        .map(|(t, k)| {
+            if k {
+                keep_smallest(run_best_task(
+                    t,
+                    breadth,
+                    width,
+                    height,
+                    alpha_used,
+                    argb,
+                    planes.as_ref(),
+                ))
+            } else {
+                None
+            }
         })
         .collect();
     reduce_task_minima(minima)
@@ -2072,32 +2164,88 @@ mod tests {
         assert_eq!(reduce_task_minima(ties_minima), vec![7u8; 4]);
     }
 
+    #[test]
+    fn transform_selection_keeps_family_best_and_respects_bands() {
+        // The keep mask always retains Floor/Palette and each family's
+        // est-best task (the hedge against order-0 entropy missing LZ77
+        // structure), keeps near-ties within the family/global bands, and
+        // caps each family at FAMILY_CAP.
+        use super::{BestTask, select_from_estimates, FAMILY_CAP};
+        let mut tasks = vec![
+            BestTask::Floor,
+            BestTask::Palette,
+            BestTask::Predictor(4),
+            BestTask::Predictor(5),
+            BestTask::CrossColor(4),
+            BestTask::CrossColor(5),
+        ];
+        let mut estimates = vec![
+            None,
+            Some(100.0),
+            Some(50.0),
+            Some(52.0),
+            Some(500.0),
+            Some(600.0),
+        ];
+        for k in 0..(FAMILY_CAP + 1) {
+            tasks.push(BestTask::PredictorCross(4, 4 + k as u32));
+            estimates.push(Some(30.0 + k as f64 * 0.4));
+        }
+        let keep = select_from_estimates(&tasks, &estimates);
+        assert!(keep[0] && keep[1], "floor and palette always run");
+        assert!(keep[2] && keep[3], "predictor near-ties stay inside the band");
+        assert!(keep[4], "a family's est-best runs even far from the global best");
+        assert!(!keep[5], "a far estimate outside the band is pruned");
+        let pc_kept = keep[tasks.len() - FAMILY_CAP - 1..]
+            .iter()
+            .filter(|&&k| k)
+            .count();
+        assert_eq!(pc_kept, FAMILY_CAP, "the family cap bounds near-ties");
+        assert!(
+            !keep[tasks.len() - 1],
+            "the (cap + 1)-th near-tie is pruned"
+        );
+    }
+
     #[cfg(feature = "rayon")]
     #[test]
     fn serial_and_parallel_evaluation_agree() {
         use super::{
-            PlaneCache, build_best_tasks, evaluate_best_tasks, keep_smallest,
-            reduce_task_minima, run_best_task, schedule,
+            PlaneCache, build_best_tasks, encode_best, estimate_task, evaluate_best_tasks,
+            keep_smallest, reduce_task_minima, run_best_task, schedule,
+            select_from_estimates,
         };
         let breadth = schedule(crate::effort::MAX_LEVEL);
         for (w, h, pixels) in byte_stability_cases() {
             let alpha = pixels.iter().any(|&p| p >> 24 != 0xff);
-            // Independent serial reference: fold each family's own minimum in task
-            // order (the serial `evaluate_best_tasks` is not compiled under rayon).
+            // Independent serial reference: the same entropy pre-score and keep
+            // mask the evaluator computes, folding each kept family's own
+            // minimum in task order.
             let planes = PlaneCache::build(breadth, w, h, &pixels);
+            let tasks = build_best_tasks(breadth);
+            let estimates: Vec<Option<f64>> = tasks
+                .iter()
+                .map(|t| estimate_task(*t, w, h, &pixels, planes.as_ref()))
+                .collect();
+            let keep = select_from_estimates(&tasks, &estimates);
             let serial = reduce_task_minima(
-                build_best_tasks(breadth)
+                tasks
                     .into_iter()
-                    .map(|t| {
-                        keep_smallest(run_best_task(
-                            t,
-                            breadth,
-                            w,
-                            h,
-                            alpha,
-                            &pixels,
-                            planes.as_ref(),
-                        ))
+                    .zip(keep)
+                    .map(|(t, k)| {
+                        if k {
+                            keep_smallest(run_best_task(
+                                t,
+                                breadth,
+                                w,
+                                h,
+                                alpha,
+                                &pixels,
+                                planes.as_ref(),
+                            ))
+                        } else {
+                            None
+                        }
                     }),
             );
             // The rayon evaluator (feature on) must match the serial reference and
@@ -2346,20 +2494,21 @@ mod tests {
         // back to the source. A function-replacement mutant returning `vec![]`
         // produces no candidates — caught by the length assert; the decodes pin that
         // both streams are correct.
-        use super::{cross_color_streams, schedule};
+        use super::{run_best_task, schedule, BestTask};
         let pixels: Vec<u32> = (0..64u32)
             .map(|i| {
                 let g = i * 2;
                 argb(255, g >> 1, g, g >> 2)
             })
             .collect();
-        let streams = cross_color_streams(
+        let streams = run_best_task(
+            BestTask::CrossColor(3),
             schedule(crate::effort::MAX_LEVEL),
             8,
             8,
             alpha_used(&pixels),
             &pixels,
-            3,
+            None,
         );
         assert_eq!(
             streams.len(),
