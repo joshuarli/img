@@ -505,9 +505,13 @@ to fixed-point `shannon_bits` so the path compiles without `std`, and a
 missing `alloc::vec::Vec` import in `lossy/trellis.rs` was repaired.
 A tile-row-parallel `cross_color::forward` was tried and reverted: it
 regressed coffee ~7% under nested rayon while the serial forward inside
-the task-parallel evaluator already saturates cores. Interleaved A/B on
-a busy host (perf gate deferred): coffee L6 ~6.6 s -> ~6.4 s, grass
-~10.4 s -> ~10.0 s — directional only. Verification: 922 lib tests +
+the task-parallel evaluator already saturates cores. Gated A/B
+(`perf-gate-ready` 0 before and after, 3 interleaved rounds, rayon
+`work-count` scratch): coffee L6 7.4 s -> 6.6 s median (~11% faster,
+consistent all rounds); grass L6 14.3 s -> 14.7 s median (~3% slower,
+consistent but under the 5% regression alarm — eval/search-bound
+stratum pays the cache's clone traffic while estimate-bound strata
+gain). Verification: 922 lib tests +
 doc tests green, alloc-only check green, serial/rayon byte-identical,
 and 24/24 sweep images (dev + validation, L6) byte-identical vs the
 pre-cache HEAD.
