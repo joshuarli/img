@@ -436,5 +436,24 @@ records are exact-sample, score null):
   as an honest limitation; relaxing `checked_sdr` is a color-fidelity
   contract decision, not a benchmark fix.
 
-Timed five-round capture at the same revision is in flight; the workflow
-speed gate still measures the exact selector (~12 s grass t90 wall).
+Timed five-round capture at `773dfd3`
+([timed-repaired](../benchmarks/results/timed-repaired-2026-11-15.json)):
+accepted host gate, one Rayon thread, 1400 records / 700 completed.
+Workflow walls vs the withdrawn oracle (median ms, img vs withdrawn):
+
+| Case / minimum target | img | Withdrawn | Ratio |
+| --- | ---: | ---: | ---: |
+| coffee / 80 | 9,977 | 342 | 29.2x |
+| coffee / 95 | 9,929 | 312 | 31.8x |
+| grass / 90 | 11,773 | 442 | 26.6x |
+| gravel / 90 | 15,032 | 432 | 34.8x |
+| large / 80 | 25,579 | 2,161 | 11.8x |
+| ui / 80 | 376 | 21 | 18.3x |
+
+The photographic band roughly doubled versus the heuristic build (grass
+t90 was 1,789 ms) because the exact selector now pays the deep lossless
+candidate (~8 s per the L6 band note) on every scored request; coffee and
+large were already deep-search-bound. Wall time remains the dominant
+measured gap: ~12–35x on photos, ~18x on tiny UI, ~12x on the 2 MP
+fixture. Next per the brief: profile the repaired pipeline and attack the
+repeated transform/parse/trellis work structurally.
