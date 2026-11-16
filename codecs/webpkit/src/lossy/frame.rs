@@ -1823,6 +1823,13 @@ struct QuantPlan<'a> {
     rate: Option<&'a RateMemo>,
 }
 
+/// Chroma trellis rate weight relative to the shared `q_ac^2` base. libwebp prices
+/// UV coefficient decisions with `lambda_trellis_uv = q_uv^2 << 1` — twice the shared
+/// base — while luma planes keep `q^2`; measured ×2 wins on smooth-chroma content
+/// (coffee/astronaut/large −2…−19% at fixed quality) and is byte-neutral on noisy
+/// fixtures, while ×4 regresses the coffee frontier.
+const CHROMA_TRELLIS_LAMBDA_MULT: i64 = 2;
+
 /// Quantize one 4×4 coefficient block, choosing rate-distortion trellis levels
 /// (`uses_trellis`, the Balanced/Best path) or round-to-nearest (`Fast`). Both
 /// return the same self-consistent [`Quantized`] (`recon = level * q`), so the choice
@@ -1840,7 +1847,8 @@ fn quantize_one(
 ) -> Quantized {
     work!(QuantizeCall);
     if uses_trellis {
-        let lambda = trellis_lambda(pair.ac.q);
+        let lambda = trellis_lambda(pair.ac.q)
+            * if plane == 2 { CHROMA_TRELLIS_LAMBDA_MULT } else { 1 };
         trellis_quantize_block(coeffs, pair, first, 0, plane, probas, lambda, rate)
     } else {
         quantize_block(coeffs, pair, first)
@@ -4070,14 +4078,14 @@ mod tests {
     /// (it prints the actual table on mismatch) and pasting the printed block here.
     const GOLDEN_EXPECTED: &str = "\
 gradient fast 190 fdbe0b6ce4ec645c
-gradient balanced 104 8ded861974c278bc
-gradient best 104 8ded861974c278bc
+gradient balanced 105 c3fa10bfb22fa948
+gradient best 105 c3fa10bfb22fa948
 noisy fast 7975 f970e253b081638d
-noisy balanced 3881 618441a165a040b1
-noisy best 3547 a5e43ed54aded19c
+noisy balanced 3710 36c5b31737c8aa75
+noisy best 3374 79d0f255b1caa4d9
 flat fast 40 66b6a4ee87e184a3
-flat balanced 39 345288bf6a40e2d0
-flat best 39 345288bf6a40e2d0
+flat balanced 39 2f5a1f125c0a5180
+flat best 39 2f5a1f125c0a5180
 checker fast 65 a42deaf46567ecd9
 checker balanced 56 6b05842252d1046e
 checker best 56 6b05842252d1046e
@@ -4088,11 +4096,11 @@ diagonal fast 415 46ac66199192122b
 diagonal balanced 293 36aa8a54dc5eb621
 diagonal best 349 2ba2e2781061fdf2
 mixed fast 4363 13644d2cc4723cd5
-mixed balanced 2159 3af8b6ed8eccb0fd
-mixed best 2174 582833946b84b7ff
+mixed balanced 1994 bb7283282f345f85
+mixed best 2008 d0610ce471febf65
 horizontal fast 667 81e58ac967acf023
-horizontal balanced 228 44a8805702dc56f3
-horizontal best 179 c5581b29de7c8018";
+horizontal balanced 228 0f91560a730ee795
+horizontal best 179 a6e45cac896f8df8";
 
     /// Golden exact-encode test — THE high-leverage encoder-decision net. Encodes a
     /// diverse set of fixed images (smooth gradient, AC-rich noise, flat blocks,
@@ -4402,8 +4410,8 @@ horizontal best 179 c5581b29de7c8018";
         };
         let (_p0, _t, default_total, optimized_total, _probas) =
             emit_best_partitions(&mb_plans, mb_w, mb_h, header, skip);
-        assert_eq!(default_total, 5687, "default candidate byte-length sum");
-        assert_eq!(optimized_total, 3868, "optimized candidate byte-length sum");
+        assert_eq!(default_total, 5387, "default candidate byte-length sum");
+        assert_eq!(optimized_total, 3697, "optimized candidate byte-length sum");
     }
 
     #[test]
@@ -4643,10 +4651,10 @@ horizontal best 179 c5581b29de7c8018";
     /// under each of those mutations. Regenerate by running this test (it prints the
     /// actual table on mismatch) and pasting the block.
     const RD_GOLDEN_EXPECTED: &str = "\
-rd_rx0_ry5_d0_q48 2bce915f7a05d74e
-rd_rx1_ry0_d0_q8 1daa25995d507435
-rd_rx0_ry2_d0_q24 8604d11657ea072d
-rd_rx0_ry5_d60_q24 0acc155f545eae02";
+rd_rx0_ry5_d0_q48 685d8884eeb80688
+rd_rx1_ry0_d0_q8 27366a70a419ee38
+rd_rx0_ry2_d0_q24 899390d297f5b6e8
+rd_rx0_ry5_d60_q24 079a9f9b95bdd452";
 
     #[test]
     fn rd_cost_arithmetic_golden() {
