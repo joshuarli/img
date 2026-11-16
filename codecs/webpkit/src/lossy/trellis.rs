@@ -402,6 +402,28 @@ pub(crate) fn trellis_quantize_block(
 ) -> Quantized {
     let pb = &bands[plane];
 
+    // Forced-empty pre-scan: when every position's nearest level is zero, each
+    // position's candidate set collapses to `{0}` and the DP can only reproduce
+    // the all-zero path that `empty_total` already prices — return it directly.
+    // `quantize_sharpened(..) != 0` is exactly the `l0 >= 1` candidate gate below,
+    // so a nonzero nearest level is the only way a nonzero magnitude can appear.
+    let mut any_nonzero = false;
+    for n in first..16 {
+        let j = ZIGZAG[n];
+        let factor = if j == 0 { pair.dc } else { pair.ac };
+        if factor.quantize_sharpened(i32::from(coeffs[j]), pair.sharpen[j]) != 0 {
+            any_nonzero = true;
+            break;
+        }
+    }
+    if !any_nonzero {
+        return Quantized {
+            levels: [0; 16],
+            recon: [0; 16],
+            last: first as i32 - 1,
+        };
+    }
+
     // suffix_dist[n] = squared error of coding positions n..16 all as zero. Used to
     // charge the distortion of the trailing zeros the terminal EOB skips.
     let mut suffix_dist = [0i64; 17];
