@@ -1128,7 +1128,11 @@ fn estimate_specs(
 /// estimate, then each family keeps its best task plus near-ties under the
 /// bands above. Ties resolve to the earlier task so selection is
 /// deterministic and identical on the serial and rayon paths.
-fn select_from_estimates(tasks: &[BestTask], estimates: &[Option<u64>]) -> Vec<bool> {
+fn select_from_estimates(
+    tasks: &[BestTask],
+    estimates: &[Option<u64>],
+    band_family_best: bool,
+) -> Vec<bool> {
     let mut keep = vec![false; tasks.len()];
     let mut scored: [Vec<(u64, usize)>; 3] = [Vec::new(), Vec::new(), Vec::new()];
     let mut global_best = u64::MAX;
@@ -1150,6 +1154,15 @@ fn select_from_estimates(tasks: &[BestTask], estimates: &[Option<u64>]) -> Vec<b
     for candidates in scored.iter_mut() {
         candidates.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
         let Some(&(best_est, first)) = candidates.first() else { continue };
+        // On wide task sets the family best is no longer unconditional: a
+        // family whose best estimate stands more than ~1.5x above the
+        // global best has never produced the byte winner on the corpus,
+        // and searching it costs a full family_search per spec. Narrow
+        // task sets keep the unconditional hedge — their estimates are too
+        // coarse to trust the band. Near-ties keep the wider 2.5x band.
+        if band_family_best && best_est.saturating_mul(2) > global_best.saturating_mul(3) {
+            continue;
+        }
         keep[first] = true;
         for &(est, i) in candidates.iter().skip(1).take(FAMILY_CAP.saturating_sub(1)) {
             // est <= best_est * 1.06 and est <= global_best * 2.5, in integers.
@@ -1256,7 +1269,8 @@ fn evaluate_best_tasks(
     // are produced, folded to one, and dropped before the next family runs.
     let planes = PlaneCache::build(breadth, width, height, argb);
     let cc = CrossColorCache::new(&tasks, argb.len());
-    let prov = if provisional_prunes(&tasks) {
+    let wide = provisional_prunes(&tasks);
+    let prov = if wide {
         let cheap: Vec<Option<u64>> = tasks
             .iter()
             .map(|t| estimate_task(*t, width, height, argb, planes.as_ref(), None, true))
@@ -1280,7 +1294,7 @@ fn evaluate_best_tasks(
         .iter()
         .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
         .collect();
-    let keep = select_from_estimates(&tasks, &estimates);
+    let keep = select_from_estimates(&tasks, &estimates, wide);
     let spec_masks = spec_keep_masks(&spec_ests);
     reduce_task_minima(
         tasks
@@ -1321,7 +1335,8 @@ fn evaluate_best_tasks(
     // keeps task order, so the fold below resolves ties identically to serial.
     let planes = PlaneCache::build(breadth, width, height, argb);
     let cc = CrossColorCache::new(&tasks, argb.len());
-    let prov = if provisional_prunes(&tasks) {
+    let wide = provisional_prunes(&tasks);
+    let prov = if wide {
         let cheap: Vec<Option<u64>> = tasks
             .par_iter()
             .map(|t| estimate_task(*t, width, height, argb, planes.as_ref(), None, true))
@@ -1345,7 +1360,7 @@ fn evaluate_best_tasks(
         .iter()
         .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
         .collect();
-    let keep = select_from_estimates(&tasks, &estimates);
+    let keep = select_from_estimates(&tasks, &estimates, wide);
     let spec_masks = spec_keep_masks(&spec_ests);
     let minima: Vec<Option<Vec<u8>>> = tasks
         .into_par_iter()
@@ -2423,8 +2438,8 @@ mod tests {
     #[test]
     fn transform_selection_keeps_family_best_and_respects_bands() {
         // The keep mask always retains Floor/Palette and each family's
-        // est-best task (the hedge against order-0 entropy missing LZ77
-        // structure), keeps near-ties within the family/global bands, and
+        // est-best task when it stands within ~1.5x of the global best
+        // estimate, keeps near-ties within the family/global bands, and
         // caps each family at FAMILY_CAP.
         use super::{BestTask, select_from_estimates, FAMILY_CAP};
         let mut tasks = vec![
@@ -2438,8 +2453,8 @@ mod tests {
         let mut estimates = vec![
             None,
             Some(100_000),
-            Some(50_000),
-            Some(52_000),
+            Some(40_000),
+            Some(41_600),
             Some(500_000),
             Some(600_000),
         ];
@@ -2447,11 +2462,13 @@ mod tests {
             tasks.push(BestTask::PredictorCross(4, 4 + k as u32));
             estimates.push(Some(30_000 + k as u64 * 400));
         }
-        let keep = select_from_estimates(&tasks, &estimates);
+        let keep = select_from_estimates(&tasks, &estimates, true);
         assert!(keep[0] && keep[1], "floor and palette always run");
         assert!(keep[2] && keep[3], "predictor near-ties stay inside the band");
-        assert!(keep[4], "a family's est-best runs even far from the global best");
-        assert!(!keep[5], "a far estimate outside the band is pruned");
+        assert!(
+            !keep[4] && !keep[5],
+            "a family best beyond ~1.5x of the global best is pruned with its near-ties"
+        );
         let pc_kept = keep[tasks.len() - FAMILY_CAP - 1..]
             .iter()
             .filter(|&&k| k)
@@ -2481,7 +2498,8 @@ mod tests {
             let planes = PlaneCache::build(breadth, w, h, &pixels);
             let tasks = build_best_tasks(breadth);
             let cc = CrossColorCache::new(&tasks, pixels.len());
-            let prov = if provisional_prunes(&tasks) {
+            let wide = provisional_prunes(&tasks);
+            let prov = if wide {
                 let cheap: Vec<Option<u64>> = tasks
                     .iter()
                     .map(|t| estimate_task(*t, w, h, &pixels, planes.as_ref(), None, true))
@@ -2505,7 +2523,7 @@ mod tests {
                 .iter()
                 .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
                 .collect();
-            let keep = select_from_estimates(&tasks, &estimates);
+            let keep = select_from_estimates(&tasks, &estimates, wide);
             let spec_masks = spec_keep_masks(&spec_ests);
             let serial = reduce_task_minima(
                 tasks

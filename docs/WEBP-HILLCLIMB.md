@@ -588,3 +588,35 @@ vs pre-two-phase `bc9140a`: coffee 6.61 -> 3.76 s (~43%), grass
 14.43 -> 9.03 s (~37%). Bytes: 24/24 L6 + L1/L9 spot checks
 byte-identical; serial/rayon identical; 922 lib + doc + alloc-only
 green.
+
+Match-coverage estimate experiment REJECTED (uncommitted): sampled
+LZ77 pair coverage (direct-mapped 64K-slot table, stride 4, 16K window)
+discounted order-0 entropy as `est * (1024 - cov) / 1024` to model
+backreference redundancy order-0 entropy cannot see. Offline replay on
+four corpus dumps showed it reorders near-tied predictor+cross-color
+specs by up to ~3% — enough to push the true byte winner past
+`FAMILY_CAP` on `validation_chelsea` (+164 B, ~0.1%) even with the
+family-best band removed. The discount is too coarse at the fine
+grain where kept candidates actually differ (<0.5%), so it was
+reverted to raw entropy. Coverage remains a plausible ORDERING signal
+only if used at coarse granularity (family standing), never inside the
+per-spec ordering the cap depends on.
+
+Family-best global band LANDED (pending commit): `select_from_estimates`
+kept each family's entropy-best task unconditionally as the hedge
+against order-0 entropy missing LZ77 structure — but on the corpus
+that best never won from >~1.5x the global best estimate
+(cross-color-alone families sit at 1.13-1.48x and always lose by
+12-46% bytes). The band `best_est * 2 <= global_best * 3` now gates
+the family best, but ONLY on wide task sets (`provisional_prunes`):
+narrow levels keep the unconditional hedge because their coarse
+task sets produced a real regression — `generated_transparent` L1
+went 198 -> 228 B (+15%) under the ungated band. Offline replay:
+coffee kept tasks 9 -> 7, grass 12 -> 11, astronaut 10 -> 8,
+text 12 -> 11, winner kept everywhere. Byte sweep: 24/24 L6 +
+L1/L9 spot checks byte-identical vs `dda39c0` (the one L1 diff was
+the ungated variant, fixed by the `wide` gate). Gated A/B vs
+`dda39c0` (pre-gate 0, `time=` medians of 5 interleaved rounds):
+coffee L6 ~3.76 s -> ~3.76 s (neutral — its pruned family bests
+were already spec-masked), grass L6 ~9.31 s -> ~8.56 s (~8%
+faster).
