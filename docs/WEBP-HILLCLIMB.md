@@ -494,3 +494,20 @@ and the rayon agreement test. Byte-identity on this sweep is evidence,
 not a proof — broader dev/validation frontier recapture is required
 before claiming the change is frontier-neutral, and per-image byte
 regressions remain possible on untested strata.
+
+Follow-up (same day): `CrossColorCache` now memoizes `cross_color::forward`
+output by (composition, predictor bits, cross-color bits) across the
+estimate and kept-task search passes — previously each surviving task
+re-ran the full multiplier sweep. Bounded by the same pixel cap as
+`PlaneCache`, `Mutex` under `std` / `RefCell` under alloc-only, inline
+fallback beyond the cap. The order-0 pre-score moved from `f64`/`log2`
+to fixed-point `shannon_bits` so the path compiles without `std`, and a
+missing `alloc::vec::Vec` import in `lossy/trellis.rs` was repaired.
+A tile-row-parallel `cross_color::forward` was tried and reverted: it
+regressed coffee ~7% under nested rayon while the serial forward inside
+the task-parallel evaluator already saturates cores. Interleaved A/B on
+a busy host (perf gate deferred): coffee L6 ~6.6 s -> ~6.4 s, grass
+~10.4 s -> ~10.0 s — directional only. Verification: 922 lib tests +
+doc tests green, alloc-only check green, serial/rayon byte-identical,
+and 24/24 sweep images (dev + validation, L6) byte-identical vs the
+pre-cache HEAD.
