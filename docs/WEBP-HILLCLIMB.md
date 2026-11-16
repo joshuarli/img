@@ -547,20 +547,25 @@ there is not the remaining lever. Lossy side profiled for contrast
 is ~30x faster than lossless on the same input, so the frontier gap
 stays lossless-side.
 
-Next experiment sketched (two-phase estimate): a single global
-multiplier does NOT cheapen the forward — sweep evals scale with
-pixels either way (~256 x n x ~7 sweeps). The cheap phase must cut
-per-eval work: subsample tile pixels (e.g. stride 2-4) inside the
-multiplier sweeps for a provisional entropy ranking only, then run
-real forwards + `stream_entropy` just for provisional keepers (wide
-bands, e.g. family-best + ~30-50% near-ties + global ~4x, cap ~8-10
-per family) and apply the existing `select_from_estimates` bands on
-the REAL estimates so finalist selection is unchanged. `CrossColorCache`
-keeps serving real forwards only (cheap-phase results must not enter
-it); eval path unchanged. Expected est-phase ~30-50% reduction on
-estimate-bound strata (coffee-like), near-zero on search-bound
-(grass-like); provisional pruning is the only byte-risk surface —
-validate with the 24-image L6 sweep plus frontier size check, keep only
-if bytes hold or improve. Rough cost: ~100 lines across
-`transform/cross_color.rs` (subsampled sweep entry) and
-`vp8l/encode.rs` (provisional mask + second estimate pass).
+Two-phase estimate LANDED (`1abcc0c`, implemented slightly
+differently than sketched — the coarse phase cuts multiplier-sweep
+evals rather than subsampling pixels): `cross_color::forward_estimate`
+runs `forward_impl` with `mult_step = 4` (every fourth `i8`
+candidate) and `refine_rounds = 1` (initial blue sweeps only) —
+`forward` itself is `forward_impl(.., 1, MAX_CC_REFINE_ROUNDS)`, so
+the exact path is unchanged. `estimate_task` takes `cheap_cc`; cheap
+specs call `forward_estimate` directly and never touch
+`CrossColorCache`. `select_provisional` keeps Floor/Palette plus each
+family's `PROVISIONAL_CAP = 8` best cheap estimates; the real pass
+runs `estimate_task(.., cheap_cc = false)` only for those, and
+`select_from_estimates` then applies the unchanged real-estimate
+bands. `provisional_prunes` skips the coarse pass entirely when no
+family exceeds the cap (levels 0-2), so narrow breadths estimate
+exactly as before. Gated A/B (`perf-gate-ready` 0 before, 5
+interleaved rounds, `work-count` scratch, host busy again at the
+post-check from the measurement's own rayon load): coffee L6
+6.61 s -> 3.97 s median (~40% faster, consistent all rounds); grass
+L6 14.43 s -> 11.06 s (~23% faster). Bytes: 24/24 corpus images at L6
+plus grass/coffee/astronaut/generated_transparent at L1 and L9 all
+byte-identical vs `bc9140a`; serial/rayon byte-identical; 922 lib
+tests + doc tests + alloc-only check green.
