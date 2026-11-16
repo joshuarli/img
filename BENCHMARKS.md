@@ -1,5 +1,41 @@
 # Benchmark evidence
 
+## Current WebP interpretation — 2026-11-15 review
+
+The current campaign, gate table and next tasks are in
+[docs/WEBP-HILLCLIMB.md](docs/WEBP-HILLCLIMB.md), reviewed at `6141369`.
+The dated sections below retain evidence from their own revisions; their old
+priority lists and blocker conclusions are historical.
+
+- [The withdrawn capture](benchmarks/results/untimed-withdrawn-2026-11-15.json)
+  records smaller outputs in 33/33 shared completed cells, **11 distinct images
+  at three minimum requested scores**. Achieved scores often differ materially;
+  this establishes that workflow result, not an equal-quality codec frontier.
+  The completing photo set is coffee plus grayscale grass/gravel. The cwebp
+  comparison uses a coarse lossy-only grid, not its full lossless/lossy frontier.
+- [The latest full timed capture](benchmarks/results/timed-neon-2026-11-15.json)
+  is at `3969a55`, before `c3c1abe` changed encoder search and output bytes.
+  It has 1,190 records / 505 completed and five serial rounds. Its `elapsedMs`
+  includes startup, reference preparation, search, readback, decode and scoring;
+  label it workflow/harness wall, not isolated encode time. See the current
+  campaign for verified per-cell medians. Default-parallel diagnostics and this
+  serial capture are separate evidence.
+- The current harness hashes the img executable but identifies the other tools
+  through labels; stronger per-tool artifact provenance is still required.
+  Saved WebP outputs are marked non-exact even when the winner is lossless,
+  because the harness currently sets exactness only for PNG. A score of 100
+  does not prove sample identity. Existing independent WebP tests remain useful;
+  archive replay is not a fresh photographic encode matrix at current HEAD.
+
+**WebP qualification is incomplete.** Selection equivalence, representative
+held-out frontiers, current-source timing/resource evidence and native platform
+proofs remain open. The existing 1.25 lossless-probe ratio is an empirical
+heuristic, not a proof that the skipped candidate cannot win; repairing this
+against the recorded selection contract is the campaign's first task. No raw
+capture was changed or new performance measurement made by this review.
+
+## Historical baseline overview
+
 Performance captures use production source `0e4a4a2`; corrected comparison commands and verification are in `6535c42`. Final JPEG safety repairs are at `7f1b45b`; final artifact/resource proofs were refreshed, while timing archives retain their original source and binary identities. Results are observations of specified configurations, not a general codec competitiveness claim. All accepted timings passed perf-gate-ready before and after their run. Initial busy-host timings were discarded.
 
 2026-11-14: retained `original-mozjpeg` outputs were rescored under the merged permissive JPEG decoder without re-encoding; outputs, byte sizes, timings, completions and the 0.0001 tolerance are unchanged, and `gravel_png-original-mozjpeg-95-0` now reads `matchedWithinHalfPoint`.
@@ -27,7 +63,11 @@ make benchmark-run
 
 The runner interleaves tool order across five repetitions and reverses it on alternate runs. It times process startup, encoding/search, output readback and fidelity verification with a release-built harness. Raw attempt commands, parameters, failures, architecture, revision, source-diff hash and binary hash are saved. The source-diff hash covers production and harness files; precommit captures explicitly report dirty source. Medians and full range widths are per fixture/tool/target.
 
-The compared configurations use one image worker and RAYON_NUM_THREADS=1:
+The following table records the **original historical configurations**, including
+the former eight-candidate/lossless-first policy. It does not describe current
+HEAD; use the current campaign's baseline instructions and record resolved
+settings afresh. These historical configurations use one image worker and
+RAYON_NUM_THREADS=1:
 
 | Tool | Configuration |
 | --- | --- |
@@ -327,7 +367,7 @@ Optional implementation and dependency changes need a reproducible benefit beyon
 
 AVIF alpha, monochrome, high depth/HDR, grids and unsupported display transforms are product refusals, not deferred environment proofs. Their retry conditions belong in [AVIF support](docs/AVIF.md). Open implementation defects belong in [TODO.md](TODO.md).
 
-**Wall-arm negative result (2026-11-15).** A profile-guided micro-hoist in the trellis inner loop (`wdist`/`ac`) built under the campaign protocol produced byte-identical outputs but ran consistently *slower* across five interleaved 100-rep A/B rounds (51.75 vs 51.42 ms per coffee-q80 encode, 5/5) and was reverted. The bool encoder is RFC 6386-tight; no safe single-patch wall win exists. The wall remains 3.6–5.7× cwebp (3.3–4.4× the withdrawn closure) pending a vectorized-kernel rewrite (see `docs/WEBP-HILLCLIMB.md`). Decode stays competitive.
+**Wall-arm negative result (2026-11-15; historical).** A profile-guided micro-hoist in the trellis inner loop (`wdist`/`ac`) built under the campaign protocol produced byte-identical outputs but ran consistently *slower* across five interleaved 100-rep A/B rounds (51.75 vs 51.42 ms per coffee-q80 encode, 5/5) and was reverted. This rejects that micro-hoist on that configuration; it does not prove other safe changes cannot improve wall time or that vectorization is the only remaining route. The contemporary 3.6–5.7× cwebp / 3.3–4.4× withdrawn workflow gaps belong to that revision. Use the current campaign for later evidence and priorities.
 
 **Owner-approved Fast-ladder landings (2026-11-15, master `0ed4a1e`/`5a10a81`; fresh capture committed as [untimed-ladder-2026-11-15.json](benchmarks/results/untimed-ladder-2026-11-15.json) with prefixed `2026-11-15-ladder-*.webp` outputs, `img`/`cwebp`, 84 records / 56 completed, `perf-gate-ready` 0 pre/post, revision `5a10a81`, `sourceDirty: false`, refusal set byte-identical, cwebp cells deterministic).** L6 lossless fallback for the 200k–400k px photographic mid-band (Fast keeps L1 elsewhere) flips the coffee t90/t95 cells to **353,630 @ 100.0** — beating the withdrawn closure's 359,054 (wall ≈8.4 s/cell, owner-accepted) and the lossy ceiling being 87.6. Cap 10 (refined frontier straddle) further improves the photographic t80 cells: coffee 67,296 → **57,762 @ 80.44**, grass 76,818 → **73,350 @ 80.40**, gravel 50,566 → **49,286 @ 80.22**; grass t95 → 212,388 @ 100 (accepted loss). Transparent t80 stays **174 @ 81.0** (+47% vs closure; cap 10 changed nothing there — efficiency of the lossless small-file path untouched; open). `benchmark_verify` re-validates all retained and fresh records. The destination gate remains **NOT met** (gravel t95, transparent cells, encode wall; see `docs/WEBP-HILLCLIMB.md`).
 
