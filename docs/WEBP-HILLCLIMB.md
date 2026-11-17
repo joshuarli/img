@@ -715,13 +715,15 @@ L2/L3 -51,720 B (-1.3%), photopea-ui -566 B, validation_text -280 B,
 generated_large -278 B; remaining images unchanged. Several L2/L3
 outputs now match former L6 bytes on alpha/UI strata.
 
-Timing cost — gated interleaved A/B, L3, `time=` CPU medians of 5
-rounds, all outputs byte-confirmed as the new smaller sizes:
-coffee 7.51 -> 8.29 s (+10.4%), grass 15.61 -> 17.21 s (+10.2%),
-validation_chelsea 5.87 -> 5.92 s (+0.9%), validation_text 8.18 ->
-9.71 s (+18.7%). This is a frontier trade, not a free win: ~1-19%
-more encode time at AUTO-selected levels buys 0.2-9.7% fewer bytes
-where meta clustering pays. Accepted because (a) the recorded
+Timing cost — gated interleaved A/B vs a fresh pre-change build,
+wall-time medians of 5 rounds per level (corrected measurement;
+see stale-binary caveat below), all outputs byte-confirmed:
+L2 coffee +55%, grass +32%, chelsea +33%, text +18%; L3 coffee
++38%, grass +24%, chelsea +24%, text +12% (medians: L3 coffee
+2.50 -> 3.45 s, grass 3.36 -> 4.16 s, chelsea 1.53 -> 1.89 s,
+text 1.19 -> 1.33 s). This is a frontier trade, not a free win:
+roughly 12-55% more encode time at AUTO-selected levels buys
+0.2-9.7% fewer bytes where meta clustering pays. Accepted because (a) the recorded
 qualification deficit is lossless bytes trailing pinned libwebp —
 coffee vs cwebp-lossless improves from +9.1% to +3.2%, utrecht
 +4.9% -> +2.5%, mm-logo-alpha +42% -> +28%; (b) absolute encode
@@ -771,8 +773,11 @@ recorded as such; a content-gated meta shot is a possible future
 refinement but adds a heuristic knob for one stratum.
 
 Harness caveat discovered here: the `.work/wt/metabase` binary used
-for the earlier L2/L3 meta A/B was stale (pre-rebuild artifact,
-~3.5x slow on L1); its byte outputs were unaffected but the recorded
-+0.9-18.7% L3 timings need re-measurement against a rebuilt
-35af988 binary — queued next. All byte sweeps are deterministic and
-unaffected.
+for the earlier L2/L3 meta A/B was a stale artifact (~3.5x slow),
+which understated the true time deltas. Re-measured against a
+rebuilt 35af988 binary (gate 0 before and after, 5 interleaved
+rounds, wall medians): L2 +18-55%, L3 +12-38% across coffee/grass/
+chelsea/text — roughly 2-3x the originally recorded +0.9-18.7%.
+The keep decision stands (byte gains unchanged, absolute times still
+below L6); only the cost figures were wrong. All byte sweeps are
+deterministic and unaffected.
