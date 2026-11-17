@@ -1256,3 +1256,13 @@ probe > 1.25x incumbent while deep <= probe always, and observed
 deep/probe >= 0.83 on the entropy >= 2.2 stratum leaves ~4% headroom;
 the tighter post-refine incumbent spends some of that headroom, which
 is why the sentinel A/B above matters.
+
+Recapture at `4413ea0`
+([timed-fast-defer](../benchmarks/results/timed-fast-defer.json)): the
+grass t95 cell drops 7,957 ms -> 1,430 ms (5.6x vs the fdeeaca
+capture, 1.3x vs the 2d5c8e0 baseline) at identical 165,462 B; every
+other completed img cell is within noise of the prior capture. Fast
+scored workflow vs the campaign baseline is now: ~2x on large.png,
+~2.1-2.7x on the tiny structured fixtures, ~1.3x on the
+photographic mid-band, with bytes equal or smaller everywhere
+completed.
