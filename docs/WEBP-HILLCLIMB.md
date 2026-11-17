@@ -1323,3 +1323,20 @@ already two-phase (cheap round-to-nearest ranking, then trellis
 re-encode of only the top `WHOLE_BLOCK_TRELLIS_KEEPS`), and
 `sse_block` carries a prior measured optimization note — the safe
 kernel surface is picked over.
+
+Lossless-size gap localization (L9 vs cwebp -z9): added two
+env-gated diagnostic tests (`dump_stream_structure` in
+decode.rs, `dump_task_bytes` in encode.rs) that parse a .webp's
+VP8L header and report per-task emitted bytes. Correction: the
+`.work/tmp/ours9-*.webp` reference files were stale — HEAD emits
+camera L9 at 129,170 B (not 130,136), so the real gap vs cwebp
+-z9's 123,699 B is 4.4%, not 5.2%. Per-task bytes on camera:
+Predictor(5)=129,149 is the winner; Predictor(3)=141,074 — our
+predictor-3 stream is far worse than cwebp's predictor-3+meta-4
+combination, so the tile-granularity difference does not transfer.
+Stream structure: both pick subtract-green + predictor + meta-Huffman
+with cache_bits=0; cwebp uses 8x8 predictor tiles and a 1024-block
+entropy image (meta bits=4) with 11 Huffman groups, we use 32x32
+tiles, 256 blocks (bits=5) and 25 groups. The residual gap is inside
+the token/entropy pipeline (LZ77 parse quality or Huffman
+clustering/code-length optimization), not transform selection.

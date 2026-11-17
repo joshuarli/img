@@ -3378,8 +3378,8 @@ mod tests {
 #[cfg(test)]
 mod proptests {
     use super::{
-        RefModel, best_cache_bits, emit_stream_meta, encode, encode_best, encode_best_at,
-        encode_with,
+        BestTask, CrossColorCache, PlaneCache, RefModel, best_cache_bits, emit_stream_meta,
+        encode, encode_best, encode_best_at, encode_with, floor_streams, run_best_task, schedule,
     };
     use crate::effort::MAX_LEVEL;
     use crate::lossless::constants::{ALPHABET_SIZE, MAX_CACHE_BITS, MAX_CHAIN_OPTIMAL};
@@ -3650,5 +3650,48 @@ mod proptests {
             let (bits, hist) = best_cache_bits(&model);
             prop_assert_eq!(hist, model.histogram(bits));
         }
+    }
+
+    #[test]
+    fn dump_task_bytes() {
+        let Ok(path) = std::env::var("WEBPKIT_DUMP") else {
+            return;
+        };
+        let bytes = std::fs::read(&path).unwrap();
+        let w = u32::from_le_bytes(bytes[0..4].try_into().unwrap());
+        let h = u32::from_le_bytes(bytes[4..8].try_into().unwrap());
+        let rgba = &bytes[8..];
+        let argb: Vec<u32> = rgba
+            .chunks_exact(4)
+            .map(|p| {
+                u32::from(p[3]) << 24
+                    | u32::from(p[0]) << 16
+                    | u32::from(p[1]) << 8
+                    | u32::from(p[2])
+            })
+            .collect();
+        let breadth = schedule(9);
+        let planes = PlaneCache::build(breadth, w, h, &argb);
+        let tasks = [
+            BestTask::Predictor(2),
+            BestTask::Predictor(3),
+            BestTask::Predictor(4),
+            BestTask::Predictor(5),
+            BestTask::CrossColor(3),
+            BestTask::CrossColor(4),
+            BestTask::CrossColor(5),
+            BestTask::PredictorCross(3, 4),
+            BestTask::PredictorCross(4, 4),
+            BestTask::PredictorCross(5, 4),
+        ];
+        let cc = CrossColorCache::new(&tasks, argb.len());
+        let alpha_used = argb.iter().any(|&p| p >> 24 != 0xff);
+        for task in tasks {
+            let streams = run_best_task(task, breadth, w, h, alpha_used, &argb, planes.as_ref(), cc.as_ref(), &[true]);
+            let lens: Vec<usize> = streams.iter().map(Vec::len).collect();
+            println!("{task:?}: {lens:?}");
+        }
+        let floor = floor_streams(breadth, w, h, alpha_used, &argb);
+        println!("floor: {:?}", floor.iter().map(Vec::len).collect::<Vec<_>>());
     }
 }

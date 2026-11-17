@@ -1210,4 +1210,38 @@ mod tests {
         assert_eq!(core.pos, 1);
         assert_eq!(core.argb[0], 0xff32_64c8); // A=255 R=50 G=100 B=200
     }
+
+    #[test]
+    fn dump_stream_structure() {
+        let Ok(path) = std::env::var("WEBPKIT_DUMP") else {
+            return;
+        };
+        let bytes = std::fs::read(&path).unwrap();
+        let tag = b"VP8L";
+        let pos = bytes
+            .windows(4)
+            .position(|w| w == tag)
+            .expect("no VP8L chunk");
+        let size = u32::from_le_bytes(bytes[pos + 4..pos + 8].try_into().unwrap()) as usize;
+        let payload = &bytes[pos + 8..pos + 8 + size];
+        let mut br = BitReader::new(payload);
+        let ((w, h, _), parsed) = parse_top_level(&mut br).unwrap();
+        let header_bits = br.bit_position();
+        println!("== {path}: {w}x{h}, payload {} B ({} bits)", payload.len(), payload.len() * 8);
+        println!("   header+tables end at bit {header_bits} ({:.1}% of stream)", 100.0 * header_bits as f64 / (payload.len() * 8) as f64);
+        for t in &parsed.transforms {
+            match t {
+                super::Transform::Predictor { bits, data, .. } => println!("   transform predictor bits={bits} tiles={}", data.len()),
+                super::Transform::CrossColor { bits, data, .. } => println!("   transform crosscolor bits={bits} tiles={}", data.len()),
+                super::Transform::SubtractGreen => println!("   transform subtract-green"),
+                super::Transform::ColorIndexing { bits, palette, .. } => println!("   transform palette bits={bits} entries={}", palette.len()),
+            }
+        }
+        println!("   cache_bits={} groups={} working_width={}", parsed.cache_bits, parsed.groups.len(), parsed.working_width);
+        if let Some(e) = &parsed.entropy {
+            println!("   meta-huffman bits={} cols={}x{}? data={}", e.bits, e.xsize, parsed.total / e.data.len().max(1), e.data.len());
+        } else {
+            println!("   meta-huffman: none");
+        }
+    }
 }
