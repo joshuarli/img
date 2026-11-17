@@ -1372,3 +1372,30 @@ Reparse generalization at codec L9 (serial): astronaut 338,320 ->
 333,736 B (-1.35%), chelsea -> 154,234 B, coins -> 70,356 B — the
 gain is consistent across photographic content, largest where the
 greedy histogram misprices the DP's preferred matches most.
+
+Group-aware DP cost model (rejected): priced each DP position under
+the CostModel of the meta-Huffman group its block belongs to, seeded
+by the converged reparse stream's MetaPlan (copy symbols bill to the
+start block, matching the decoder's select_group rule — exact, not
+approximate). Codec L9 bytes: camera -226 B (-0.18%), astronaut
+-28 B, coins -8 B, and identical output on grass/coffee/chelsea —
+but the extra pass plus per-stream emit/meta_shot ran inside every
+optimal_parse task, costing +40-90% L9 wall (grass 15.3 -> 22.6 s
+after a token-equality emit skip, coffee 26.1 -> 43.6 s, camera
+45.7 -> 60.6 s even with the grouped pass capped at MAX_CHAIN).
+Sub-0.2% maximum gain for ~+50% deep-level latency fails the same
+trade the Fast guardrails encode; reverted uncommitted.
+
+Meta group header-cost retune (rejected): META_GROUP_HEADER_BITS
+256 -> 512 made clustering merge more aggressively — camera's
+emitted stream drops 18 -> 15 Huffman groups and its table section
+shrinks 13,202 -> 12,010 bits (-149 B), but pixel data grows ~+93 B
+back, netting only -56 B at codec L9 (coffee -50 B, astronaut
+-18 B). The constant is shared with levels 1-6, where a 13-image
+x L1/L6 codec sweep showed net regression: mm-logo-opaque +172 B
+(+1.17%), mm-logo-alpha +112 B (+0.37%), clock_motion +104 B, with
+only photopea-ui improving (-184 B, -0.58%). 1024 and 768 were
+worse still at L9. Net-negative on the product path; reverted. The
+emitted-bytes selection already protects each level internally —
+the loss is that every level's candidate *plans* shift, not that a
+worse plan wins.
