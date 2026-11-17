@@ -1298,6 +1298,18 @@ metric, an already-minimal search tier, or serial-ish match walking —
 policy-level Fast work is exhausted; further gains are codec-kernel
 efforts gated on the unsafe-grant decision or new algorithmic work.
 
+Lossy codec-vs-libwebp calibration (single-thread, codec level):
+product AUTO maps to our top lossy tier, which runs ~1.3-1.7x cwebp
+`-m6` wall per encode — coffee q90 83.5 ms vs ~60 ms, astronaut q80
+68.8 vs ~40 ms, grass q90 111 vs ~80 ms — while emitting fewer bytes
+at the same quality number (coffee 59,772 vs 60,088 B; grass q80
+79,660 vs 92,898 B, though fixed-q fidelity is not score-matched).
+The per-encode codec gap is therefore modest and already
+dominated by the scored-search volume (~8 candidates + decode/score
+per target), not by codec throughput; closing the residual ~1.5x
+per-encode gap is kernel work (NEON grant) for at most ~25% of a
+typical scored wall.
+
 Micro-optimization probes (negative results): a trellis-DP restructure
 that hoisted the per-(position, magnitude) distortion term and outgoing
 context out of the incoming-context loop measured ~4% SLOWER on grass
