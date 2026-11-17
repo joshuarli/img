@@ -1340,3 +1340,13 @@ entropy image (meta bits=4) with 11 Huffman groups, we use 32x32
 tiles, 256 blocks (bits=5) and 25 groups. The residual gap is inside
 the token/entropy pipeline (LZ77 parse quality or Huffman
 clustering/code-length optimization), not transform selection.
+
+Entropy-pipeline follow-up: LZ77 parameters already match libwebp
+(1M-pixel window, 4096 max copy, min match 4, deep chain at high
+effort) and the Huffman builder is length-limited canonical. The
+encode path is single-pass — the optimal-parse DP scores candidates
+against one RefModel and never re-parses against the histogram its
+own stream implies. libwebp's -z9 path iterates backward-reference
+encoding against refreshed histograms; a second parse pass with a
+model rebuilt from first-pass tokens is the leading unexplored
+hypothesis for the residual ~4.4% camera gap. Untested.
