@@ -267,12 +267,36 @@ fn search_lz77_variant(
     if optimal_parse {
         let optimal_chain_cap = effective_chain_cap(chain_cap, pixels.len());
         let tokens_dp = parse_optimal(pixels, working_width, &tokens_lz77, &chain, optimal_chain_cap);
+        let shallow_dp = (chain_cap == MAX_CHAIN_OPTIMAL && pixels.len() < DEEP_CHAIN_MIN_PIXELS)
+            .then(|| parse_optimal(pixels, working_width, &tokens_lz77, &chain, MAX_CHAIN));
         drop(chain);
         let model_dp = RefModel::new(&tokens_dp, pixels, working_width);
         let (cache_dp, hist_dp) = best_cache_bits(&model_dp);
         let dp_stream = emit(cache_dp, &model_dp, &hist_dp);
         keep_smaller(&mut plain, dp_stream.clone());
         keep_smaller(&mut best, dp_stream);
+        if let Some(tokens_shallow) = shallow_dp {
+            let model_shallow = RefModel::new(&tokens_shallow, pixels, working_width);
+            let (cache_shallow, hist_shallow) = best_cache_bits(&model_shallow);
+            let shallow_stream = emit(cache_shallow, &model_shallow, &hist_shallow);
+            keep_smaller(&mut plain, shallow_stream.clone());
+            keep_smaller(&mut best, shallow_stream);
+            if meta_huffman {
+                meta_shot(
+                    &mut best,
+                    header_width,
+                    header_height,
+                    alpha_used,
+                    plans,
+                    cache_shallow,
+                    &model_shallow,
+                    false,
+                    pixels,
+                    working_width,
+                    ysize,
+                );
+            }
+        }
         if meta_huffman {
             // A meta-Huffman shot on each of the greedy and DP streams — both
             // self-floored against the single-group candidates already folded in.
@@ -346,7 +370,29 @@ fn meta_shot(
     working_width: u32,
     ysize: u32,
 ) {
-    let mut candidates = meta::bits_candidates(working_width, ysize, finer).into_iter();
+    let mut candidates = meta::bits_candidates(working_width, ysize, finer);
+    let base_len = meta::bits_candidates(working_width, ysize, false).len();
+    debug_assert!(candidates.len() == base_len || candidates.len() == base_len + 1);
+    if candidates.len() == base_len + 1 {
+        let finer_bits = candidates.remove(0);
+        if let Some(plan) =
+            meta::plan_at_bits(model.tokens, pixels, working_width, ysize, cache_bits, finer_bits)
+        {
+            keep_smaller(
+                best,
+                emit_stream_meta(
+                    header_width,
+                    header_height,
+                    alpha_used,
+                    plans,
+                    cache_bits,
+                    model,
+                    &plan,
+                ),
+            );
+        }
+    }
+    let mut candidates = candidates.into_iter();
     let Some(bits) = candidates.next() else { return };
     let Some(plan) =
         meta::plan_at_bits(model.tokens, pixels, working_width, ysize, cache_bits, bits)
@@ -578,7 +624,7 @@ const fn schedule(level: u8) -> Breadth {
 /// One independent `Effort` candidate family. Evaluated in the fixed order
 /// [`build_best_tasks`] emits, so [`reduce_task_minima`] is deterministic and the
 /// serial and rayon evaluators agree byte-for-byte.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum BestTask {
     Floor,
     Palette,
@@ -1267,9 +1313,11 @@ fn select_from_estimates(
 /// percent, so finalists need margin the real pass then trims.
 const PROVISIONAL_CAP: usize = 8;
 
-/// Below this pixel count the estimate bands stay off: the full wide search is
-/// cheap at this size and small-sample entropy estimates are least reliable —
-/// pruning there broke level monotonicity (generated_transparent L3 > L2).
+/// Below this pixel count every estimate band stays off: the full search is
+/// cheap at this size, small-sample entropy estimates are least reliable, and
+/// bands keyed to the task set's own minimum tighten as higher levels add
+/// tasks — pruning there broke level monotonicity (generated_transparent
+/// L3 > L2, both in the wide path and in [`select_from_estimates`]).
 const PRUNE_MIN_PIXELS: usize = 0x40000;
 
 /// Whether the cheap pass can actually prune: it pays only when some family has
@@ -1309,6 +1357,36 @@ fn select_provisional(tasks: &[BestTask], estimates: &[Option<u64>]) -> Vec<bool
         candidates.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
         for &(_, i) in candidates.iter().take(PROVISIONAL_CAP) {
             keep[i] = true;
+        }
+    }
+    keep
+}
+
+fn select_keep(
+    tasks: &[BestTask],
+    estimates: &[Option<u64>],
+    wide: bool,
+    pixels: usize,
+    level: u8,
+) -> Vec<bool> {
+    if pixels >= PRUNE_MIN_PIXELS {
+        return select_from_estimates(tasks, estimates, wide);
+    }
+    let mut keep = select_from_estimates(tasks, estimates, false);
+    let index_of = |t: &BestTask| tasks.iter().position(|c| c == t);
+    for lower in 0..level {
+        let lower_tasks = build_best_tasks(schedule_for(lower, pixels as u64));
+        let lower_estimates: Vec<Option<u64>> = lower_tasks
+            .iter()
+            .map(|t| index_of(t).and_then(|i| estimates[i]))
+            .collect();
+        let lower_keep = select_from_estimates(&lower_tasks, &lower_estimates, false);
+        for (t, &k) in lower_tasks.iter().zip(&lower_keep) {
+            if k {
+                if let Some(i) = index_of(&t) {
+                    keep[i] = true;
+                }
+            }
         }
     }
     keep
@@ -1437,6 +1515,7 @@ fn evaluate_best_tasks(
     height: u32,
     alpha_used: bool,
     argb: &[u32],
+    level: u8,
 ) -> Vec<u8> {
     // Serial: `reduce_task_minima` drives the lazy map, so each family's streams
     // are produced, folded to one, and dropped before the next family runs.
@@ -1467,7 +1546,7 @@ fn evaluate_best_tasks(
         .iter()
         .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
         .collect();
-    let mut keep = select_from_estimates(&tasks, &estimates, wide);
+    let mut keep = select_keep(&tasks, &estimates, wide, argb.len(), level);
     let spec_masks = spec_keep_masks(&spec_ests);
     if wide {
         let scores: Vec<Option<u64>> = tasks
@@ -1515,6 +1594,7 @@ fn evaluate_best_tasks(
     height: u32,
     alpha_used: bool,
     argb: &[u32],
+    level: u8,
 ) -> Vec<u8> {
     use rayon::prelude::*;
     // Parallel: each worker folds its family to a single stream, so the collected
@@ -1547,7 +1627,7 @@ fn evaluate_best_tasks(
         .iter()
         .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
         .collect();
-    let mut keep = select_from_estimates(&tasks, &estimates, wide);
+    let mut keep = select_keep(&tasks, &estimates, wide, argb.len(), level);
     let spec_masks = spec_keep_masks(&spec_ests);
     if wide {
         let scores: Vec<Option<u64>> = tasks
@@ -1612,6 +1692,7 @@ pub(crate) fn encode_best_at(level: u8, width: u32, height: u32, argb: &[u32]) -
         height,
         alpha_used,
         argb,
+        level,
     )
 }
 
@@ -2687,7 +2768,7 @@ mod tests {
         use super::{
             CrossColorCache, PlaneCache, build_best_tasks, cheap_task_score, coverage_band,
             encode_best, estimate_specs, estimate_task, evaluate_best_tasks, keep_smallest,
-            reduce_task_minima, run_best_task, schedule, select_from_estimates,
+            reduce_task_minima, run_best_task, schedule, select_from_estimates, select_keep,
             select_provisional, spec_keep_masks, provisional_prunes, PRUNE_MIN_PIXELS,
         };
         let breadth = schedule(crate::effort::MAX_LEVEL);
@@ -2724,7 +2805,7 @@ mod tests {
                 .iter()
                 .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
                 .collect();
-            let mut keep = select_from_estimates(&tasks, &estimates, wide);
+            let mut keep = select_keep(&tasks, &estimates, wide, pixels.len(), crate::effort::MAX_LEVEL);
             let spec_masks = spec_keep_masks(&spec_ests);
             if wide {
                 let scores: Vec<Option<u64>> = tasks
@@ -2775,7 +2856,7 @@ mod tests {
             // The rayon evaluator (feature on) must match the serial reference and
             // the public entry point, byte-for-byte.
             let parallel =
-                evaluate_best_tasks(build_best_tasks(breadth), breadth, w, h, alpha, &pixels);
+                evaluate_best_tasks(build_best_tasks(breadth), breadth, w, h, alpha, &pixels, crate::effort::MAX_LEVEL);
             assert_eq!(
                 serial, parallel,
                 "rayon evaluation must equal serial, byte-for-byte"

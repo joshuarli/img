@@ -1049,3 +1049,92 @@ Note: the in-flight timed frontier capture overlapped this rebuild
 binary while `binarySha256` records the pre-change build, so that
 capture is internally inconsistent and was discarded (timed.json
 reverted); recapture after this lands.
+
+## Checkpoint — 2026-11-17 (Fast workflow cost; effort monotonicity repair)
+
+Phase attribution on the scored Fast path (sentinel verbose runs):
+the deferred WebP-lossless candidate dominated wall time and usually
+lost — grass t80 ~4.9 s of ~5.8 s in one deep lossless encode that the
+75 KB lossy winner beat 3x; photopea-ui ~15.5 s of ~16.8 s likewise.
+mm-logo-alpha (4.7 MP) spent ~150 s across six lossy AUTO-tier
+encodes (~16.6 s each) vs ~33 s lossless. Decode+score overhead is
+small (single-decode scoring already landed).
+
+Landed since `71722b6`:
+
+- `395c8a2` perf(webpkit): `search_lz77_variant` now returns
+  (plain, meta) from one shared literal/LZ77/DP/cache/emission pass;
+  `floor_streams` folds raw and subtract-green once instead of
+  searching each representation twice for the meta shots. Byte-stable.
+- `6651fad` perf(img): Fast-only lossless floor policy. For 8-bit
+  images with sampled local delta entropy >= 2.2 bits/channel, the
+  deferred lossless candidate first runs a codec-level-0 probe
+  (`still::webp::probe` now returns the probe bytes, reused as the
+  candidate or as fallback if the deep encode fails). When
+  `probe*4 > incumbent*5` (empirical margin, NOT a proof — renamed
+  the old `lossless_cannot_win` gate to `lossless_unlikely_to_win`
+  for Balanced/Best, which keep the 3.5-bit/1.67x rule) the probe
+  output is kept and the deep Fast encode is skipped. `Evaluation`
+  gained `probe_ms` so probe work is counted and reported separately.
+  Low-entropy inputs bypass the probe entirely: deep/probe ratios of
+  0.31 (large.png) and 0.51 (transparent.png) make any size margin
+  unsafe there. Observed deep/probe on probe-path photos: 0.83-1.0.
+- `654feae` perf(img): Fast lossy alpha filter search bounded to one
+  predictor. mm-logo t80 ~189 s -> ~50.5 s (3.7x) with a
+  byte-identical 30,152 B lossless winner; lossy candidates +0.4%
+  bytes total. grass t80 ~5.8 s -> ~1.0 s, same 75,220 B winner;
+  photopea-ui ~16.8 s -> ~4.9 s, same 22,658 B winner.
+- `25382da` perf(img): dropped the photographic 200-400K px band
+  that mapped Fast lossless to codec level 6 — coffee gained 0.82%
+  bytes for ~2x time, grass was byte-identical for ~1.6x, gravel
+  0.09% for ~1.75x. Fast now uses codec L6 only for <=16,384 px.
+
+Monotonicity repair (this commit): the public `Effort::level`
+contract promises a higher level never emits a larger file, but two
+mechanisms broke it. (a) Levels >=3 parse the optimal DP at
+`MAX_CHAIN_OPTIMAL` while levels <=2 use `MAX_CHAIN`; on images under
+`DEEP_CHAIN_MIN_PIXELS` the deeper walk is not a candidate superset
+(coffee L2->L3 +4 B, coins +14 B). `search_lz77_variant` now also
+parses and emits the shallow `MAX_CHAIN` DP (plus its meta shot)
+when the deep cap applies to a small image. (b) The fine-meta grid
+prepended one entropy precision and an early `plan_at_bits` failure
+returned before the base candidates ran; the finer step is now
+isolated so base candidates keep their exact prior evaluation.
+(c) `select_from_estimates` family bands key thresholds to the task
+set's own minimum, which tightens as higher levels add tile sizes —
+`generated_transparent` L2->L3 regressed 178 -> 190 B even with the
+chain fix (verified by disabling the bands: L3 emitted 176 B). Below
+`PRUNE_MIN_PIXELS` (256K px) `select_keep` now unions the current
+level's band selection with the selection each coarser level would
+have produced — estimates are level-independent, so this is cheap
+and makes the keep set a superset by construction. Above the
+threshold the banded path is unchanged; a residual monotonicity
+exposure remains there in principle (no violation observed on the
+swept corpus: coffee, coins, camera, grass, gravel, clock_motion,
+text, transparent, large, ui, brick, cell, astronaut, chelsea, horse,
+microaneurysms, boundary-200704/399424 — all monotone at levels
+1/2/3/4/7/9). Keep-all was tried first and rejected: it made the
+encode proptests exceed 10 min and would have slowed Fast's level-6
+small-image path ~4x.
+
+Cost of the monotonicity repair: extra kept tasks only on <256K px
+images at levels >=2 (union of coarser-level selections); coffee L9
+~6.5 s -> ~8.3 s, transparent L9 ~0.34 s -> ~0.28 s (noise). Fast
+(level 1, or 6 on <=16K px) is essentially unaffected — level-1 task
+sets are already fully kept by the bands.
+
+Verification: 917-test webpkit lib suite green (incl. byte-stability,
+`encode_best_at_is_monotone_and_floored`, serial/rayon agreement);
+optimizer integration tests green. Fast-path sentinel A/B vs the
+pre-change binary preserved winners byte-for-byte on grass,
+photopea-ui, mm-logo-alpha.
+
+Next priorities: (1) phase-attribute the remaining Fast lossless cost
+on low-entropy large inputs (large.png still pays ~6-19 s because
+the probe is correctly bypassed — the deep encode itself is the
+cost); (2) quantify Fast size deltas vs the pre-probe-policy binary
+across the corpus strata against the 1% geomean / 3% per-image
+guardrails and publish exceptions; (3) recapture the timed frontier
+now that the Fast path changed materially; (4) decide whether the
+>=256K px banded selection needs the same superset treatment or a
+documented residual risk.
