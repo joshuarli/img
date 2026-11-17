@@ -1,0 +1,4640 @@
+{
+  "architecture": "aarch64",
+  "binarySha256": "acfa8bd371aad6d7f81ed8841e6a18c5998cfa5d3e0720a19f94db1b4606f778",
+  "cargoProfile": "dist",
+  "rayonThreads": 1,
+  "records": [
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000056422778",
+      "fixture": "chelsea.png",
+      "height": 300,
+      "inputBytes": 240512,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/chelsea.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 451
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 241109,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/chelsea.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "chelsea.png",
+      "height": 300,
+      "inputBytes": 240512,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 241109,
+      "outputHeight": 300,
+      "outputPath": "results/chelsea_png-img-png-80-0.png",
+      "outputWidth": 451,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/chelsea.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 451
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000056422778",
+      "fixture": "chelsea.png",
+      "height": 300,
+      "inputBytes": 240512,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/chelsea.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 451
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000056422778",
+      "fixture": "chelsea.png",
+      "height": 300,
+      "inputBytes": 240512,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/chelsea.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 451
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 1250,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/clock_motion.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 80.05658522729797,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\nwarning: \"cross-format metadata loss: PNG vpAg\"\nwarning: \"cross-format metadata loss: PNG tEXt\"\nwarning: \"cross-format metadata loss: PNG tEXt\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "clock_motion.png",
+      "height": 300,
+      "inputBytes": 58784,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 1250,
+      "outputHeight": 300,
+      "outputPath": "results/clock_motion_png-img-80-0.webp",
+      "outputWidth": 400,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 80.05658522729797,
+      "sourcePath": "corpus/validation/clock_motion.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 400
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 46809,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/clock_motion.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "clock_motion.png",
+      "height": 300,
+      "inputBytes": 58784,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 46809,
+      "outputHeight": 300,
+      "outputPath": "results/clock_motion_png-img-png-80-0.png",
+      "outputWidth": 400,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/clock_motion.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 400
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 46392,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/clock_motion.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\nwarning: \"cross-format metadata loss: PNG vpAg\"\nwarning: \"cross-format metadata loss: PNG tEXt\"\nwarning: \"cross-format metadata loss: PNG tEXt\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "clock_motion.png",
+      "height": 300,
+      "inputBytes": 58784,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 46392,
+      "outputHeight": 300,
+      "outputPath": "results/clock_motion_png-img-90-0.webp",
+      "outputWidth": 400,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/clock_motion.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 400
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 46392,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/clock_motion.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\nwarning: \"cross-format metadata loss: PNG vpAg\"\nwarning: \"cross-format metadata loss: PNG tEXt\"\nwarning: \"cross-format metadata loss: PNG tEXt\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "clock_motion.png",
+      "height": 300,
+      "inputBytes": 58784,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 46392,
+      "outputHeight": 300,
+      "outputPath": "results/clock_motion_png-img-95-0.webp",
+      "outputWidth": 400,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/clock_motion.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 400
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 19292,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/coins.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 80.88408774048176,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "coins.png",
+      "height": 303,
+      "inputBytes": 75825,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 19292,
+      "outputHeight": 303,
+      "outputPath": "results/coins_png-img-80-0.webp",
+      "outputWidth": 384,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 80.88408774048176,
+      "sourcePath": "corpus/validation/coins.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 384
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 77990,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/coins.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "coins.png",
+      "height": 303,
+      "inputBytes": 75825,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 77990,
+      "outputHeight": 303,
+      "outputPath": "results/coins_png-img-png-80-0.png",
+      "outputWidth": 384,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/coins.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 384
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 34266,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/coins.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 91.02485518862801,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "coins.png",
+      "height": 303,
+      "inputBytes": 75825,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 34266,
+      "outputHeight": 303,
+      "outputPath": "results/coins_png-img-90-0.webp",
+      "outputWidth": 384,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 91.02485518862801,
+      "sourcePath": "corpus/validation/coins.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 384
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 73024,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/coins.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "coins.png",
+      "height": 303,
+      "inputBytes": 75825,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 73024,
+      "outputHeight": 303,
+      "outputPath": "results/coins_png-img-95-0.webp",
+      "outputWidth": 384,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/coins.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 384
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 3120,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/horse.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 81.15452246595486,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "horse.png",
+      "height": 328,
+      "inputBytes": 16633,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 3120,
+      "outputHeight": 328,
+      "outputPath": "results/horse_png-img-80-0.webp",
+      "outputWidth": 400,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 81.15452246595486,
+      "sourcePath": "corpus/validation/horse.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 400
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 19103,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/horse.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "horse.png",
+      "height": 328,
+      "inputBytes": 16633,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 19103,
+      "outputHeight": 328,
+      "outputPath": "results/horse_png-img-png-80-0.png",
+      "outputWidth": 400,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/horse.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 400
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 4812,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/horse.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 90.46490636871165,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "horse.png",
+      "height": 328,
+      "inputBytes": 16633,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 4812,
+      "outputHeight": 328,
+      "outputPath": "results/horse_png-img-90-0.webp",
+      "outputWidth": 400,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 90.46490636871165,
+      "sourcePath": "corpus/validation/horse.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 400
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 6140,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/horse.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "horse.png",
+      "height": 328,
+      "inputBytes": 16633,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 6140,
+      "outputHeight": 328,
+      "outputPath": "results/horse_png-img-95-0.webp",
+      "outputWidth": 400,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/horse.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 400
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000012394104",
+      "fixture": "hubble_deep_field.jpg",
+      "height": 872,
+      "inputBytes": 527940,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/hubble_deep_field.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1000
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 1786763,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/hubble_deep_field.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "hubble_deep_field.jpg",
+      "height": 872,
+      "inputBytes": 527940,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 1786763,
+      "outputHeight": 872,
+      "outputPath": "results/hubble_deep_field_jpg-img-png-80-0.png",
+      "outputWidth": 1000,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/hubble_deep_field.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 1000
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000012394104",
+      "fixture": "hubble_deep_field.jpg",
+      "height": 872,
+      "inputBytes": 527940,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/hubble_deep_field.jpg",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1000
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000012394104",
+      "fixture": "hubble_deep_field.jpg",
+      "height": 872,
+      "inputBytes": 527940,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/hubble_deep_field.jpg",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1000
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 110648,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/retina.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 80.48247428640448,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "retina.jpg",
+      "height": 1411,
+      "inputBytes": 269564,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 110648,
+      "outputHeight": 1411,
+      "outputPath": "results/retina_jpg-img-80-0.webp",
+      "outputWidth": 1411,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 80.48247428640448,
+      "sourcePath": "corpus/validation/retina.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1411
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 1574160,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/retina.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "retina.jpg",
+      "height": 1411,
+      "inputBytes": 269564,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 1574160,
+      "outputHeight": 1411,
+      "outputPath": "results/retina_jpg-img-png-80-0.png",
+      "outputWidth": 1411,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/retina.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 1411
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 858376,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/retina.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "retina.jpg",
+      "height": 1411,
+      "inputBytes": 269564,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 858376,
+      "outputHeight": 1411,
+      "outputPath": "results/retina_jpg-img-90-0.webp",
+      "outputWidth": 1411,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/retina.jpg",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1411
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 858376,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/retina.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "retina.jpg",
+      "height": 1411,
+      "inputBytes": 269564,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 858376,
+      "outputHeight": 1411,
+      "outputPath": "results/retina_jpg-img-95-0.webp",
+      "outputWidth": 1411,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/retina.jpg",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1411
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 11214,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/text.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 82.45105326033578,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "text.png",
+      "height": 172,
+      "inputBytes": 42704,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 11214,
+      "outputHeight": 172,
+      "outputPath": "results/text_png-img-80-0.webp",
+      "outputWidth": 448,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 82.45105326033578,
+      "sourcePath": "corpus/validation/text.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 448
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 44175,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/text.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "text.png",
+      "height": 172,
+      "inputBytes": 42704,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 44175,
+      "outputHeight": 172,
+      "outputPath": "results/text_png-img-png-80-0.png",
+      "outputWidth": 448,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/text.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 448
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 21492,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/text.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 91.1618873644637,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "text.png",
+      "height": 172,
+      "inputBytes": 42704,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 21492,
+      "outputHeight": 172,
+      "outputPath": "results/text_png-img-90-0.webp",
+      "outputWidth": 448,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 91.1618873644637,
+      "sourcePath": "corpus/validation/text.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 448
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 42740,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/text.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "text.png",
+      "height": 172,
+      "inputBytes": 42704,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 42740,
+      "outputHeight": 172,
+      "outputPath": "results/text_png-img-95-0.webp",
+      "outputWidth": 448,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/text.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 448
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.000051",
+      "fixture": "marmolada.jpg",
+      "height": 2604,
+      "inputBytes": 3396302,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/marmolada.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3904
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/marmolada.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 3,
+          "quality": null,
+          "stderr": "/Users/josh/d/img/benchmarks/corpus/validation/marmolada.jpg: input.limit: image working reservation 2874331854 exceeds per-worker memory budget 2827575296\n"
+        }
+      ],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "no qualifying evaluated output (tool failure or fidelity refusal)",
+      "fixture": "marmolada.jpg",
+      "height": 2604,
+      "inputBytes": 3396302,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/marmolada.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 3904
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.000051",
+      "fixture": "marmolada.jpg",
+      "height": 2604,
+      "inputBytes": 3396302,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/marmolada.jpg",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3904
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.000051",
+      "fixture": "marmolada.jpg",
+      "height": 2604,
+      "inputBytes": 3396302,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/marmolada.jpg",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3904
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.0001464",
+      "fixture": "mountain-landscape-met.jpg",
+      "height": 2277,
+      "inputBytes": 3317916,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/mountain-landscape-met.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3015
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 16780184,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/mountain-landscape-met.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "mountain-landscape-met.jpg",
+      "height": 2277,
+      "inputBytes": 3317916,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 16780184,
+      "outputHeight": 2277,
+      "outputPath": "results/mountain-landscape-met_jpg-img-png-80-0.png",
+      "outputWidth": 3015,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/mountain-landscape-met.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 3015
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.0001464",
+      "fixture": "mountain-landscape-met.jpg",
+      "height": 2277,
+      "inputBytes": 3317916,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/mountain-landscape-met.jpg",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3015
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.0001464",
+      "fixture": "mountain-landscape-met.jpg",
+      "height": 2277,
+      "inputBytes": 3317916,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/mountain-landscape-met.jpg",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3015
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000023616773",
+      "fixture": "piraeus-ferry.jpg",
+      "height": 3025,
+      "inputBytes": 6360277,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/piraeus-ferry.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 4545
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/piraeus-ferry.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 3,
+          "quality": null,
+          "stderr": "/Users/josh/d/img/benchmarks/corpus/validation/piraeus-ferry.jpg: input.limit: image working reservation 3794443733 exceeds per-worker memory budget 2829099008\n"
+        }
+      ],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "no qualifying evaluated output (tool failure or fidelity refusal)",
+      "fixture": "piraeus-ferry.jpg",
+      "height": 3025,
+      "inputBytes": 6360277,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/piraeus-ferry.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 4545
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000023616773",
+      "fixture": "piraeus-ferry.jpg",
+      "height": 3025,
+      "inputBytes": 6360277,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/piraeus-ferry.jpg",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 4545
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000023616773",
+      "fixture": "piraeus-ferry.jpg",
+      "height": 3025,
+      "inputBytes": 6360277,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/piraeus-ferry.jpg",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 4545
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000010346254",
+      "fixture": "portrait-woman-met.jpg",
+      "height": 3851,
+      "inputBytes": 2643999,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/portrait-woman-met.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3099
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/portrait-woman-met.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 3,
+          "quality": null,
+          "stderr": "/Users/josh/d/img/benchmarks/corpus/validation/portrait-woman-met.jpg: input.limit: image working reservation 3326247199 exceeds per-worker memory budget 2843779072\n"
+        }
+      ],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "no qualifying evaluated output (tool failure or fidelity refusal)",
+      "fixture": "portrait-woman-met.jpg",
+      "height": 3851,
+      "inputBytes": 2643999,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/portrait-woman-met.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 3099
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000010346254",
+      "fixture": "portrait-woman-met.jpg",
+      "height": 3851,
+      "inputBytes": 2643999,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/portrait-woman-met.jpg",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3099
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: -0.000010346254",
+      "fixture": "portrait-woman-met.jpg",
+      "height": 3851,
+      "inputBytes": 2643999,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/portrait-woman-met.jpg",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3099
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 741644,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/utrecht-meetup.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 81.90825916672557,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "utrecht-meetup.jpg",
+      "height": 2448,
+      "inputBytes": 2399773,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 741644,
+      "outputHeight": 2448,
+      "outputPath": "results/utrecht-meetup_jpg-img-80-0.webp",
+      "outputWidth": 3264,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 81.90825916672557,
+      "sourcePath": "corpus/validation/utrecht-meetup.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3264
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 8187988,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/utrecht-meetup.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "utrecht-meetup.jpg",
+      "height": 2448,
+      "inputBytes": 2399773,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 8187988,
+      "outputHeight": 2448,
+      "outputPath": "results/utrecht-meetup_jpg-img-png-80-0.png",
+      "outputWidth": 3264,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/utrecht-meetup.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 3264
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 4040140,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/utrecht-meetup.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "utrecht-meetup.jpg",
+      "height": 2448,
+      "inputBytes": 2399773,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 4040140,
+      "outputHeight": 2448,
+      "outputPath": "results/utrecht-meetup_jpg-img-90-0.webp",
+      "outputWidth": 3264,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/utrecht-meetup.jpg",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3264
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 4040140,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/utrecht-meetup.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "utrecht-meetup.jpg",
+      "height": 2448,
+      "inputBytes": 2399773,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 4040140,
+      "outputHeight": 2448,
+      "outputPath": "results/utrecht-meetup_jpg-img-95-0.webp",
+      "outputWidth": 3264,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/utrecht-meetup.jpg",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3264
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.0001365",
+      "fixture": "charolais-cattle.jpg",
+      "height": 2485,
+      "inputBytes": 7053749,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/charolais-cattle.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3000
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 13517464,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/charolais-cattle.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "charolais-cattle.jpg",
+      "height": 2485,
+      "inputBytes": 7053749,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 13517464,
+      "outputHeight": 2485,
+      "outputPath": "results/charolais-cattle_jpg-img-png-80-0.png",
+      "outputWidth": 3000,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/charolais-cattle.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 3000
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.0001365",
+      "fixture": "charolais-cattle.jpg",
+      "height": 2485,
+      "inputBytes": 7053749,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/charolais-cattle.jpg",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3000
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.0001365",
+      "fixture": "charolais-cattle.jpg",
+      "height": 2485,
+      "inputBytes": 7053749,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/charolais-cattle.jpg",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3000
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.0015544",
+      "fixture": "sous-tour-eiffel.jpg",
+      "height": 2013,
+      "inputBytes": 6413888,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/sous-tour-eiffel.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 2935
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 9429669,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/sous-tour-eiffel.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "sous-tour-eiffel.jpg",
+      "height": 2013,
+      "inputBytes": 6413888,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 9429669,
+      "outputHeight": 2013,
+      "outputPath": "results/sous-tour-eiffel_jpg-img-png-80-0.png",
+      "outputWidth": 2935,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/sous-tour-eiffel.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 2935
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.0015544",
+      "fixture": "sous-tour-eiffel.jpg",
+      "height": 2013,
+      "inputBytes": 6413888,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/sous-tour-eiffel.jpg",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 2935
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.0015544",
+      "fixture": "sous-tour-eiffel.jpg",
+      "height": 2013,
+      "inputBytes": 6413888,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/sous-tour-eiffel.jpg",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 2935
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.0001469",
+      "fixture": "goose-head.jpg",
+      "height": 1660,
+      "inputBytes": 1221573,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/goose-head.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 2500
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 2933869,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/goose-head.jpg",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "goose-head.jpg",
+      "height": 1660,
+      "inputBytes": 1221573,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 2933869,
+      "outputHeight": 1660,
+      "outputPath": "results/goose-head_jpg-img-png-80-0.png",
+      "outputWidth": 2500,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/goose-head.jpg",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 2500
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.0001469",
+      "fixture": "goose-head.jpg",
+      "height": 1660,
+      "inputBytes": 1221573,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/goose-head.jpg",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 2500
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [],
+      "completed": false,
+      "elapsedMs": null,
+      "failure": "color transform leaves the SDR sRGB gamut: 1.0001469",
+      "fixture": "goose-head.jpg",
+      "height": 1660,
+      "inputBytes": 1221573,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "sourcePath": "corpus/validation/goose-head.jpg",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 2500
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 30326,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/mm-logo-alpha.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "mm-logo-alpha.png",
+      "height": 1318,
+      "inputBytes": 83435,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 30326,
+      "outputHeight": 1318,
+      "outputPath": "results/mm-logo-alpha_png-img-80-0.webp",
+      "outputWidth": 3583,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/mm-logo-alpha.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3583
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 162488,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/mm-logo-alpha.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "mm-logo-alpha.png",
+      "height": 1318,
+      "inputBytes": 83435,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 162488,
+      "outputHeight": 1318,
+      "outputPath": "results/mm-logo-alpha_png-img-png-80-0.png",
+      "outputWidth": 3583,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/mm-logo-alpha.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 3583
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 30326,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/mm-logo-alpha.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "mm-logo-alpha.png",
+      "height": 1318,
+      "inputBytes": 83435,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 30326,
+      "outputHeight": 1318,
+      "outputPath": "results/mm-logo-alpha_png-img-90-0.webp",
+      "outputWidth": 3583,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/mm-logo-alpha.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3583
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 30326,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/mm-logo-alpha.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "mm-logo-alpha.png",
+      "height": 1318,
+      "inputBytes": 83435,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 30326,
+      "outputHeight": 1318,
+      "outputPath": "results/mm-logo-alpha_png-img-95-0.webp",
+      "outputWidth": 3583,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/mm-logo-alpha.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 3583
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 22658,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/photopea-ui.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 80.45904652235308,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\nwarning: \"cross-format metadata loss: PNG tEXt\"\nwarning: \"cross-format metadata loss: PNG tEXt\"\nwarning: \"cross-format metadata loss: PNG iTXt\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "photopea-ui.png",
+      "height": 941,
+      "inputBytes": 77962,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 22658,
+      "outputHeight": 941,
+      "outputPath": "results/photopea-ui_png-img-80-0.webp",
+      "outputWidth": 1919,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 80.45904652235308,
+      "sourcePath": "corpus/validation/photopea-ui.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1919
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 110759,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/photopea-ui.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "photopea-ui.png",
+      "height": 941,
+      "inputBytes": 77962,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 110759,
+      "outputHeight": 941,
+      "outputPath": "results/photopea-ui_png-img-png-80-0.png",
+      "outputWidth": 1919,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/photopea-ui.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 1919
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 32268,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/photopea-ui.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\nwarning: \"cross-format metadata loss: PNG tEXt\"\nwarning: \"cross-format metadata loss: PNG tEXt\"\nwarning: \"cross-format metadata loss: PNG iTXt\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "photopea-ui.png",
+      "height": 941,
+      "inputBytes": 77962,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 32268,
+      "outputHeight": 941,
+      "outputPath": "results/photopea-ui_png-img-90-0.webp",
+      "outputWidth": 1919,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/photopea-ui.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1919
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 32268,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/photopea-ui.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": "warning: \"cross-format metadata loss: PNG pHYs\"\nwarning: \"cross-format metadata loss: PNG tEXt\"\nwarning: \"cross-format metadata loss: PNG tEXt\"\nwarning: \"cross-format metadata loss: PNG iTXt\"\n"
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "photopea-ui.png",
+      "height": 941,
+      "inputBytes": 77962,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 32268,
+      "outputHeight": 941,
+      "outputPath": "results/photopea-ui_png-img-95-0.webp",
+      "outputWidth": 1919,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/photopea-ui.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1919
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 5060,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-16512.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 80.78518399321577,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "boundary-16512.png",
+      "height": 128,
+      "inputBytes": 41466,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 5060,
+      "outputHeight": 128,
+      "outputPath": "results/boundary-16512_png-img-80-0.webp",
+      "outputWidth": 129,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 80.78518399321577,
+      "sourcePath": "corpus/validation/boundary-16512.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 129
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 41466,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-16512.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "boundary-16512.png",
+      "height": 128,
+      "inputBytes": 41466,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 41466,
+      "outputHeight": 128,
+      "outputPath": "results/boundary-16512_png-img-png-80-0.png",
+      "outputWidth": 129,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/boundary-16512.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 129
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 10552,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-16512.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 90.34153593369255,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "boundary-16512.png",
+      "height": 128,
+      "inputBytes": 41466,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 10552,
+      "outputHeight": 128,
+      "outputPath": "results/boundary-16512_png-img-90-0.webp",
+      "outputWidth": 129,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 90.34153593369255,
+      "sourcePath": "corpus/validation/boundary-16512.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 129
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 15368,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-16512.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "boundary-16512.png",
+      "height": 128,
+      "inputBytes": 41466,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 15368,
+      "outputHeight": 128,
+      "outputPath": "results/boundary-16512_png-img-95-0.webp",
+      "outputWidth": 129,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/boundary-16512.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 129
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 65012,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-199809.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 82.75526303299571,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "boundary-199809.png",
+      "height": 447,
+      "inputBytes": 499340,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 65012,
+      "outputHeight": 447,
+      "outputPath": "results/boundary-199809_png-img-80-0.webp",
+      "outputWidth": 447,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 82.75526303299571,
+      "sourcePath": "corpus/validation/boundary-199809.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 447
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 499340,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-199809.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "boundary-199809.png",
+      "height": 447,
+      "inputBytes": 499340,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 499340,
+      "outputHeight": 447,
+      "outputPath": "results/boundary-199809_png-img-png-80-0.png",
+      "outputWidth": 447,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/boundary-199809.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 447
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 110694,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-199809.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 90.19118281092183,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "boundary-199809.png",
+      "height": 447,
+      "inputBytes": 499340,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 110694,
+      "outputHeight": 447,
+      "outputPath": "results/boundary-199809_png-img-90-0.webp",
+      "outputWidth": 447,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 90.19118281092183,
+      "sourcePath": "corpus/validation/boundary-199809.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 447
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 184612,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-199809.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "boundary-199809.png",
+      "height": 447,
+      "inputBytes": 499340,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 184612,
+      "outputHeight": 447,
+      "outputPath": "results/boundary-199809_png-img-95-0.webp",
+      "outputWidth": 447,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/boundary-199809.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 447
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 130660,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-400689.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 82.5367966042892,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "boundary-400689.png",
+      "height": 633,
+      "inputBytes": 1000358,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 130660,
+      "outputHeight": 633,
+      "outputPath": "results/boundary-400689_png-img-80-0.webp",
+      "outputWidth": 633,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 82.5367966042892,
+      "sourcePath": "corpus/validation/boundary-400689.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 633
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 1000358,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-400689.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "boundary-400689.png",
+      "height": 633,
+      "inputBytes": 1000358,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 1000358,
+      "outputHeight": 633,
+      "outputPath": "results/boundary-400689_png-img-png-80-0.png",
+      "outputWidth": 633,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/boundary-400689.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 633
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 239462,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-400689.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 90.20690451734761,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "boundary-400689.png",
+      "height": 633,
+      "inputBytes": 1000358,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 239462,
+      "outputHeight": 633,
+      "outputPath": "results/boundary-400689_png-img-90-0.webp",
+      "outputWidth": 633,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 90.20690451734761,
+      "sourcePath": "corpus/validation/boundary-400689.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 633
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 371904,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-400689.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "boundary-400689.png",
+      "height": 633,
+      "inputBytes": 1000358,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 371904,
+      "outputHeight": 633,
+      "outputPath": "results/boundary-400689_png-img-95-0.webp",
+      "outputWidth": 633,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/boundary-400689.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 633
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 338890,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-1048575.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 82.29729177678988,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "boundary-1048575.png",
+      "height": 1025,
+      "inputBytes": 2615283,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 338890,
+      "outputHeight": 1025,
+      "outputPath": "results/boundary-1048575_png-img-80-0.webp",
+      "outputWidth": 1023,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 82.29729177678988,
+      "sourcePath": "corpus/validation/boundary-1048575.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1023
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 2615283,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-1048575.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "boundary-1048575.png",
+      "height": 1025,
+      "inputBytes": 2615283,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 2615283,
+      "outputHeight": 1025,
+      "outputPath": "results/boundary-1048575_png-img-png-80-0.png",
+      "outputWidth": 1023,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/boundary-1048575.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 1023
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 622846,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-1048575.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 90.01981391807581,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "boundary-1048575.png",
+      "height": 1025,
+      "inputBytes": 2615283,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 622846,
+      "outputHeight": 1025,
+      "outputPath": "results/boundary-1048575_png-img-90-0.webp",
+      "outputWidth": 1023,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 90.01981391807581,
+      "sourcePath": "corpus/validation/boundary-1048575.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1023
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 972824,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-1048575.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "boundary-1048575.png",
+      "height": 1025,
+      "inputBytes": 2615283,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 972824,
+      "outputHeight": 1025,
+      "outputPath": "results/boundary-1048575_png-img-95-0.webp",
+      "outputWidth": 1023,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/boundary-1048575.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1023
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 334658,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-1048576.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 82.20135061488483,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "boundary-1048576.png",
+      "height": 1024,
+      "inputBytes": 2613386,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 334658,
+      "outputHeight": 1024,
+      "outputPath": "results/boundary-1048576_png-img-80-0.webp",
+      "outputWidth": 1024,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 82.20135061488483,
+      "sourcePath": "corpus/validation/boundary-1048576.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1024
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 2613386,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-1048576.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "boundary-1048576.png",
+      "height": 1024,
+      "inputBytes": 2613386,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 2613386,
+      "outputHeight": 1024,
+      "outputPath": "results/boundary-1048576_png-img-png-80-0.png",
+      "outputWidth": 1024,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/boundary-1048576.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 1024
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 619340,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-1048576.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 90.22273344976318,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "boundary-1048576.png",
+      "height": 1024,
+      "inputBytes": 2613386,
+      "lossless": false,
+      "matchedWithinHalfPoint": true,
+      "outputBytes": 619340,
+      "outputHeight": 1024,
+      "outputPath": "results/boundary-1048576_png-img-90-0.webp",
+      "outputWidth": 1024,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 90.22273344976318,
+      "sourcePath": "corpus/validation/boundary-1048576.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1024
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 970198,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-1048576.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "boundary-1048576.png",
+      "height": 1024,
+      "inputBytes": 2613386,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 970198,
+      "outputHeight": 1024,
+      "outputPath": "results/boundary-1048576_png-img-95-0.webp",
+      "outputWidth": 1024,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/boundary-1048576.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1024
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 345922,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-1050625.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 81.6467573332646,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "boundary-1050625.png",
+      "height": 1025,
+      "inputBytes": 2620415,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 345922,
+      "outputHeight": 1025,
+      "outputPath": "results/boundary-1050625_png-img-80-0.webp",
+      "outputWidth": 1025,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 81.6467573332646,
+      "sourcePath": "corpus/validation/boundary-1050625.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1025
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 2620415,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-1050625.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "boundary-1050625.png",
+      "height": 1025,
+      "inputBytes": 2620415,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 2620415,
+      "outputHeight": 1025,
+      "outputPath": "results/boundary-1050625_png-img-png-80-0.png",
+      "outputWidth": 1025,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/validation/boundary-1050625.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 1025
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 694922,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-1050625.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 90.56756058810005,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": false,
+      "fixture": "boundary-1050625.png",
+      "height": 1025,
+      "inputBytes": 2620415,
+      "lossless": false,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 694922,
+      "outputHeight": 1025,
+      "outputPath": "results/boundary-1050625_png-img-90-0.webp",
+      "outputWidth": 1025,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 90.56756058810005,
+      "sourcePath": "corpus/validation/boundary-1050625.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1025
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 973120,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/validation/boundary-1050625.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5737/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "boundary-1050625.png",
+      "height": 1025,
+      "inputBytes": 2620415,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 973120,
+      "outputHeight": 1025,
+      "outputPath": "results/boundary-1050625_png-img-95-0.webp",
+      "outputWidth": 1025,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/validation/boundary-1050625.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 1025
+    }
+  ],
+  "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+  "runsPerSide": 1,
+  "rustc": "rustc 1.102.0-nightly (5b7b37aef 2026-11-08)",
+  "schemaVersion": 1,
+  "sourceDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "sourceDirty": false,
+  "summary": {
+    "img-png:boundary-1048575.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 2615283.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:boundary-1048576.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 2613386.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:boundary-1050625.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 2620415.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:boundary-16512.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 41466.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:boundary-199809.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 499340.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:boundary-400689.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 1000358.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:charolais-cattle.jpg:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 13517464.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:chelsea.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 241109.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:clock_motion.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 46809.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:coins.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 77990.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:goose-head.jpg:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 2933869.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:horse.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 19103.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:hubble_deep_field.jpg:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 1786763.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:marmolada.jpg:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:mm-logo-alpha.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 162488.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:mountain-landscape-met.jpg:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 16780184.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:photopea-ui.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 110759.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:piraeus-ferry.jpg:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:portrait-woman-met.jpg:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:retina.jpg:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 1574160.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:sous-tour-eiffel.jpg:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 9429669.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:text.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 44175.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img-png:utrecht-meetup.jpg:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 8187988.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-1048575.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 338890.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-1048575.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 622846.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-1048575.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 972824.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-1048576.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 334658.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-1048576.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 619340.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-1048576.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 970198.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-1050625.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 345922.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-1050625.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 694922.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-1050625.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 973120.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-16512.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 5060.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-16512.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 10552.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-16512.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 15368.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-199809.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 65012.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-199809.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 110694.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-199809.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 184612.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-400689.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 130660.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-400689.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 239462.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:boundary-400689.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 371904.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:charolais-cattle.jpg:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:charolais-cattle.jpg:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:charolais-cattle.jpg:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:chelsea.png:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:chelsea.png:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:chelsea.png:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:clock_motion.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 1250.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:clock_motion.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 46392.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:clock_motion.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 46392.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:coins.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 19292.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:coins.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 34266.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:coins.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 73024.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:goose-head.jpg:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:goose-head.jpg:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:goose-head.jpg:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:horse.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 3120.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:horse.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 4812.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:horse.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 6140.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:hubble_deep_field.jpg:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:hubble_deep_field.jpg:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:hubble_deep_field.jpg:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:marmolada.jpg:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:marmolada.jpg:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:marmolada.jpg:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:mm-logo-alpha.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 30326.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:mm-logo-alpha.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 30326.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:mm-logo-alpha.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 30326.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:mountain-landscape-met.jpg:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:mountain-landscape-met.jpg:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:mountain-landscape-met.jpg:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:photopea-ui.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 22658.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:photopea-ui.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 32268.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:photopea-ui.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 32268.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:piraeus-ferry.jpg:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:piraeus-ferry.jpg:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:piraeus-ferry.jpg:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:portrait-woman-met.jpg:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:portrait-woman-met.jpg:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:portrait-woman-met.jpg:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:retina.jpg:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 110648.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:retina.jpg:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 858376.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:retina.jpg:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 858376.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:sous-tour-eiffel.jpg:80.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:sous-tour-eiffel.jpg:90.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:sous-tour-eiffel.jpg:95.0": {
+      "completed": 0,
+      "failures": 1,
+      "medianElapsedMs": null,
+      "medianOutputBytes": null,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:text.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 11214.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:text.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 21492.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:text.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 42740.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:utrecht-meetup.jpg:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 741644.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:utrecht-meetup.jpg:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 4040140.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:utrecht-meetup.jpg:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 4040140.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    }
+  },
+  "timingGate": "not measured: capture mode",
+  "toolSha256": {
+    "cwebp": "unavailable",
+    "cwebp-lossless": "unavailable",
+    "img": "acfa8bd371aad6d7f81ed8841e6a18c5998cfa5d3e0720a19f94db1b4606f778",
+    "img-png": "acfa8bd371aad6d7f81ed8841e6a18c5998cfa5d3e0720a19f94db1b4606f778",
+    "original-mozjpeg": "unavailable",
+    "original-oxipng": "unavailable",
+    "original-ravif": "unavailable"
+  },
+  "tools": {
+    "cwebp": "1.6.0, single-threaded; cwebp-lossless adds -lossless -z 9",
+    "dedicatedAvif": "standalone unavailable; original ravif 0.13.0 included but emits unsupported 10-bit",
+    "img": "locked repository dist",
+    "jpegli": "unavailable",
+    "original": "66fc0fc plus docs/original-build.patch, release; mozjpeg 0.10.13 (mozjpeg-sys 2.2.3), oxipng 10.2.1, ravif 0.13.0",
+    "withdrawn": "pre-merge master 5424df8 (zenwebp 0.4.6), IMG_WITHDRAWN_BIN or .work/wt/withdrawn"
+  }
+}

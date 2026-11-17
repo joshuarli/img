@@ -781,3 +781,35 @@ chelsea/text — roughly 2-3x the originally recorded +0.9-18.7%.
 The keep decision stands (byte gains unchanged, absolute times still
 below L6); only the cost figures were wrong. All byte sweeps are
 deterministic and unaffected.
+
+Frontier refresh after meta-Huffman at levels 1-9 (untimed captures,
+`dist` build at `fc0b421`, `IMG_BENCH_FIXTURES`-filtered recapture of
+the pixel bands `fast_lossless_effort` maps to codec level 1 —
+(16,384, 200,000) and >400,000 px — plus dev `large.png`):
+[validation-l1meta](../benchmarks/results/untimed-validation-l1meta.json),
+[dev-l1meta](../benchmarks/results/untimed-dev-l1meta.json). Dev
+corpus photographic fixtures are all in the unchanged 200-400K px
+level-6 band; `large.png` scored lossy at all targets so no lossless
+record moved. On the product path every changed record improved and
+none regressed:
+
+- mm-logo-alpha t80/90/95: 33,566 -> 30,326 B; vs cwebp-lossless
+  -z9 gap +41.7% -> +28.0%.
+- utrecht-meetup t90/95: 4,093,780 -> 4,040,140 B; gap +4.9% -> +3.5%.
+- photopea-ui t90/95: 32,834 -> 32,268 B; gap +14.0% -> +12.1%.
+- retina.jpg t90/95: 867,854 -> 858,376 B; img's advantage over
+  cwebp-lossless widens -4.9% -> -5.9%.
+- clock_motion t90/95: 48,096 -> 46,392 B; gap +34.3% -> +29.5%.
+- coins t95: 74,784 -> 73,024 B; gap +10.9% -> +8.3%.
+- text t95: 43,020 -> 42,740 B; gap +4.1% -> +3.5%.
+- boundary-16512/199809/400689/1048575/1048576/1050625 t95: -202 to
+  -1,760 B each; ~25% gaps essentially unchanged (synthetic noise
+  content gains least from meta clustering).
+
+img-png records are lossless PNG outputs (PNG encoder untouched) and
+correctly show zero delta. The scored `img` records' lossless
+candidates are the Fast->level-1 WebP path, matching the codec-level
+sweep byte-for-byte (mm-logo 30,326, utrecht 4,040,140 vs workledger
+4,040,140-equivalent deltas). Remaining lossless-vs-libwebp gaps are
+now concentrated in mm-logo-alpha (+28%), clock_motion (+30%),
+photopea-ui (+12%), boundary synthetics (~25%) and coins (+8%).

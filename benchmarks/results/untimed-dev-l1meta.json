@@ -1,0 +1,267 @@
+{
+  "architecture": "aarch64",
+  "binarySha256": "acfa8bd371aad6d7f81ed8841e6a18c5998cfa5d3e0720a19f94db1b4606f778",
+  "cargoProfile": "dist",
+  "rayonThreads": 1,
+  "records": [
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 4434,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/large.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5819/img-95/output.webp",
+            "--score",
+            "80",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "large.png",
+      "height": 1024,
+      "inputBytes": 79758,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 4434,
+      "outputHeight": 1024,
+      "outputPath": "results/large_png-img-80-0.webp",
+      "outputWidth": 2048,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 80.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/large.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 2048
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 437952,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/large.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5819/img-png-95/output.png",
+            "--lossless",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": null,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "large.png",
+      "height": 1024,
+      "inputBytes": 79758,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 437952,
+      "outputHeight": 1024,
+      "outputPath": "results/large_png-img-png-80-0.png",
+      "outputWidth": 2048,
+      "parameters": {
+        "effort": "fast",
+        "lossless": true
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": null,
+      "sourcePath": "corpus/generated/large.png",
+      "target": 80.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img-png",
+      "width": 2048
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 4434,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/large.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5819/img-95/output.webp",
+            "--score",
+            "90",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "large.png",
+      "height": 1024,
+      "inputBytes": 79758,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 4434,
+      "outputHeight": 1024,
+      "outputPath": "results/large_png-img-90-0.webp",
+      "outputWidth": 2048,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 90.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/large.png",
+      "target": 90.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 2048
+    },
+    {
+      "architecture": "aarch64",
+      "attempts": [
+        {
+          "bytes": 4434,
+          "command": [
+            "/Users/josh/d/img/target/dist/img",
+            "convert",
+            "/Users/josh/d/img/benchmarks/corpus/generated/large.png",
+            "-o",
+            "/Users/josh/d/img/.work/tmp/benchmark-capture-5819/img-95/output.webp",
+            "--score",
+            "95",
+            "--effort",
+            "fast",
+            "--quiet"
+          ],
+          "exitCode": 0,
+          "quality": 95,
+          "score": 100.0,
+          "stderr": ""
+        }
+      ],
+      "completed": true,
+      "elapsedMs": null,
+      "exactSamples": true,
+      "fixture": "large.png",
+      "height": 1024,
+      "inputBytes": 79758,
+      "lossless": true,
+      "matchedWithinHalfPoint": false,
+      "outputBytes": 4434,
+      "outputHeight": 1024,
+      "outputPath": "results/large_png-img-95-0.webp",
+      "outputWidth": 2048,
+      "parameters": {
+        "effort": "fast",
+        "globalCandidateCap": 10,
+        "target": 95.0
+      },
+      "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+      "run": 0,
+      "schemaVersion": 1,
+      "score": 100.0,
+      "sourcePath": "corpus/generated/large.png",
+      "target": 95.0,
+      "threads": 1,
+      "timingAccepted": false,
+      "tool": "img",
+      "width": 2048
+    }
+  ],
+  "revision": "fc0b4218c8073524d4fb83ae27981edc84759b08",
+  "runsPerSide": 1,
+  "rustc": "rustc 1.102.0-nightly (5b7b37aef 2026-11-08)",
+  "schemaVersion": 1,
+  "sourceDiffSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "sourceDirty": false,
+  "summary": {
+    "img-png:large.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 437952.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:large.png:80.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 4434.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:large.png:90.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 4434.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    },
+    "img:large.png:95.0": {
+      "completed": 1,
+      "failures": 0,
+      "medianElapsedMs": null,
+      "medianOutputBytes": 4434.0,
+      "spreadMs": null,
+      "timingGate": "deferred"
+    }
+  },
+  "timingGate": "not measured: capture mode",
+  "toolSha256": {
+    "cwebp": "unavailable",
+    "cwebp-lossless": "unavailable",
+    "img": "acfa8bd371aad6d7f81ed8841e6a18c5998cfa5d3e0720a19f94db1b4606f778",
+    "img-png": "acfa8bd371aad6d7f81ed8841e6a18c5998cfa5d3e0720a19f94db1b4606f778",
+    "original-mozjpeg": "unavailable",
+    "original-oxipng": "unavailable",
+    "original-ravif": "unavailable"
+  },
+  "tools": {
+    "cwebp": "1.6.0, single-threaded; cwebp-lossless adds -lossless -z 9",
+    "dedicatedAvif": "standalone unavailable; original ravif 0.13.0 included but emits unsupported 10-bit",
+    "img": "locked repository dist",
+    "jpegli": "unavailable",
+    "original": "66fc0fc plus docs/original-build.patch, release; mozjpeg 0.10.13 (mozjpeg-sys 2.2.3), oxipng 10.2.1, ravif 0.13.0",
+    "withdrawn": "pre-merge master 5424df8 (zenwebp 0.4.6), IMG_WITHDRAWN_BIN or .work/wt/withdrawn"
+  }
+}
