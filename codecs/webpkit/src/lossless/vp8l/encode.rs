@@ -326,19 +326,49 @@ fn meta_shot(
     working_width: u32,
     ysize: u32,
 ) {
-    if let Some(plan) = meta::plan(model.tokens, pixels, working_width, ysize, cache_bits) {
-        keep_smaller(
-            best,
-            emit_stream_meta(
-                header_width,
-                header_height,
-                alpha_used,
-                plans,
-                cache_bits,
-                model,
-                &plan,
-            ),
-        );
+    let mut candidates = meta::bits_candidates(working_width, ysize).into_iter();
+    let Some(bits) = candidates.next() else { return };
+    let Some(plan) =
+        meta::plan_at_bits(model.tokens, pixels, working_width, ysize, cache_bits, bits)
+    else {
+        return;
+    };
+    keep_smaller(
+        best,
+        emit_stream_meta(
+            header_width,
+            header_height,
+            alpha_used,
+            plans,
+            cache_bits,
+            model,
+            &plan,
+        ),
+    );
+    // Coarser grids pay only when the fine grid's statistics already collapsed
+    // into few groups — then a bigger block shrinks the entropy image without
+    // losing the split. Photos keep many groups and skip the extra emits.
+    let blocks = (plan.entropy_xsize * subsample_size(ysize, plan.bits)) as usize;
+    if plan.group_histograms.len() * 8 > blocks {
+        return;
+    }
+    for bits in candidates {
+        if let Some(plan) =
+            meta::plan_at_bits(model.tokens, pixels, working_width, ysize, cache_bits, bits)
+        {
+            keep_smaller(
+                best,
+                emit_stream_meta(
+                    header_width,
+                    header_height,
+                    alpha_used,
+                    plans,
+                    cache_bits,
+                    model,
+                    &plan,
+                ),
+            );
+        }
     }
 }
 

@@ -904,3 +904,20 @@ restored from git and this capture's copies renamed to
 `l1meta-timed-text_png-img-*` with `outputPath` rewritten, so both
 documents verify. `IMG_BENCH_OUTPUT_PREFIX` exists for exactly this;
 future cross-corpus captures should set it.
+
+Meta-Huffman precision sweep: `meta::plan` always emitted the finest
+entropy grid `choose_bits` allows.
+libwebp tries several histogram precisions; this change emits the chosen
+grid plus the two coarser steps, each self-floored by real bytes. A coarser
+grid only pays when the fine grid's statistics already collapsed — gated on
+`groups * 8 <= entropy_blocks`, so group-rich content (every corpus photo)
+skips the extra emits entirely: photopea-ui and coffee work counters are
+bit-identical to baseline. Corpus evidence: 44/44 dev+validation fixtures
+byte-identical at L6 vs `895948d` (incl. utrecht 4,063,236, mm-logo-alpha
+30,326, photopea-ui 32,268); the mechanism wins on regioned synthetic
+content (512x512 half-flat/half-noise: 394,270 -> 393,984 B, -286) where a
+coarser grid keeps the region split with a smaller entropy image. Also
+recorded: codec L9 still trails `cwebp -z9` on photos (camera 130,136 vs
+123,720; astronaut 341,490 vs 329,608; coffee 343,922 vs 336,030) — the
+residual lossless gap is algorithmic (candidate set / cost model), not
+search depth; effort increases buy nothing there.

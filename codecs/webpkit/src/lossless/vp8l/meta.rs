@@ -46,6 +46,7 @@ pub(crate) struct MetaPlan {
               (`entropy_xsize` is also the emitted `MetaPlan` field); the x/y pair is \
               intentional and clearer than renaming one side"
 )]
+#[cfg(test)]
 pub(crate) fn plan(
     tokens: &[Token],
     pixels: &[u32],
@@ -54,6 +55,30 @@ pub(crate) fn plan(
     cache_bits: u32,
 ) -> Option<MetaPlan> {
     let bits = choose_bits(width, ysize)?;
+    plan_at_bits(tokens, pixels, width, ysize, cache_bits, bits)
+}
+
+/// The meta precisions worth emitting for this image: the finest grid
+/// [`choose_bits`] allows plus the two coarser steps. A coarser grid merges
+/// statistics that were already alike, shrinking the entropy image and group
+/// headers; real emitted bytes decide, so extras only cost encode time.
+pub(crate) fn bits_candidates(width: u32, ysize: u32) -> Vec<u32> {
+    let Some(bits) = choose_bits(width, ysize) else {
+        return Vec::new();
+    };
+    (bits..=bits.saturating_add(2).min(MAX_META_BITS)).collect()
+}
+
+/// [`plan`] at an explicit precision; `None` under the same conditions, with
+/// the block grid derived from `bits` instead of [`choose_bits`].
+pub(crate) fn plan_at_bits(
+    tokens: &[Token],
+    pixels: &[u32],
+    width: u32,
+    ysize: u32,
+    cache_bits: u32,
+    bits: u32,
+) -> Option<MetaPlan> {
     let entropy_xsize = subsample_size(width, bits);
     let entropy_ysize = subsample_size(ysize, bits);
     let num_blocks = (entropy_xsize * entropy_ysize) as usize;
