@@ -1314,3 +1314,12 @@ grass (95 -> 42.5 ms at q75) but at matched score the winner grows
 +8.0% on coffee t80 (53,874 -> 58,156 B) and +1.2% on grass t80 —
 far over the 1% stratum guardrail. AUTO's Best tier on <=1 MP
 inputs is load-bearing for output size; reverted.
+
+Decode and mode-decision cost checks: `webpkit::decode` runs 7.9 ms
+on a 512x512 lossless stream and 17.6 ms on 2048x1024 — roughly 8-18
+ms per scored candidate, small beside the 30-500 ms encodes, so
+decode is not a workflow bottleneck. The lossy mode decision is
+already two-phase (cheap round-to-nearest ranking, then trellis
+re-encode of only the top `WHOLE_BLOCK_TRELLIS_KEEPS`), and
+`sse_block` carries a prior measured optimization note — the safe
+kernel surface is picked over.
