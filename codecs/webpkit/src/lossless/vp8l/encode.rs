@@ -1246,6 +1246,93 @@ fn spec_keep_masks(spec_ests: &[Option<Vec<u64>>]) -> Vec<Vec<bool>> {
         .collect()
 }
 
+/// Sampled LZ77 match coverage in per-mille: the fraction of sampled pixel
+/// positions whose pixel-pair already occurred within a 16K-pixel window
+/// earlier in the stream. Order-0 entropy cannot see backreference
+/// redundancy; this is the cheap signal that can. A direct-mapped table
+/// keeps one (key, position) entry per slot — collisions overwrite like a
+/// depth-1 hash chain, which is all an estimate needs.
+fn match_coverage(pixels: &[u32]) -> u64 {
+    const STRIDE: usize = 4;
+    const WINDOW: usize = 16384;
+    const BITS: u32 = 16;
+    let mut table = vec![u128::MAX; 1usize << BITS];
+    let (mut hits, mut total) = (0u64, 0u64);
+    let mut i = 0usize;
+    while i + 1 < pixels.len() {
+        let key = (u64::from(pixels[i]) << 32) | u64::from(pixels[i + 1]);
+        let h = (key ^ (key >> 32))
+            .wrapping_mul(0x9E37_79B9_7F4A_7C15)
+            .wrapping_shr(64 - BITS) as usize;
+        let e = table[h];
+        let pos = (e & 0xFFFF_FFFF) as usize;
+        if e >> 32 == u128::from(key) && i.wrapping_sub(pos) <= WINDOW {
+            hits += 1;
+        }
+        table[h] = (u128::from(key) << 32) | u128::from(i as u32);
+        i += STRIDE;
+        total += 1;
+    }
+    if total == 0 {
+        return 0;
+    }
+    hits * 1024 / total
+}
+
+/// Coverage-discounted bit estimate for one spec buffer: order-0 entropy
+/// scaled by sampled match coverage. Used ONLY as a coarse task-standing
+/// score — never inside per-spec ordering, where the ~3% reordering it
+/// causes provably loses byte winners (`validation_chelsea`).
+fn coverage_adjusted_estimate(pixels: &[u32]) -> u64 {
+    let entropy = stream_entropy(pixels);
+    let coverage = match_coverage(pixels);
+    entropy
+        .saturating_mul(1024u64.saturating_sub(coverage))
+        / 1024
+}
+
+/// Cheap score for one kept task: the minimum
+/// [`coverage_adjusted_estimate`] over its mask-surviving specs. `None`
+/// for Floor/Palette (no specs, unconditional) and for tasks whose specs
+/// were all masked out.
+fn cheap_task_score(
+    task: BestTask,
+    keep: bool,
+    mask: &[bool],
+    width: u32,
+    height: u32,
+    argb: &[u32],
+    planes: Option<&PlaneCache>,
+    cc: Option<&CrossColorCache>,
+) -> Option<u64> {
+    if !keep || matches!(task, BestTask::Floor | BestTask::Palette) {
+        return None;
+    }
+    task_specs(task, width, height, argb, planes, cc, false)
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| mask.get(*i).copied().unwrap_or(true))
+        .map(|(_, spec)| coverage_adjusted_estimate(&spec.pixels))
+        .min()
+}
+
+/// Second keep band over the per-task [`cheap_task_score`]s: a kept
+/// scored task whose best coverage-adjusted estimate stands more than
+/// ~15% above the best kept estimate skips the full `family_search`.
+/// The cross-color-alone family trails by 1.5-2.4x on this signal on
+/// every corpus image and has never produced the byte winner; the kept
+/// near-tie cluster sits within ~11%. `None`-scored tasks (Floor/Palette,
+/// fully masked) always pass.
+fn coverage_band(scores: &[Option<u64>]) -> Vec<bool> {
+    let Some(min) = scores.iter().flatten().min() else {
+        return vec![true; scores.len()];
+    };
+    scores
+        .iter()
+        .map(|s| s.is_none_or(|v| v * 20 <= min * 23))
+        .collect()
+}
+
 /// Run every task serially (default) or across a rayon thread pool (feature
 /// `rayon`), folding each family to its own minimum and then across families, so
 /// the peak never holds every candidate stream at once — only the running best
@@ -1294,8 +1381,22 @@ fn evaluate_best_tasks(
         .iter()
         .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
         .collect();
-    let keep = select_from_estimates(&tasks, &estimates, wide);
+    let mut keep = select_from_estimates(&tasks, &estimates, wide);
     let spec_masks = spec_keep_masks(&spec_ests);
+    if wide {
+        let scores: Vec<Option<u64>> = tasks
+            .iter()
+            .zip(&keep)
+            .zip(&spec_masks)
+            .map(|((t, &k), mask)| {
+                cheap_task_score(*t, k, mask, width, height, argb, planes.as_ref(), cc.as_ref())
+            })
+            .collect();
+        let band = coverage_band(&scores);
+        for (k, b) in keep.iter_mut().zip(band) {
+            *k &= b;
+        }
+    }
     reduce_task_minima(
         tasks
             .into_iter()
@@ -1360,8 +1461,22 @@ fn evaluate_best_tasks(
         .iter()
         .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
         .collect();
-    let keep = select_from_estimates(&tasks, &estimates, wide);
+    let mut keep = select_from_estimates(&tasks, &estimates, wide);
     let spec_masks = spec_keep_masks(&spec_ests);
+    if wide {
+        let scores: Vec<Option<u64>> = tasks
+            .par_iter()
+            .zip(&keep)
+            .zip(&spec_masks)
+            .map(|((t, &k), mask)| {
+                cheap_task_score(*t, k, mask, width, height, argb, planes.as_ref(), cc.as_ref())
+            })
+            .collect();
+        let band = coverage_band(&scores);
+        for (k, b) in keep.iter_mut().zip(band) {
+            *k &= b;
+        }
+    }
     let minima: Vec<Option<Vec<u8>>> = tasks
         .into_par_iter()
         .zip(keep)
@@ -2484,10 +2599,10 @@ mod tests {
     #[test]
     fn serial_and_parallel_evaluation_agree() {
         use super::{
-            CrossColorCache, PlaneCache, build_best_tasks, encode_best, estimate_specs,
-            estimate_task, evaluate_best_tasks, keep_smallest, reduce_task_minima,
-            run_best_task, schedule, select_from_estimates, select_provisional,
-            spec_keep_masks, provisional_prunes,
+            CrossColorCache, PlaneCache, build_best_tasks, cheap_task_score, coverage_band,
+            encode_best, estimate_specs, estimate_task, evaluate_best_tasks, keep_smallest,
+            reduce_task_minima, run_best_task, schedule, select_from_estimates,
+            select_provisional, spec_keep_masks, provisional_prunes,
         };
         let breadth = schedule(crate::effort::MAX_LEVEL);
         for (w, h, pixels) in byte_stability_cases() {
@@ -2523,8 +2638,31 @@ mod tests {
                 .iter()
                 .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
                 .collect();
-            let keep = select_from_estimates(&tasks, &estimates, wide);
+            let mut keep = select_from_estimates(&tasks, &estimates, wide);
             let spec_masks = spec_keep_masks(&spec_ests);
+            if wide {
+                let scores: Vec<Option<u64>> = tasks
+                    .iter()
+                    .zip(&keep)
+                    .zip(&spec_masks)
+                    .map(|((t, &k), mask)| {
+                        cheap_task_score(
+                            *t,
+                            k,
+                            mask,
+                            w,
+                            h,
+                            &pixels,
+                            planes.as_ref(),
+                            cc.as_ref(),
+                        )
+                    })
+                    .collect();
+                let band = coverage_band(&scores);
+                for (k, b) in keep.iter_mut().zip(band) {
+                    *k &= b;
+                }
+            }
             let serial = reduce_task_minima(
                 tasks
                     .into_iter()
