@@ -842,3 +842,21 @@ Qualification status at `286a625` (post level-1 meta landing):
   encode peak-RSS and animated/metadata edge refresh open.
 - Explicit gaps unchanged: mozjpeg/oxipng/ravif originals absent,
   SDR-gamut refusals, img-png unsafe-metadata refusal on coffee.
+
+Encode peak-RSS at level 1 (`/usr/bin/time -l`, workledger-scratch,
+meta vs pre-meta HEAD build): coffee 35.0 -> 45.6 MB (+30%),
+grass 34.6 -> 37.7 MB (+9%), chelsea 25.5 -> 33.3 MB (+31%),
+mm-logo-alpha 375 -> 383 MiB (+2%), utrecht-meetup 1.05 -> 1.26 GiB
+(+20%, +226 MB worst case). Meta planning/emit buffers add bounded
+scratch on top of the pixel-dominated baseline; absolute deltas are
+<=10 MB on sub-1 MP images and <=226 MB on the 8 MP stratum, all
+freed at encode end. Recorded as the resource-cost evidence for the
+level-1 meta landing.
+
+Fuzz/conformance evidence: `PROPTEST_CASES=512 cargo test --locked
+--lib lossless::` at `7f71f6e` — 367/367 pass in 657 s, covering
+encode_best round-trips/floors/serial-parity proptests, meta emit
+decode-to-source, decode_incr arbitrary/split streams, and
+near-lossless bounds. Combined with codec_boundary hostile-input
+tests and the 24+25-fixture byte sweeps, this is the bounded
+campaign evidence; a longer dedicated fuzz run remains open.
