@@ -813,3 +813,14 @@ sweep byte-for-byte (mm-logo 30,326, utrecht 4,040,140 vs workledger
 4,040,140-equivalent deltas). Remaining lossless-vs-libwebp gaps are
 now concentrated in mm-logo-alpha (+28%), clock_motion (+30%),
 photopea-ui (+12%), boundary synthetics (~25%) and coins (+8%).
+
+Decode-cost spot check on the meta-Huffman streams (img decoder,
+best-of-8 decode wall, `scratch-decode` release): meta streams cost
+~3-10% more decode time than the same fixtures' pre-meta L1 streams
+— mm-logo-alpha 6.13 -> 6.34 ms, photopea-ui 4.05 -> 4.31 ms,
+clock_motion 1.31 -> 1.43 ms, coins 1.35 -> 1.40 ms, utrecht
+115.3 -> 126.5 ms — the expected per-block histogram-group lookup.
+img still decodes utrecht faster than cwebp-lossless (126.5 vs
+135.8 ms) and remains ~1.5x cwebp-lossless on the small alpha/UI
+strata, consistent with the earlier ±25% decode finding. Encode
+peak-RSS and full decode-matrix refresh remain open.
