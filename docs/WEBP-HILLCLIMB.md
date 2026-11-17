@@ -734,3 +734,45 @@ Verified: 922 lib tests incl. monotone/floor/serial-parity, 5
 doctests, alloc-only check, x86_64+aarch64 musl checks, L4=L6
 collapse spot-verified. Frontiers vs cwebp-lossless recomputed in
 the next qualification pass.
+
+Meta-Huffman at codec level 1 LANDED (this commit): the Fast-effort
+lossless path (`fast_lossless_effort`) maps every pixel band outside
+<=16,384 px and 200-400K px to `Effort::level(1)`, so the recorded
+lossless-vs-libwebp gap concentrated exactly where meta-Huffman was
+still off. Level 1 now runs meta shots on the greedy and DP streams;
+level 0 (explicit minimum) unchanged. AUTO never selects levels 0-1
+(`content_level` floors at 3, `size_cap` at 2), so this affects only
+the product Fast tier and explicit `Effort::level(1)` callers.
+
+Byte evidence — L1 sweep over all 25 corpus .rgba fixtures, zero
+positive deltas, -115,890 B total: mm-logo-alpha 33566 -> 30326
+(-9.7%, equal to L6 bytes), camera -13,838 B (-9.3%), coffee
+366756 -> 346932 (-19,824 B, -5.4%), chelsea -8,170 B (-5.0%),
+utrecht-meetup -53,640 B (-1.3%), photopea-ui -566 B, clock_motion
+-1,704 B, coins -1,760 B, text -280 B, boundary fixtures -374/-1162 B,
+plus small gains; generated/grass/gravel near-equal. On coffee,
+grass, chelsea and camera the L1+meta output now equals the former
+L2/L3+meta bytes — meta was the binding constraint, not tile bits —
+so Fast gains roughly a level of byte quality at roughly half of
+level 2's encode time.
+
+Timing cost — gated interleaved A/B vs a fresh HEAD build
+(`time=` wall medians of 4 rounds, pre-gate 0 / post-gate 0, all
+outputs byte-confirmed): coffee 1.24 -> 2.30 s (+85%), grass
+1.93 -> 2.75 s (+42%), chelsea 0.74 -> 1.11 s (+50%), text
+0.56 -> 0.70 s (+24%), camera 2.22 -> 2.94 s (+33%), utrecht
+96.2 -> 104.7 s (+8.9%), mm-logo-alpha 33.7 -> 39.6 s (+17.6%).
+Accepted as a frontier trade: absolute Fast-tier times stay far
+below levels 2/6 (L1+meta coffee 2.3 s vs L6 ~3.7 s), the largest
+relative costs land on sub-3 s encodes where the absolute delta is
+~1 s, and the byte gains concentrate on the strata that trail
+libwebp. grass is the poor-ratio case (+42% for -0.2%) and is
+recorded as such; a content-gated meta shot is a possible future
+refinement but adds a heuristic knob for one stratum.
+
+Harness caveat discovered here: the `.work/wt/metabase` binary used
+for the earlier L2/L3 meta A/B was stale (pre-rebuild artifact,
+~3.5x slow on L1); its byte outputs were unaffected but the recorded
++0.9-18.7% L3 timings need re-measurement against a rebuilt
+35af988 binary — queued next. All byte sweeps are deterministic and
+unaffected.
