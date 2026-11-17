@@ -217,6 +217,7 @@ fn search_lz77_variant(
     optimal_parse: bool,
     meta_huffman: bool,
     fine_meta: bool,
+    reparse: bool,
     chain_cap: u32,
 ) -> (Vec<u8>, Vec<u8>) {
     let emit = |cache_bits, model: &RefModel<'_>, histogram: &Histogram| {
@@ -269,12 +270,53 @@ fn search_lz77_variant(
         let tokens_dp = parse_optimal(pixels, working_width, &tokens_lz77, &chain, optimal_chain_cap);
         let shallow_dp = (chain_cap == MAX_CHAIN_OPTIMAL && pixels.len() < DEEP_CHAIN_MIN_PIXELS)
             .then(|| parse_optimal(pixels, working_width, &tokens_lz77, &chain, MAX_CHAIN));
+        // Re-parse against the histogram the DP stream itself implies: the DP
+        // prices matches under the greedy stream's distribution, which
+        // systematically misprices the matches an optimal parse prefers.
+        // Iterating to a token fixed point recovers most of the gap (each pass
+        // is one more DP walk); intermediate streams are discarded un-emitted —
+        // only the converged stream and the first-pass stream are candidates.
+        let reparsed = if reparse && tokens_dp != tokens_lz77 {
+            let mut prev = tokens_dp.clone();
+            for _ in 0..REPARSE_MAX_PASSES {
+                let next = parse_optimal(pixels, working_width, &prev, &chain, optimal_chain_cap);
+                if next == prev {
+                    break;
+                }
+                prev = next;
+            }
+            (prev != tokens_dp).then_some(prev)
+        } else {
+            None
+        };
         drop(chain);
         let model_dp = RefModel::new(&tokens_dp, pixels, working_width);
         let (cache_dp, hist_dp) = best_cache_bits(&model_dp);
         let dp_stream = emit(cache_dp, &model_dp, &hist_dp);
         keep_smaller(&mut plain, dp_stream.clone());
         keep_smaller(&mut best, dp_stream);
+        if let Some(tokens_re) = reparsed {
+            let model_re = RefModel::new(&tokens_re, pixels, working_width);
+            let (cache_re, hist_re) = best_cache_bits(&model_re);
+            let re_stream = emit(cache_re, &model_re, &hist_re);
+            keep_smaller(&mut plain, re_stream.clone());
+            keep_smaller(&mut best, re_stream);
+            if meta_huffman {
+                meta_shot(
+                    &mut best,
+                    header_width,
+                    header_height,
+                    alpha_used,
+                    plans,
+                    cache_re,
+                    &model_re,
+                    fine_meta,
+                    pixels,
+                    working_width,
+                    ysize,
+                );
+            }
+        }
         if let Some(tokens_shallow) = shallow_dp {
             let model_shallow = RefModel::new(&tokens_shallow, pixels, working_width);
             let (cache_shallow, hist_shallow) = best_cache_bits(&model_shallow);
@@ -460,6 +502,7 @@ fn search_lz77(
         true,
         false,
         false,
+        false,
         chain_cap,
     )
     .0
@@ -487,6 +530,7 @@ fn search_lz77_best(
         true,
         true,
         false,
+        false,
         MAX_CHAIN_OPTIMAL,
     )
     .1
@@ -495,6 +539,10 @@ fn search_lz77_best(
 /// Tile-bits candidates for the predictor/cross-color families. [`keep_smaller`]
 /// ranks by REAL emitted bytes, so widening this array can only shrink the result.
 const TRANSFORM_TILE_BITS_SWEEP: [u32; 4] = [2, 3, 4, 5];
+/// Extra optimal-parse passes seeded by the previous pass's token stream when
+/// [`Breadth::reparse`] is on. Four passes capture the steep part of the
+/// convergence curve; the fixed-point check normally stops earlier.
+const REPARSE_MAX_PASSES: usize = 4;
 /// Extended grid sweep tried only on small images (<= [`SMALL_TILE_SWEEP_MAX_PIXELS`]).
 /// The fine grids capture the sub-megapixel synthetics' gradient structure (the
 /// transparent.png lossless candidate dropped 128 -> 110 B), while for photographic
@@ -532,6 +580,12 @@ struct Breadth {
     /// than [`meta::choose_bits`] — where libwebp's picks land on photos. The
     /// ~1000-block merge is quadratic, so this stays a top-level-only knob.
     fine_meta: bool,
+    /// Whether the optimal parse re-runs against the histogram its own first
+    /// pass implies, iterated to a fixed point — the cost model the DP prices
+    /// is the greedy stream's, which misprices the matches the DP itself
+    /// prefers. Each extra pass is one more DP walk, so this stays a deep-level
+    /// knob.
+    reparse: bool,
     /// Hop cap for the optimal-parse DP's staircase walk. Small images at low
     /// levels keep [`MAX_CHAIN`] so their wall stays flat; effort level ≥ 3 or a
     /// large image opens [`MAX_CHAIN_OPTIMAL`] (see [`search_lz77_variant`]).
@@ -573,6 +627,7 @@ const fn schedule(level: u8) -> Breadth {
             optimal_parse: false,
             meta_huffman: false,
             fine_meta: false,
+            reparse: false,
             chain_cap,
         },
         1 => Breadth {
@@ -581,6 +636,7 @@ const fn schedule(level: u8) -> Breadth {
             optimal_parse: true,
             meta_huffman: true,
             fine_meta: false,
+            reparse: false,
             chain_cap,
         },
         2 => Breadth {
@@ -589,6 +645,7 @@ const fn schedule(level: u8) -> Breadth {
             optimal_parse: true,
             meta_huffman: true,
             fine_meta: false,
+            reparse: false,
             chain_cap,
         },
         3 => Breadth {
@@ -597,6 +654,7 @@ const fn schedule(level: u8) -> Breadth {
             optimal_parse: true,
             meta_huffman: true,
             fine_meta: false,
+            reparse: false,
             chain_cap,
         },
         // Level 6 is the product Fast-effort band for sub-400K-pixel images —
@@ -608,6 +666,7 @@ const fn schedule(level: u8) -> Breadth {
             optimal_parse: true,
             meta_huffman: true,
             fine_meta: false,
+            reparse: false,
             chain_cap,
         },
         _ => Breadth {
@@ -616,6 +675,7 @@ const fn schedule(level: u8) -> Breadth {
             optimal_parse: true,
             meta_huffman: true,
             fine_meta: true,
+            reparse: true,
             chain_cap,
         },
     }
@@ -773,6 +833,7 @@ fn family_search(
         breadth.optimal_parse,
         breadth.meta_huffman,
         breadth.fine_meta,
+        breadth.reparse,
         breadth.chain_cap,
     )
     .1
@@ -806,6 +867,7 @@ fn floor_streams(
             true,
             breadth.meta_huffman,
             breadth.fine_meta,
+            breadth.reparse,
             chain_cap,
         )
     };
@@ -3378,9 +3440,11 @@ mod tests {
 #[cfg(test)]
 mod proptests {
     use super::{
-        BestTask, CrossColorCache, PlaneCache, RefModel, best_cache_bits, emit_stream_meta,
-        encode, encode_best, encode_best_at, encode_with, floor_streams, run_best_task, schedule,
+        BestTask, CrossColorCache, PlaneCache, RefModel, TransformPlan, best_cache_bits,
+        emit_stream, emit_stream_meta, encode, encode_best, encode_best_at, encode_with,
+        floor_streams, meta_shot, parse_lz77, run_best_task, schedule, task_specs,
     };
+    use crate::lossless::vp8l::backref::parse_optimal;
     use crate::effort::MAX_LEVEL;
     use crate::lossless::constants::{ALPHABET_SIZE, MAX_CACHE_BITS, MAX_CHAIN_OPTIMAL};
     use crate::lossless::histogram::Histogram;
@@ -3693,5 +3757,59 @@ mod proptests {
         }
         let floor = floor_streams(breadth, w, h, alpha_used, &argb);
         println!("floor: {:?}", floor.iter().map(Vec::len).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn dump_reparse_bytes() {
+        let Ok(path) = std::env::var("WEBPKIT_DUMP") else {
+            return;
+        };
+        let bytes = std::fs::read(&path).unwrap();
+        let w = u32::from_le_bytes(bytes[0..4].try_into().unwrap());
+        let h = u32::from_le_bytes(bytes[4..8].try_into().unwrap());
+        let rgba = &bytes[8..];
+        let argb: Vec<u32> = rgba
+            .chunks_exact(4)
+            .map(|p| {
+                u32::from(p[3]) << 24
+                    | u32::from(p[0]) << 16
+                    | u32::from(p[1]) << 8
+                    | u32::from(p[2])
+            })
+            .collect();
+        let breadth = schedule(9);
+        let planes = PlaneCache::build(breadth, w, h, &argb);
+        let tasks = [BestTask::Predictor(3), BestTask::Predictor(5)];
+        let cc = CrossColorCache::new(&tasks, argb.len());
+        let alpha_used = argb.iter().any(|&p| p >> 24 != 0xff);
+        for task in tasks {
+            for spec in task_specs(task, w, h, &argb, planes.as_ref(), cc.as_ref(), false) {
+                let pixels = &spec.pixels;
+                let ww = spec.working_width;
+                let ysize = pixels.len() as u32 / ww;
+                let (tokens_lz77, chain) = parse_lz77(pixels);
+                let cap = crate::lossless::constants::MAX_CHAIN_OPTIMAL;
+                let mut passes: Vec<(&'static str, Vec<Token>)> = vec![("lz77", tokens_lz77.clone())];
+                let mut cur = tokens_lz77;
+                for k in 1..=4 {
+                    cur = parse_optimal(pixels, ww, &cur, &chain, cap);
+                    passes.push((match k { 1 => "dp1", 2 => "dp2", 3 => "dp3", _ => "dp4" }, cur.clone()));
+                }
+                for (name, tokens) in &passes {
+                    let model = RefModel::new(tokens, pixels, ww);
+                    let (cache, hist) = best_cache_bits(&model);
+                    let mut best = emit_stream(w, h, alpha_used, &spec.plans, cache, &model, &hist);
+                    let plain0 = emit_stream(w, h, alpha_used, &spec.plans, 0, &model, &model.histogram(0));
+                    if plain0.len() < best.len() {
+                        best = plain0;
+                    }
+                    meta_shot(
+                        &mut best, w, h, alpha_used, &spec.plans, cache, &model, true,
+                        pixels, ww, ysize,
+                    );
+                    println!("{task:?} spec: {name} -> {} B", best.len());
+                }
+            }
+        }
     }
 }

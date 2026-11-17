@@ -1350,3 +1350,20 @@ own stream implies. libwebp's -z9 path iterates backward-reference
 encoding against refreshed histograms; a second parse pass with a
 model rebuilt from first-pass tokens is the leading unexplored
 hypothesis for the residual ~4.4% camera gap. Untested.
+
+Re-parse iteration landed (levels 7-9 only): the optimal-parse DP
+prices matches under the *greedy* stream's histogram, which
+systematically misprices the matches an optimal parse prefers.
+`Breadth::reparse` re-runs `parse_optimal` seeded by the previous
+pass's token stream to a fixed point (cap 4 extra passes, early-out
+on token equality; intermediate streams un-emitted, first-pass
+stream kept as fallback so a regressing pass can never lose bytes).
+Measured at codec L9 (serial workledger): camera 129,170 -> 124,978 B
+(-3.2%, vs cwebp -z9 123,699 the gap is now ~1.0%), coffee
+343,922 -> 340,688 B (-0.94%), grass 212,156 -> 211,820 B (-0.16%),
+large.png (2 MP) -> 3,984 B. Cost: ~2.4x L9 encode wall on camera
+(19.1 -> 45.7 s serial); the flag lives only in the level 7-9
+breadth arm, and `auto_level`'s size cap keeps AUTO/Balanced at <=6
+and Fast at 1/6, so scored Fast latency is untouched. 370 lossless
+tests + 87 img lib tests pass, including round-trip, monotonicity,
+and serial/rayon agreement proptests.
