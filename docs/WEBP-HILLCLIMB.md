@@ -1284,3 +1284,16 @@ deep lossless (~3.6 s encode) which must run to produce the 4,362 B
 output. The next real lever is codec throughput — the cross-color
 NEON sweep (awaiting the unsafe-grant decision) or AUTO-tier lossy
 kernel profiling — not another selection-policy change.
+
+Codec work-count attribution (grass L1, `work-count` feature): the
+lossless encode's dominant counters are the LZ77 machinery —
+`match_hop` 155M, `resolve_walk` 51M, `match_compare` 19M,
+`optimal_dp_step` 3.4M — versus `cross_color_eval` only 15.2M (~5%).
+The earlier "cross-color sweep is the largest kernel target" note does
+not hold on this stratum; the wall is the per-spec optimal-parse match
+search itself, which is already rayon-parallel across specs and NEON-
+assisted in the match-length kernel. Combined with the trellis/autovector
+analysis above, every remaining Fast cost center is either the fidelity
+metric, an already-minimal search tier, or serial-ish match walking —
+policy-level Fast work is exhausted; further gains are codec-kernel
+efforts gated on the unsafe-grant decision or new algorithmic work.
