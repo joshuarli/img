@@ -1266,3 +1266,21 @@ scored workflow vs the campaign baseline is now: ~2x on large.png,
 ~2.1-2.7x on the tiny structured fixtures, ~1.3x on the
 photographic mid-band, with bytes equal or smaller everywhere
 completed.
+
+Fast-path phase attribution at `5807820` (scratch-eval + work-count
+ledger): the remaining scored-Fast wall time is codec- and
+metric-intrinsic, not policy waste. On grass t80 (~1.4 s
+single-thread benchmark): ~8 scored lossy candidates at
+`webpkit::Effort::AUTO` cost ~30-45 ms encode each (parallel;
+~90 ms single-thread on 512x512), the codec-L0 floor probe ~117 ms,
+and per-candidate decode (~9 ms) + ssimulacra2 score (~25 ms) ~35 ms
+each. Two apparent shortcuts are both dead ends measured this session:
+product Fast lossy already maps to codec AUTO because the frame `Fast`
+tier emits ~2x the bytes at the same quality setting (grass q75:
+130,658 B Fast-tier vs 67,368 B AUTO) — any cheaper tier breaks the
+size guardrails outright; and the ssimulacra2 score is the fidelity
+contract itself, not reducible work. On large.png the winner is the
+deep lossless (~3.6 s encode) which must run to produce the 4,362 B
+output. The next real lever is codec throughput — the cross-color
+NEON sweep (awaiting the unsafe-grant decision) or AUTO-tier lossy
+kernel profiling — not another selection-policy change.
