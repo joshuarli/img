@@ -624,7 +624,7 @@ const fn schedule(level: u8) -> Breadth {
 /// One independent `Effort` candidate family. Evaluated in the fixed order
 /// [`build_best_tasks`] emits, so [`reduce_task_minima`] is deterministic and the
 /// serial and rayon evaluators agree byte-for-byte.
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum BestTask {
     Floor,
     Palette,
@@ -1258,6 +1258,35 @@ fn estimate_specs(
         .collect()
 }
 
+/// The real-estimate pass for one task: per-spec order-0 entropy, plus — when
+/// `with_covs` — the coverage-adjusted band score, computed inside the same
+/// spec materialization so the wide-path keep bands never re-derive spec
+/// pixels. Returns `None` for spec-less tasks, matching `estimate_specs`.
+fn estimate_specs_scored(
+    task: BestTask,
+    width: u32,
+    height: u32,
+    argb: &[u32],
+    planes: Option<&PlaneCache>,
+    cc: Option<&CrossColorCache>,
+    with_covs: bool,
+) -> Option<(Vec<u64>, Vec<u64>)> {
+    let specs = task_specs(task, width, height, argb, planes, cc, false);
+    if specs.is_empty() {
+        return None;
+    }
+    let mut ents = Vec::with_capacity(specs.len());
+    let mut covs = Vec::new();
+    for spec in &specs {
+        let entropy = stream_entropy(&spec.pixels);
+        ents.push(entropy);
+        if with_covs {
+            covs.push(coverage_adjusted(entropy, match_coverage(&spec.pixels)));
+        }
+    }
+    Some((ents, covs))
+}
+
 /// Turn per-task estimates into the keep mask: `Floor`/`Palette` always
 /// kept; every other task ranked by its best buffer's order-0 entropy
 /// estimate, then each family keeps its best task plus near-ties under the
@@ -1373,13 +1402,10 @@ fn select_provisional(tasks: &[BestTask], estimates: &[Option<u64>]) -> Vec<bool
 fn select_keep(
     tasks: &[BestTask],
     estimates: &[Option<u64>],
-    wide: bool,
     pixels: usize,
     level: u8,
 ) -> Vec<bool> {
-    if pixels >= PRUNE_MIN_PIXELS {
-        return select_from_estimates(tasks, estimates, wide);
-    }
+    debug_assert!(pixels < PRUNE_MIN_PIXELS);
     let mut keep = select_from_estimates(tasks, estimates, false);
     let index_of = |t: &BestTask| tasks.iter().position(|c| c == t);
     for lower in 0..level {
@@ -1451,50 +1477,23 @@ fn match_coverage(pixels: &[u32]) -> u64 {
     hits * 1024 / total
 }
 
-/// Coverage-discounted bit estimate for one spec buffer: order-0 entropy
-/// scaled by sampled match coverage. Used ONLY as a coarse task-standing
-/// score — never inside per-spec ordering, where the ~3% reordering it
-/// causes provably loses byte winners (`validation_chelsea`).
-fn coverage_adjusted_estimate(pixels: &[u32]) -> u64 {
-    let entropy = stream_entropy(pixels);
-    let coverage = match_coverage(pixels);
+/// Coverage-discounted bit estimate from an already-computed order-0 entropy
+/// and sampled match coverage: order-0 entropy scaled by match coverage.
+/// Used ONLY as a coarse task-standing score — never inside per-spec ordering,
+/// where the ~3% reordering it causes provably loses byte winners
+/// (`validation_chelsea`).
+fn coverage_adjusted(entropy: u64, coverage: u64) -> u64 {
     entropy
         .saturating_mul(1024u64.saturating_sub(coverage))
         / 1024
 }
 
-/// Cheap score for one kept task: the minimum
-/// [`coverage_adjusted_estimate`] over its mask-surviving specs. `None`
-/// for Floor/Palette (no specs, unconditional) and for tasks whose specs
-/// were all masked out.
-fn cheap_task_score(
-    task: BestTask,
-    keep: bool,
-    mask: &[bool],
-    width: u32,
-    height: u32,
-    argb: &[u32],
-    planes: Option<&PlaneCache>,
-    cc: Option<&CrossColorCache>,
-) -> Option<u64> {
-    if !keep || matches!(task, BestTask::Floor | BestTask::Palette) {
-        return None;
-    }
-    task_specs(task, width, height, argb, planes, cc, false)
-        .iter()
-        .enumerate()
-        .filter(|(i, _)| mask.get(*i).copied().unwrap_or(true))
-        .map(|(_, spec)| coverage_adjusted_estimate(&spec.pixels))
-        .min()
-}
-
-/// Second keep band over the per-task [`cheap_task_score`]s: a kept
-/// scored task whose best coverage-adjusted estimate stands more than
-/// ~15% above the best kept estimate skips the full `family_search`.
-/// The cross-color-alone family trails by 1.5-2.4x on this signal on
-/// every corpus image and has never produced the byte winner; the kept
-/// near-tie cluster sits within ~11%. `None`-scored tasks (Floor/Palette,
-/// fully masked) always pass.
+/// Second keep band over the per-task coverage-adjusted scores: a kept
+/// scored task whose best estimate stands more than ~15% above the best kept
+/// estimate skips the full `family_search`. The cross-color-alone family
+/// trails by 1.5-2.4x on this signal on every corpus image and has never
+/// produced the byte winner; the kept near-tie cluster sits within ~11%.
+/// `None`-scored tasks (Floor/Palette, fully masked) always pass.
 fn coverage_band(scores: &[Option<u64>]) -> Vec<bool> {
     let Some(min) = scores.iter().flatten().min() else {
         return vec![true; scores.len()];
@@ -1503,6 +1502,150 @@ fn coverage_band(scores: &[Option<u64>]) -> Vec<bool> {
         .iter()
         .map(|s| s.is_none_or(|v| v * 20 <= min * 23))
         .collect()
+}
+
+/// Distinct task sets across levels `0..=level`, coarsest first. Levels that
+/// share a [`Breadth`] task set collapse to one entry — their keep decisions
+/// are identical, so simulating each distinct set once covers every level.
+fn breadth_task_sets(level: u8, pixels: u64) -> Vec<Vec<BestTask>> {
+    let mut sets: Vec<Vec<BestTask>> = Vec::new();
+    for l in 0..=level {
+        let tasks = build_best_tasks(schedule_for(l, pixels));
+        if sets.last() != Some(&tasks) {
+            sets.push(tasks);
+        }
+    }
+    sets
+}
+
+/// Provisional keep mask for the estimate pass: below [`PRUNE_MIN_PIXELS`]
+/// every task is estimated; at or above it, the union of each distinct
+/// breadth's own provisional selection — a task any coarser level would have
+/// estimated for real must be estimated now, or that level's keep decision
+/// cannot be reproduced exactly.
+fn provisional_keep(
+    tasks: &[BestTask],
+    level: u8,
+    pixels: usize,
+    cheap: &[Option<u64>],
+) -> Vec<bool> {
+    if pixels < PRUNE_MIN_PIXELS {
+        return vec![true; tasks.len()];
+    }
+    let index_of = |t: &BestTask| tasks.iter().position(|c| c == t);
+    let mut keep = vec![false; tasks.len()];
+    for set in breadth_task_sets(level, pixels as u64) {
+        if provisional_prunes(&set) {
+            let cheap_b: Vec<Option<u64>> = set
+                .iter()
+                .map(|t| index_of(t).and_then(|i| cheap.get(i).copied().flatten()))
+                .collect();
+            for (t, &k) in set.iter().zip(&select_provisional(&set, &cheap_b)) {
+                if k {
+                    if let Some(i) = index_of(&t) {
+                        keep[i] = true;
+                    }
+                }
+            }
+        } else {
+            for t in &set {
+                if let Some(i) = index_of(t) {
+                    keep[i] = true;
+                }
+            }
+        }
+    }
+    keep
+}
+
+/// Final keep mask plus per-spec masks. Below [`PRUNE_MIN_PIXELS`] this is
+/// [`select_keep`]'s union of coarser-level band selections. At or above it,
+/// every distinct breadth's full band pipeline — provisional cap, estimate
+/// bands, spec masks, coverage band — is simulated from the level-invariant
+/// per-task data and the results unioned, so the searched set at any level is
+/// a superset of the set any lower level searched. The [`Effort::level`]
+/// contract ("a higher level never yields a larger file") needs exactly that
+/// nesting: each level's own bands tighten as its task set grows, and without
+/// the union a task a lower level kept can silently drop out (measured:
+/// utrecht-meetup L1 -> L2 +7,608 B, retina L1 -> L2 +1,834 B,
+/// goose-head L3 -> L4 +5,326 B).
+fn final_keep(
+    tasks: &[BestTask],
+    level: u8,
+    pixels: usize,
+    cheap: &[Option<u64>],
+    spec_ests: &[Option<Vec<u64>>],
+    spec_covs: &[Option<Vec<u64>>],
+) -> (Vec<bool>, Vec<Vec<bool>>) {
+    let spec_masks = spec_keep_masks(spec_ests);
+    let estimates: Vec<Option<u64>> = spec_ests
+        .iter()
+        .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
+        .collect();
+    if pixels < PRUNE_MIN_PIXELS {
+        return (select_keep(tasks, &estimates, pixels, level), spec_masks);
+    }
+    let index_of = |t: &BestTask| tasks.iter().position(|c| c == t);
+    let mut keep = vec![false; tasks.len()];
+    for set in breadth_task_sets(level, pixels as u64) {
+        let wide_b = provisional_prunes(&set);
+        let prov_b: Vec<bool> = if wide_b {
+            let cheap_b: Vec<Option<u64>> = set
+                .iter()
+                .map(|t| index_of(t).and_then(|i| cheap.get(i).copied().flatten()))
+                .collect();
+            select_provisional(&set, &cheap_b)
+        } else {
+            vec![true; set.len()]
+        };
+        let ests_b: Vec<Option<u64>> = set
+            .iter()
+            .zip(&prov_b)
+            .map(|(t, &p)| {
+                if !p {
+                    return None;
+                }
+                index_of(t).and_then(|i| estimates[i])
+            })
+            .collect();
+        let mut keep_b = select_from_estimates(&set, &ests_b, wide_b);
+        if wide_b {
+            let scores: Vec<Option<u64>> = set
+                .iter()
+                .zip(&keep_b)
+                .map(|(t, &k)| -> Option<u64> {
+                    if !k || matches!(t, BestTask::Floor | BestTask::Palette) {
+                        return None;
+                    }
+                    let i = index_of(t)?;
+                    let covs = spec_covs.get(i)?.as_ref()?;
+                    covs.iter()
+                        .enumerate()
+                        .filter(|(j, _)| {
+                            spec_masks
+                                .get(i)
+                                .and_then(|m| m.get(*j))
+                                .copied()
+                                .unwrap_or(true)
+                        })
+                        .map(|(_, c)| *c)
+                        .min()
+                })
+                .collect();
+            let band = coverage_band(&scores);
+            for (k, b) in keep_b.iter_mut().zip(band) {
+                *k &= b;
+            }
+        }
+        for (t, &k) in set.iter().zip(&keep_b) {
+            if k {
+                if let Some(i) = index_of(&t) {
+                    keep[i] = true;
+                }
+            }
+        }
+    }
+    (keep, spec_masks)
 }
 
 /// Run every task serially (default) or across a rayon thread pool (feature
@@ -1529,47 +1672,41 @@ fn evaluate_best_tasks(
     // are produced, folded to one, and dropped before the next family runs.
     let planes = PlaneCache::build(breadth, width, height, argb);
     let cc = CrossColorCache::new(&tasks, argb.len());
-    let wide = provisional_prunes(&tasks) && argb.len() >= PRUNE_MIN_PIXELS;
-    let prov = if wide {
-        let cheap: Vec<Option<u64>> = tasks
+    let pixels = argb.len();
+    // The cheap coarse-forward pass only pays when some distinct breadth's
+    // provisional cap can actually prune; the coverage scores ride the same
+    // spec materialization under the same condition.
+    let need_cheap = pixels >= PRUNE_MIN_PIXELS
+        && breadth_task_sets(level, pixels as u64)
+            .iter()
+            .any(|set| provisional_prunes(set));
+    let cheap: Vec<Option<u64>> = if need_cheap {
+        tasks
             .iter()
             .map(|t| estimate_task(*t, width, height, argb, planes.as_ref(), None, true))
-            .collect();
-        select_provisional(&tasks, &cheap)
+            .collect()
     } else {
-        vec![true; tasks.len()]
+        Vec::new()
     };
-    let spec_ests: Vec<Option<Vec<u64>>> = tasks
+    let prov = provisional_keep(&tasks, level, pixels, &cheap);
+    let spec_pairs: Vec<Option<(Vec<u64>, Vec<u64>)>> = tasks
         .iter()
         .zip(&prov)
         .map(|(t, &p)| {
             if !p {
                 return None;
             }
-            let ests = estimate_specs(*t, width, height, argb, planes.as_ref(), cc.as_ref(), false);
-            (!ests.is_empty()).then_some(ests)
+            estimate_specs_scored(*t, width, height, argb, planes.as_ref(), cc.as_ref(), need_cheap)
         })
         .collect();
-    let estimates: Vec<Option<u64>> = spec_ests
-        .iter()
-        .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
-        .collect();
-    let mut keep = select_keep(&tasks, &estimates, wide, argb.len(), level);
-    let spec_masks = spec_keep_masks(&spec_ests);
-    if wide {
-        let scores: Vec<Option<u64>> = tasks
-            .iter()
-            .zip(&keep)
-            .zip(&spec_masks)
-            .map(|((t, &k), mask)| {
-                cheap_task_score(*t, k, mask, width, height, argb, planes.as_ref(), cc.as_ref())
-            })
-            .collect();
-        let band = coverage_band(&scores);
-        for (k, b) in keep.iter_mut().zip(band) {
-            *k &= b;
-        }
-    }
+    let (spec_ests, spec_covs): (Vec<Option<Vec<u64>>>, Vec<Option<Vec<u64>>>) = spec_pairs
+        .into_iter()
+        .map(|o| match o {
+            Some((ents, covs)) => (Some(ents), need_cheap.then_some(covs)),
+            None => (None, None),
+        })
+        .unzip();
+    let (keep, spec_masks) = final_keep(&tasks, level, pixels, &cheap, &spec_ests, &spec_covs);
     reduce_task_minima(
         tasks
             .into_iter()
@@ -1634,48 +1771,51 @@ fn evaluate_best_tasks(
             // ties identically to serial.
             let planes = PlaneCache::build(breadth, width, height, argb);
             let cc = CrossColorCache::new(&tasks, argb.len());
-            let wide = provisional_prunes(&tasks) && argb.len() >= PRUNE_MIN_PIXELS;
-            let prov = if wide {
-                let cheap: Vec<Option<u64>> = tasks
+            let pixels = argb.len();
+            // The cheap coarse-forward pass only pays when some distinct
+            // breadth's provisional cap can actually prune; the coverage
+            // scores ride the same spec materialization under the same
+            // condition.
+            let need_cheap = pixels >= PRUNE_MIN_PIXELS
+                && breadth_task_sets(level, pixels as u64)
+                    .iter()
+                    .any(|set| provisional_prunes(set));
+            let cheap: Vec<Option<u64>> = if need_cheap {
+                tasks
                     .par_iter()
                     .map(|t| estimate_task(*t, width, height, argb, planes.as_ref(), None, true))
-                    .collect();
-                select_provisional(&tasks, &cheap)
+                    .collect()
             } else {
-                vec![true; tasks.len()]
+                Vec::new()
             };
-            let spec_ests: Vec<Option<Vec<u64>>> = tasks
+            let prov = provisional_keep(&tasks, level, pixels, &cheap);
+            let spec_pairs: Vec<Option<(Vec<u64>, Vec<u64>)>> = tasks
                 .par_iter()
                 .zip(&prov)
                 .map(|(t, &p)| {
                     if !p {
                         return None;
                     }
-                    let ests =
-                        estimate_specs(*t, width, height, argb, planes.as_ref(), cc.as_ref(), false);
-                    (!ests.is_empty()).then_some(ests)
+                    estimate_specs_scored(
+                        *t,
+                        width,
+                        height,
+                        argb,
+                        planes.as_ref(),
+                        cc.as_ref(),
+                        need_cheap,
+                    )
                 })
                 .collect();
-            let estimates: Vec<Option<u64>> = spec_ests
-                .iter()
-                .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
-                .collect();
-            let mut keep = select_keep(&tasks, &estimates, wide, argb.len(), level);
-            let spec_masks = spec_keep_masks(&spec_ests);
-            if wide {
-                let scores: Vec<Option<u64>> = tasks
-                    .par_iter()
-                    .zip(&keep)
-                    .zip(&spec_masks)
-                    .map(|((t, &k), mask)| {
-                        cheap_task_score(*t, k, mask, width, height, argb, planes.as_ref(), cc.as_ref())
-                    })
-                    .collect();
-                let band = coverage_band(&scores);
-                for (k, b) in keep.iter_mut().zip(band) {
-                    *k &= b;
-                }
-            }
+            let (spec_ests, spec_covs): (Vec<Option<Vec<u64>>>, Vec<Option<Vec<u64>>>) = spec_pairs
+                .into_iter()
+                .map(|o| match o {
+                    Some((ents, covs)) => (Some(ents), need_cheap.then_some(covs)),
+                    None => (None, None),
+                })
+                .unzip();
+            let (keep, spec_masks) =
+                final_keep(&tasks, level, pixels, &cheap, &spec_ests, &spec_covs);
             tasks
                 .into_par_iter()
                 .zip(keep)
@@ -2807,70 +2947,57 @@ mod tests {
     #[test]
     fn serial_and_parallel_evaluation_agree() {
         use super::{
-            CrossColorCache, PlaneCache, build_best_tasks, cheap_task_score, coverage_band,
-            encode_best, estimate_specs, estimate_task, evaluate_best_tasks, keep_smallest,
-            reduce_task_minima, run_best_task, schedule, select_from_estimates, select_keep,
-            select_provisional, spec_keep_masks, provisional_prunes, PRUNE_MIN_PIXELS,
+            CrossColorCache, PlaneCache, build_best_tasks, encode_best, estimate_specs_scored,
+            estimate_task, evaluate_best_tasks, final_keep, keep_smallest, provisional_keep,
+            reduce_task_minima, run_best_task, schedule,
         };
         let breadth = schedule(crate::effort::MAX_LEVEL);
         for (w, h, pixels) in byte_stability_cases() {
             let alpha = pixels.iter().any(|&p| p >> 24 != 0xff);
-            // Independent serial reference: the same entropy pre-score and keep
-            // mask the evaluator computes, folding each kept family's own
+            // Independent serial reference: the same provisional/estimate/keep
+            // pipeline the evaluator computes, folding each kept family's own
             // minimum in task order.
             let planes = PlaneCache::build(breadth, w, h, &pixels);
             let tasks = build_best_tasks(breadth);
             let cc = CrossColorCache::new(&tasks, pixels.len());
-            let wide = provisional_prunes(&tasks) && pixels.len() >= PRUNE_MIN_PIXELS;
-            let prov = if wide {
-                let cheap: Vec<Option<u64>> = tasks
+            let need_cheap = pixels.len() >= super::PRUNE_MIN_PIXELS
+                && super::breadth_task_sets(crate::effort::MAX_LEVEL, pixels.len() as u64)
+                    .iter()
+                    .any(|set| super::provisional_prunes(set));
+            let cheap: Vec<Option<u64>> = if need_cheap {
+                tasks
                     .iter()
                     .map(|t| estimate_task(*t, w, h, &pixels, planes.as_ref(), None, true))
-                    .collect();
-                select_provisional(&tasks, &cheap)
+                    .collect()
             } else {
-                vec![true; tasks.len()]
+                Vec::new()
             };
-            let spec_ests: Vec<Option<Vec<u64>>> = tasks
+            let prov = provisional_keep(&tasks, crate::effort::MAX_LEVEL, pixels.len(), &cheap);
+            let spec_pairs: Vec<Option<(Vec<u64>, Vec<u64>)>> = tasks
                 .iter()
                 .zip(&prov)
                 .map(|(t, &p)| {
                     if !p {
                         return None;
                     }
-                    let ests = estimate_specs(*t, w, h, &pixels, planes.as_ref(), cc.as_ref(), false);
-                    (!ests.is_empty()).then_some(ests)
+                    estimate_specs_scored(*t, w, h, &pixels, planes.as_ref(), cc.as_ref(), need_cheap)
                 })
                 .collect();
-            let estimates: Vec<Option<u64>> = spec_ests
-                .iter()
-                .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
-                .collect();
-            let mut keep = select_keep(&tasks, &estimates, wide, pixels.len(), crate::effort::MAX_LEVEL);
-            let spec_masks = spec_keep_masks(&spec_ests);
-            if wide {
-                let scores: Vec<Option<u64>> = tasks
-                    .iter()
-                    .zip(&keep)
-                    .zip(&spec_masks)
-                    .map(|((t, &k), mask)| {
-                        cheap_task_score(
-                            *t,
-                            k,
-                            mask,
-                            w,
-                            h,
-                            &pixels,
-                            planes.as_ref(),
-                            cc.as_ref(),
-                        )
-                    })
-                    .collect();
-                let band = coverage_band(&scores);
-                for (k, b) in keep.iter_mut().zip(band) {
-                    *k &= b;
-                }
-            }
+            let (spec_ests, spec_covs): (Vec<Option<Vec<u64>>>, Vec<Option<Vec<u64>>>) = spec_pairs
+                .into_iter()
+                .map(|o| match o {
+                    Some((ents, covs)) => (Some(ents), need_cheap.then_some(covs)),
+                    None => (None, None),
+                })
+                .unzip();
+            let (keep, spec_masks) = final_keep(
+                &tasks,
+                crate::effort::MAX_LEVEL,
+                pixels.len(),
+                &cheap,
+                &spec_ests,
+                &spec_covs,
+            );
             let serial = reduce_task_minima(
                 tasks
                     .into_iter()
