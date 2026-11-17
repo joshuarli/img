@@ -1006,3 +1006,13 @@ failures identical on both binaries). Balanced/Best/Auto spot checks
 byte-identical. Probe overhead is zero on compressible content
 (entropy filter) and ~150-6500 ms on photo content where it replaces
 a 0.8-14 s deep encode.
+
+Qualification datapoints (scored convert path, coffee t80 fast):
+peak RSS 59.6 MB for `img convert` vs 4.3 MB for `cwebp -q 90 -m 4`
+— ~14x, expected given per-candidate decode+SSIMULACRA2 references
+and rayon task parallelism; recorded for the resource-limits gate,
+not yet a regression vs the withdrawn oracle (unmeasured). Scored
+converts now decode each candidate once (score_decoded reuses the
+validation decode; ea2bbc9). Output-equivalence sweep vs pre-gate
+binary: 105+ records, zero DIFF at time of writing; mm-logo-alpha
+(4.7 MP, the heaviest fixture) SAME at all three targets.
