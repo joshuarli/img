@@ -1367,3 +1367,8 @@ breadth arm, and `auto_level`'s size cap keeps AUTO/Balanced at <=6
 and Fast at 1/6, so scored Fast latency is untouched. 370 lossless
 tests + 87 img lib tests pass, including round-trip, monotonicity,
 and serial/rayon agreement proptests.
+
+Reparse generalization at codec L9 (serial): astronaut 338,320 ->
+333,736 B (-1.35%), chelsea -> 154,234 B, coins -> 70,356 B — the
+gain is consistent across photographic content, largest where the
+greedy histogram misprices the DP's preferred matches most.
