@@ -1016,3 +1016,36 @@ converts now decode each candidate once (score_decoded reuses the
 validation decode; ea2bbc9). Output-equivalence sweep vs pre-gate
 binary: 105+ records, zero DIFF at time of writing; mm-logo-alpha
 (4.7 MP, the heaviest fixture) SAME at all three targets.
+
+Finer meta-Huffman entropy grid (landed, codec levels 7-9 only):
+stream-structure dumps of `cwebp -z9` output showed libwebp picks a
+FINER entropy-image precision than our `choose_bits` — coffee uses
+bits=4 (38x25=950 blocks) where our 256-block cap forces bits=5
+(19x13=247). `bits_candidates` now prepends one step below
+`choose_bits` when the finer grid stays <= 1024 blocks
+(`FINE_META_MAX_BLOCKS`, bounding the quadratic cluster merge),
+offered to the DP-token meta shot only — the greedy shot keeps the
+old window (both-shots variant measured byte-identical on 8
+fixtures, so the cheaper form won). Gated to codec levels 7-9:
+level 6 is the product Fast-effort band for <=400K-pixel images
+and the ~1000-block merge roughly doubles its wall for ~1% bytes.
+
+Bytes (effort best = codec L9, vs HEAD binary, all improved):
+coffee 343,666 -> 340,698 (-2,968); astronaut 341,122 -> 336,928
+(-4,194); camera 130,034 -> 129,170 (-864); chelsea 161,846 ->
+160,512 (-1,334); grass 212,156 -> 211,820; gravel 188,418 ->
+188,250; photopea-ui 31,670 -> 31,346; clock_motion 40,642 ->
+40,602. Residual vs `cwebp -z9` coffee 336,030: ~1.4% (was ~2.3%).
+Fast/Balanced outputs byte-identical to base (fine_meta unreachable
+below level 7 except tiny AUTO->9 images where the grid is trivial).
+Cost (RAYON_NUM_THREADS=1 wall, effort best): coffee 4.6 -> 10.1 s,
+astronaut 4.0 -> 8.4 s, camera 5.9 -> 9.5 s (~1.6-2.2x); the added
+work is one ~1000-block greedy_cluster per kept DP meta shot.
+918 webpkit lib tests + alloc-only + musl checks green; serial/rayon
+agreement preserved (fine plan is deterministic per spec).
+
+Note: the in-flight timed frontier capture overlapped this rebuild
+— img records timed after ~06:26 ran the intermediate fine-meta
+binary while `binarySha256` records the pre-change build, so that
+capture is internally inconsistent and was discarded (timed.json
+reverted); recapture after this lands.

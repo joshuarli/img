@@ -212,6 +212,7 @@ fn search_lz77_variant(
     pixels: &[u32],
     optimal_parse: bool,
     meta_huffman: bool,
+    fine_meta: bool,
     chain_cap: u32,
 ) -> Vec<u8> {
     let emit = |cache_bits, model: &RefModel<'_>, histogram: &Histogram| {
@@ -263,6 +264,9 @@ fn search_lz77_variant(
         if meta_huffman {
             // A meta-Huffman shot on each of the greedy and DP streams — both
             // self-floored against the single-group candidates already folded in.
+            // The finer entropy grid is offered to the DP shot only: it is the
+            // stream that almost always wins, and the ~1000-block merge is the
+            // expensive part of meta planning.
             meta_shot(
                 &mut best,
                 header_width,
@@ -271,6 +275,7 @@ fn search_lz77_variant(
                 plans,
                 cache_lz77,
                 &model_lz77,
+                false,
                 pixels,
                 working_width,
                 ysize,
@@ -283,6 +288,7 @@ fn search_lz77_variant(
                 plans,
                 cache_dp,
                 &model_dp,
+                fine_meta,
                 pixels,
                 working_width,
                 ysize,
@@ -299,6 +305,7 @@ fn search_lz77_variant(
             plans,
             cache_lz77,
             &model_lz77,
+            fine_meta,
             pixels,
             working_width,
             ysize,
@@ -322,11 +329,12 @@ fn meta_shot(
     plans: &[TransformPlan],
     cache_bits: u32,
     model: &RefModel<'_>,
+    finer: bool,
     pixels: &[u32],
     working_width: u32,
     ysize: u32,
 ) {
-    let mut candidates = meta::bits_candidates(working_width, ysize).into_iter();
+    let mut candidates = meta::bits_candidates(working_width, ysize, finer).into_iter();
     let Some(bits) = candidates.next() else { return };
     let Some(plan) =
         meta::plan_at_bits(model.tokens, pixels, working_width, ysize, cache_bits, bits)
@@ -393,6 +401,7 @@ fn search_lz77(
         pixels,
         true,
         false,
+        false,
         chain_cap,
     )
 }
@@ -418,6 +427,7 @@ fn search_lz77_best(
         pixels,
         true,
         true,
+        false,
         MAX_CHAIN_OPTIMAL,
     )
 }
@@ -458,6 +468,10 @@ struct Breadth {
     optimal_parse: bool,
     /// Whether each family search adds the meta-Huffman shots.
     meta_huffman: bool,
+    /// Whether the DP-token meta shot also tries one entropy-grid step finer
+    /// than [`meta::choose_bits`] — where libwebp's picks land on photos. The
+    /// ~1000-block merge is quadratic, so this stays a top-level-only knob.
+    fine_meta: bool,
     /// Hop cap for the optimal-parse DP's staircase walk. Small images at low
     /// levels keep [`MAX_CHAIN`] so their wall stays flat; effort level ≥ 3 or a
     /// large image opens [`MAX_CHAIN_OPTIMAL`] (see [`search_lz77_variant`]).
@@ -498,6 +512,7 @@ const fn schedule(level: u8) -> Breadth {
             cross_color: false,
             optimal_parse: false,
             meta_huffman: false,
+            fine_meta: false,
             chain_cap,
         },
         1 => Breadth {
@@ -505,6 +520,7 @@ const fn schedule(level: u8) -> Breadth {
             cross_color: true,
             optimal_parse: true,
             meta_huffman: true,
+            fine_meta: false,
             chain_cap,
         },
         2 => Breadth {
@@ -512,6 +528,7 @@ const fn schedule(level: u8) -> Breadth {
             cross_color: true,
             optimal_parse: true,
             meta_huffman: true,
+            fine_meta: false,
             chain_cap,
         },
         3 => Breadth {
@@ -519,6 +536,18 @@ const fn schedule(level: u8) -> Breadth {
             cross_color: true,
             optimal_parse: true,
             meta_huffman: true,
+            fine_meta: false,
+            chain_cap,
+        },
+        // Level 6 is the product Fast-effort band for sub-400K-pixel images —
+        // the fine meta grid's quadratic merge would double its wall for ~1%
+        // bytes, so the finer precision waits for the explicit deep levels.
+        4..=6 => Breadth {
+            tile_bits: FULL,
+            cross_color: true,
+            optimal_parse: true,
+            meta_huffman: true,
+            fine_meta: false,
             chain_cap,
         },
         _ => Breadth {
@@ -526,6 +555,7 @@ const fn schedule(level: u8) -> Breadth {
             cross_color: true,
             optimal_parse: true,
             meta_huffman: true,
+            fine_meta: true,
             chain_cap,
         },
     }
@@ -682,6 +712,7 @@ fn family_search(
         pixels,
         breadth.optimal_parse,
         breadth.meta_huffman,
+        breadth.fine_meta,
         breadth.chain_cap,
     )
 }

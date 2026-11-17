@@ -21,6 +21,10 @@ use crate::lossless::work::work;
 const MAX_META_BITS: u32 = 9;
 /// Hard cap on the initial entropy-block grid, bounding the O(n^2) greedy merge.
 const MAX_ENTROPY_BLOCKS: u32 = 256;
+/// One step finer than [`choose_bits`] is emitted only while its grid stays
+/// under this cap — the merge's O(n^2) delta matrix and heap make a 4x-larger
+/// grid the practical ceiling (~1024 non-empty blocks measured on photos).
+const FINE_META_MAX_BLOCKS: u64 = 1024;
 /// Group ids are packed `group << 8` into the entropy image's green byte, so they
 /// stay < 256 (the decoder itself supports up to 65535 via green+red).
 const MAX_GROUPS: usize = 256;
@@ -62,11 +66,20 @@ pub(crate) fn plan(
 /// [`choose_bits`] allows plus the two coarser steps. A coarser grid merges
 /// statistics that were already alike, shrinking the entropy image and group
 /// headers; real emitted bytes decide, so extras only cost encode time.
-pub(crate) fn bits_candidates(width: u32, ysize: u32) -> Vec<u32> {
+/// `finer` prepends one step BELOW the [`choose_bits`] grid — libwebp's picks
+/// land there on photos — bounded by [`FINE_META_MAX_BLOCKS`] because the
+/// merge is quadratic in block count.
+pub(crate) fn bits_candidates(width: u32, ysize: u32, finer: bool) -> Vec<u32> {
     let Some(bits) = choose_bits(width, ysize) else {
         return Vec::new();
     };
-    (bits..=bits.saturating_add(2).min(MAX_META_BITS)).collect()
+    let finer = finer
+        && bits > MIN_TRANSFORM_BITS
+        && u64::from(subsample_size(width, bits - 1))
+            * u64::from(subsample_size(ysize, bits - 1))
+            <= FINE_META_MAX_BLOCKS;
+    let start = if finer { bits - 1 } else { bits };
+    (start..=bits.saturating_add(2).min(MAX_META_BITS)).collect()
 }
 
 /// [`plan`] at an explicit precision; `None` under the same conditions, with
