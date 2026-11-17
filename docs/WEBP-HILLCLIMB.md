@@ -696,3 +696,41 @@ Qualification evidence gathered alongside (untimed, this host):
   alloc-only serial build vs rayon build byte-identical on grass,
   coffee, astronaut, validation_text, validation_chelsea,
   generated_transparent at L6.
+
+Meta-Huffman breadth extension LANDED (this commit): the
+`meta_huffman` breadth flag moves from levels 6-9 to levels 2-9.
+Schedule arms 2 and 3 gain meta shots; the now-identical `4 | 5`
+arm is removed so levels 4-9 share one full-breadth arm. Levels 0-1
+unchanged, preserving a fast tier. `meta_shot` self-floors on real
+emitted bytes, so output can only shrink for a given search scope;
+monotonicity is preserved by construction (higher levels still
+search a superset).
+
+Byte evidence — L2 and L3 sweeps over all 24 corpus images, zero
+positive deltas: mm-logo-alpha L2 33566 -> 30326 (-9.7%, equal to
+former L6 output), validation_camera L2 -13,838 B (-9.3%), coffee
+L2/L3 366756 -> 346932 (-19,824 B, -5.4%), validation_chelsea L3
+-8,250 B (-5.0%), astronaut L2/L3 ~-10.5 KB (-3.0%), utrecht-meetup
+L2/L3 -51,720 B (-1.3%), photopea-ui -566 B, validation_text -280 B,
+generated_large -278 B; remaining images unchanged. Several L2/L3
+outputs now match former L6 bytes on alpha/UI strata.
+
+Timing cost — gated interleaved A/B, L3, `time=` CPU medians of 5
+rounds, all outputs byte-confirmed as the new smaller sizes:
+coffee 7.51 -> 8.29 s (+10.4%), grass 15.61 -> 17.21 s (+10.2%),
+validation_chelsea 5.87 -> 5.92 s (+0.9%), validation_text 8.18 ->
+9.71 s (+18.7%). This is a frontier trade, not a free win: ~1-19%
+more encode time at AUTO-selected levels buys 0.2-9.7% fewer bytes
+where meta clustering pays. Accepted because (a) the recorded
+qualification deficit is lossless bytes trailing pinned libwebp —
+coffee vs cwebp-lossless improves from +9.1% to +3.2%, utrecht
++4.9% -> +2.5%, mm-logo-alpha +42% -> +28%; (b) absolute encode
+time already trails the oracle by an order of magnitude, so the
+marginal ~10% does not change the time story; (c) L0/L1 remain
+meta-free for speed-sensitive callers. Cluster/plan counters were
+already shown small; the cost is the per-spec meta emit passes.
+
+Verified: 922 lib tests incl. monotone/floor/serial-parity, 5
+doctests, alloc-only check, x86_64+aarch64 musl checks, L4=L6
+collapse spot-verified. Frontiers vs cwebp-lossless recomputed in
+the next qualification pass.
