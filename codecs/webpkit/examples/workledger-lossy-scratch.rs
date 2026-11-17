@@ -9,13 +9,21 @@ fn main() {
     let h = u32::from_le_bytes(bytes[4..8].try_into().unwrap());
     let rgba = &bytes[8..];
     let quality: u8 = args[2].parse().unwrap();
+    let effort = args.get(3).map_or(webpkit::Effort::AUTO, |s| {
+        if s == "auto" { webpkit::Effort::AUTO } else { webpkit::Effort::level(s.parse().unwrap()) }
+    });
+    let tuning = if args.get(4).map(String::as_str) == Some("afast") {
+        webpkit::LossyTuning::new().with_alpha_filter(webpkit::AlphaFilterMode::Fast)
+    } else {
+        webpkit::LossyTuning::default()
+    };
     let dims = Dimensions::new(w, h).unwrap();
     let img = ImageRef::new(dims, PixelLayout::Rgba8, rgba).unwrap();
-    let out = Encoder::lossy().quality(quality).metadata(Metadata::none()).encode_ref(img).unwrap();
-    println!("encoded {} bytes ({}x{}, q{})", out.len(), w, h, quality);
+    let out = Encoder::lossy().quality(quality).effort(effort).tuning(tuning).metadata(Metadata::none()).encode_ref(img).unwrap();
+    println!("encoded {} bytes ({}x{}, q{}, effort {:?})", out.len(), w, h, quality, effort);
     work_count::reset();
     let t = std::time::Instant::now();
-    let out = Encoder::lossy().quality(quality).metadata(Metadata::none()).encode_ref(img).unwrap();
+    let out = Encoder::lossy().quality(quality).effort(effort).tuning(tuning).metadata(Metadata::none()).encode_ref(img).unwrap();
     let ms = t.elapsed().as_secs_f64() * 1000.0;
     let snap = work_count::snapshot();
     println!("time = {ms:.1} ms, bytes = {}", out.len());

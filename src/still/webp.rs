@@ -98,14 +98,14 @@ fn webkit_effort(mode: EncodingMode, effort: Effort, pixels: u64) -> webpkit::Ef
 
 pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
     let (width, height) = image.dimensions();
-    encode_with_effort(image, mode, webkit_effort(mode, effort, u64::from(width) * u64::from(height)), stop)
+    encode_with_effort(image, mode, webkit_effort(mode, effort, u64::from(width) * u64::from(height)), effort == Effort::Fast, stop)
 }
 
 pub(crate) fn probe(image: &StillImage, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
-    encode_with_effort(image, EncodingMode::Lossless, webpkit::Effort::level(0), stop)
+    encode_with_effort(image, EncodingMode::Lossless, webpkit::Effort::level(0), false, stop)
 }
 
-fn encode_with_effort(image: &StillImage, mode: EncodingMode, effort: webpkit::Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
+fn encode_with_effort(image: &StillImage, mode: EncodingMode, effort: webpkit::Effort, fast_alpha: bool, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
     if stop.is_cancelled() { return Err(Error::new(ErrorKind::Invalid, "operation cancelled")); }
     if image.bit_depth() != 8 { return Err(Error::new(ErrorKind::Unsupported, "WebP encoding requires eight-bit samples")); }
     let (width, height) = image.dimensions();
@@ -120,11 +120,21 @@ fn encode_with_effort(image: &StillImage, mode: EncodingMode, effort: webpkit::E
             .effort(effort)
             .metadata(metadata)
             .encode_ref(reference),
-        EncodingMode::Quality(quality) => webpkit::Encoder::lossy()
-            .effort(effort)
-            .quality((quality.value().round() as u8).clamp(0, 100))
-            .metadata(metadata)
-            .encode_ref(reference),
+        EncodingMode::Quality(quality) => {
+            let encoder = webpkit::Encoder::lossy()
+                .effort(effort)
+                .quality((quality.value().round() as u8).clamp(0, 100));
+            // Fast effort bounds the lossless ALPH filter search to one estimated
+            // predictor: the exhaustive four-filter trial re-encodes the whole
+            // alpha plane per filter, which dominates lossy encode time on large
+            // transparent inputs. Balanced and Best keep the exhaustive default.
+            let encoder = if fast_alpha {
+                encoder.tuning(webpkit::LossyTuning::new().with_alpha_filter(webpkit::AlphaFilterMode::Fast))
+            } else {
+                encoder
+            };
+            encoder.metadata(metadata).encode_ref(reference)
+        },
     };
     let bytes = result.map_err(|e| Error::new(ErrorKind::Encode, e.to_string()))?;
     super::limits().check_output_size(bytes.len() as u64).map_err(|e| Error::caused(ErrorKind::Limit, e))?;
