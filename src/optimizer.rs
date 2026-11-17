@@ -196,7 +196,7 @@ fn local_delta_entropy_bits(samples: &[u8], bytes_per_pixel: usize) -> f64 {
     }
     h
 }
-fn lossless_cannot_win(image: &StillImage, cancelled: &crate::cancellation::Cancellation, incumbent: usize) -> bool {
+fn lossless_unlikely_to_win(image: &StillImage, cancelled: &crate::cancellation::Cancellation, incumbent: usize) -> bool {
     if image.bit_depth() != 8 { return false; }
     let bytes_per_pixel = if image.is_grayscale() { if image.has_alpha() { 2 } else { 1 } } else if image.has_alpha() { 4 } else { 3 };
     if local_delta_entropy_bits(&image.samples(), bytes_per_pixel) < 3.5 { return false; }
@@ -322,7 +322,7 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
                 },
             }
         } else {
-            let gated = deferred_lossless && incumbent.is_some_and(|n| lossless_cannot_win(&image,cancelled,n));
+            let gated = deferred_lossless && incumbent.is_some_and(|n| lossless_unlikely_to_win(&image,cancelled,n));
             if gated { None } else {
                 let t = Instant::now();
                 let r = image.encode_cancellable(format,quality.map(|q|EncodingMode::Quality(Quality::new(q).unwrap())).unwrap_or(EncodingMode::Lossless),request.effort,cancelled);
@@ -332,7 +332,7 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
         };
         let mut evaluation=Evaluation { format,quality,bytes:None,score:None,encode_ms,probe_ms,failure:None };
         match encoded {
-            None => evaluation.failure=Some("skipped: lossless probe cannot beat the incumbent".into()),
+            None => evaluation.failure=Some("skipped: lossless floor probe is far larger than the incumbent".into()),
             Some(Err(error)) => { encode_error |= error.kind() == ErrorKind::Encode; evaluation.failure=Some(error.to_string()); },
             Some(Ok(candidate_bytes)) => {
                 encoded_any=true; evaluation.bytes=Some(candidate_bytes.len());
