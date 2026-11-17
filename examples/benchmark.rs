@@ -51,6 +51,8 @@ fn run()->Result<(),Box<dyn std::error::Error>> {
     let rustc=Command::new("rustc").arg("--version").output().ok().map(|o|String::from_utf8_lossy(&o.stdout).trim().to_owned());
     let output_prefix=std::env::var("IMG_BENCH_OUTPUT_PREFIX").unwrap_or_default();
     let tool_filter: Option<Vec<String>> = std::env::var("IMG_BENCH_TOOLS").ok().map(|v| v.split(',').map(str::to_string).collect());
+    let fixture_filter: Option<Vec<String>> = std::env::var("IMG_BENCH_FIXTURES").ok().map(|v| v.split(',').map(str::to_string).collect());
+    if let Some(filter)=&fixture_filter {cases.retain(|(name,_,_)|filter.iter().any(|f|f==name));}
     let mut records=vec![];
     for run in 0..if timed {5} else {1} {
         for (name,source,source_directory) in &cases {
