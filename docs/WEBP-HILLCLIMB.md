@@ -1105,6 +1105,23 @@ charolais-cattle, sous-tour-eiffel, rocket, goose-head, and
 generated/deep.png (scratch stride assumption). Geomean size
 delta on completed rows: ~0%.
 
+- `3700625` perf(webpkit): byte-identical scheduling win. The floor
+  family's raw/subtract-green halves now run under `rayon::join`,
+  and the floor task joins against the whole estimate+eval pipeline
+  (it is never pruned and depends on no estimate output), removing
+  one full search from the eval wave. large.png codec L1 ~4.05 s ->
+  ~3.65 s, L9 ~10.8 s -> ~9.7 s, byte-identical.
+
+Fast-L1 task-set probe (per-task minima, codec level 1): the four
+PredictorCross tasks are load-bearing on photographs — utrecht
+2 MP: best PredictorCross 3,990,311 B vs Predictor-alone 4,471,725
+B (~10.8% smaller); retina ~9% smaller. On synthetic/UI content they
+trail by >1% and never win. Dropping them for Fast is therefore dead
+on arrival against the 3%/1% size guardrails; the remaining Fast
+lossless cost is ~9 atomic optimal-parse searches plus a ~35%
+estimate/spec phase, neither reducible without an authorized
+approximation or a byte-identical kernel win.
+
 Monotonicity repair (this commit): the public `Effort::level`
 contract promises a higher level never emits a larger file, but two
 mechanisms broke it. (a) Levels >=3 parse the optimal DP at
@@ -1145,13 +1162,14 @@ optimizer integration tests green. Fast-path sentinel A/B vs the
 pre-change binary preserved winners byte-for-byte on grass,
 photopea-ui, mm-logo-alpha.
 
-Next priorities: (1) phase-attribute the remaining Fast lossless cost
-on low-entropy large inputs (large.png still pays ~6-19 s because
-the probe is correctly bypassed — the deep encode itself is the
-cost); (2) recapture the timed frontier now that the Fast path
-changed materially, including peak RSS; (3) decide whether the
+Next priorities: (1) recapture the timed frontier now that the Fast
+path changed materially, including peak RSS; (2) decide whether the
 >=256K px banded selection needs the same superset treatment or a
-documented residual risk; (4) the Fast mid-band L6 cost (~2x on
-200-400K px photos) is the largest remaining Fast lossless latency
-item now that the probe gate and alpha bound landed — a cheaper
-approximate search inside codec L6/L1 is the open design space.
+documented residual risk; (3) Fast lossless on >400K px inputs is
+bounded below by ~9 atomic optimal-parse searches — the only
+remaining levers are an authorized Fast-only approximation (needs a
+codec breadth knob; PredictorCross is load-bearing at ~10% on
+photos so candidate cuts are not free) or a byte-identical kernel
+win inside `parse_optimal`/the cross-color sweeps (NEON sweep is the
+largest single kernel target; the crate's single-unsafe-module grant
+currently covers only the match-length kernel).
