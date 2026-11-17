@@ -1217,3 +1217,42 @@ the bypass protects yet also the case where the probe margin
 correct refinement needs the deep/probe ratio modeled against a
 better cheap signal than raw entropy, validated on the reserved
 unseen subset before promotion.
+
+Timed frontier recapture at `fdeeaca`
+([timed-fast-path](../benchmarks/results/timed-fast-path.json), img vs
+cwebp, dev corpus, `RAYON_NUM_THREADS=1`, gate accepted, 5 interleaved
+rounds x 3 targets): the accumulated Fast-path work is now visible in
+wall time. img medians vs the `2d5c8e0` capture
+([timed-post-skip](../benchmarks/results/timed-post-skip.json)): large.png
+33.6 s -> 17.2 s (1.96x, bytes 4,674 -> 4,362, -6.7%), ui.png and
+compressed.webp ~0.42 s -> ~0.16 s (2.65x, 68 -> 66 B), text/line/
+transparent ~2.1x, flat/gray ~1.4-1.8x, coffee t90/t95 1.8x/1.4x with
+bytes -0.07%, grass/gravel t80-t90 ~1.3x. One regression cell:
+grass.png t95 ran the deep lossless to a 47 KB loss because the probe
+compared against a pre-refine incumbent (see below); all other img
+cells improved or held. img remains 3-20x slower than cwebp in wall
+time on every completed cell but produces far smaller scored outputs
+(-6% to -97% bytes vs cwebp's quality grid); the gap is now dominated
+by the lossy candidate grid and unavoidable deep lossless on
+low-entropy winners, not by skipped-work waste. Peak RSS on
+large.png scored Fast: 683.7 MB -> 691.1 MB (+1.1%, union-selection
+estimate state). Evaluator-limited cells unchanged: astronaut/icc
+(SDR-gamut refusal, both tools), deep.png (high-depth scored refusal),
+cwebp quality-grid failures on coffee t90/t95, ui, large t90/t95,
+compressed.webp.
+
+Deferred-lossless ordering fix (`4413ea0`): the deferred exact-lossless
+candidate was evaluated before the refine bisection finished, so the
+floor probe's incumbent was still ~6% high on grass t95 and the deep
+encode ran only to lose by 47 KB (~6 s scored-Fast wall time for zero
+bytes). Fast now reserves the deferred slots and drains them after
+refine exhausts its budget — same evaluation count, same scored set,
+only the order moves; Balanced/Best keep the prior order. Byte-identical
+outputs verified on coffee/grass/gravel + all generated fixtures and
+brick/cell/camera/boundary-399424 at t80/t95 (camera t95 keeps its
+130,034 B lossless win — no wrong skip). grass t95 ~2.25 s -> ~0.63 s
+parallel. The margin's safety argument is unchanged: skip requires
+probe > 1.25x incumbent while deep <= probe always, and observed
+deep/probe >= 0.83 on the entropy >= 2.2 stratum leaves ~4% headroom;
+the tighter post-refine incumbent spends some of that headroom, which
+is why the sentinel A/B above matters.
