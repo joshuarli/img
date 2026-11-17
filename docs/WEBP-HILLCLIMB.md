@@ -1307,3 +1307,10 @@ already hoisted the invariant work; reverted. The `find`/
 quick-reject guard, chain-walk via `prev[]`, strict-improvement-only
 rescans, and byte-invariant candidate sets pinned by proptests — no
 redundant work left to remove without changing the search itself.
+
+Lossy tier A/B (rejected): routing scored-Fast lossy through codec
+level 5 (Full tier) instead of AUTO halves lossy encode time on
+grass (95 -> 42.5 ms at q75) but at matched score the winner grows
++8.0% on coffee t80 (53,874 -> 58,156 B) and +1.2% on grass t80 —
+far over the 1% stratum guardrail. AUTO's Best tier on <=1 MP
+inputs is load-bearing for output size; reverted.
