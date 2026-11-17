@@ -860,3 +860,18 @@ decode-to-source, decode_incr arbitrary/split streams, and
 near-lossless bounds. Combined with codec_boundary hostile-input
 tests and the 24+25-fixture byte sweeps, this is the bounded
 campaign evidence; a longer dedicated fuzz run remains open.
+
+Level-monotonicity repair (this commit): the estimate bands were
+gated only on task-set width, so level 3 (20 tasks) pruned while
+level 2 (14 tasks) searched everything — generated_transparent
+regressed L2 178 B -> L3 386 B. `wide` now also requires
+>= PRUNE_MIN_PIXELS (256 Ki px): below that the full wide search is
+cheap and small-sample entropy estimates are least reliable. Same-
+level bytes can only shrink under the gate (unpruned is a superset);
+verified on all 13 sub-256 Ki-px corpus fixtures at L3 and L6 — the
+only delta is generated_transparent L3 386 -> 190 B, every other
+byte identical. Residual: L3 still emits 190 B vs L2's 178 B because
+the deeper optimal-parse chain (MAX_CHAIN_OPTIMAL at level >=3) is
+a different candidate, not a superset — a by-design heuristic-depth
+effect of a few bytes on tiny files, distinct from the band bug and
+recorded here so it is not re-diagnosed as a regression.

@@ -1179,6 +1179,11 @@ fn select_from_estimates(
 /// percent, so finalists need margin the real pass then trims.
 const PROVISIONAL_CAP: usize = 8;
 
+/// Below this pixel count the estimate bands stay off: the full wide search is
+/// cheap at this size and small-sample entropy estimates are least reliable —
+/// pruning there broke level monotonicity (generated_transparent L3 > L2).
+const PRUNE_MIN_PIXELS: usize = 0x40000;
+
 /// Whether the cheap pass can actually prune: it pays only when some family has
 /// more members than [`PROVISIONAL_CAP`]. Below that every task is provisional
 /// anyway, so the real estimates run directly and the coarse pass is skipped.
@@ -1349,7 +1354,7 @@ fn evaluate_best_tasks(
     // are produced, folded to one, and dropped before the next family runs.
     let planes = PlaneCache::build(breadth, width, height, argb);
     let cc = CrossColorCache::new(&tasks, argb.len());
-    let wide = provisional_prunes(&tasks);
+    let wide = provisional_prunes(&tasks) && argb.len() >= PRUNE_MIN_PIXELS;
     let prov = if wide {
         let cheap: Vec<Option<u64>> = tasks
             .iter()
@@ -1429,7 +1434,7 @@ fn evaluate_best_tasks(
     // keeps task order, so the fold below resolves ties identically to serial.
     let planes = PlaneCache::build(breadth, width, height, argb);
     let cc = CrossColorCache::new(&tasks, argb.len());
-    let wide = provisional_prunes(&tasks);
+    let wide = provisional_prunes(&tasks) && argb.len() >= PRUNE_MIN_PIXELS;
     let prov = if wide {
         let cheap: Vec<Option<u64>> = tasks
             .par_iter()
@@ -2595,7 +2600,7 @@ mod tests {
             CrossColorCache, PlaneCache, build_best_tasks, cheap_task_score, coverage_band,
             encode_best, estimate_specs, estimate_task, evaluate_best_tasks, keep_smallest,
             reduce_task_minima, run_best_task, schedule, select_from_estimates,
-            select_provisional, spec_keep_masks, provisional_prunes,
+            select_provisional, spec_keep_masks, provisional_prunes, PRUNE_MIN_PIXELS,
         };
         let breadth = schedule(crate::effort::MAX_LEVEL);
         for (w, h, pixels) in byte_stability_cases() {
@@ -2606,7 +2611,7 @@ mod tests {
             let planes = PlaneCache::build(breadth, w, h, &pixels);
             let tasks = build_best_tasks(breadth);
             let cc = CrossColorCache::new(&tasks, pixels.len());
-            let wide = provisional_prunes(&tasks);
+            let wide = provisional_prunes(&tasks) && pixels.len() >= PRUNE_MIN_PIXELS;
             let prov = if wide {
                 let cheap: Vec<Option<u64>> = tasks
                     .iter()
