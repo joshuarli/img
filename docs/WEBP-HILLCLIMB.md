@@ -663,3 +663,18 @@ test updated and passing. Gated A/B vs `edb6d9d` (pre-gate 0,
 post-gate 0, `time=` CPU medians of 5 interleaved rounds, all SAME):
 coffee L6 ~3.73 s -> ~3.75 s (neutral), grass L6 ~8.93 s -> ~8.25 s
 (~8% faster), astronaut L6 ~6.95 s -> ~6.34 s (~9% faster).
+
+Quad-keyed DP chain REJECTED (uncommitted, reverted): lowering the
+`build_quad` threshold so the optimal-parse DP walks the
+minimum-match-keyed chain on sub-1 MP images too. Under the hop cap
+the quad chain reaches strictly more useful candidates, so the DP
+input grows — and because the cost model is a heuristic, extra
+candidates sometimes win the estimate while losing real bytes:
+coffee +2 B, astronaut -14 B, validation_chelsea +24 B at L6. Mixed
+and net-negative; any byte-altering DP-input change needs the same
+frontier justification as an effort change, and this one doesn't
+earn it. Recorded so the next attempt doesn't re-derive it: the
+remaining `match_hop` mass is pinned by byte-identity — reducing it
+requires either fewer searched specs (the estimate bands are already
+at their safe width) or a provably lossless candidate prune inside
+`find_candidates`, neither of which has a known construction.
