@@ -1173,3 +1173,43 @@ photos so candidate cuts are not free) or a byte-identical kernel
 win inside `parse_optimal`/the cross-color sweeps (NEON sweep is the
 largest single kernel target; the crate's single-unsafe-module grant
 currently covers only the match-length kernel).
+
+>=256K px banded-selection repair (`d1044a8`): the residual monotonicity
+exposure recorded above was real — once the per-task instrumented
+sweep reached the validation photos, utrecht-meetup regressed L1->L2 by
++7,608 B (3,990,332 -> 3,997,940), retina L1->L2 by +1,834 B, and
+goose-head L3->L4 by +5,326 B: adding tile sizes tightened
+`select_from_estimates`' family bands enough to drop a task the lower
+level had searched and won with. `evaluate_best_tasks` (serial and
+rayon) now computes one shared estimate pass — per-spec entropy plus
+coverage-adjusted scores inside the same `task_specs` materialization —
+and `final_keep` simulates each distinct breadth's full band pipeline
+(provisional cap, estimate bands, spec masks, coverage band) from that
+level-invariant data, unioning the results. The searched set at any
+level is a superset of every lower level's by construction; sub-256K
+behavior is the existing coarser-level union, unchanged. Verified: the
+three violations now emit non-increasing bytes (utrecht L1=L2=
+3,990,332; retina 856,644 flat to L2; goose L3=L4=1,744,160), 378
+lossless tests green including serial/rayon agreement and the
+monotonicity proptest, and coffee/transparent/cell bytes identical.
+Cost: levels >=2 on >=256K px images can search a few tasks their own
+bands would have dropped (bounded by the union); Fast's L1 path is
+unaffected in kind — L0's three tasks are a subset of L1's and were
+already kept there on the swept photos.
+
+Fast-gate probe analysis (negative result + one opening): per-task
+floor mins on the >=1 MP validation photos show floor-stream bits/pixel
+cannot gate the transform search — photopea-ui floor wins outright at
+0.14 bpp while mm-logo-alpha sits at 0.053 bpp yet a transform still
+wins by 4.3% (31,448 -> 30,152 B), so any floor-size threshold either
+keeps photopea's ~15 s of doomed transform searches or drops
+mm-logo's winner. The product-level L0 probe is more promising: codec
+L0 bytes are an upper bound on L1 (L1's candidate set contains L0's),
+and the observed deep/L0 ratio is ~0.83-1.0 on photographs but
+0.31-0.51 on low-entropy synthetics — which is exactly why the
+entropy < 2.2 bypass exists. photopea-ui (entropy 1.26) is the case
+the bypass protects yet also the case where the probe margin
+(32,834 vs ~22.6 KB incumbent -> skip) would have saved ~15 s; a
+correct refinement needs the deep/probe ratio modeled against a
+better cheap signal than raw entropy, validated on the reserved
+unseen subset before promotion.
