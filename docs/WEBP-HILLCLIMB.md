@@ -824,3 +824,21 @@ img still decodes utrecht faster than cwebp-lossless (126.5 vs
 135.8 ms) and remains ~1.5x cwebp-lossless on the small alpha/UI
 strata, consistent with the earlier ±25% decode finding. Encode
 peak-RSS and full decode-matrix refresh remain open.
+
+Qualification status at `286a625` (post level-1 meta landing):
+
+- Product suites green: `benchmark_verify` 2/2 (incl. `verify_saved`
+  over the new l1meta result files), `webp_codec` 6/6,
+  `color_fidelity` 9/9, `codec_boundary` 8/8, `optimizer` 12/12,
+  `cli` 16/16; webpkit 917 lib tests + 5 doctests + alloc-only
+  check green (proptests run at default 256 cases — the fuzz
+  obligation is partially covered by these plus codec_boundary
+  hostile-input tests; a dedicated longer fuzz campaign remains
+  open).
+- Target matrix: `cargo check` green for `x86_64-unknown-linux-musl`
+  and `aarch64-unknown-linux-musl` (rayon,work-count and alloc-only
+  feature sets) on current source.
+- Decode cost: meta streams +3-10% decode time (recorded above);
+  encode peak-RSS and animated/metadata edge refresh open.
+- Explicit gaps unchanged: mozjpeg/oxipng/ravif originals absent,
+  SDR-gamut refusals, img-png unsafe-metadata refusal on coffee.
