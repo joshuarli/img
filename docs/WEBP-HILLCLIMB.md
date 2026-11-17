@@ -1297,3 +1297,13 @@ analysis above, every remaining Fast cost center is either the fidelity
 metric, an already-minimal search tier, or serial-ish match walking —
 policy-level Fast work is exhausted; further gains are codec-kernel
 efforts gated on the unsafe-grant decision or new algorithmic work.
+
+Micro-optimization probes (negative results): a trellis-DP restructure
+that hoisted the per-(position, magnitude) distortion term and outgoing
+context out of the incoming-context loop measured ~4% SLOWER on grass
+q75 AUTO (99.5 ms vs 95.3 ms baseline, bytes identical) — LLVM had
+already hoisted the invariant work; reverted. The `find`/
+`find_candidates` match-hop loops are already minimal: hoisted
+quick-reject guard, chain-walk via `prev[]`, strict-improvement-only
+rescans, and byte-invariant candidate sets pinned by proptests — no
+redundant work left to remove without changing the search itself.
