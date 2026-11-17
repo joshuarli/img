@@ -196,11 +196,15 @@ fn encode_stream(
 /// effort level searches less. Parses the reference strategies, lets the cost
 /// model pick a cache size for each, and keeps the smallest. The
 /// `(literal, no-cache)` candidate is always first, so this never regresses the
-/// plain literal baseline for the given `plans`.
+/// plain literal baseline for the given `plans`. Returns `(plain, meta)`:
+/// `plain` folds only the non-meta-Huffman candidates — exactly what the same
+/// call with `meta_huffman: false` returns — while `meta` additionally folds
+/// the meta-Huffman shots, both out of one shared parse/DP/search pass.
 #[expect(
     clippy::too_many_arguments,
+    clippy::type_complexity,
     reason = "threads the emit context (dimensions, plans, working width) and the \
-              two breadth gates through unchanged; bundling it would only hide the \
+              breadth gates through unchanged; bundling it would only hide the \
               data flow the named wrappers rely on"
 )]
 fn search_lz77_variant(
@@ -214,7 +218,7 @@ fn search_lz77_variant(
     meta_huffman: bool,
     fine_meta: bool,
     chain_cap: u32,
-) -> Vec<u8> {
+) -> (Vec<u8>, Vec<u8>) {
     let emit = |cache_bits, model: &RefModel<'_>, histogram: &Histogram| {
         emit_stream(
             header_width,
@@ -229,8 +233,10 @@ fn search_lz77_variant(
     // Baseline: all literals, with and without a cache — the non-regression floor.
     // The cache search hands back the winning size's histogram, reused by that
     // candidate's emit (the @0 emit still builds its own, since the winner may be
-    // > 0).
-    let mut best = {
+    // > 0). `plain` and `best` fold the same non-meta candidates in the same
+    // order; `best` additionally folds the meta-Huffman shots, so the pair
+    // equals the `meta_huffman: false` and `true` results of one shared pass.
+    let literal_best = {
         let tokens_literal = parse(pixels, false);
         let model_literal = RefModel::new(&tokens_literal, pixels, working_width);
         let (cache_literal, hist_literal) = best_cache_bits(&model_literal);
@@ -243,13 +249,17 @@ fn search_lz77_variant(
         }
         best
     };
+    let mut plain = literal_best.clone();
+    let mut best = literal_best;
     // The greedy LZ77 stream. Kept alive as the DP seed and the meta-Huffman input;
     // its hash chain is carried alongside so the DP reuses it instead of rebuilding
     // the same pure-function-of-pixels chain (byte-identical either way).
     let (tokens_lz77, chain) = parse_lz77(pixels);
     let model_lz77 = RefModel::new(&tokens_lz77, pixels, working_width);
     let (cache_lz77, hist_lz77) = best_cache_bits(&model_lz77);
-    keep_smaller(&mut best, emit(cache_lz77, &model_lz77, &hist_lz77));
+    let lz77_stream = emit(cache_lz77, &model_lz77, &hist_lz77);
+    keep_smaller(&mut plain, lz77_stream.clone());
+    keep_smaller(&mut best, lz77_stream);
     let ysize = pixels.len() as u32 / working_width;
     // Cost-model-driven optimal parse: a self-floored extra candidate (chosen only
     // when strictly smaller by real bytes), seeded from the greedy stream. Large
@@ -260,7 +270,9 @@ fn search_lz77_variant(
         drop(chain);
         let model_dp = RefModel::new(&tokens_dp, pixels, working_width);
         let (cache_dp, hist_dp) = best_cache_bits(&model_dp);
-        keep_smaller(&mut best, emit(cache_dp, &model_dp, &hist_dp));
+        let dp_stream = emit(cache_dp, &model_dp, &hist_dp);
+        keep_smaller(&mut plain, dp_stream.clone());
+        keep_smaller(&mut best, dp_stream);
         if meta_huffman {
             // A meta-Huffman shot on each of the greedy and DP streams — both
             // self-floored against the single-group candidates already folded in.
@@ -311,7 +323,7 @@ fn search_lz77_variant(
             ysize,
         );
     }
-    best
+    (plain, best)
 }
 
 /// Fold a meta-Huffman candidate for `model` into `best` when [`meta::plan`] finds
@@ -404,6 +416,7 @@ fn search_lz77(
         false,
         chain_cap,
     )
+    .0
 }
 
 /// The full-breadth search: [`search_lz77`] plus the meta-Huffman shots (the
@@ -430,6 +443,7 @@ fn search_lz77_best(
         false,
         MAX_CHAIN_OPTIMAL,
     )
+    .1
 }
 
 /// Tile-bits candidates for the predictor/cross-color families. [`keep_smaller`]
@@ -715,6 +729,7 @@ fn family_search(
         breadth.fine_meta,
         breadth.chain_cap,
     )
+    .1
 }
 
 /// The transform-free floor (always first, so it seeds `best` and wins ties). The
@@ -728,28 +743,40 @@ fn floor_streams(
     alpha_used: bool,
     argb: &[u32],
 ) -> Vec<Vec<u8>> {
-    let floor = encode_with(
-        width,
-        height,
-        argb,
-        true,
-        effective_chain_cap(breadth.chain_cap, argb.len()),
-    );
+    // Each representation is searched once: the floor tiers always run the
+    // optimal parse ([`search_lz77`]), and the meta-enabled breadth folds the
+    // meta-Huffman shots into the same pass, so the plain floor streams and the
+    // meta-augmented streams come out of a single parse/DP/search per buffer.
+    debug_assert!(breadth.optimal_parse || !breadth.meta_huffman);
+    let chain_cap = effective_chain_cap(breadth.chain_cap, argb.len());
+    let floor_pair = |plans: &[TransformPlan], pixels: &[u32]| {
+        search_lz77_variant(
+            width,
+            height,
+            alpha_used,
+            plans,
+            width,
+            pixels,
+            true,
+            breadth.meta_huffman,
+            breadth.fine_meta,
+            chain_cap,
+        )
+    };
+    let (raw_plain, raw_meta) = floor_pair(&[], argb);
+    let mut sg = argb.to_vec();
+    subtract_green::forward(&mut sg);
+    let sg_plans = [TransformPlan::SubtractGreen];
+    let (sg_plain, sg_meta) = floor_pair(&sg_plans, &sg);
+    // [`encode_with`] keeps Tier 0 unless Tier 1 is strictly smaller.
+    let floor = if sg_plain.len() < raw_plain.len() {
+        sg_plain
+    } else {
+        raw_plain
+    };
     if !breadth.meta_huffman {
         return vec![floor];
     }
-    let raw_meta = family_search(breadth, width, height, alpha_used, &[], width, argb);
-    let mut sg = argb.to_vec();
-    subtract_green::forward(&mut sg);
-    let sg_meta = family_search(
-        breadth,
-        width,
-        height,
-        alpha_used,
-        &[TransformPlan::SubtractGreen],
-        width,
-        &sg,
-    );
     vec![floor, raw_meta, sg_meta]
 }
 
