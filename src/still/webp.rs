@@ -62,18 +62,23 @@ fn webkit_metadata(image: &StillImage) -> webpkit::Metadata {
 
 // Fast effort skips the Best-tier transform search, which is where the remaining
 // lossless byte wins on photographic content live; codec level 1 still runs
-// cross-color, optimal parse and meta-Huffman shots. Only the sub-16,384 px small
-// tier rides level 6 under the owner's 2026-11-15 extension: the fine tile-bit
-// grid for those fixtures costs sub-millisecond planning (transparent.png's
-// lossless candidate encodes 200 -> 110 B), and the small synthetics measure
-// byte-identical at L6. The photographic mid-band (200-400k px) previously rode
-// L6 as well, but measured L1-vs-L6 deltas do not justify ~2x the encode time
-// there (coffee +0.82% bytes for +2.4 s; grass byte-identical; gravel +0.09%
-// for +2.4 s), so it stays at level 1 like every other band.
+// cross-color, optimal parse and meta-Huffman shots. For the photographic
+// mid-band (>= `DEEP_LOSSLESS_FAST_MIN_PIXELS`, <= `DEEP_LOSSLESS_FAST_MAX_PIXELS`)
+// level 6 closes the measured gap to the withdrawn closure's lossless bytes (coffee
+// 386,802 -> 353,630 vs 359,054), at roughly 8 s per encode. The sub-16,384 px small
+// tier also rides level 6 under the owner's 2026-11-15 extension: the fine tile-bit
+// grid for those fixtures costs sub-millisecond planning (transparent.png's lossless
+// candidate encodes 200 -> 110 B), and the small synthetics measure byte-identical at
+// L6. Other bands stay at level 1; the 2 MP large fixture stays out (its L6 wall
+// measured ~290 s).
+const DEEP_LOSSLESS_FAST_MIN_PIXELS: u64 = 200_000;
+const DEEP_LOSSLESS_FAST_MAX_PIXELS: u64 = 400_000;
 const DEEP_LOSSLESS_FAST_SMALL_MAX_PIXELS: u64 = 16_384;
 
 fn fast_lossless_effort(pixels: u64) -> webpkit::Effort {
-    if pixels <= DEEP_LOSSLESS_FAST_SMALL_MAX_PIXELS {
+    if pixels <= DEEP_LOSSLESS_FAST_SMALL_MAX_PIXELS
+        || (DEEP_LOSSLESS_FAST_MIN_PIXELS..=DEEP_LOSSLESS_FAST_MAX_PIXELS).contains(&pixels)
+    {
         webpkit::Effort::level(6)
     } else {
         webpkit::Effort::level(1)
