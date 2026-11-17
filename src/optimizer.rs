@@ -280,13 +280,18 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
     let mut encode_error = false;
     let mut next = 0;
     let mut deferred_at = 0;
+    let fast_defer = request.effort == Effort::Fast && !deferred.is_empty();
+    let scored_budget = if fast_defer { cap.saturating_sub(deferred.len()) } else { cap };
+    let mut scored_evals = 0usize;
     'eval: while evaluations.len() < cap {
         if cancelled.is_cancelled() { return Err(Error::new(ErrorKind::Invalid,"processing cancelled")); }
         let (format,quality,from_deferred) = loop {
-            if next < settings.len() { next+=1; break (settings[next-1].0,settings[next-1].1,false); }
-            if deferred_at < deferred.len() { deferred_at+=1; let s=deferred[deferred_at-1]; break (s.0,s.1,true); }
+            if next < settings.len() && scored_evals < scored_budget { next+=1; scored_evals+=1; break (settings[next-1].0,settings[next-1].1,false); }
             if !matches!(request.fidelity,Fidelity::Score(_)) { break 'eval; }
-            if !refine_step(&formats,&evaluations,&mut settings) { break 'eval; }
+            if deferred_at < deferred.len() && !fast_defer { deferred_at+=1; let s=deferred[deferred_at-1]; break (s.0,s.1,true); }
+            if scored_evals < scored_budget && refine_step(&formats,&evaluations,&mut settings) { continue; }
+            if deferred_at < deferred.len() { deferred_at+=1; let s=deferred[deferred_at-1]; break (s.0,s.1,true); }
+            break 'eval;
         };
         let start=Instant::now();
         let incumbent = best.as_ref().map(|b| b.bytes.len());
