@@ -642,3 +642,24 @@ Recorded so the next attempt doesn't re-derive it: a viable version
 needs a match probe that costs << one greedy parse (subsampled or
 capped-chain), or a band applied inside `run_best_task` where spec
 count is already small.
+
+Coverage-band task prune LANDED: the cheap-probe economics above are
+fixed by replacing the greedy parse with sampled match coverage — a
+direct-mapped (key, position) table over pixel pairs at stride 4,
+scoring each spec as `entropy * (1024 - coverage) / 1024`. Cost is
+~1-3 ms per spec versus ~100-300 ms for `parse_lz77`, so the probe is
+noise. Offline replay showed the cross-color-alone family trailing at
+1.5-2.4x on this signal on every corpus image while the kept near-tie
+cluster sits within ~11%; a 15% band (`v*20 <= min*23`) on wide task
+sets therefore removes exactly the CC-alone survivors the entropy
+family-best band lets through (entropy ratio 1.48-1.67 vs coverage
+ratio 1.5-2.4). Coverage-adjusted estimates are used ONLY for this
+coarse task band — never inside `spec_keep_masks` or family ordering,
+where the ~3% reordering provably loses byte winners
+(`validation_chelsea`, see rejected experiment above). Bytes:
+24/24 L6 byte-identical vs `edb6d9d`, L1/L9 spot checks identical,
+922 lib + 5 doc tests + alloc-only green, serial/rayon agreement
+test updated and passing. Gated A/B vs `edb6d9d` (pre-gate 0,
+post-gate 0, `time=` CPU medians of 5 interleaved rounds, all SAME):
+coffee L6 ~3.73 s -> ~3.75 s (neutral), grass L6 ~8.93 s -> ~8.25 s
+(~8% faster), astronaut L6 ~6.95 s -> ~6.34 s (~9% faster).
