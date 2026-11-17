@@ -839,7 +839,12 @@ Qualification status at `286a625` (post level-1 meta landing):
   and `aarch64-unknown-linux-musl` (rayon,work-count and alloc-only
   feature sets) on current source.
 - Decode cost: meta streams +3-10% decode time (recorded above);
-  encode peak-RSS and animated/metadata edge refresh open.
+  encode peak-RSS recorded above.
+- Animated/metadata edge: `animated_webp_is_rejected_before_frame_extraction`
+  plus the new `lossless_webp_round_trips_icc_exif_orientation_and_xmp`
+  (`c272f8e`) carry ICC/EXIF/XMP/orientation through the product encode
+  path and confirm them via `describe` on the output — closing the
+  metadata edge refresh at product level.
 - Explicit gaps unchanged: mozjpeg/oxipng/ravif originals absent,
   SDR-gamut refusals, img-png unsafe-metadata refusal on coffee.
 
@@ -853,8 +858,9 @@ scratch on top of the pixel-dominated baseline; absolute deltas are
 freed at encode end. Recorded as the resource-cost evidence for the
 level-1 meta landing.
 
-Fuzz/conformance evidence: `PROPTEST_CASES=512 cargo test --locked
---lib lossless::` at `7f71f6e` — 367/367 pass in 657 s, covering
+Fuzz/conformance evidence: `PROPTEST_CASES=1024 cargo test --locked
+--release --lib lossless::` at `c272f8e` — 367/367 pass in 21 s,
+covering
 encode_best round-trips/floors/serial-parity proptests, meta emit
 decode-to-source, decode_incr arbitrary/split streams, and
 near-lossless bounds. Combined with codec_boundary hostile-input
