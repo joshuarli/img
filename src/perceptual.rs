@@ -72,8 +72,11 @@ impl PerceptualReference {
 
     /// Decode and score actual candidate bytes. Alpha must match exactly.
     pub fn score_encoded(&self, bytes: &[u8]) -> Result<f64, Error> {
-        let candidate = StillImage::decode_cancellable(bytes,&self.stop)?.prepare()?;
-        self.score_prepared(&candidate)
+        self.score_decoded(&StillImage::decode_cancellable(bytes,&self.stop)?)
+    }
+
+    pub(crate) fn score_decoded(&self, decoded: &StillImage) -> Result<f64, Error> {
+        self.score_prepared(&decoded.prepare()?)
     }
 
     fn score_prepared(&self, candidate: &PreparedImage) -> Result<f64, Error> {

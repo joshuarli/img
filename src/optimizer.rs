@@ -305,7 +305,7 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
                         if !samples_equal(&image,&candidate) { return Err(Error::new(ErrorKind::Score,"exact decoded samples differ")); }
                         Ok(None)
                     } else {
-                        let score=metric.as_ref().unwrap().score_encoded(&candidate_bytes)?;
+                        let score=metric.as_ref().unwrap().score_decoded(&candidate)?;
                         evaluation.score=Some(score);
                         if let Fidelity::Score(target)=request.fidelity && score < target.value() { return Err(Error::new(ErrorKind::Score,"candidate is below requested score")); }
                         Ok(Some(score))
