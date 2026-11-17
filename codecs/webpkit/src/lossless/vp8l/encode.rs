@@ -809,11 +809,19 @@ fn floor_streams(
             chain_cap,
         )
     };
-    let (raw_plain, raw_meta) = floor_pair(&[], argb);
+    // The raw and subtract-green halves are independent full searches; running
+    // them together keeps the floor task from setting the critical path when
+    // the caller is already inside the rayon task pool. Results are identical —
+    // only the scheduling differs.
     let mut sg = argb.to_vec();
     subtract_green::forward(&mut sg);
     let sg_plans = [TransformPlan::SubtractGreen];
-    let (sg_plain, sg_meta) = floor_pair(&sg_plans, &sg);
+    #[cfg(feature = "rayon")]
+    let ((raw_plain, raw_meta), (sg_plain, sg_meta)) =
+        rayon::join(|| floor_pair(&[], argb), || floor_pair(&sg_plans, &sg));
+    #[cfg(not(feature = "rayon"))]
+    let ((raw_plain, raw_meta), (sg_plain, sg_meta)) =
+        (floor_pair(&[], argb), floor_pair(&sg_plans, &sg));
     // [`encode_with`] keeps Tier 0 unless Tier 1 is strictly smaller.
     let floor = if sg_plain.len() < raw_plain.len() {
         sg_plain
@@ -1597,74 +1605,107 @@ fn evaluate_best_tasks(
     level: u8,
 ) -> Vec<u8> {
     use rayon::prelude::*;
-    // Parallel: each worker folds its family to a single stream, so the collected
-    // vec holds one stream per non-empty family (not every candidate); `collect`
-    // keeps task order, so the fold below resolves ties identically to serial.
-    let planes = PlaneCache::build(breadth, width, height, argb);
-    let cc = CrossColorCache::new(&tasks, argb.len());
-    let wide = provisional_prunes(&tasks) && argb.len() >= PRUNE_MIN_PIXELS;
-    let prov = if wide {
-        let cheap: Vec<Option<u64>> = tasks
-            .par_iter()
-            .map(|t| estimate_task(*t, width, height, argb, planes.as_ref(), None, true))
-            .collect();
-        select_provisional(&tasks, &cheap)
-    } else {
-        vec![true; tasks.len()]
-    };
-    let spec_ests: Vec<Option<Vec<u64>>> = tasks
-        .par_iter()
-        .zip(&prov)
-        .map(|(t, &p)| {
-            if !p {
-                return None;
-            }
-            let ests = estimate_specs(*t, width, height, argb, planes.as_ref(), cc.as_ref(), false);
-            (!ests.is_empty()).then_some(ests)
-        })
-        .collect();
-    let estimates: Vec<Option<u64>> = spec_ests
-        .iter()
-        .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
-        .collect();
-    let mut keep = select_keep(&tasks, &estimates, wide, argb.len(), level);
-    let spec_masks = spec_keep_masks(&spec_ests);
-    if wide {
-        let scores: Vec<Option<u64>> = tasks
-            .par_iter()
-            .zip(&keep)
-            .zip(&spec_masks)
-            .map(|((t, &k), mask)| {
-                cheap_task_score(*t, k, mask, width, height, argb, planes.as_ref(), cc.as_ref())
-            })
-            .collect();
-        let band = coverage_band(&scores);
-        for (k, b) in keep.iter_mut().zip(band) {
-            *k &= b;
-        }
-    }
-    let minima: Vec<Option<Vec<u8>>> = tasks
-        .into_par_iter()
-        .zip(keep)
-        .zip(spec_masks)
-        .map(|((t, k), mask)| {
-            if k {
-                keep_smallest(run_best_task(
-                    t,
-                    breadth,
-                    width,
-                    height,
-                    alpha_used,
-                    argb,
-                    planes.as_ref(),
-                    cc.as_ref(),
-                    &mask,
-                ))
+    debug_assert!(matches!(tasks.first(), Some(BestTask::Floor)));
+    // The floor family is never pruned (`cheap_task_score` scores it `None`, so
+    // every keep band passes it) and its search depends on nothing the estimate
+    // pipeline computes, so it runs joined against the whole estimate+eval
+    // pipeline instead of queueing as one more task — on wide task sets this
+    // fills the estimate phase's otherwise-idle workers and removes one full
+    // search from the eval wave. `join` returns both sides, so task order and
+    // the `minima[0]` slot are unchanged.
+    let (floor_min, mut minima) = rayon::join(
+        || {
+            keep_smallest(run_best_task(
+                BestTask::Floor,
+                breadth,
+                width,
+                height,
+                alpha_used,
+                argb,
+                None,
+                None,
+                &[],
+            ))
+        },
+        || {
+            // Parallel: each worker folds its family to a single stream, so the
+            // collected vec holds one stream per non-empty family (not every
+            // candidate); `collect` keeps task order, so the fold below resolves
+            // ties identically to serial.
+            let planes = PlaneCache::build(breadth, width, height, argb);
+            let cc = CrossColorCache::new(&tasks, argb.len());
+            let wide = provisional_prunes(&tasks) && argb.len() >= PRUNE_MIN_PIXELS;
+            let prov = if wide {
+                let cheap: Vec<Option<u64>> = tasks
+                    .par_iter()
+                    .map(|t| estimate_task(*t, width, height, argb, planes.as_ref(), None, true))
+                    .collect();
+                select_provisional(&tasks, &cheap)
             } else {
-                None
+                vec![true; tasks.len()]
+            };
+            let spec_ests: Vec<Option<Vec<u64>>> = tasks
+                .par_iter()
+                .zip(&prov)
+                .map(|(t, &p)| {
+                    if !p {
+                        return None;
+                    }
+                    let ests =
+                        estimate_specs(*t, width, height, argb, planes.as_ref(), cc.as_ref(), false);
+                    (!ests.is_empty()).then_some(ests)
+                })
+                .collect();
+            let estimates: Vec<Option<u64>> = spec_ests
+                .iter()
+                .map(|o| o.as_ref().and_then(|v| v.iter().copied().min()))
+                .collect();
+            let mut keep = select_keep(&tasks, &estimates, wide, argb.len(), level);
+            let spec_masks = spec_keep_masks(&spec_ests);
+            if wide {
+                let scores: Vec<Option<u64>> = tasks
+                    .par_iter()
+                    .zip(&keep)
+                    .zip(&spec_masks)
+                    .map(|((t, &k), mask)| {
+                        cheap_task_score(*t, k, mask, width, height, argb, planes.as_ref(), cc.as_ref())
+                    })
+                    .collect();
+                let band = coverage_band(&scores);
+                for (k, b) in keep.iter_mut().zip(band) {
+                    *k &= b;
+                }
             }
-        })
-        .collect();
+            tasks
+                .into_par_iter()
+                .zip(keep)
+                .zip(spec_masks)
+                .enumerate()
+                .map(|(i, ((t, k), mask))| {
+                    if i == 0 {
+                        None
+                    } else if k {
+                        keep_smallest(run_best_task(
+                            t,
+                            breadth,
+                            width,
+                            height,
+                            alpha_used,
+                            argb,
+                            planes.as_ref(),
+                            cc.as_ref(),
+                            &mask,
+                        ))
+                    } else {
+                        None
+                    }
+                })
+                .collect::<Vec<Option<Vec<u8>>>>()
+        },
+    );
+    if !minima.is_empty() {
+        minima[0] = floor_min;
+    }
     reduce_task_minima(minima)
 }
 
