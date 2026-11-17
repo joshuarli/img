@@ -342,7 +342,7 @@ fn greedy_cluster_reference(
 ) -> Option<MetaPlan> {
     let num_blocks = block_histograms.len();
     let mut cluster_of: Vec<Option<usize>> = vec![None; num_blocks];
-    let mut hist: Vec<Histogram> = Vec::new();
+    let mut hist: Vec<ClusterHistogram> = Vec::new();
     let mut src_block: Vec<usize> = Vec::new();
     for (b, h) in block_histograms.into_iter().enumerate() {
         if h.green().iter().all(|&n| n == 0) {
@@ -350,20 +350,20 @@ fn greedy_cluster_reference(
         }
         cluster_of[b] = Some(hist.len());
         src_block.push(b);
-        hist.push(h);
+        hist.push(ClusterHistogram::new(h));
     }
     let n = hist.len();
     if n <= 1 {
         return None;
     }
 
-    let mut est: Vec<u64> = hist.iter().map(Histogram::estimate_bits).collect();
+    let mut est: Vec<u64> = hist.iter().map(ClusterHistogram::estimate_bits).collect();
     let mut active: Vec<bool> = vec![true; n];
     let mut active_count = n;
     let mut delta: Vec<i64> = vec![0; n * n];
     for i in 0..n {
         for j in (i + 1)..n {
-            delta[i * n + j] = hist[i].merged_estimate_bits(&hist[j]) as i64 - est[i] as i64 - est[j] as i64;
+            delta[i * n + j] = merge_delta(&hist[i], &hist[j], est[i], est[j]);
         }
     }
 
@@ -402,7 +402,7 @@ fn greedy_cluster_reference(
                 continue;
             }
             let (lo, hi) = if a < j { (a, j) } else { (j, a) };
-            delta[lo * n + hi] = hist[lo].merged_estimate_bits(&hist[hi]) as i64 - est[lo] as i64 - est[hi] as i64;
+            delta[lo * n + hi] = merge_delta(&hist[lo], &hist[hi], est[lo], est[hi]);
         }
     }
 
@@ -426,7 +426,7 @@ fn greedy_cluster_reference(
         .into_iter()
         .enumerate()
         .filter(|(old, _)| active[*old])
-        .map(|(old, h)| (new_id[old], h))
+        .map(|(old, h)| (new_id[old], h.into_histogram()))
         .collect();
     tagged.sort_by_key(|&(id, _)| id);
     let group_histograms: Vec<Histogram> = tagged.into_iter().map(|(_, h)| h).collect();
@@ -518,9 +518,11 @@ mod tests {
             a.add_literal(g << 8);
             b.add_literal((g + 40) << 8);
         }
-        let est_a = a.estimate_bits();
-        let est_b = b.estimate_bits();
-        let expected = a.merged_estimate_bits(&b) as i64 - est_a as i64 - est_b as i64;
+        let ca = super::ClusterHistogram::new(a);
+        let cb = super::ClusterHistogram::new(b);
+        let est_a = ca.estimate_bits();
+        let est_b = cb.estimate_bits();
+        let expected = ca.merged_estimate_bits(&cb) as i64 - est_a as i64 - est_b as i64;
         // Guarantee the const/sign mutants all diverge: `-> 0` and `-> 1` differ
         // because expected is neither; the two `-`->`+` mutants differ because they
         // add 2*est_a resp. 2*est_b, both strictly positive.
@@ -529,27 +531,40 @@ mod tests {
             expected != 0 && expected != 1,
             "delta {expected} must be distinct from the constant mutants"
         );
-        assert_eq!(merge_delta(&super::ClusterHistogram::new(a), &super::ClusterHistogram::new(b), est_a, est_b), expected);
+        assert_eq!(merge_delta(&ca, &cb, est_a, est_b), expected);
     }
 
     #[test]
     fn active_count_decrement_gates_forced_merge() {
         // 256 non-empty blocks, of which ONLY blocks 0 and 1 are worth merging.
         let mut blocks = Vec::with_capacity(256);
-        // Blocks 0 and 1: identical two-symbol histograms. Merging them replaces two
-        // multi-symbol channel headers with one, so the merge delta is negative.
+        // Blocks 0 and 1: identical rich histograms. Merging them drops one group's
+        // channel headers plus the fixed per-group cost, so the merge delta is
+        // negative and it is the unique cheapest pair.
         for _ in 0..2 {
             let mut h = Histogram::new(ALPHABET_SIZE[0]);
-            h.add_literal(0x0000_0100); // green symbol 1
-            h.add_literal(0x0000_0200); // green symbol 2
+            for s in 0u32..48 {
+                for _ in 0..128 {
+                    h.add_literal(s << 8);
+                }
+            }
             blocks.push(h);
         }
-        // Blocks 2..256: distinct single-symbol histograms. A one-symbol channel is a
-        // zero-bit code, so each estimates 0 bits and every remaining merge (among
-        // them, or with the 0/1 cluster) only adds bits -> delta >= 0.
-        for s in 2u32..256 {
+        // Blocks 2..256: rich histograms over pseudo-random 48-symbol supports with
+        // disjoint-ish coverage, so every pairwise mixture penalty exceeds the
+        // per-group header credit and no further merge is profitable.
+        for i in 2u32..256 {
             let mut h = Histogram::new(ALPHABET_SIZE[0]);
-            h.add_literal(s << 8);
+            for j in 0u32..48 {
+                let mut z = u64::from(i).wrapping_mul(0x9E37_79B9_7F4A_7C15)
+                    ^ u64::from(j).wrapping_mul(0xD1B5_4A32_D192_ED03);
+                z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+                z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+                let s = (z ^ (z >> 31)) as u32 % 256;
+                for _ in 0..128 {
+                    h.add_literal(s << 8);
+                }
+            }
             blocks.push(h);
         }
         assert_eq!(blocks.len(), 256);

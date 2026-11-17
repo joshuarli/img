@@ -921,3 +921,32 @@ recorded: codec L9 still trails `cwebp -z9` on photos (camera 130,136 vs
 123,720; astronaut 341,490 vs 329,608; coffee 343,922 vs 336,030) — the
 residual lossless gap is algorithmic (candidate set / cost model), not
 search depth; effort increases buy nothing there.
+
+Meta-Huffman group-cost model: VP8L stream dumps (temporary decoder
+diagnostic, since removed) showed our meta streams carry 2-3x the
+Huffman groups of `cwebp -z9` on the same images (coffee 38 vs 17,
+astronaut 43 vs 17, camera 25 vs 11) because the greedy cluster merge
+stops at entropy-of-mixture ties and never charges the ~hundreds of
+bits each group's five prefix-code headers actually cost. `ClusterHistogram`
+now adds a fixed `META_GROUP_HEADER_BITS = 256` per group inside the
+cluster estimate only (cache selection and spec estimates are
+untouched); the emitted stream is still self-floored on real bytes.
+Constant tuned on coffee/camera/astronaut at L9: 128/384/512 all worse
+than 256 on at least one fixture; 1024 regressed all three. Corpus
+evidence at L6 vs `f6b278b` (25 fixtures): 15 improved, 10 identical,
+2 marginally worse (boundary-16384 +10 B, clock_motion +12 B);
+largest wins photopea-ui -598 B (-1.9%), mm-logo-alpha -174 B,
+astronaut -368 B, coffee -256 B. L1/L3/L9 spot checks all improved or
+matched (clock_motion L9 +12 B is the lone level regression seen).
+Groups now land near libwebp's counts (coffee 38->18 vs cwebp 17,
+camera 25->12 vs 11, astronaut 43->19 vs 17). Gated interleaved A/B
+(`perf-gate-ready` 0, quiet host): encode wall neutral on grass
+(9.12->9.12 s) and photopea-ui (+0.7%), +8% on coffee (8.73->9.46 s)
+— the coarser-grid gate `groups*8 <= blocks` now passes more often, so
+group-rich specs pay up to two extra self-floored meta emits. 368/368
+release lossless tests, alloc-only and musl target checks green; the
+two meta emit tests and the merge-gate unit test were re-fixtured for
+the new economics (256x256 regional images; rich pseudo-random block
+histograms). Net: a real but modest frontier gain — the residual gap
+to `cwebp -z9` is now mostly transform choice and joint
+transform-bitstream scoring, not group count.

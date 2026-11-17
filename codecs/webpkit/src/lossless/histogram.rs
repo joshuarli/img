@@ -267,6 +267,13 @@ impl Histogram {
     }
 }
 
+/// Fixed per-group transmission cost the Shannon estimate misses: five prefix
+/// codes each carry a code-length-code header plus simple-code flags, roughly
+/// hundreds of bits per group. Charging it inside the cluster cost model is
+/// what pushes the greedy merge past entropy-of-mixture ties the way libwebp's
+/// clustering does; the final stream is still picked by real emitted bytes.
+const META_GROUP_HEADER_BITS: u64 = 256;
+
 pub(crate) struct ClusterHistogram {
     histogram: Histogram,
     support: [ChannelSupport; 5],
@@ -285,7 +292,7 @@ impl ClusterHistogram {
     }
 
     pub(crate) fn estimate_bits(&self) -> u64 {
-        self.histogram.estimate_bits()
+        self.histogram.estimate_bits() + META_GROUP_HEADER_BITS
     }
 
     pub(crate) fn add_assign(&mut self, other: &Self) {
@@ -306,6 +313,7 @@ impl ClusterHistogram {
                 let (bits, used) = sa.merged_cost(sb, a, b);
                 bits + header_bits(used)
             }).sum::<u64>() + self.histogram.extra_bits + other.histogram.extra_bits
+            + META_GROUP_HEADER_BITS
     }
 
     pub(crate) fn into_histogram(self) -> Histogram {
@@ -738,10 +746,10 @@ mod tests {
             prop_assert_eq!(a.merged_estimate_bits(&b), b.merged_estimate_bits(&a));
             let mut supported = super::ClusterHistogram::new(a.clone());
             let other = super::ClusterHistogram::new(b);
-            prop_assert_eq!(supported.merged_estimate_bits(&other), merged.estimate_bits());
+            prop_assert_eq!(supported.merged_estimate_bits(&other), super::ClusterHistogram::new(merged.clone()).estimate_bits());
             supported.add_assign(&other);
             merged.add_assign(&a);
-            prop_assert_eq!(supported.merged_estimate_bits(&super::ClusterHistogram::new(a)), merged.estimate_bits());
+            prop_assert_eq!(supported.merged_estimate_bits(&super::ClusterHistogram::new(a)), super::ClusterHistogram::new(merged.clone()).estimate_bits());
         }
     }
 }

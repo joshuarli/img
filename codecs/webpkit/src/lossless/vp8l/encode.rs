@@ -2865,14 +2865,15 @@ mod tests {
         // `((argb >> 24) & 0xff)` load-bearing: corrupting the shift (`>>`->`<<`
         // forces 0) or the mask (`&`->`|` forces 0xff, `&`->`^` flips the byte)
         // emits the wrong alpha symbol and the round-trip breaks.
-        let mut pixels = Vec::with_capacity(256);
-        for y in 0..16u32 {
-            for x in 0..16u32 {
+        let (w, h) = (256u32, 256u32);
+        let mut pixels = Vec::with_capacity((w * h) as usize);
+        for y in 0..h {
+            for x in 0..w {
                 let a = 1 + ((x * 5 + y * 3) & 0x3f);
-                pixels.push(if y < 8 {
-                    argb(a, (x * 16 + y) & 0xff, x & 7, 0)
+                pixels.push(if y < h / 2 {
+                    argb(a, (x * 16 + y) & 0xff, x & 0x3f, 0)
                 } else {
-                    argb(a, 0, x & 7, (x * 16 + (y - 8)) & 0xff)
+                    argb(a, 0, x & 0x3f, (x * 16 + (y - h / 2)) & 0xff)
                 });
             }
         }
@@ -2880,12 +2881,12 @@ mod tests {
         assert!(pixels.iter().any(|&p| p >> 24 != pixels[0] >> 24));
         let tokens = crate::lossless::vp8l::backref::parse(&pixels, true);
         let plan =
-            meta::plan(&tokens, &pixels, 16, 16, 0).expect("regional image should plan >=2 groups");
+            meta::plan(&tokens, &pixels, w, h, 0).expect("regional image should plan >=2 groups");
         assert!(plan.group_histograms.len() >= 2);
-        let model = RefModel::new(&tokens, &pixels, 16);
-        let bytes = emit_stream_meta(16, 16, alpha_used(&pixels), &[], 0, &model, &plan);
+        let model = RefModel::new(&tokens, &pixels, w);
+        let bytes = emit_stream_meta(w, h, alpha_used(&pixels), &[], 0, &model, &plan);
         let decoded = decode(&bytes).expect("meta stream must decode");
-        assert_eq!((decoded.width, decoded.height), (16, 16));
+        assert_eq!((decoded.width, decoded.height), (w, h));
         assert_eq!(decoded.argb.as_slice(), pixels.as_slice());
     }
 
@@ -2896,13 +2897,14 @@ mod tests {
         // Flipping the first `+` to `-` emits `NUM_LITERAL_CODES - NUM_LENGTH_CODES +
         // key` (= 232 + key) — a green LITERAL symbol — so the decoder reads a
         // different unit and the stream stops round-tripping. Random images seldom
-        // exercise the meta cache path, so pin it deterministically: a 16x16 image
+        // exercise the meta cache path, so pin it deterministically: a 256x256 image
         // whose top and bottom halves use DISJOINT palettes (>=2 Huffman groups), with
         // every color duplicated in place so an all-literal parse under an 8-bit color
         // cache scores a guaranteed hit on the second pixel of every pair. Encoded via
         // the meta path with that cache, an exact round-trip catches the wrong cache
         // symbol on every run, at any case count.
         use crate::lossless::vp8l::backref::{Resolved, resolve};
+        let (w, h) = (256u32, 256u32);
         let top = [
             argb(255, 10, 20, 30),
             argb(255, 200, 40, 60),
@@ -2915,10 +2917,10 @@ mod tests {
             argb(255, 15, 250, 250),
             argb(255, 250, 15, 130),
         ];
-        let mut pixels = Vec::with_capacity(256);
-        for y in 0..16u32 {
-            for x in 0..16u32 {
-                let palette = if y < 8 { &top } else { &bottom };
+        let mut pixels = Vec::with_capacity((w * h) as usize);
+        for y in 0..h {
+            for x in 0..w {
+                let palette = if y < h / 2 { &top } else { &bottom };
                 // Duplicated pairs (0,0,1,1,2,2,3,3,...): every odd x repeats its
                 // predecessor, so an all-literal parse makes it a cache hit.
                 pixels.push(palette[((x / 2) % 4) as usize]);
@@ -2930,7 +2932,7 @@ mod tests {
         let tokens = parse(&pixels, false);
         // The cache branch must genuinely fire, else the mutation would be invisible.
         let mut cache_hit_count = 0usize;
-        resolve(&tokens, &pixels, cache_bits, 16, |_pos, unit| {
+        resolve(&tokens, &pixels, cache_bits, w, |_pos, unit| {
             if matches!(unit, Resolved::Cache(_)) {
                 cache_hit_count += 1;
             }
@@ -2939,17 +2941,17 @@ mod tests {
             cache_hit_count > 0,
             "the meta cache branch must be exercised"
         );
-        let plan = meta::plan(&tokens, &pixels, 16, 16, cache_bits)
+        let plan = meta::plan(&tokens, &pixels, w, h, cache_bits)
             .expect("two disjoint-palette halves must plan >=2 groups");
         assert!(
             plan.group_histograms.len() >= 2,
             "expected >=2 groups, got {}",
             plan.group_histograms.len()
         );
-        let model = RefModel::new(&tokens, &pixels, 16);
-        let bytes = emit_stream_meta(16, 16, alpha_used(&pixels), &[], cache_bits, &model, &plan);
+        let model = RefModel::new(&tokens, &pixels, w);
+        let bytes = emit_stream_meta(w, h, alpha_used(&pixels), &[], cache_bits, &model, &plan);
         let decoded = decode(&bytes).expect("meta cache stream must decode");
-        assert_eq!((decoded.width, decoded.height), (16, 16));
+        assert_eq!((decoded.width, decoded.height), (w, h));
         assert_eq!(decoded.argb.as_slice(), pixels.as_slice());
     }
 
