@@ -1193,9 +1193,13 @@ three violations now emit non-increasing bytes (utrecht L1=L2=
 lossless tests green including serial/rayon agreement and the
 monotonicity proptest, and coffee/transparent/cell bytes identical.
 Cost: levels >=2 on >=256K px images can search a few tasks their own
-bands would have dropped (bounded by the union); Fast's L1 path is
-unaffected in kind — L0's three tasks are a subset of L1's and were
-already kept there on the swept photos.
+bands would have dropped (bounded by the union); measured on
+photopea-ui L4 ~5.4 s -> ~8.0 s (+47%, bytes identical at 31,670) —
+the price of the superset guarantee, concentrated at mid levels; L1
+and L9 were flat on large.png/photopea-ui and camera L1/L6 bytes are
+identical pre/post. Fast's L1 path is unaffected in kind — L0's three
+tasks are a subset of L1's and were already kept there on the swept
+photos.
 
 Fast-gate probe analysis (negative result + one opening): per-task
 floor mins on the >=1 MP validation photos show floor-stream bits/pixel
