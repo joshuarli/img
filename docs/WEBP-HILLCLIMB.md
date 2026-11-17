@@ -678,3 +678,21 @@ remaining `match_hop` mass is pinned by byte-identity — reducing it
 requires either fewer searched specs (the estimate bands are already
 at their safe width) or a provably lossless candidate prune inside
 `find_candidates`, neither of which has a known construction.
+
+Qualification evidence gathered alongside (untimed, this host):
+
+- Pure-Rust/dependency: `cargo tree` shows webpkit has zero external
+  dependencies; `cargo check` passes for `x86_64-unknown-linux-musl`
+  and `aarch64-unknown-linux-musl` (both `rayon,work-count` and
+  alloc-only feature sets). Host target `aarch64-apple-darwin` is the
+  development oracle.
+- Decode cost (img decoder, 30 decode reps per file, system libwebp
+  `cwebp -lossless -z9` as comparator — not the pinned tool): our
+  L6 streams decode within ±25% of libwebp's either direction,
+  content-dependent, no systematic penalty — coffee-img 192 ms vs
+  cwebp 152 ms, grass 120 vs 129, chelsea 106 vs 117, text 35.5 vs
+  30.2 (totals over 30 reps).
+- Serial/rayon agreement re-verified on the coverage-band landing:
+  alloc-only serial build vs rayon build byte-identical on grass,
+  coffee, astronaut, validation_text, validation_chelsea,
+  generated_transparent at L6.
