@@ -1087,7 +1087,23 @@ Landed since `71722b6`:
 - `25382da` perf(img): dropped the photographic 200-400K px band
   that mapped Fast lossless to codec level 6 — coffee gained 0.82%
   bytes for ~2x time, grass was byte-identical for ~1.6x, gravel
-  0.09% for ~1.75x. Fast now uses codec L6 only for <=16,384 px.
+  0.09% for ~1.75x. REVERTED by `70a6c27`: the scored-path A/B below
+  showed camera.png t99 lossless 130,034 -> 135,518 B (+4.21%),
+  over the 3% per-image guardrail, with cell +1.60% and coffee
+  +0.82% as further exceptions. Fast keeps codec L6 for <=16,384 px
+  and the 200K-400K px band; everything else uses L1.
+
+Fast size-delta A/B (71722b6 vs head, scored path t80/t99, winners
+compared): with the mid-band restored every completed row is
+byte-identical to base except generated_ui.png (-2 B, an
+improvement). The earlier run against the mid-band-removed binary
+is the exception list: camera +4.21%, cell +1.60%, coffee +0.82%,
+gravel +0.09%, brick +0.01% — all at t99 only, all inside the band.
+Missing comparisons (scratch-evaluator SDR-gamut panic, identical
+on both binaries, not encoder regressions): astronaut, chelsea,
+charolais-cattle, sous-tour-eiffel, rocket, goose-head, and
+generated/deep.png (scratch stride assumption). Geomean size
+delta on completed rows: ~0%.
 
 Monotonicity repair (this commit): the public `Effort::level`
 contract promises a higher level never emits a larger file, but two
@@ -1132,9 +1148,10 @@ photopea-ui, mm-logo-alpha.
 Next priorities: (1) phase-attribute the remaining Fast lossless cost
 on low-entropy large inputs (large.png still pays ~6-19 s because
 the probe is correctly bypassed — the deep encode itself is the
-cost); (2) quantify Fast size deltas vs the pre-probe-policy binary
-across the corpus strata against the 1% geomean / 3% per-image
-guardrails and publish exceptions; (3) recapture the timed frontier
-now that the Fast path changed materially; (4) decide whether the
+cost); (2) recapture the timed frontier now that the Fast path
+changed materially, including peak RSS; (3) decide whether the
 >=256K px banded selection needs the same superset treatment or a
-documented residual risk.
+documented residual risk; (4) the Fast mid-band L6 cost (~2x on
+200-400K px photos) is the largest remaining Fast lossless latency
+item now that the probe gate and alpha bound landed — a cheaper
+approximate search inside codec L6/L1 is the open design space.
