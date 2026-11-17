@@ -370,7 +370,7 @@ mod tests {
         Outcome { bytes: vec![0; size], format, unchanged: false, score, evaluations: vec![], warnings: vec![] }
     }
     fn eval(format: Format, quality: Option<f32>, bytes: usize, score: Option<f64>, failure: Option<&str>) -> Evaluation {
-        Evaluation { format, quality, bytes: Some(bytes), score, encode_ms: 0.0, failure: failure.map(str::to_string) }
+        Evaluation { format, quality, bytes: Some(bytes), score, encode_ms: 0.0, probe_ms: None, failure: failure.map(str::to_string) }
     }
     #[test]
     fn better_prefers_size_then_score_then_format_then_incumbent() {
