@@ -60,8 +60,9 @@ fn webkit_metadata(image: &StillImage) -> webpkit::Metadata {
         .with_xmp(image.metadata.xmp.as_deref().map(<[u8]>::to_vec))
 }
 
-// Fast effort skips the Best-tier transform/meta-Huffman search, which is where the
-// remaining lossless byte wins on photographic content live. For the photographic
+// Fast effort skips the Best-tier transform search, which is where the remaining
+// lossless byte wins on photographic content live; codec level 1 still runs
+// cross-color, optimal parse and meta-Huffman shots. For the photographic
 // mid-band (>= `DEEP_LOSSLESS_FAST_MIN_PIXELS`, <= `DEEP_LOSSLESS_FAST_MAX_PIXELS`)
 // level 6 closes the measured gap to the withdrawn closure's lossless bytes (coffee
 // 386,802 -> 353,630 vs 359,054), at roughly 8 s per encode. The sub-16,384 px small

@@ -474,7 +474,7 @@ const fn schedule(level: u8) -> Breadth {
             tile_bits: T4,
             cross_color: true,
             optimal_parse: true,
-            meta_huffman: false,
+            meta_huffman: true,
             chain_cap,
         },
         2 => Breadth {
