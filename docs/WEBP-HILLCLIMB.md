@@ -979,3 +979,30 @@ gate provably cannot change the winner; cap-bound 4-format requests
 need explicit handling since deferral changes which tail candidates
 run. Requires a corpus output-equivalence sweep plus timed A/B before
 landing — selection-policy change, not a codec change.
+
+Scored-path deferred lossless gate (landed): `Fidelity::Score`
+requests previously ran the deep lossless candidate first on every
+encode even when lossy candidates were certain to win on bytes
+(coffee t80: 1030 ms lossless eval vs ~250 ms for all nine lossy
+evals, winner 53,874 B vs lossless 343,922 B). Exact `(format, None)`
+settings are now deferred behind the quality grid whenever the full
+initial setting list fits the candidate cap (cap-bound requests keep
+the original order, so the evaluated set is unchanged either way).
+Before a deferred WebP lossless encode runs, `lossless_cannot_win`
+skips it iff (a) local-delta sample entropy >= 3.5 bits/channel —
+below that, palette/meta-Huffman structure makes cheap probes
+unreliable (large.png L0->L1 = 0.31x, transparent/icc L1->L6 ~0.5x) —
+and (b) a codec-level-0 lossless probe exceeds the incumbent by
+margin 1.67x (deep/probe observed >= 0.84 on probe-path fixtures;
+margin requires >= 0.60). Skipped evaluations record an explicit
+failure entry; winners are unchanged whenever the gate is correct.
+
+Evidence: coffee t80 wall 1.51 s -> 0.60 s; utrecht t80 skips the
+~6.4 s probe+deep pair (probe itself ~6.4 s on 2 MP — L0 still pays
+LZ77+entropy, so savings scale with image size). Corpus output
+sweep vs pre-change binary: every completed record byte-identical
+(91+ SAME at time of writing, zero DIFF; pre-existing decode
+failures identical on both binaries). Balanced/Best/Auto spot checks
+byte-identical. Probe overhead is zero on compressible content
+(entropy filter) and ~150-6500 ms on photo content where it replaces
+a 0.8-14 s deep encode.

@@ -19,7 +19,8 @@ fn search_finishes_coarse_grid_before_refining_and_does_not_assume_monotonicity(
     let bytes=StillImage::from_rgb8(48,32,(0..32u8).flat_map(|y|(0..48u8).flat_map(move|x|[x*4,y*6,100])).collect()).unwrap().encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
     let result=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Score(ScoreTarget::new(40.0).unwrap()),effort:Effort::Balanced,..Request::default() }).unwrap();
     assert_eq!(result.evaluations.len(),24);
-    assert_eq!(result.evaluations[1..7].iter().map(|e|e.quality.unwrap()).collect::<Vec<_>>(),[95.0,50.0,0.0,100.0,75.0,25.0]);
+    assert_eq!(result.evaluations[..6].iter().map(|e|e.quality.unwrap()).collect::<Vec<_>>(),[95.0,50.0,0.0,100.0,75.0,25.0]);
+    assert_eq!(result.evaluations[6].quality,None);
     assert_eq!(result.bytes.len(),result.evaluations.iter().filter(|e|e.failure.is_none()).map(|e|e.bytes.unwrap()).min().unwrap());
     let impossible=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Jpeg),fidelity:Fidelity::Score(ScoreTarget::new(100.0).unwrap()),effort:Effort::Fast,..Request::default() });
     assert!(impossible.is_err());
@@ -107,14 +108,14 @@ fn lossless_cross_format_cannot_discard_hdr_color_signaling() {
 }
 
 #[test]
-fn score_search_evaluates_exact_candidates_before_the_quality_grid() {
+fn score_search_defers_exact_candidates_behind_the_quality_grid_when_budget_allows() {
     let bytes=source();
     let auto=optimizer::process(&bytes,Request { operation:Operation::Optimize(FormatSelection::Auto),fidelity:Fidelity::Score(ScoreTarget::new(70.0).unwrap()),effort:Effort::Fast,..Request::default() }).unwrap();
     assert_eq!(auto.evaluations[0].format,Format::Png); assert_eq!(auto.evaluations[0].quality,None);
     assert_eq!(auto.evaluations[1].format,Format::Webp); assert_eq!(auto.evaluations[1].quality,None);
     assert_eq!(auto.evaluations[2..6].iter().map(|e|(format!("{:?}",e.format),e.quality.unwrap())).collect::<Vec<_>>(),[("Jpeg".to_string(),95.0),("Png".to_string(),95.0),("Webp".to_string(),95.0),("Avif".to_string(),95.0)]);
     let webp=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Score(ScoreTarget::new(70.0).unwrap()),effort:Effort::Fast,..Request::default() }).unwrap();
-    assert_eq!(webp.evaluations[0].format,Format::Webp); assert_eq!(webp.evaluations[0].quality,None);
+    assert_eq!(webp.evaluations[6].quality,None);
     assert!(webp.evaluations.iter().all(|e|e.format==Format::Webp));
 }
 
@@ -129,5 +130,5 @@ fn score_search_selects_the_deep_lossless_candidate_when_lossy_cannot_qualify() 
     let winner=result.evaluations.iter().find(|e|e.bytes==Some(result.bytes.len()) && e.failure.is_none()).unwrap();
     assert_eq!(winner.format,Format::Webp); assert_eq!(winner.quality,None);
     assert!(result.evaluations.iter().filter(|e|e.quality.is_some()).all(|e|e.failure.is_some()));
-    assert_eq!(result.evaluations[0].quality,None);
+    assert_eq!(result.evaluations.iter().filter(|e|e.quality.is_none()).count(),1);
 }

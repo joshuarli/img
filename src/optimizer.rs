@@ -174,6 +174,32 @@ fn strip_compliant(bytes: &[u8], format: Format) -> bool {
         Format::Avif => false,
     }
 }
+fn local_delta_entropy_bits(samples: &[u8], bytes_per_pixel: usize) -> f64 {
+    let step = (samples.len() / (bytes_per_pixel * 65536)).max(1);
+    let mut hist = [0u64; 256];
+    let mut n = 0u64;
+    let mut prev: Option<&[u8]> = None;
+    let mut i = 0usize;
+    while i + bytes_per_pixel <= samples.len() {
+        let px = &samples[i..i + bytes_per_pixel];
+        if let Some(p) = prev {
+            for c in 0..bytes_per_pixel { hist[px[c].wrapping_sub(p[c]) as usize] += 1; n += 1; }
+        }
+        prev = Some(px);
+        i += bytes_per_pixel * step;
+    }
+    let mut h = 0.0f64;
+    for &c in &hist {
+        if c > 0 { let p = c as f64 / n as f64; h -= p * p.log2(); }
+    }
+    h
+}
+fn lossless_cannot_win(image: &StillImage, cancelled: &crate::cancellation::Cancellation, incumbent: usize) -> bool {
+    if image.bit_depth() != 8 { return false; }
+    let bytes_per_pixel = if image.is_grayscale() { if image.has_alpha() { 2 } else { 1 } } else if image.has_alpha() { 4 } else { 3 };
+    if local_delta_entropy_bits(&image.samples(), bytes_per_pixel) < 3.5 { return false; }
+    crate::still::webp::probe(image, cancelled).is_ok_and(|p| p.saturating_mul(3) > incumbent.saturating_mul(5))
+}
 fn warnings(image: &StillImage, format: Format, policy: MetadataPolicy) -> Vec<String> {
     if policy == MetadataPolicy::Keep && format != image.format() {
         image.png_metadata.iter().filter(|p| !matches!(&p[4..8], b"iCCP"|b"eXIf") && !( &p[4..8] == b"iTXt" && image.metadata.xmp.is_some()))
@@ -232,33 +258,45 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
     if formats.is_empty() { return best.ok_or_else(|| Error::new(ErrorKind::Unsupported,"no compatible destination for the requested precision, alpha or lossless contract")); }
     let cap = request.effort.candidate_cap();
     let mut settings = Vec::new();
+    let mut deferred: Vec<(Format,Option<f32>)> = Vec::new();
     match request.fidelity {
         Fidelity::Lossless => for &f in &formats { settings.push((f,None)); },
         Fidelity::Quality(q) => for &f in &formats { settings.push((f,Some(q.value()))); },
         Fidelity::Score(_) => {
-            for format in [Format::Png,Format::Webp] {if formats.contains(&format) {settings.push((format,None));}}
+            let mut exact = vec![];
+            for format in [Format::Png,Format::Webp] {if formats.contains(&format) {exact.push((format,None));}}
+            let mut scored = vec![];
             for q in [95.0,50.0,0.0,100.0,75.0,25.0] {
-                for &f in &formats { if f != Format::Png || !image.is_grayscale() { settings.push((f,Some(q))); } }
+                for &f in &formats { if f != Format::Png || !image.is_grayscale() { scored.push((f,Some(q))); } }
             }
+            if exact.len() + scored.len() <= cap { deferred = exact; settings = scored; }
+            else { settings = exact.into_iter().chain(scored).collect(); }
         },
     }
     let mut evaluations = Vec::new();
     let mut encoded_any = false;
     let mut encode_error = false;
     let mut next = 0;
-    while evaluations.len() < cap {
+    let mut deferred_at = 0;
+    'eval: while evaluations.len() < cap {
         if cancelled.is_cancelled() { return Err(Error::new(ErrorKind::Invalid,"processing cancelled")); }
-        if next >= settings.len() {
-            if !matches!(request.fidelity,Fidelity::Score(_)) { break; }
-            if !refine_step(&formats,&evaluations,&mut settings) { break; }
-        }
-        let (format,quality) = settings[next]; next+=1;
+        let (format,quality,from_deferred) = loop {
+            if next < settings.len() { next+=1; break (settings[next-1].0,settings[next-1].1,false); }
+            if deferred_at < deferred.len() { deferred_at+=1; let s=deferred[deferred_at-1]; break (s.0,s.1,true); }
+            if !matches!(request.fidelity,Fidelity::Score(_)) { break 'eval; }
+            if !refine_step(&formats,&evaluations,&mut settings) { break 'eval; }
+        };
         let start=Instant::now();
-        let encoded=image.encode_cancellable(format,quality.map(|q|EncodingMode::Quality(Quality::new(q).unwrap())).unwrap_or(EncodingMode::Lossless),request.effort,cancelled);
+        let gated = from_deferred && format == Format::Webp && quality.is_none()
+            && best.as_ref().is_some_and(|b| lossless_cannot_win(&image,cancelled,b.bytes.len()));
+        let encoded = if gated { None } else {
+            Some(image.encode_cancellable(format,quality.map(|q|EncodingMode::Quality(Quality::new(q).unwrap())).unwrap_or(EncodingMode::Lossless),request.effort,cancelled))
+        };
         let mut evaluation=Evaluation { format,quality,bytes:None,score:None,encode_ms:start.elapsed().as_secs_f64()*1000.0,failure:None };
         match encoded {
-            Err(error) => { encode_error |= error.kind() == ErrorKind::Encode; evaluation.failure=Some(error.to_string()); },
-            Ok(candidate_bytes) => {
+            None => evaluation.failure=Some("skipped: lossless probe cannot beat the incumbent".into()),
+            Some(Err(error)) => { encode_error |= error.kind() == ErrorKind::Encode; evaluation.failure=Some(error.to_string()); },
+            Some(Ok(candidate_bytes)) => {
                 encoded_any=true; evaluation.bytes=Some(candidate_bytes.len());
                 let validated=(|| {
                     let candidate=StillImage::decode_cancellable(&candidate_bytes,cancelled)?;

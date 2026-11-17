@@ -8,7 +8,7 @@ mod jpeg;
 mod avif;
 mod avif_container;
 mod av1;
-mod webp;
+pub(crate) mod webp;
 pub(crate) mod color;
 pub use color::{PreparedImage, SamplePreservation};
 

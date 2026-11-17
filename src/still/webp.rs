@@ -97,6 +97,15 @@ fn webkit_effort(mode: EncodingMode, effort: Effort, pixels: u64) -> webpkit::Ef
 }
 
 pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
+    let (width, height) = image.dimensions();
+    encode_with_effort(image, mode, webkit_effort(mode, effort, u64::from(width) * u64::from(height)), stop)
+}
+
+pub(crate) fn probe(image: &StillImage, stop: &crate::cancellation::Cancellation) -> Result<usize, Error> {
+    Ok(encode_with_effort(image, EncodingMode::Lossless, webpkit::Effort::level(0), stop)?.len())
+}
+
+fn encode_with_effort(image: &StillImage, mode: EncodingMode, effort: webpkit::Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
     if stop.is_cancelled() { return Err(Error::new(ErrorKind::Invalid, "operation cancelled")); }
     if image.bit_depth() != 8 { return Err(Error::new(ErrorKind::Unsupported, "WebP encoding requires eight-bit samples")); }
     let (width, height) = image.dimensions();
@@ -108,11 +117,11 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, sto
     let metadata = webkit_metadata(image);
     let result = match mode {
         EncodingMode::Lossless => webpkit::Encoder::lossless()
-            .effort(webkit_effort(mode, effort, u64::from(width) * u64::from(height)))
+            .effort(effort)
             .metadata(metadata)
             .encode_ref(reference),
         EncodingMode::Quality(quality) => webpkit::Encoder::lossy()
-            .effort(webkit_effort(mode, effort, u64::from(width) * u64::from(height)))
+            .effort(effort)
             .quality((quality.value().round() as u8).clamp(0, 100))
             .metadata(metadata)
             .encode_ref(reference),
