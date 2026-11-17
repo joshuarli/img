@@ -68,6 +68,8 @@ pub struct Evaluation {
     pub score: Option<f64>,
     /// Wall time for encoding only; diagnostic, not a benchmark.
     pub encode_ms: f64,
+    /// Wall time spent on the Fast lossless floor probe, when one ran.
+    pub probe_ms: Option<f64>,
     /// Named encode, validation, or fidelity failure.
     pub failure: Option<String>,
 }
@@ -198,7 +200,7 @@ fn lossless_cannot_win(image: &StillImage, cancelled: &crate::cancellation::Canc
     if image.bit_depth() != 8 { return false; }
     let bytes_per_pixel = if image.is_grayscale() { if image.has_alpha() { 2 } else { 1 } } else if image.has_alpha() { 4 } else { 3 };
     if local_delta_entropy_bits(&image.samples(), bytes_per_pixel) < 3.5 { return false; }
-    crate::still::webp::probe(image, cancelled).is_ok_and(|p| p.saturating_mul(3) > incumbent.saturating_mul(5))
+    crate::still::webp::probe(image, cancelled).is_ok_and(|p| p.len().saturating_mul(3) > incumbent.saturating_mul(5))
 }
 fn warnings(image: &StillImage, format: Format, policy: MetadataPolicy) -> Vec<String> {
     if policy == MetadataPolicy::Keep && format != image.format() {
@@ -287,12 +289,48 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
             if !refine_step(&formats,&evaluations,&mut settings) { break 'eval; }
         };
         let start=Instant::now();
-        let gated = from_deferred && format == Format::Webp && quality.is_none()
-            && best.as_ref().is_some_and(|b| lossless_cannot_win(&image,cancelled,b.bytes.len()));
-        let encoded = if gated { None } else {
-            Some(image.encode_cancellable(format,quality.map(|q|EncodingMode::Quality(Quality::new(q).unwrap())).unwrap_or(EncodingMode::Lossless),request.effort,cancelled))
+        let incumbent = best.as_ref().map(|b| b.bytes.len());
+        let deferred_lossless = from_deferred && format == Format::Webp && quality.is_none();
+        let fast_floor_probe = deferred_lossless && request.effort == Effort::Fast && incumbent.is_some()
+            && image.bit_depth() == 8 && {
+                let bpp = if image.is_grayscale() { if image.has_alpha() { 2 } else { 1 } } else if image.has_alpha() { 4 } else { 3 };
+                local_delta_entropy_bits(&image.samples(), bpp) >= 2.2
+            };
+        let mut probe_ms = None;
+        let mut probe_bytes;
+        let mut encode_ms = 0.0;
+        let encoded = if fast_floor_probe {
+            match crate::still::webp::probe(&image,cancelled) {
+                Ok(bytes) => {
+                    probe_ms = Some(start.elapsed().as_secs_f64()*1000.0);
+                    if bytes.len().saturating_mul(4) > incumbent.unwrap().saturating_mul(5) {
+                        encode_ms = probe_ms.unwrap();
+                        Some(Ok(bytes))
+                    } else {
+                        probe_bytes = Some(bytes);
+                        let t = Instant::now();
+                        let r = image.encode_cancellable(format,EncodingMode::Lossless,request.effort,cancelled);
+                        encode_ms = t.elapsed().as_secs_f64()*1000.0;
+                        Some(match r { Err(_) => probe_bytes.take().map_or(r, Ok), Ok(b) => Ok(b) })
+                    }
+                },
+                Err(_) => {
+                    let t = Instant::now();
+                    let r = image.encode_cancellable(format,EncodingMode::Lossless,request.effort,cancelled);
+                    encode_ms = t.elapsed().as_secs_f64()*1000.0;
+                    Some(r)
+                },
+            }
+        } else {
+            let gated = deferred_lossless && incumbent.is_some_and(|n| lossless_cannot_win(&image,cancelled,n));
+            if gated { None } else {
+                let t = Instant::now();
+                let r = image.encode_cancellable(format,quality.map(|q|EncodingMode::Quality(Quality::new(q).unwrap())).unwrap_or(EncodingMode::Lossless),request.effort,cancelled);
+                encode_ms = t.elapsed().as_secs_f64()*1000.0;
+                Some(r)
+            }
         };
-        let mut evaluation=Evaluation { format,quality,bytes:None,score:None,encode_ms:start.elapsed().as_secs_f64()*1000.0,failure:None };
+        let mut evaluation=Evaluation { format,quality,bytes:None,score:None,encode_ms,probe_ms,failure:None };
         match encoded {
             None => evaluation.failure=Some("skipped: lossless probe cannot beat the incumbent".into()),
             Some(Err(error)) => { encode_error |= error.kind() == ErrorKind::Encode; evaluation.failure=Some(error.to_string()); },

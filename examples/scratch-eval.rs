@@ -7,7 +7,7 @@ fn main() {
     let t80 = Request { operation: Operation::Convert(Format::Webp), fidelity: Fidelity::Score(ScoreTarget::new(args[2].parse().unwrap()).unwrap()), effort: Effort::Fast, ..Request::default() };
     let out = optimizer::process(&bytes, t80).unwrap();
     for e in &out.evaluations {
-        println!("format={:?} quality={:?} bytes={:?} score={:?} failure={:?}", e.format, e.quality, e.bytes, e.score, e.failure);
+        println!("format={:?} quality={:?} bytes={:?} score={:?} encode_ms={:.1} probe_ms={:?} failure={:?}", e.format, e.quality, e.bytes, e.score, e.encode_ms, e.probe_ms, e.failure);
     }
     println!("winner format={:?} bytes={} score={:?}", out.format, out.bytes.len(), out.score);
 }

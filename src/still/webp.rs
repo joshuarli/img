@@ -101,8 +101,8 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, sto
     encode_with_effort(image, mode, webkit_effort(mode, effort, u64::from(width) * u64::from(height)), stop)
 }
 
-pub(crate) fn probe(image: &StillImage, stop: &crate::cancellation::Cancellation) -> Result<usize, Error> {
-    Ok(encode_with_effort(image, EncodingMode::Lossless, webpkit::Effort::level(0), stop)?.len())
+pub(crate) fn probe(image: &StillImage, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
+    encode_with_effort(image, EncodingMode::Lossless, webpkit::Effort::level(0), stop)
 }
 
 fn encode_with_effort(image: &StillImage, mode: EncodingMode, effort: webpkit::Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
