@@ -950,3 +950,32 @@ the new economics (256x256 regional images; rich pseudo-random block
 histograms). Net: a real but modest frontier gain — the residual gap
 to `cwebp -z9` is now mostly transform choice and joint
 transform-bitstream scoring, not group count.
+
+Lossless residual-gap probes (all rejected, temporary instrumentation
+reverted): (a) forcing EVERY transform task + spec through
+`family_search` on coffee L9 still yields 343,646 B — the estimate
+bands are NOT dropping the cwebp-style winner; `pred3+xcolor4`+SG
+emits 363-366 KB under our pipeline vs cwebp's ~336 KB total, so the
+residual ~2.2% is diffuse (LZ77 cost-table details, transform
+internals, Huffman subtleties), not candidate coverage. (b) A second
+optimal-parse DP iteration seeded by the DP's own histogram
+(WEBPKIT_DP2 probe): 343,666 -> 343,662 B, -4 B — the pass-1 cost
+model is already converged; iteration is a dead end. (c) Raising
+MAX_CHAIN_OPTIMAL 256 -> 1024: coffee L9 byte-identical — photographic
+chains exhaust long before the cap, matching the constant's doc.
+
+Scored-path wall analysis (the dominant measured gap, ~12-35x vs the
+withdrawn oracle on photos): `Fidelity::Score` settings evaluate
+`(Webp, None)` = deep lossless as candidate #2 on every request, and
+on photographic content it can never win bytes (lossless ~344 KB vs
+lossy ~55-200 KB) yet costs ~4-9 s of the ~10 s wall. Proposed next
+lever — deferred gated lossless: under Score fidelity, evaluate the
+quality grid first and defer `(format, None)` lossless entries;
+when reached, run a Fast-effort lossless probe and skip the deep
+encode iff `probe_bytes * margin > incumbent_bytes` (margin covering
+the worst observed Fast->deep gain, ~0.80 pending corpus calibration).
+Preserves the evaluated set and `better()` outcomes except where the
+gate provably cannot change the winner; cap-bound 4-format requests
+need explicit handling since deferral changes which tail candidates
+run. Requires a corpus output-equivalence sweep plus timed A/B before
+landing — selection-policy change, not a codec change.
