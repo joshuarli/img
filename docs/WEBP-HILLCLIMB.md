@@ -875,3 +875,26 @@ the deeper optimal-parse chain (MAX_CHAIN_OPTIMAL at level >=3) is
 a different candidate, not a superset — a by-design heuristic-depth
 effect of a few bytes on tiny files, distinct from the band bug and
 recorded here so it is not re-diagnosed as a regression.
+
+Timed frontier recapture at `28073f9` (5 interleaved rounds,
+`RAYON_NUM_THREADS=1`, host gate accepted;
+[timed-validation-l1meta](../benchmarks/results/timed-validation-l1meta.json),
+img vs cwebp-lossless `-z9` medians): the meta-Huffman levels make
+the already-large time gap wider on the big alpha/UI strata —
+mm-logo-alpha img 179.0 s vs cwebp 4.2 s (42.8x; was ~35x
+pre-meta), photopea-ui 16.8 s vs 1.7 s (9.9x), utrecht 112.0 s vs
+37.5 s (3.0x), boundary-1050625 10.2 s vs 7.5 s (1.4x), retina
+21.2 s vs 15.6 s (1.4x). img remains FASTER than cwebp-lossless on
+clock_motion (0.5x), coins (0.3x) and text (0.5x). Byte gaps vs
+cwebp narrowed as recorded above; the time story is unchanged in
+kind — lossless encode is 1.4-43x the oracle depending on stratum,
+with meta adding ~10-20% on the L1 bands. withdrawn produced no
+records (binary absent in this checkout — explicit gap).
+
+Harness note: this capture's `text.png` fixture name collides with
+the dev corpus's generated `text.png`; the 15 `timed-text_png-img-*`
+outputs it overwrote belong to `timed-post-skip.json`. Those were
+restored from git and this capture's copies renamed to
+`l1meta-timed-text_png-img-*` with `outputPath` rewritten, so both
+documents verify. `IMG_BENCH_OUTPUT_PREFIX` exists for exactly this;
+future cross-corpus captures should set it.
