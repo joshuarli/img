@@ -75,6 +75,43 @@ fn gray_alpha_webp_expands_luminance_and_preserves_every_alpha_value() {
 }
 
 #[test]
+fn lossless_webp_round_trips_icc_exif_orientation_and_xmp() {
+    use img::still::describe;
+    let mut info = png::Info::with_size(16, 16);
+    info.color_type = png::ColorType::Rgb;
+    info.bit_depth = png::BitDepth::Eight;
+    info.icc_profile = Some(std::borrow::Cow::Owned(moxcms::ColorProfile::new_srgb().encode().unwrap()));
+    let mut png_bytes = Vec::new();
+    png::Encoder::with_info(&mut png_bytes, info).unwrap()
+        .write_header().unwrap()
+        .write_image_data(&common::pixels(16, 16)).unwrap();
+    let chunk = |kind: &[u8; 4], data: &[u8]| {
+        let mut c = (data.len() as u32).to_be_bytes().to_vec();
+        c.extend_from_slice(kind); c.extend_from_slice(data);
+        let crc = crc32fast::hash(&c[4..]); c.extend_from_slice(&crc.to_be_bytes()); c
+    };
+    let tiff = [
+        b'I', b'I', 42, 0, 8, 0, 0, 0,
+        1, 0, 0x12, 0x01, 3, 0, 1, 0, 0, 0, 6, 0, 0, 0,
+        0, 0, 0, 0,
+    ];
+    let mut xmp_text = b"XML:com.adobe.xmp\0".to_vec();
+    xmp_text.extend_from_slice(&[0, 0, 0, 0]);
+    xmp_text.extend_from_slice(b"<x:xmpmeta>fixture</x:xmpmeta>");
+    png_bytes.splice(33..33, [
+        chunk(b"eXIf", &tiff),
+        chunk(b"iTXt", &xmp_text),
+    ].concat());
+    let source = StillImage::decode(&png_bytes).unwrap();
+    let webp = source.encode(Format::Webp, EncodingMode::Lossless, Effort::Fast).unwrap();
+    let decoded = StillImage::decode(&webp).unwrap();
+    assert_eq!(decoded.samples(), source.samples());
+    let description = describe(&webp).unwrap();
+    assert!(description.icc && description.exif && description.xmp, "{description:?}");
+    assert_eq!(description.orientation, 6);
+}
+
+#[test]
 fn decoded_untagged_png_samples_can_be_encoded_without_color_conversion() {
     let samples=transparent();
     let image=StillImage::from_samples(32,24,SampleLayout::Rgba8,samples.clone()).unwrap();
