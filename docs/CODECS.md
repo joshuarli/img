@@ -31,7 +31,8 @@ the repository (release profile, sha256
 | Palette quantization | quantizr 1.4.3 (RGBA), quantette 0.6.0 (opaque RGB) | Unchanged; output now passes through OxiPNG |
 | JPEG encode | jpegli (libjxl v0.11.1) YCbCr, 4:4:4 color ([jpeg-candidates.md](codecs/jpeg-candidates.md)) | Selected; mozjpeg-rs 0.9.2 ships until integrated |
 | JPEG decode | libjpeg-turbo 3.1.1 | Selected; zune-jpeg 0.5.15 ships until integrated |
-| AVIF encode/decode | ravif 0.13.0 (rav1e) / rav1d 1.1.0 | Candidate comparison open |
+| AVIF encode | libavif 1.4.2 + libaom 3.13.1, 8-bit 4:4:4 ([avif-candidates.md](codecs/avif-candidates.md)) | Selected; ravif 0.13.0 ships until integrated |
+| AVIF decode | libavif 1.4.2 + dav1d 1.5.4 | Selected; rav1d 1.1.0 ships until integrated |
 
 PNG effort mapping: fast → OxiPNG preset 0; balanced → preset 0 with
 libdeflate level 8; best → preset 2. The adapter disables alpha optimization,
@@ -86,7 +87,17 @@ grows 149,856 bytes (4,622,592 → 4,772,448).
    (+10–16%). libjpeg-turbo decodes with 19% less CPU and half the RSS of
    Zen; in-process decode wall time is unmeasured. Next: vendor jpegli and
    libjpeg-turbo behind the JPEG adapter.
-6. **AVIF:** candidate comparison (libavif with libaom/SVT-AV1, dav1d) is next.
+6. **AVIF.** The candidate comparison ([avif-candidates.md](codecs/avif-candidates.md),
+   14 scaled untagged photos plus one gradient, single thread, gated) selected
+   libaom 4:4:4: at score 90 speed 6 is 9.7% smaller than Zen Best at 863 vs
+   3,376 ms, and speed 8 is 5.1% smaller at 299 ms. Mapping: fast → speed 8;
+   balanced and best → speed 6 (speed 4 costs 10× for 0.65%). dav1d decodes in
+   46.7 ms against rav1d's 69.5 ms and Zen's 112.0 ms. 4:2:0 cannot reach score
+   90 on five photos. No eligible texture or UI/text input exists (all are gray
+   or alpha, which img's AVIF path refuses). The lane found img read the nclx
+   `full_range_flag` from bit 0 instead of bit 7, misdecoding standard
+   full-range files; fixed with a regression test in `tests/avif_codec.rs`.
+   Next: vendor libavif, libaom and dav1d behind the AVIF adapter.
 
 ## Needs environment
 
