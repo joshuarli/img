@@ -115,7 +115,7 @@ fn score_search_defers_exact_candidates_behind_the_quality_grid_when_budget_allo
     assert_eq!(auto.evaluations[1].format,Format::Webp); assert_eq!(auto.evaluations[1].quality,None);
     assert_eq!(auto.evaluations[2..6].iter().map(|e|(format!("{:?}",e.format),e.quality.unwrap())).collect::<Vec<_>>(),[("Jpeg".to_string(),95.0),("Png".to_string(),95.0),("Webp".to_string(),95.0),("Avif".to_string(),95.0)]);
     let webp=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Webp),fidelity:Fidelity::Score(ScoreTarget::new(70.0).unwrap()),effort:Effort::Fast,..Request::default() }).unwrap();
-    assert_eq!(webp.evaluations[6].quality,None);
+    assert_eq!(webp.evaluations.last().unwrap().quality,None);
     assert!(webp.evaluations.iter().all(|e|e.format==Format::Webp));
 }
 
