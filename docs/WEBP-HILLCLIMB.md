@@ -1819,3 +1819,17 @@ libwebp match-finder mechanism is now landed, strictly
 richer on our side, or measured-and-rejected; the residual
 ~0.5% L9 gap has no remaining structural explanation short of
 porting libwebp's exact-cost model itself.
+
+Literal-stream meta-Huffman shot (rejected): the all-literals
+candidate was the only token stream never offered a meta shot.
+Probed by hoisting the literal model and calling meta_shot on
+it. Ungated: coins L6 -38 B (literal+meta beat every match
+stream) but +5-11% encode wall on chelsea/text/grass — the
+extra plan+emit runs per transform variant. Gated at
+literal <= 2x best: same wall on near-literal content (literals
+sit within 2x there too), still -38 B on coins. Restricted to
+fine_meta (L7-9): the win evaporates — fine-meta DP streams
+already dominate literal+meta (coins L9 identical at 70,140).
+The only level where it paid is exactly where its wall cost is
+least acceptable. Reverted; every token-stream family now has
+either a landed meta shot or a measured rejection.
