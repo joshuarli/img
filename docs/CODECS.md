@@ -29,7 +29,8 @@ the repository (release profile, sha256
 | PNG encode/optimize | OxiPNG 10.2.1 + libdeflate 1.26 (vendored, [VENDOR.md](VENDOR.md)) | Shipping |
 | PNG decode | png 0.18.1 | Unchanged; not yet compared with Zen |
 | Palette quantization | quantizr 1.4.3 (RGBA), quantette 0.6.0 (opaque RGB) | Unchanged; output now passes through OxiPNG |
-| JPEG encode/decode | mozjpeg-rs 0.9.2 / zune-jpeg 0.5.15 | Candidate comparison open |
+| JPEG encode | jpegli (libjxl v0.11.1) YCbCr, 4:4:4 color ([jpeg-candidates.md](codecs/jpeg-candidates.md)) | Selected; mozjpeg-rs 0.9.2 ships until integrated |
+| JPEG decode | libjpeg-turbo 3.1.1 | Selected; zune-jpeg 0.5.15 ships until integrated |
 | AVIF encode/decode | ravif 0.13.0 (rav1e) / rav1d 1.1.0 | Candidate comparison open |
 
 PNG effort mapping: fast → OxiPNG preset 0; balanced → preset 0 with
@@ -76,8 +77,15 @@ grows 149,856 bytes (4,622,592 → 4,772,448).
 5. **JPEG scored workflow (bytes).** First explicit `img-jpeg`/`zen-jpeg`
    capture (untimed, grass and gravel): at score 95 img is 15–23% larger
    than Zen (grass 167,538 vs 146,139 B; gravel 181,695 vs 147,844 B). At
-   score 80 img is smaller only because Zen overshoots. Candidate comparison
-   (jpegli, MozJPEG, libjpeg-turbo) is in progress.
+   score 80 img is smaller only because Zen overshoots. The candidate
+   comparison ([jpeg-candidates.md](codecs/jpeg-candidates.md), 23 scaled
+   untagged images, single thread, gated) selected jpegli 4:4:4 for color:
+   −6.4% / −3.9% bytes against Zen at scores 80 / 90 at equal latency
+   (48.4 vs 47.8 ms), and 4.9× faster than img fast. jpegli still trails Zen
+   on grayscale (+11.3 / +8.5 / +2.5% at 80 / 90 / 95) and the one text image
+   (+10–16%). libjpeg-turbo decodes with 19% less CPU and half the RSS of
+   Zen; in-process decode wall time is unmeasured. Next: vendor jpegli and
+   libjpeg-turbo behind the JPEG adapter.
 6. **AVIF:** candidate comparison (libavif with libaom/SVT-AV1, dav1d) is next.
 
 ## Needs environment
