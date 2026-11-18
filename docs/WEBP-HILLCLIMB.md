@@ -1502,3 +1502,19 @@ floored on real emitted bits. L9 deltas vs the greedy-only floor:
 astronaut -18 B, camera/coffee/chelsea -6 B, coins -2 B, grass
 unchanged; ~+3% L9 wall. 370 lossless + 87 img tests green; dwebp
 verified.
+
+Exact-cost cache-size re-rank (rejected): `best_cache_bits` picked the
+color-cache size by the Shannon `estimate_bits` alone, and UI/alpha
+content showed the estimate can mispick badly — an exact-cost variant
+(real Huffman lengths + serialized header bits per channel, top-3
+estimate shortlist, emitted as a floored alternate alongside the
+estimate pick) recovered photopea-ui -468 B (-1.5%) and tworegion
+-18/-10 B at L1/L6 with every other fixture byte-identical and zero
+regressions. But the code-length builds cost ~+20-33% codec wall on
+Fast lossless (coffee L1 2.57 -> 3.15-3.4 s): the estimate top-2 are
+near-tied on essentially every model, so no cheap gate (estimate-gap
+slack, winner>0) discriminated the paying cases from the waste, and
+cheaper cost models (pixel-bits only, direct lengths, single
+challenger) still cost ~+20%. Rejected and reverted uncommitted —
+the estimate pick stands; a future retry needs a fundamentally
+cheaper exact signal or a narrower call site.
