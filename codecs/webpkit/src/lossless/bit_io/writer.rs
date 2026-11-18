@@ -56,6 +56,11 @@ impl BitWriter {
         }
     }
 
+    /// Total bits appended so far: flushed bytes plus the pending partial byte.
+    pub(crate) fn bit_len(&self) -> u64 {
+        self.bytes.len() as u64 * 8 + u64::from(self.nbits)
+    }
+
     /// Flush any partial byte, zero-padding to the next byte boundary.
     pub(crate) fn align(&mut self) {
         if self.nbits > 0 {

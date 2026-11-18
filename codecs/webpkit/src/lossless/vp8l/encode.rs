@@ -2336,12 +2336,34 @@ fn emit_coded_pixels(
 /// color-cache header (always absent) then the coded pixels, with NO transform
 /// list and NO meta-Huffman bit — exactly what [`crate::lossless::vp8l::decode`] reads for a
 /// transform's tile grid or a palette's color map. The height is implicit in
-/// `pixels.len() / width`. The pixels are coded as literals with no color cache.
+/// `pixels.len() / width`. The pixels are coded with no color cache; the
+/// literal and greedy-LZ77 token streams are both emitted to scratch writers
+/// and the smaller kept, since copies pay off on the run-heavy tile grids and
+/// entropy image but lose on scattered ones.
 fn emit_subimage(bw: &mut BitWriter, width: u32, pixels: &[u32]) {
     write_color_cache(bw, 0);
-    let tokens = parse(pixels, false);
-    let model = RefModel::new(&tokens, pixels, width);
+    let lz77 = parse(pixels, true);
+    let literals: Vec<Token> = pixels.iter().map(|&p| Token::Literal(p)).collect();
+    let tokens = if subimage_bits(width, pixels, &lz77) < subimage_bits(width, pixels, &literals)
+    {
+        &lz77
+    } else {
+        &literals
+    };
+    let model = RefModel::new(tokens, pixels, width);
     emit_coded_pixels(bw, 0, &model, &model.histogram(0));
+}
+
+/// The exact bit count [`emit_subimage`] would write for one token stream,
+/// measured by emitting into a scratch writer — backward references are legal
+/// in sub-images, and the literal/LZ77 pick is floored on real bytes rather
+/// than a cost model.
+fn subimage_bits(width: u32, pixels: &[u32], tokens: &[Token]) -> u64 {
+    let mut scratch = BitWriter::new();
+    write_color_cache(&mut scratch, 0);
+    let model = RefModel::new(tokens, pixels, width);
+    emit_coded_pixels(&mut scratch, 0, &model, &model.histogram(0));
+    scratch.bit_len()
 }
 
 /// Write the fixed VP8L header: signature, `width - 1`, `height - 1`, the
