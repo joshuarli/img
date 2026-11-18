@@ -1398,6 +1398,14 @@ after a token-equality emit skip, coffee 26.1 -> 43.6 s, camera
 Sub-0.2% maximum gain for ~+50% deep-level latency fails the same
 trade the Fast guardrails encode; reverted uncommitted.
 
+Landed (`ed616e7`): Huffman header serialization now emits libwebp's
+trimmed max-symbol field — trailing all-zero code lengths are omitted
+through the decoder's token countdown, with both serializations costed
+exactly per code so a header can never grow. Corpus deltas are small
+but strictly non-positive (L9: camera -10 B, coffee -14 B, astronaut
+-18 B, grass -6 B; L1/L6 spot checks similar). Verified by independent
+`dwebp` decode; 380 lossless + 87 img tests green, goldens updated.
+
 Meta group header-cost retune (rejected): META_GROUP_HEADER_BITS
 256 -> 512 made clustering merge more aggressively — camera's
 emitted stream drops 18 -> 15 Huffman groups and its table section
