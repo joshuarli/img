@@ -73,8 +73,12 @@ grows 149,856 bytes (4,622,592 → 4,772,448).
    is 1.3–1.4× Zen's wall time on photos. Next: test fast with a single filter strategy.
 4. **Not yet measured:** PNG decode against Zen, the scored optimize workflow
    and batch throughput with the new encoder, and Linux native timing.
-5. **JPEG and AVIF:** candidate comparisons (jpegli, MozJPEG, libjpeg-turbo;
-   libavif with libaom/SVT-AV1, dav1d) are the next slices.
+5. **JPEG scored workflow (bytes).** First explicit `img-jpeg`/`zen-jpeg`
+   capture (untimed, grass and gravel): at score 95 img is 15–23% larger
+   than Zen (grass 167,538 vs 146,139 B; gravel 181,695 vs 147,844 B). At
+   score 80 img is smaller only because Zen overshoots. Candidate comparison
+   (jpegli, MozJPEG, libjpeg-turbo) is in progress.
+6. **AVIF:** candidate comparison (libavif with libaom/SVT-AV1, dav1d) is next.
 
 ## Needs environment
 
