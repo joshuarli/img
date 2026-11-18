@@ -1650,3 +1650,23 @@ scoring does not reproduce libwebp's joint accumulated-histogram
 mode selection (PredictionCostSpatialHistogram), which is what
 makes their residuals copy-friendly. All probes reverted
 uncommitted.
+
+Estimate-architecture probe (measured, closed): built a per-spec
+diagnostic computing stream_entropy, match_coverage,
+coverage_adjusted, a greedy-LZ77 histogram estimate (lzest), and
+real family_search bytes for every spec of every task on coffee
+L1. Findings: (a) estimates already rank correctly — the banded
+keep set dropped CrossColor-alone (real +42-58%) and Predictor-
+alone s0 (real +6%) while keeping the genuine near-tie cluster
+(PredictorCross p4/cc3-6, real spread 2.4%); (b) lzest tracks ent
+almost exactly (constant ~3-4K offset) and reorders nothing — a
+parse_lz77-based EncodeImageNoHuffman-style estimate buys no
+discrimination on this cell; (c) the byte winner (PC(4,4) no-SG,
+346,032 B) is estimate-ranked #3 of 12 specs, inside every band.
+Conclusion: kept searches are genuinely competitive; tighter bands
+would trade frontier bytes for wall with no estimate signal to make
+it safe. Probe reverted uncommitted. Lossy AUTO ledger (coffee q80
+119 ms, grass 164 ms): trellis_eval dominates work units ~10x the
+next counter (2.4M/4.3M), consistent with the brief's scalar-kernel
+verdict — codec-level lossy is ~1.3-1.7x cwebp -m6, the ~4x figure
+is workflow-level (candidate count x decode/score/startup).
