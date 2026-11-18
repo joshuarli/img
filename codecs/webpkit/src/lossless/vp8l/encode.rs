@@ -2344,7 +2344,8 @@ fn emit_subimage(bw: &mut BitWriter, width: u32, pixels: &[u32]) {
     write_color_cache(bw, 0);
     let lz77 = parse(pixels, true);
     let literals: Vec<Token> = pixels.iter().map(|&p| Token::Literal(p)).collect();
-    let tokens = if subimage_bits(width, pixels, &lz77) < subimage_bits(width, pixels, &literals)
+    let tokens = if lz77.iter().any(|t| matches!(t, Token::Copy { .. }))
+        && subimage_bits(width, pixels, &lz77) < subimage_bits(width, pixels, &literals)
     {
         &lz77
     } else {
