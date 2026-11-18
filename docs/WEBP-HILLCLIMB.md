@@ -1518,3 +1518,10 @@ cheaper cost models (pixel-bits only, direct lengths, single
 challenger) still cost ~+20%. Rejected and reverted uncommitted —
 the estimate pick stands; a future retry needs a fundamentally
 cheaper exact signal or a narrower call site.
+
+Runner-up variant (also rejected): emitting the estimate runner-up
+cache size as a floored alternate costs nothing to rank but every
+observed win flowed through the meta-Huffman path — plain-only
+alternates produced zero byte deltas on coffee/photopea while meta
+alternates doubled `meta_shot` planning for +43% codec wall on
+coffee L1 (2.57 -> 3.68 s). Reverted uncommitted.
