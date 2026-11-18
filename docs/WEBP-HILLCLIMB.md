@@ -1596,3 +1596,12 @@ mm-logo-opaque L6 and mm-logo-alpha L1 while costing +61-65% codec
 wall — sub-images are emitted once per transform task per candidate,
 so the extra parse+scratch emit multiplies. Reverted; `rle_candidate`
 extracted as a shared helper (landed as a pure refactor).
+
+Lz77Box locality variant (assessed, deferred): libwebp's fourth
+candidate restricts match search to ~100 nearest plane-code offsets
+(a +-6 pixel spiral) using a run-count array for O(1) length queries.
+Port cost is bounded but the per-position offset scan is ~100 first-
+pixel probes even with early-out — ~100x the RLE parse's constant —
+so it needs a coverage-style gate just to be affordable, and our
+plane-code-priced optimal DP already prefers near offsets when they
+win on cost. Deferred unless a cheap gate emerges; not implemented.
