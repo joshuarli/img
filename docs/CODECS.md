@@ -7,7 +7,8 @@ JPEG, PNG and AVIF, adopt the strongest maintained upstream implementation per
 role, vendor it, conform it to img's contracts, then improve measured
 weaknesses until img beats the Zen codecs on the qualification matrix: bytes at
 equal or better achieved fidelity, encode and decode latency, CPU, throughput,
-peak memory, and correctness/metadata/precision coverage.
+and peak memory. Existing correctness, metadata and precision contracts must
+not regress, but extending feature coverage is not a goal.
 
 Permissive native code (C/C++, FFI, upstream SIMD/assembly, native build
 tools) is authorized for these codecs; copyleft never enters production. WebP
@@ -28,7 +29,6 @@ is met only when it is measured; an unmeasured cell counts as unmet.
 | G4 | Decode latency at most 0.8× Zen; CPU and peak memory no higher than Zen | AVIF dav1d 0.42×; JPEG CPU 0.81× (wall unmeasured); PNG unmeasured |
 | G5 | Scored workflow (`--score T`) reaches the target score with fewer bytes than Zen, in less time | JPEG +15–23% bytes at t95; PNG and AVIF unmeasured |
 | G6 | Batch throughput at least 1.5× Zen on the production thread pool | Unmeasured |
-| G7 | Coverage superset of Zen: ICC/EXIF/XMP/orientation preserved; native gray; 16-bit PNG; AVIF alpha, gray and 10-bit; zero conformance failures | AVIF refuses alpha, gray and >8-bit |
 
 **Zen reference:** pre-migration `rimage` at `5424df8` (zenpng 0.1.4, zenjpeg
 0.8.4, zenavif 0.1.6; AGPL), built as an immutable benchmark binary outside
@@ -113,6 +113,17 @@ grows 149,856 bytes (4,622,592 → 4,772,448).
    `full_range_flag` from bit 0 instead of bit 7, misdecoding standard
    full-range files; fixed with a regression test in `tests/avif_codec.rs`.
    Next: vendor libavif, libaom and dav1d behind the AVIF adapter.
+
+## Deferred (low priority)
+
+Not pursued unless a concrete need appears; img keeps refusing these
+explicitly.
+
+- AVIF alpha, grayscale and 10/12-bit encode and decode.
+- AVIF grids, animation and HDR (gain maps, PQ/HLG).
+- AVIF 4:2:0 as an option (cannot reach score 90 on 5 of 14 photos).
+- JPEG XYB output (not baseline-compatible YCbCr; unscorable today).
+- SVT-AV1 presets beyond 4 and 8, libaom tuning/tiling variants.
 
 ## Needs environment
 
