@@ -1683,3 +1683,20 @@ transform forwards are already PlaneCache/CrossColorCache-shared.
 The residual Fast-lossless wall is inside per-search scalar kernels
 (parse_optimal DP, hash-chain walks, resolve) — the unsafe grant
 covers only match_kernel's length kernel today.
+
+Traceback cost-model audit (source review, closed): fetched
+libwebp's backward_references cost pass. Their "optimal" parse
+(BackwardReferencesHashChainDistanceOnly + TraceBackwards) is a
+distance-only DP over ONE (offset,len) candidate per position —
+their matcher's backward scan with left-extension — seeded from
+the winning stream's histogram, structurally identical to our
+reparse. Our parse_optimal considers up to chain_cap candidates
+per position, a strictly richer candidate set, with plane-code
+distance pricing already verified equivalent. BackwardRefsWith
+LocalCache is a literal->cache-index post-pass our resolve
+already performs inline. Conclusion: the residual ~0.5% L9 gap is
+inside their match finder's candidate details (hash function,
+backward scan order, left-extension edge cases, tie-breaking),
+not any algorithmic mechanism we lack. Porting it is a
+matcher-internals rewrite for a Best-tier-only ~0.5% ceiling —
+deprioritised against the Fast-latency priority.
