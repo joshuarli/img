@@ -15,6 +15,23 @@ tools) is authorized for these codecs; copyleft never enters production. WebP
 is a separate workstream ([WEBP-HILLCLIMB.md](WEBP-HILLCLIMB.md)); this
 campaign does not change `codecs/webpkit` or `src/still/webp.rs`.
 
+## Goals
+
+Each goal holds per group (photo, grayscale, texture, UI/text, synthetic) on
+the qualification corpus and on macOS ARM64 and Linux ARM64/x86-64. A goal
+is met only when it is measured; an unmeasured cell counts as unmet.
+
+| # | Goal | Now |
+| --- | --- | --- |
+| G1 | Lossy bytes at matched SSIMULACRA2 80/90/95: JPEG and AVIF at least 5% smaller than Zen in every group | JPEG color −6.4/−3.9% (95 unmeasured); gray +2.5–11.3%, text +10–16%. AVIF photo 4:4:4 −9.7% at 90; other groups absent |
+| G2 | Exact PNG bytes: at least 3% smaller than Zen in every group at every effort, and no image more than 1% larger | Photo 0.97–1.00×; gravel +3.4% and text +2.0% at balanced |
+| G3 | Encode latency: Fast at most half of Zen Fast's wall time; Balanced and Best no slower than Zen at the same effort | JPEG ≈ parity (48 vs 48 ms); AVIF speed 8 0.09× and speed 6 0.34× Zen Best; PNG best up to 2.04× slower |
+| G4 | Decode latency at most 0.8× Zen; CPU and peak memory no higher than Zen | AVIF dav1d 0.42×; JPEG CPU 0.81× (wall unmeasured); PNG unmeasured |
+| G5 | Scored workflow (`--score T`) reaches the target score with fewer bytes than Zen, in less time | JPEG +15–23% bytes at t95; PNG and AVIF unmeasured |
+| G6 | Batch throughput at least 1.5× Zen on the production thread pool | Unmeasured |
+| G7 | Coverage superset of Zen: ICC/EXIF/XMP/orientation preserved; native gray; 16-bit PNG; AVIF alpha, gray and 10-bit; zero conformance failures | AVIF refuses alpha, gray and >8-bit |
+| G8 | Static release at most 15 MB; clean 4-core release build at most 5 minutes | 4.77 MB with OxiPNG; libaom adds about 7 MB; build time unmeasured |
+
 **Zen reference:** pre-migration `rimage` at `5424df8` (zenpng 0.1.4, zenjpeg
 0.8.4, zenavif 0.1.6; AGPL), built as an immutable benchmark binary outside
 the repository (release profile, sha256
