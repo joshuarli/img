@@ -1843,3 +1843,14 @@ within-task or cross-task duplicates, so no family_search is
 repeated work worth caching. The stratum's wall is genuine
 per-spec parse+DP cost on distinct pixels — kernel-bound.
 Probe reverted.
+
+Qualification refresh at `70adb40` (this commit's parent):
+PROPTEST_CASES=1024 cargo test --release --lib lossless:: —
+373/373 pass in 44 s (was 367 at c272f8e; the delta is the
+meta/remap/ALPH coverage added since). cargo check clean for
+x86_64-unknown-linux-musl and aarch64-unknown-linux-musl under
+both the rayon,work-count and alloc-only feature sets —
+current-source pure-Rust/no_std evidence refreshed after the
+HistogramRemap, RLE-meta, fine-meta and ALPH-meta landings.
+Native Linux timing remains the open evidence gap (no Linux
+host in this environment).
