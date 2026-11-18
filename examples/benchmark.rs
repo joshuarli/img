@@ -39,7 +39,8 @@ fn run()->Result<(),Box<dyn std::error::Error>> {
     let binary_sha256={use sha2::{Digest,Sha256};format!("{:x}",Sha256::digest(fs::read(&current)?))};
     let withdrawn=std::env::var_os("IMG_WITHDRAWN_BIN").map(PathBuf::from).unwrap_or_else(||repository.join(".work/wt/withdrawn/target/release/rimage"));
     let mut tools=vec![("img",current.as_os_str().to_owned(),"new"),("img-png",current.as_os_str().to_owned(),"new-png"),("original-mozjpeg",original.as_os_str().to_owned(),"original-jpeg"),("original-oxipng",original.as_os_str().to_owned(),"original-png"),("original-ravif",original.as_os_str().to_owned(),"original-avif"),("cwebp","cwebp".into(),"cwebp"),("cwebp-lossless","cwebp".into(),"cwebp-lossless")];
-    if withdrawn.exists() {tools.push(("withdrawn",withdrawn.as_os_str().to_owned(),"withdrawn"));}
+    tools.extend([("img-jpeg",current.as_os_str().to_owned(),"new-jpeg"),("img-avif",current.as_os_str().to_owned(),"new-avif")]);
+    if withdrawn.exists() {tools.extend([("withdrawn",withdrawn.as_os_str().to_owned(),"withdrawn"),("zen-jpeg",withdrawn.as_os_str().to_owned(),"withdrawn-jpeg"),("zen-png",withdrawn.as_os_str().to_owned(),"withdrawn-png"),("zen-avif",withdrawn.as_os_str().to_owned(),"withdrawn-avif")]);}
     let mut tool_digests=serde_json::Map::new();
     {
         use sha2::{Digest,Sha256};
@@ -66,7 +67,7 @@ fn run()->Result<(),Box<dyn std::error::Error>> {
                     }
                     if kind.ends_with("png") && target!=80.0 {continue;}
                     let mut record=support::record_base(tool,name,&revision);record["attempts"]=json!([]);record["run"]=json!(run);record["target"]=json!(target);record["sourcePath"]=json!(format!("{source_directory}/{name}"));record["width"]=json!(width);record["height"]=json!(height);record["inputBytes"]=json!(source.len());record["parameters"]=match *kind {"new"=>json!({"target":target,"effort":"fast","globalCandidateCap":10}),"withdrawn"=>json!({"target":target,"effort":"fast","oracle":"rimage 5424df8 zenwebp 0.4.6"}),"new-png"=>json!({"lossless":true,"effort":"fast"}),"original-jpeg"=>json!({"qualityGrid":[1,25,50,75,95,100],"progressive":true,"qtable":"NRobidoux"}),"original-png"=>json!({"lossless":true,"effort":2}),"original-avif"=>json!({"qualityGrid":[1,25,50,75,95,100],"speed":6,"sourcePrecision":"original ravif defaults to 10-bit; scored decode may refuse"}),_=>json!({"qualityGrid":[0,25,50,75,95,100],"method":4,"alphaQuality":100,"exact":true,"metadata":"all"})};
-                    let extension=if *kind=="original-jpeg" {"jpg"} else if kind.ends_with("png") {"png"} else if *kind=="original-avif" {"avif"} else {"webp"};
+                    let extension=if kind.ends_with("jpeg") {"jpg"} else if kind.ends_with("png") {"png"} else if kind.ends_with("avif") {"avif"} else {"webp"};
                     let input=benchmark.join(source_directory).join(name);
                     let target_name=format!("{}{}{}-{}-{}-{}.{}",output_prefix,if timed {"timed-"} else {""},name.replace('.',"_"),tool,target,run,extension);let saved=output_dir.join(&target_name);
                     let start=Instant::now();
@@ -75,7 +76,7 @@ fn run()->Result<(),Box<dyn std::error::Error>> {
                         if image.bit_depth()>8 && !kind.ends_with("png") {return Err("quality comparison excludes high-depth samples; exact proof is separate".into());}
                         let reference=if exact_kind {None} else {Some(PerceptualReference::new(&image).map_err(|e|e.to_string())?)};
                         let mut winner:Option<(Vec<u8>,Option<f64>,bool)>=None;
-                        let qualities=if *kind=="new"||*kind=="withdrawn"||kind.ends_with("png")||*kind=="cwebp-lossless" {vec![95]} else if kind.starts_with("original-") {vec![1,25,50,75,95,100]} else {vec![0,25,50,75,95,100]};
+                        let qualities=if kind.starts_with("new")||kind.starts_with("withdrawn")||kind.ends_with("png")||*kind=="cwebp-lossless" {vec![95]} else if kind.starts_with("original-") {vec![1,25,50,75,95,100]} else {vec![0,25,50,75,95,100]};
                         for quality in qualities {
                             let attempt=scratch.join(format!("{tool}-{quality}"));fs::create_dir_all(&attempt).map_err(|e|e.to_string())?;
                             let candidate=attempt.join(if kind.starts_with("original-") {format!("{}.{}",Path::new(name).file_stem().unwrap().to_str().unwrap(),extension)} else {format!("output.{extension}")});
@@ -83,7 +84,8 @@ fn run()->Result<(),Box<dyn std::error::Error>> {
                             let mut command=Command::new(executable);command.env("RAYON_NUM_THREADS","1");
                             match *kind {
                                 "new"|"withdrawn"=>{command.arg("convert").arg(&input).arg("-o").arg(&candidate).args(["--score",&target.to_string(),"--effort","fast","--quiet"]);},
-                                "new-png"=>{command.arg("convert").arg(&input).arg("-o").arg(&candidate).args(["--lossless","--effort","fast","--quiet"]);},
+                                "new-jpeg"|"withdrawn-jpeg"|"new-avif"|"withdrawn-avif"=>{command.arg("convert").arg(&input).arg("-o").arg(&candidate).args(["--format",if kind.ends_with("jpeg") {"jpeg"} else {"avif"},"--score",&target.to_string(),"--effort","fast","--quiet"]);},
+                                "new-png"|"withdrawn-png"=>{command.arg("convert").arg(&input).arg("-o").arg(&candidate).args(["--lossless","--effort","fast","--quiet"]);},
                                 "original-jpeg"=>{command.arg("mozjpeg").arg(&input).arg("-d").arg(&attempt).args(["-q",&quality.to_string(),"-t","1","--quiet"]);},
                                 "original-png"=>{command.arg("oxipng").arg(&input).arg("-d").arg(&attempt).args(["--effort","2","-t","1","--quiet"]);},
                                 "original-avif"=>{command.arg("avif").arg(&input).arg("-d").arg(&attempt).args(["-q",&quality.to_string(),"--speed","6","-t","1","--quiet"]);},

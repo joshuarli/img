@@ -58,7 +58,7 @@ pub fn gate(baseline:Option<(f64,f64)>,candidate:Option<(f64,f64)>,baseline_comp
 pub fn validate_record(value:&Value)->Result<(),String> {
     let fail=||Err("invalid saved benchmark record".into());
     if value["schemaVersion"]!=1 || !value["tool"].is_string()||!value["fixture"].is_string()||!value["revision"].is_string() {return fail();}
-    let expected_command=match value["tool"].as_str() {Some("original-mozjpeg")=>Some("mozjpeg"),Some("original-oxipng")=>Some("oxipng"),Some("original-ravif")=>Some("avif"),Some("img"|"img-png"|"rimage"|"rimage-png")=>Some("convert"),_=>None};
+    let expected_command=match value["tool"].as_str() {Some("original-mozjpeg")=>Some("mozjpeg"),Some("original-oxipng")=>Some("oxipng"),Some("original-ravif")=>Some("avif"),Some("img"|"img-png"|"img-jpeg"|"img-avif"|"zen-jpeg"|"zen-png"|"zen-avif"|"rimage"|"rimage-png")=>Some("convert"),_=>None};
     if let Some(expected)=expected_command {let attempts=value["attempts"].as_array().ok_or("missing tool invocations")?;if attempts.iter().any(|attempt|attempt["command"][1]!=expected) {return Err("benchmark tool label does not match invoked command".into());}}
     if value["completed"]!=true {return if value["failure"].is_string() {Ok(())} else {fail()};}
     let width=value["width"].as_u64().ok_or("missing width")?;let height=value["height"].as_u64().ok_or("missing height")?;
