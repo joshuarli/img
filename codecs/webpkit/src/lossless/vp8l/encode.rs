@@ -188,6 +188,22 @@ fn encode_stream(
     search_lz77(width, height, alpha_used, plans, width, pixels, chain_cap)
 }
 
+/// The RLE/previous-row token stream, offered only when its copies cover at
+/// least 1% of the pixels — below that the model/cache/emit cost cannot pay
+/// for itself (measured: photo content sits under 0.3%, run-heavy UI content
+/// near 100%).
+fn rle_candidate(pixels: &[u32], width: u32) -> Option<Vec<Token>> {
+    let tokens = parse_rle(pixels, width);
+    let copy_px: usize = tokens
+        .iter()
+        .map(|t| match t {
+            Token::Copy { length, .. } => *length as usize,
+            Token::Literal(_) => 0,
+        })
+        .sum();
+    (copy_px * 100 >= pixels.len()).then_some(tokens)
+}
+
 /// Full LZ77 + color-cache candidate search over already-transformed `pixels`
 /// laid out at `working_width` (which a color-indexing transform reduces below
 /// `header_width`; every other family leaves them equal), returning the smallest
@@ -264,15 +280,7 @@ fn search_lz77_variant(
     // libwebp's third candidate family: run-length/previous-row copies only.
     // Cheap near distances beat longer far ones on run-heavy content; the
     // stream is self-floored against the candidates already folded in.
-    let tokens_rle = parse_rle(pixels, working_width);
-    let copy_px: usize = tokens_rle
-        .iter()
-        .map(|t| match t {
-            Token::Copy { length, .. } => *length as usize,
-            Token::Literal(_) => 0,
-        })
-        .sum();
-    if copy_px * 100 >= pixels.len() {
+    if let Some(tokens_rle) = rle_candidate(pixels, working_width) {
         let model_rle = RefModel::new(&tokens_rle, pixels, working_width);
         let (cache_rle, hist_rle) = best_cache_bits(&model_rle);
         let rle_stream = emit(cache_rle, &model_rle, &hist_rle);
