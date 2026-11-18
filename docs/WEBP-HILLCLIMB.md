@@ -1723,3 +1723,20 @@ mattered. Conclusion: the coffee loss vs default cwebp is the
 same token-stage match-selection gap isolated on camera, not a
 transform-coverage or pruning defect. The transform search is
 complete at level 9.
+
+RLE + meta-Huffman combination (landed 23e701e): cwebp -z9's
+camera token stats showed near-distance copies under an
+11-group meta plan — a candidate shape the search never built:
+the RLE stream folded plain-only, and the earlier gated
+RLE+meta experiment only fired when RLE led on plain bytes.
+Offering meta_shot on the RLE stream (coarse grid, self-floored)
+lands mm-logo-opaque L1/L6 11,566 -> 10,564 B (-8.7%) and
+mm-logo-alpha L1 28,422 -> 24,720 B (-13.0%) at neutral paired
+wall (+0.5%); camera/astronaut/coffee and all other L1 fixtures
+byte-identical; dwebp pixel-exact on the 4.7 MP alpha fixture.
+Also fixed a stale optimizer test (84bdbcd): 4413ea0 moved the
+fast deferred lossless behind the refine budget; the assertion
+still pinned index 6 — now asserts last position. Full suites
+green: 922 webpkit lib, rayon/serial agreement, monotonicity,
+87 img lib, cli/codec_boundary/color_fidelity/optimizer/
+webp_codec integration.
