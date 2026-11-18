@@ -1670,3 +1670,16 @@ it safe. Probe reverted uncommitted. Lossy AUTO ledger (coffee q80
 next counter (2.4M/4.3M), consistent with the brief's scalar-kernel
 verdict — codec-level lossy is ~1.3-1.7x cwebp -m6, the ~4x figure
 is workflow-level (candidate count x decode/score/startup).
+
+Repeated-work audit (measured): `best_cache_bits` walks every
+token stream 12x per model (cache_bits 0..11), each walk inserting
+every copied pixel into a fresh cache simulation — but on coffee
+L1 the whole cache_bits_build phase is ~432 walks against a 4.1 s
+encode, roughly ~1% of wall. Not the bottleneck. Combined with the
+spec_rank_probe result, every safe-Rust repeated-work candidate in
+the lossless path is now measured and closed: estimates rank well,
+bands keep only genuinely competitive specs, cache scan is cheap,
+transform forwards are already PlaneCache/CrossColorCache-shared.
+The residual Fast-lossless wall is inside per-search scalar kernels
+(parse_optimal DP, hash-chain walks, resolve) — the unsafe grant
+covers only match_kernel's length kernel today.
