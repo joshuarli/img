@@ -1606,3 +1606,14 @@ RLE parse's constant —
 so it needs a coverage-style gate just to be affordable, and our
 plane-code-priced optimal DP already prefers near offsets when they
 win on cost. Deferred unless a cheap gate emerges; not implemented.
+
+Lz77Box headroom probe (measured, rejected): sampled near-match
+density (any 4-px match at distance 2..64 excluding width, stride 3)
+vs RLE coverage across fixtures. photopea-ui 1919x941: rle 98.7%,
+near 95.9%; mm-logo-opaque/alpha: rle ~99.7%, near ~98%; tworegion
+and grass: 0%/0%; coffee 0.3%/0.1%; astronaut 10.7%/9.5%. On every
+fixture the near-match set is essentially the distance-1/width set
+RLE already covers, and where RLE fires the hash chain finds the
+same repeats plus longer ones — photopea-ui's RLE candidate fired
+and still lost on real bytes. The box variant's unique offsets add
+no measurable opportunity; not implemented.
