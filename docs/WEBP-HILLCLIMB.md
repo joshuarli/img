@@ -1745,3 +1745,19 @@ shot now receives fine_meta at levels 7-9, matching the DP shot.
 mm-logo-alpha L7 24,720 -> 24,526 B (-194 B); self-floored so it
 cannot regress, and Fast/Balanced levels are untouched since
 fine_meta stays false below level 7. 922 webpkit lib tests green.
+ALPH lossless stream meta-Huffman (landed): the ALPH chunk's
+lossless payload always ran the Balanced search_lz77 path —
+optimal parse but no meta-Huffman grouping — regardless of
+effort, even though alpha planes are the runniest data we
+encode. Flag matrix on mm-logo-alpha's 3583x1318 alpha plane:
+current 25,764 B; meta-Huffman alone 24,342 B; fine meta grid
+24,133 B; reparse adds nothing. encode_with gained a
+meta_huffman flag (false everywhere except
+encode_alpha_stream); search_lz77_variant runs
+optimal+meta+fine, no reparse, self-floored on real bytes.
+End-to-end lossy AUTO paired A/B (interleaved binaries):
+q75 82,056 -> 80,426 B (-2.0%), q90 94,704 -> 93,074 B
+(-1.7%), wall +0.5 s on 38 s (+1.3%, consistent across two
+pairs); photopea-ui byte-identical at neutral wall. 73 alpha/
+lossy/encoder tests + 42 encode tests green; byte-stability
+goldens unchanged; dwebp round-trips.
