@@ -1,5 +1,7 @@
 # WebP correctness and Pareto hillclimb
 
+## Status — winding down 2026-11-18
+
 ## Current brief — reviewed 2026-11-15
 
 This is the authoritative operating brief for the next unattended run in
