@@ -1617,3 +1617,15 @@ RLE already covers, and where RLE fires the hash chain finds the
 same repeats plus longer ones — photopea-ui's RLE candidate fired
 and still lost on real bytes. The box variant's unique offsets add
 no measurable opportunity; not implemented.
+
+RLE-seeded optimal parse (measured, rejected): a probe showed a
+single-pass DP seeded from the RLE token histogram beat the
+lz77-seeded DP on single-group emits (mm-logo-alpha raw tier
+-1265 B, photopea-ui raw -245 B). Wired as a floored second DP
+candidate inside `optimal_parse` and measured end-to-end: bytes
+were IDENTICAL to HEAD on all 8 cells (mm-logo-alpha L1/L6
+28422 B, mm-logo-opaque L1/L6 11566 B, photopea-ui L1/L6 31502 B,
+coffee L1/L6 346052/343312 B) — the meta-Huffman shots on the
+existing streams already capture every gain the probe saw. The
+change only added one full DP walk per family call on run-heavy
+images at every level >= 1. Reverted uncommitted.
