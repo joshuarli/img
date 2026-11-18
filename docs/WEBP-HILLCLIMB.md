@@ -1700,3 +1700,12 @@ backward scan order, left-extension edge cases, tie-breaking),
 not any algorithmic mechanism we lack. Porting it is a
 matcher-internals rewrite for a Best-tier-only ~0.5% ceiling —
 deprioritised against the Fast-latency priority.
+
+Default-effort competitiveness check (measured): our codec L9
+already matches or beats `cwebp -lossless -exact` at default
+effort on photos — camera 124,674 vs 126,758 (-1.6%),
+astronaut 333,238 vs 340,938 (-2.3%), grass 211,764 vs
+212,560 (-0.4%); coffee is the lone small loss 340,272 vs
+339,206 (+0.3%). The residual ~0.5-0.8% gap exists only
+against `-z 9` max effort, i.e. matcher-internals detail at
+Best tier, not a competitiveness deficit at shipped efforts.
