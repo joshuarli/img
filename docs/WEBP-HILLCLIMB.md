@@ -1581,3 +1581,11 @@ green including byte-stability goldens. This is the first landed
 piece of the libwebp backward-reference review; remaining unported
 mechanisms: spatial "box" LZ77 variant and plane-code distance
 pricing in the DP cost model.
+
+RLE meta-shot probe (rejected, uncommitted): offering
+`meta_shot` on the RLE stream when it led the plain candidates bought
+mm-logo-opaque L6 another -1,002 B (10,564 total, -28% vs baseline)
+and mm-logo-alpha L1 -3,702 B more (24,720, -17.7% total) but cost
++62-74% codec wall on those images and +70% on astronaut L9 for zero
+byte gain — the meta-plan merge dominates. Reverted; the plain
+coverage-gated RLE candidate (e3a4222) stands.
