@@ -7,8 +7,7 @@ JPEG, PNG and AVIF, adopt the strongest maintained upstream implementation per
 role, vendor it, conform it to img's contracts, then improve measured
 weaknesses until img beats the Zen codecs on the qualification matrix: bytes at
 equal or better achieved fidelity, encode and decode latency, CPU, throughput,
-peak memory, and correctness/metadata/precision coverage. Release size and
-build cost are tracked alongside.
+peak memory, and correctness/metadata/precision coverage.
 
 Permissive native code (C/C++, FFI, upstream SIMD/assembly, native build
 tools) is authorized for these codecs; copyleft never enters production. WebP
@@ -30,7 +29,6 @@ is met only when it is measured; an unmeasured cell counts as unmet.
 | G5 | Scored workflow (`--score T`) reaches the target score with fewer bytes than Zen, in less time | JPEG +15–23% bytes at t95; PNG and AVIF unmeasured |
 | G6 | Batch throughput at least 1.5× Zen on the production thread pool | Unmeasured |
 | G7 | Coverage superset of Zen: ICC/EXIF/XMP/orientation preserved; native gray; 16-bit PNG; AVIF alpha, gray and 10-bit; zero conformance failures | AVIF refuses alpha, gray and >8-bit |
-| G8 | Static release at most 15 MB; clean 4-core release build at most 5 minutes | 4.77 MB with OxiPNG; libaom adds about 7 MB; build time unmeasured |
 
 **Zen reference:** pre-migration `rimage` at `5424df8` (zenpng 0.1.4, zenjpeg
 0.8.4, zenavif 0.1.6; AGPL), built as an immutable benchmark binary outside
