@@ -1398,6 +1398,17 @@ after a token-equality emit skip, coffee 26.1 -> 43.6 s, camera
 Sub-0.2% maximum gain for ~+50% deep-level latency fails the same
 trade the Fast guardrails encode; reverted uncommitted.
 
+Landed (`538e343`): ported libwebp's `OptimizeHuffmanForRle` count
+perturbation — near-equal count strides collapse to their mean so the
+built lengths run-length-encode smaller. Unlike libwebp (which always
+uses the perturbed counts), both assignments are priced exactly as
+pixel bits + serialized header bits per channel and the cheaper kept,
+so it is self-floored. Codec L9: astronaut -410 B, coffee -314 B,
+camera -154 B, coins -130 B, chelsea -62 B, grass -50 B; Fast levels
+also improve (coffee L1 -386 B, photopea-ui -140 B, grass -38 B).
+380 lossless tests green; byte-stability goldens unchanged (fixtures
+don't trigger the variant).
+
 Landed (`ed616e7`): Huffman header serialization now emits libwebp's
 trimmed max-symbol field — trailing all-zero code lengths are omitted
 through the decoder's token countdown, with both serializations costed
