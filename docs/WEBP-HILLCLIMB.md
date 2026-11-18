@@ -1629,3 +1629,24 @@ coffee L1/L6 346052/343312 B) — the meta-Huffman shots on the
 existing streams already capture every gain the probe saw. The
 change only added one full DP walk per family call on run-heavy
 images at every level >= 1. Reverted uncommitted.
+
+L9 gap decomposition (measured): decoded both VP8L streams'
+token statistics on camera. cwebp -z9 -exact: 244,539 literals +
+3,364 copies (17,605 px) at distances {1:2077, 512:1287} only —
+an RLE-shaped stream under per-block meta-Huffman (11 groups,
+entropy bits=4). Ours: 258,303 lit + 319 copies. Decisive
+experiment: re-encoded cwebp's OWN residual stream + transform
+plans through our full search — 124,403 B vs their 123,699 B
+(0.57%), so ~74% of the 954 B gap is token-stage, ~26%
+transform selection. On their residuals our RLE candidate fires
+(6.7% coverage) but single-group emits 140,947 B and RLE+meta
+124,991 B — still behind our DP+meta 124,403 B, so the residual
+~0.5% sits inside libwebp's cost-based match selection, not in
+any candidate family we lack. Also tested and rejected: a new
+[SG, Predictor] spec (libwebp's composition order without
+cross-color) — full-search probe gave camera sg-first best
+126,004 B vs incumbent 124,674 B; our per-tile independent mode
+scoring does not reproduce libwebp's joint accumulated-histogram
+mode selection (PredictionCostSpatialHistogram), which is what
+makes their residuals copy-friendly. All probes reverted
+uncommitted.
