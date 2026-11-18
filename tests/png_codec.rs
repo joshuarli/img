@@ -178,6 +178,21 @@ fn rgb_cicp_signaling_keeps_an_rgb_png_color_type_for_gray_valued_pixels() {
 }
 
 #[test]
+fn icc_profile_from_a_non_png_source_survives_png_encoding() {
+    let icc=moxcms::ColorProfile::new_display_p3().encode().unwrap();
+    let mut info=png::Info::with_size(16,16);info.color_type=png::ColorType::Rgb;info.bit_depth=png::BitDepth::Eight;info.icc_profile=Some(std::borrow::Cow::Owned(icc.clone()));
+    let mut bytes=Vec::new();png::Encoder::with_info(&mut bytes,info).unwrap().write_header().unwrap().write_image_data(&(0..16*16*3).map(|i|(i*7) as u8).collect::<Vec<_>>()).unwrap();
+    let jpeg=StillImage::decode(&bytes).unwrap().encode(Format::Jpeg,EncodingMode::Quality(Quality::new(90.0).unwrap()),Effort::Fast).unwrap();
+    let source=StillImage::decode(&jpeg).unwrap();
+    assert_eq!(img::still::describe(&jpeg).unwrap().icc,true);
+    for effort in [Effort::Fast,Effort::Balanced,Effort::Best] {
+        let encoded=source.encode(Format::Png,EncodingMode::Lossless,effort).unwrap();
+        let reader=png::Decoder::new(Cursor::new(&encoded)).read_info().unwrap();
+        assert_eq!(reader.info().icc_profile.as_deref(),Some(icc.as_slice()),"{effort:?}");
+    }
+}
+
+#[test]
 fn reducible_sixteen_bit_samples_still_keep_sixteen_bit_precision() {
     for (layout,channels) in [(SampleLayout::Gray16,1),(SampleLayout::Rgb16,3),(SampleLayout::Rgba16,4)] {
         let values=[0u16,256,32768,65280];let samples=(0..16*16*channels).flat_map(|i|values[i%4].to_ne_bytes()).collect();let image=StillImage::from_samples(16,16,layout,samples).unwrap();

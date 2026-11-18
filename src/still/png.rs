@@ -159,7 +159,11 @@ fn png_encode(image: &StillImage, effort: Effort, samples: &[u8], indexed: Optio
     };
     let encode_error = |e: oxipng::PngError| Error::caused(ErrorKind::Encode, e);
     let mut raw = RawImage::new(width, height, color_type, bit_depth, samples.to_vec()).map_err(encode_error)?;
-    if let Some(icc) = image.metadata.icc_profile.as_deref() { raw.add_icc_profile(icc); }
+    if let Some(icc) = image.metadata.icc_profile.as_deref() {
+        let mut data = b"ICC Profile\0\0".to_vec();
+        data.extend_from_slice(&fdeflate::compress_to_vec(icc));
+        raw.add_png_chunk(*b"iCCP", data);
+    }
     if let Some(exif) = image.metadata.exif.as_deref() { raw.add_png_chunk(*b"eXIf", exif.to_vec()); }
     for chunk in &image.png_metadata {
         let kind: [u8; 4] = chunk[4..8].try_into().unwrap();
