@@ -12,6 +12,11 @@ BINARIES = (
     'img-aarch64-unknown-linux-musl-static',
     'img-x86_64-unknown-linux-musl-static',
 )
+NOTICES = (
+    'LICENSE-MIT', 'LICENSE-APACHE', 'docs/PROVENANCE.md',
+    'vendor/oxipng/LICENSE', 'vendor/libdeflater/LICENSE', 'vendor/libdeflate-sys/LICENSE',
+    'vendor/libdeflate-sys/libdeflate/COPYING',
+)
 
 
 class PackageReleaseTest(unittest.TestCase):
@@ -38,7 +43,7 @@ class PackageReleaseTest(unittest.TestCase):
                     with tarfile.open(archive, 'r:xz') as tar:
                         members = tar.getmembers()
                         names = [member.name for member in members]
-                        self.assertEqual(names, sorted(['LICENSE-MIT', 'LICENSE-APACHE', 'docs/PROVENANCE.md', name]))
+                        self.assertEqual(names, sorted(NOTICES) + [name])
                         for member in members:
                             self.assertEqual((member.uid, member.gid, member.mtime), (0, 0, 0))
                         self.assertEqual(tar.getmember(name).mode, 0o755)

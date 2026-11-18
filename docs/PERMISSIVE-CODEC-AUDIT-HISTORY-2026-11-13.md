@@ -1,4 +1,8 @@
-# Permissive pure-Rust codec audit (2026-11-13)
+# Permissive pure-Rust codec audit (2026-11-13) — history
+
+> **Archived 2026-11-18.** The pure-Rust requirement for JPEG, PNG and AVIF was
+> withdrawn; permissive native code is authorized. The active status is
+> [CODECS.md](CODECS.md). This survey is kept as evidence.
 
 ## Scope and evidence standard
 

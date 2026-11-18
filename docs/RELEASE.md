@@ -9,8 +9,8 @@ empty; only the publication job can write repository contents.
 CI runs minimal-feature checks, Clippy and tests on macOS ARM64 and Linux
 ARM64/x86-64 using the pinned nightly. Linux tests run unprivileged in the
 repository's Alpine image, so permission tests exercise real denial. Native
-codec/color tools are development references; the released binaries use the
-pure-Rust production graph. Clippy's current warnings remain visible.
+codec/color tools other than the vendored snapshots in `docs/VENDOR.md` are
+development references. Clippy's current warnings remain visible.
 
 ```sh
 make ci

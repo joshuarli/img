@@ -3,6 +3,8 @@ mod common;
 use std::{io::Cursor, fs};
 use img::still::{Effort, EncodingMode, Format, Quality, SampleLayout, StillImage};
 
+fn chunk(kind:&[u8;4],data:&[u8])->Vec<u8> {let mut c=(data.len() as u32).to_be_bytes().to_vec();c.extend_from_slice(kind);c.extend_from_slice(data);let crc=crc32fast::hash(&c[4..]);c.extend_from_slice(&crc.to_be_bytes());c}
+
 #[test]
 fn exact_png_matrix_preserves_precision_alpha_gray_and_hidden_samples() {
     for (layout, channels, depth, color) in [
@@ -102,7 +104,6 @@ fn lossless_png_strip_preserves_final_content_light_metadata() {
     let mut base=Vec::new();let mut encoder=png::Encoder::new(&mut base,1,1);
     encoder.set_color(png::ColorType::Rgb);encoder.set_depth(png::BitDepth::Sixteen);
     encoder.write_header().unwrap().write_image_data(&[0x2e,0xe0,0x55,0xf0,0x7d,0x00]).unwrap();
-    let chunk=|kind:&[u8;4],data:&[u8]| {let mut c=(data.len() as u32).to_be_bytes().to_vec();c.extend_from_slice(kind);c.extend_from_slice(data);let crc=crc32fast::hash(&c[4..]);c.extend_from_slice(&crc.to_be_bytes());c};
     let cicp=chunk(b"cICP",&[9,16,0,1]);let light=chunk(b"cLLI",&[0,0x98,0x96,0x80,0,0x3d,0x09,0]);
     let mut tagged=base.clone();tagged.splice(33..33,[cicp.clone(),light.clone()].concat());
     let original=StillImage::decode(&tagged).unwrap();
@@ -159,6 +160,21 @@ fn rgb_icc_profile_keeps_a_compatible_png_color_type_for_gray_valued_pixels() {
     let image=StillImage::decode(&bytes).unwrap();let encoded=image.encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
     let reader=png::Decoder::new(Cursor::new(&encoded)).read_info().unwrap();assert!(matches!(reader.info().color_type,png::ColorType::Rgb|png::ColorType::Rgba|png::ColorType::Indexed),"RGB profile requires an RGB-compatible PNG representation");
     assert_eq!(reader.info().icc_profile.as_deref(),png::Decoder::new(Cursor::new(&bytes)).read_info().unwrap().info().icc_profile.as_deref());
+}
+
+#[test]
+fn rgb_cicp_signaling_keeps_an_rgb_png_color_type_for_gray_valued_pixels() {
+    let mut info=png::Info::with_size(16,16);info.color_type=png::ColorType::Rgb;info.bit_depth=png::BitDepth::Eight;
+    let mut bytes=Vec::new();png::Encoder::with_info(&mut bytes,info).unwrap().write_header().unwrap().write_image_data(&[128;16*16*3]).unwrap();
+    bytes.splice(33..33,chunk(b"cICP",&[1,13,0,1]));
+    let image=StillImage::decode(&bytes).unwrap();
+    for effort in [Effort::Fast,Effort::Balanced,Effort::Best] {
+        let encoded=image.encode(Format::Png,EncodingMode::Lossless,effort).unwrap();
+        let reader=png::Decoder::new(Cursor::new(&encoded)).read_info().unwrap();
+        assert!(matches!(reader.info().color_type,png::ColorType::Rgb|png::ColorType::Rgba|png::ColorType::Indexed),"{effort:?}: cICP for RGB requires an RGB-compatible PNG representation");
+        assert_eq!(img::still::describe(&encoded).unwrap().cicp,img::still::describe(&bytes).unwrap().cicp,"{effort:?}");
+        assert!(img::optimizer::samples_equal(&StillImage::decode(&encoded).unwrap(),&image),"{effort:?}");
+    }
 }
 
 #[test]

@@ -122,9 +122,9 @@ No other optional tuning is retained on an unmeasured benefit. OxiPNG is removed
 The normal/build [license inventory](benchmarks/production-dependencies.json) covers 137 resolved packages. Actual macOS linkage is OS-only. Fresh masked-tool macOS builds pass. Linux ARM64 also builds after removing Clang, CMake, NASM, pkg-config and dav1d from the disposable environment, using cc only as Rust's OS linker. Its normal linkage is musl/libgcc only. The static ARM64 binary has no interpreter or dynamic section and runs an exact conversion/compare proof. Linux x86-64 passes the full suite under Docker emulation, and builds a static PIE after the same native-tool package removal. Its relocation dynamic section has no DT_NEEDED entries or PT_INTERP; it runs the exact smoke proof. These are target execution proofs, not native x86-64 timing results.
 
 ```sh
-make pure-rust-build-check
+make native-build-check
 # Explicit target prevents static CRT flags being applied to host proc macros:
-RUSTFLAGS='-C link-arg=-fuse-ld=mold -C target-feature=+crt-static' scripts/check-pure-rust-build aarch64-unknown-linux-musl
+RUSTFLAGS='-C link-arg=-fuse-ld=mold -C target-feature=+crt-static' scripts/check-native-build aarch64-unknown-linux-musl
 ```
 
 The guard always uses a fresh repository-local target, denies native build-tool invocations and checks its invocation log. Rust build scripts still execute for configuration. Physical Linux package removal and ELF/Mach-O linkage checks provide evidence beyond crate names. macOS physical clean-host and native target timing remain separate proofs.
@@ -361,7 +361,7 @@ Optional implementation and dependency changes need a reproducible benefit beyon
 | --- | --- |
 | Native Linux timing | Dedicated stable x86-64 and ARM64 hosts. Run `make benchmark-run` and `make benchmark-verify`; require five interleaved completed cases, passing load gates, and medians separated from spread before claiming an ordering. Emulated functional execution is not native timing. |
 | Stable startup, file and batch comparisons | Resolved 2026-11-14 on a quiet host with immutable binaries: `scripts/benchmark-workflows` with the retained `2708512` oracle and current master `1424358` (30 samples; pre/post `perf-gate-ready` passed). Results in [workflows-macos-arm64.json](benchmarks/workflows-macos-arm64.json): `startup_version` 3.75 ms vs oracle 3.13 ms (+20%, spreads 58/167 µs), `png_file_conversion` 20.2 ms vs 6.95 ms (+190%, spreads 1.0/0.1 ms), `optimize_scored_file` 24.3 ms, `lossless_batch` 87.7 ms (spread 3.3 ms). The PNG file-conversion gap is the pure-Rust PNG stack's cost vs the pre-rewrite closure; it is an honest tradeoff of the migration, not a regression introduced by these iterations. |
-| Physical clean macOS build | macOS ARM64 without third-party native build tools. Run `make pure-rust-build-check`, inspect its empty native-tool log and `otool -L`; require OS-only linkage. |
+| Physical clean macOS build | macOS ARM64 with only the system compiler. Run `make native-build-check`; require that only allowlisted vendored sources compile and `otool -L` shows OS-only linkage. |
 | JPEGli and external eight-bit AVIF comparisons | Install those tools and validate command adapters before extending `examples/benchmark.rs`. `make benchmark-run` does not discover new tools automatically. Rerun verification and retain failures alongside actual decoded scores and dimensions. |
 | Allocation and copy totals | An environment where Instruments can attach. Run `xcrun xctrace record --template Allocations --no-prompt --time-limit 30s --output .work/tmp/allocations.trace --launch -- target/dist/img convert benchmarks/corpus/generated/large.png --score 95 --effort fast -o .work/tmp/profile.webp --quiet` with fresh output names. Require an attached trace and attributed counts for completed work; unsupported zero counters are not measurements. |
 

@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+import json, subprocess, sys, re
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+TARGETS = ['aarch64-apple-darwin', 'aarch64-unknown-linux-musl', 'x86_64-unknown-linux-musl']
+COPYLEFT = re.compile(r'\b(A?GPL|LGPL|MPL|EUPL|CDDL|SSPL|OSL)\b')
+LICENSE_FILE_SELECTIONS = {'quantizr': 'MIT'}
+PREFERRED = ['MIT', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', 'Zlib', 'ISC', '0BSD', 'Unicode-3.0', 'CC0-1.0', 'Unlicense']
+
+def select(declared):
+    if declared is None:
+        return None
+    if ' AND ' in declared or '(' in declared:
+        return declared
+    options = [o.strip() for o in declared.replace('/', ' OR ').split(' OR ')]
+    for license in PREFERRED:
+        if license in options:
+            return license
+    return options[0]
+
+def closure(target):
+    meta = json.loads(subprocess.check_output([
+        'cargo', 'metadata', '--locked', '--format-version', '1', '--features', 'build-binary',
+        '--filter-platform', target], cwd=ROOT))
+    nodes = {n['id']: n for n in meta['resolve']['nodes']}
+    packages = {p['id']: p for p in meta['packages']}
+    seen, stack = set(), [meta['resolve']['root']]
+    while stack:
+        node = stack.pop()
+        if node in seen:
+            continue
+        seen.add(node)
+        for dep in nodes[node]['deps']:
+            if any(kind['kind'] in (None, 'build') for kind in dep['dep_kinds']):
+                stack.append(dep['pkg'])
+    return [packages[i] for i in seen]
+
+union = {}
+for target in TARGETS:
+    for package in closure(target):
+        union[(package['name'], package['version'])] = package
+records, problems = [], []
+for (name, version), package in sorted(union.items()):
+    declared = package['license']
+    if declared is None and package.get('license_file'):
+        declared = 'license-file'
+    selected = LICENSE_FILE_SELECTIONS.get(name) if declared == 'license-file' else select(package['license'])
+    if selected is None or (selected and COPYLEFT.search(selected)):
+        problems.append(f'{name} {version}: {declared}')
+    records.append({
+        'name': name, 'version': version, 'licenseDeclared': declared, 'licenseSelected': selected,
+        'repository': package.get('repository'), 'source': package.get('source') or 'path',
+        'hasBuildScript': any(t['kind'] == ['custom-build'] for t in package['targets']),
+    })
+revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+document = {'schemaVersion': 1, 'scope': 'union of normal and build dependencies; default plus build-binary; development edges excluded',
+            'targets': TARGETS, 'sourceRevision': revision, 'packages': records}
+(ROOT / 'benchmarks/production-dependencies.json').write_text(json.dumps(document, indent=2) + '\n')
+print(f'{len(records)} packages')
+if problems:
+    print('license review required:', *problems, sep='\n  ', file=sys.stderr)
+    sys.exit(1)

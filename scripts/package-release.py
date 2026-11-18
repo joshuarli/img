@@ -22,7 +22,11 @@ for directory, filename in artifacts.items():
 
 packages = dist / 'packages'
 packages.mkdir()
-notices = ['LICENSE-MIT', 'LICENSE-APACHE', 'docs/PROVENANCE.md']
+notices = [
+    'LICENSE-MIT', 'LICENSE-APACHE', 'docs/PROVENANCE.md',
+    'vendor/oxipng/LICENSE', 'vendor/libdeflater/LICENSE', 'vendor/libdeflate-sys/LICENSE',
+    'vendor/libdeflate-sys/libdeflate/COPYING',
+]
 for directory, filename in artifacts.items():
     source = dist / directory / filename
     if directory == 'img-source':

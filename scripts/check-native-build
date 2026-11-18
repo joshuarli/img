@@ -1,0 +1,76 @@
+#!/bin/sh
+set -eu
+root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+cd "$root"
+export TMPDIR="$root/.work/tmp"
+mkdir -p "$TMPDIR"
+allowed="$root/vendor/libdeflate-sys/libdeflate/"
+proof_dir="$(mktemp -d "$TMPDIR/native-build-proof.XXXXXX")"
+export IMG_NATIVE_TOOL_LOG="$proof_dir/invocations"
+mkdir "$IMG_NATIVE_TOOL_LOG"
+real_cc="$(command -v "${CC:-cc}")"
+real_cxx="$(command -v "${CXX:-c++}")"
+for pair in "cc:$real_cc" "c++:$real_cxx"; do
+    name="${pair%%:*}"; real="${pair#*:}"
+    cat > "$proof_dir/$name" <<WRAP
+#!/bin/sh
+record="\$(mktemp "\$IMG_NATIVE_TOOL_LOG/cc.XXXXXX")"
+printf '%s\n' "\$PWD" > "\$record"
+for arg in "\$@"; do printf '%s\n' "\$arg" >> "\$record"; done
+exec "$real" "\$@"
+WRAP
+    chmod +x "$proof_dir/$name"
+done
+cat > "$proof_dir/denied" <<'GUARD'
+#!/bin/sh
+printf 'DENIED %s %s\n' "$0" "$*" > "$(mktemp "$IMG_NATIVE_TOOL_LOG/denied.XXXXXX")"
+exit 97
+GUARD
+chmod +x "$proof_dir/denied"
+for tool in cmake pkg-config nasm bindgen; do cp "$proof_dir/denied" "$proof_dir/$tool"; done
+export CC="$proof_dir/cc" CXX="$proof_dir/c++" HOST_CC="$proof_dir/cc" HOST_CXX="$proof_dir/c++" TARGET_CC="$proof_dir/cc" TARGET_CXX="$proof_dir/c++"
+export CMAKE="$proof_dir/cmake" NASM="$proof_dir/nasm" PKG_CONFIG="$proof_dir/pkg-config"
+export LIBCLANG_PATH="$proof_dir/no-libclang"
+export PATH="$proof_dir:$PATH" RUSTC_WRAPPER=
+export CARGO_TARGET_DIR="${IMG_NATIVE_TARGET:-$proof_dir/target}"
+case "$CARGO_TARGET_DIR" in "$TMPDIR"/*) ;; *) echo 'proof target must be in repository .work/tmp' >&2; exit 2 ;; esac
+if test -e "$CARGO_TARGET_DIR"; then echo 'proof requires a fresh target directory' >&2; exit 2; fi
+if test "$#" -gt 1; then echo "usage: $0 [target-triple]" >&2; exit 2; fi
+triple="${1:-$(rustc -vV | sed -n 's/^host: //p')}"
+export "CC_$(echo "$triple" | tr '-' '_')=$proof_dir/cc" "CXX_$(echo "$triple" | tr '-' '_')=$proof_dir/c++"
+target_subdir=
+if test "$#" -eq 1; then
+    cargo build --locked --profile dist --features build-binary --target "$1"
+    target_subdir="/$1"
+else
+    cargo build --locked --profile dist --features build-binary
+fi
+python3 -I - "$IMG_NATIVE_TOOL_LOG" "$allowed" "$CARGO_TARGET_DIR" <<'PY'
+import sys
+from pathlib import Path
+log, allowed, target = sys.argv[1:4]
+sources, bad = set(), []
+for record in sorted(Path(log).iterdir()):
+    lines = record.read_text().split('\n')[:-1]
+    if record.name.startswith('denied.'):
+        bad.extend(lines); continue
+    cwd, args = lines[0], lines[1:]
+    for arg in args:
+        if arg.endswith(('.c', '.cc', '.cpp', '.cxx', '.S', '.s', '.asm')):
+            path = arg if arg.startswith('/') else f'{cwd}/{arg}'
+            if path.startswith(allowed):
+                sources.add(path[len(allowed):])
+            elif path.startswith(target):
+                continue
+            else:
+                bad.append(path)
+if bad:
+    print('native compilation outside the vendored allowlist:', *bad, sep='\n  ', file=sys.stderr)
+    sys.exit(1)
+if not sources:
+    print('no native sources compiled; allowlist is stale', file=sys.stderr)
+    sys.exit(1)
+print(f'native sources compiled: {len(sources)} (all under {allowed})')
+PY
+printf 'binary=%s/dist/img\nproof=%s\n' "$CARGO_TARGET_DIR$target_subdir" "$proof_dir"
+"$CARGO_TARGET_DIR$target_subdir/dist/img" --version

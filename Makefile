@@ -39,5 +39,5 @@ benchmark-run:
 	cargo run --locked --profile dist --all-features --example benchmark -- run
 	perf-gate-ready -1
 
-pure-rust-build-check:
-	./scripts/check-pure-rust-build
+native-build-check:
+	./scripts/check-native-build

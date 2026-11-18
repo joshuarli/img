@@ -24,6 +24,7 @@ limits = ["dep:sysinfo"]
 [dependencies]
 png = "=0.18.1"
 fdeflate = "=0.3.7"
+oxipng = { version = "=10.2.1", default-features = false, features = ["parallel"] }
 libc = "0.2"
 libm = "=0.2.16"
 crc32fast = "1.5"
@@ -102,3 +103,8 @@ required-features = ["build-binary"]
 [[example]]
 name = "benchmark"
 required-features = ["build-binary"]
+
+[patch.crates-io]
+oxipng = { path = "vendor/oxipng" }
+libdeflater = { path = "vendor/libdeflater" }
+libdeflate-sys = { path = "vendor/libdeflate-sys" }

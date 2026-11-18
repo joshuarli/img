@@ -76,4 +76,4 @@ license files.
 
 An isolated snapshot of the MIT/Apache-2.0 [Webpkit](https://github.com/P4suta/webpkit) codec lives in [`codecs/webpkit/`](codecs/webpkit/) and is wired in as the WebP encoder through a path dependency, replacing zenwebp. The executable unattended correctness/performance campaign is [`docs/WEBP-HILLCLIMB.md`](docs/WEBP-HILLCLIMB.md) and its exact import provenance is [`docs/WEBP-IMPORT.md`](docs/WEBP-IMPORT.md). The backend is experimental: the pinned snapshot shows photographic size regressions in [BENCHMARKS.md](BENCHMARKS.md), and the campaign gates govern any claim of parity.
 
-The [permissive codec audit](docs/PERMISSIVE-CODEC-AUDIT.md) inventories the remaining AGPL/GPL roles and the leading pure-Rust alternatives for JPEG, PNG/DEFLATE, palette quantization and AVIF/AV1, with explicit integration blockers and performance validation gates.
+The non-WebP codec campaign status, selected upstream implementations and their measured results against the Zen codecs are in [`docs/CODECS.md`](docs/CODECS.md); vendored sources are recorded in [`docs/VENDOR.md`](docs/VENDOR.md).

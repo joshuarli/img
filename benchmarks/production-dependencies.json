@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "sourceRevision": "5fcedccef69af3676e7f40615adef1bacdaa623c",
   "scope": "union of normal and build dependencies; default plus build-binary; development edges excluded",
   "targets": [
     "aarch64-apple-darwin",
     "aarch64-unknown-linux-musl",
     "x86_64-unknown-linux-musl"
   ],
+  "sourceRevision": "2258e42b8d7c8d4dd51ec56ac183fb553c325a2e",
   "packages": [
     {
       "name": "adler2",
@@ -51,7 +51,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/dtolnay/anyhow",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "archmage",
@@ -102,7 +102,7 @@
       "name": "assert_matches",
       "version": "1.5.0",
       "licenseDeclared": "MIT/Apache-2.0",
-      "licenseSelected": "MIT/Apache-2.0",
+      "licenseSelected": "MIT",
       "repository": "https://github.com/murarth/assert_matches",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
@@ -111,7 +111,7 @@
       "name": "atomig",
       "version": "0.4.3",
       "licenseDeclared": "MIT/Apache-2.0",
-      "licenseSelected": "MIT/Apache-2.0",
+      "licenseSelected": "MIT",
       "repository": "https://github.com/LukasKalbertodt/atomig/",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
@@ -120,7 +120,7 @@
       "name": "atomig-macro",
       "version": "0.4.0",
       "licenseDeclared": "MIT/Apache-2.0",
-      "licenseSelected": "MIT/Apache-2.0",
+      "licenseSelected": "MIT",
       "repository": "https://github.com/LukasKalbertodt/atomig/",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
@@ -141,7 +141,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/rust-av/av-scenechange",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "av1-grain",
@@ -174,7 +174,7 @@
       "name": "bitstream-io",
       "version": "4.10.0",
       "licenseDeclared": "MIT/Apache-2.0",
-      "licenseSelected": "MIT/Apache-2.0",
+      "licenseSelected": "MIT",
       "repository": "https://github.com/tuffy/bitstream-io",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
@@ -276,7 +276,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/srijs/rust-crc32fast",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "crossbeam-deque",
@@ -285,7 +285,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/crossbeam-rs/crossbeam",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "crossbeam-epoch",
@@ -294,7 +294,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/crossbeam-rs/crossbeam",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "crossbeam-utils",
@@ -303,7 +303,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/crossbeam-rs/crossbeam",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "document-features",
@@ -351,13 +351,22 @@
       "hasBuildScript": false
     },
     {
+      "name": "equivalent",
+      "version": "1.0.2",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/indexmap-rs/equivalent",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": false
+    },
+    {
       "name": "fast-ssim2",
       "version": "0.9.1",
       "licenseDeclared": "BSD-2-Clause AND BSD-3-Clause AND MIT",
-      "licenseSelected": "MIT",
+      "licenseSelected": "BSD-2-Clause AND BSD-3-Clause AND MIT",
       "repository": "https://github.com/imazen/fast-ssim2",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "fast_image_resize",
@@ -405,6 +414,24 @@
       "hasBuildScript": false
     },
     {
+      "name": "glob",
+      "version": "0.3.4",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/rust-lang/glob",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": false
+    },
+    {
+      "name": "hashbrown",
+      "version": "0.17.1",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/rust-lang/hashbrown",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": false
+    },
+    {
       "name": "heck",
       "version": "0.5.0",
       "licenseDeclared": "MIT OR Apache-2.0",
@@ -423,6 +450,15 @@
       "hasBuildScript": false
     },
     {
+      "name": "img",
+      "version": "0.14.0",
+      "licenseDeclared": "Apache-2.0",
+      "licenseSelected": "Apache-2.0",
+      "repository": null,
+      "source": "path",
+      "hasBuildScript": false
+    },
+    {
       "name": "imgref",
       "version": "1.12.3",
       "licenseDeclared": "CC0-1.0 OR Apache-2.0",
@@ -432,11 +468,29 @@
       "hasBuildScript": false
     },
     {
+      "name": "indexmap",
+      "version": "2.14.2",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/indexmap-rs/indexmap",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": false
+    },
+    {
       "name": "itertools",
       "version": "0.14.0",
       "licenseDeclared": "MIT OR Apache-2.0",
       "licenseSelected": "MIT",
       "repository": "https://github.com/rust-itertools/itertools",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": false
+    },
+    {
+      "name": "itoa",
+      "version": "1.0.19",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/dtolnay/itoa",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
     },
@@ -453,7 +507,7 @@
       "name": "jpeg-encoder",
       "version": "0.7.1",
       "licenseDeclared": "(MIT OR Apache-2.0) AND IJG",
-      "licenseSelected": "MIT",
+      "licenseSelected": "(MIT OR Apache-2.0) AND IJG",
       "repository": "https://github.com/vstroebel/jpeg-encoder",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
@@ -468,12 +522,39 @@
       "hasBuildScript": false
     },
     {
+      "name": "lexopt",
+      "version": "0.3.2",
+      "licenseDeclared": "MIT",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/blyxxyz/lexopt",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": false
+    },
+    {
       "name": "libc",
       "version": "0.2.189",
       "licenseDeclared": "MIT OR Apache-2.0",
       "licenseSelected": "MIT",
       "repository": "https://github.com/rust-lang/libc",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": true
+    },
+    {
+      "name": "libdeflate-sys",
+      "version": "1.26.1",
+      "licenseDeclared": "Apache-2.0",
+      "licenseSelected": "Apache-2.0",
+      "repository": "https://github.com/libdeflater/libdeflater",
+      "source": "path",
+      "hasBuildScript": true
+    },
+    {
+      "name": "libdeflater",
+      "version": "1.26.1",
+      "licenseDeclared": "Apache-2.0",
+      "licenseSelected": "Apache-2.0",
+      "repository": "https://github.com/libdeflater/libdeflater",
+      "source": "path",
       "hasBuildScript": false
     },
     {
@@ -483,7 +564,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/rust-lang/compiler-builtins",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "linear-srgb",
@@ -554,6 +635,15 @@
       "licenseDeclared": "Unlicense OR MIT",
       "licenseSelected": "MIT",
       "repository": "https://github.com/BurntSushi/memchr",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": false
+    },
+    {
+      "name": "miniz_oxide",
+      "version": "0.8.9",
+      "licenseDeclared": "MIT OR Zlib OR Apache-2.0",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/Frommi/miniz_oxide/tree/master/miniz_oxide",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
     },
@@ -681,6 +771,24 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/rust-num/num-traits",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": true
+    },
+    {
+      "name": "objc2-core-foundation",
+      "version": "0.3.2",
+      "licenseDeclared": "Zlib OR Apache-2.0 OR MIT",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/madsmtm/objc2",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": false
+    },
+    {
+      "name": "objc2-io-kit",
+      "version": "0.3.2",
+      "licenseDeclared": "Zlib OR Apache-2.0 OR MIT",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/madsmtm/objc2",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
     },
     {
@@ -699,6 +807,15 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/reem/rust-ordered-float",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": false
+    },
+    {
+      "name": "oxipng",
+      "version": "10.2.1",
+      "licenseDeclared": "MIT",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/oxipng/oxipng",
+      "source": "path",
       "hasBuildScript": false
     },
     {
@@ -744,7 +861,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/Amanieu/parking_lot",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "paste",
@@ -753,7 +870,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/dtolnay/paste",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "pastey",
@@ -780,7 +897,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/dtolnay/proc-macro2",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "profiling",
@@ -821,7 +938,7 @@
     {
       "name": "quantizr",
       "version": "1.4.3",
-      "licenseDeclared": "license-file: LICENSE (SPDX expression absent)",
+      "licenseDeclared": "license-file",
       "licenseSelected": "MIT",
       "repository": "https://github.com/DarthSim/quantizr",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
@@ -831,7 +948,7 @@
       "name": "quick-error",
       "version": "2.0.1",
       "licenseDeclared": "MIT/Apache-2.0",
-      "licenseSelected": "MIT/Apache-2.0",
+      "licenseSelected": "MIT",
       "repository": "http://github.com/tailhook/quick-error",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
@@ -843,7 +960,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/dtolnay/quote",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "radium",
@@ -852,7 +969,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/bitvecto-rs/radium",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "rand",
@@ -888,7 +1005,7 @@
       "licenseSelected": "BSD-2-Clause",
       "repository": "https://github.com/memorysafety/rav1d",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "rav1e",
@@ -897,7 +1014,7 @@
       "licenseSelected": "BSD-2-Clause",
       "repository": "https://github.com/xiph/rav1e/",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "ravif",
@@ -933,7 +1050,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/rayon-rs/rayon",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "ref-cast",
@@ -942,7 +1059,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/dtolnay/ref-cast",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "ref-cast-impl",
@@ -963,13 +1080,22 @@
       "hasBuildScript": false
     },
     {
+      "name": "rustc-hash",
+      "version": "2.1.3",
+      "licenseDeclared": "Apache-2.0 OR MIT",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/rust-lang/rustc-hash",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": false
+    },
+    {
       "name": "rustversion",
       "version": "1.0.23",
       "licenseDeclared": "MIT OR Apache-2.0",
       "licenseSelected": "MIT",
       "repository": "https://github.com/dtolnay/rustversion",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "safe_arch",
@@ -997,6 +1123,24 @@
       "repository": "https://github.com/bluss/scopeguard",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
+    },
+    {
+      "name": "serde_core",
+      "version": "1.0.229",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/serde-rs/serde",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": true
+    },
+    {
+      "name": "serde_json",
+      "version": "1.0.154",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/serde-rs/json",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": true
     },
     {
       "name": "shlex",
@@ -1071,6 +1215,24 @@
       "hasBuildScript": false
     },
     {
+      "name": "syn",
+      "version": "3.0.6",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/dtolnay/syn",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": false
+    },
+    {
+      "name": "sysinfo",
+      "version": "0.39.6",
+      "licenseDeclared": "MIT",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/GuillaumeGomez/sysinfo",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": false
+    },
+    {
       "name": "tap",
       "version": "1.0.1",
       "licenseDeclared": "MIT",
@@ -1086,7 +1248,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/dtolnay/thiserror",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "thiserror-impl",
@@ -1110,7 +1272,7 @@
       "name": "unicode-ident",
       "version": "1.0.26",
       "licenseDeclared": "(MIT OR Apache-2.0) AND Unicode-3.0",
-      "licenseSelected": "MIT",
+      "licenseSelected": "(MIT OR Apache-2.0) AND Unicode-3.0",
       "repository": "https://github.com/dtolnay/unicode-ident",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
@@ -1131,7 +1293,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/wasm-bindgen/wasm-bindgen",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "wasm-bindgen-macro",
@@ -1158,7 +1320,7 @@
       "licenseSelected": "MIT",
       "repository": "https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/shared",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
+      "hasBuildScript": true
     },
     {
       "name": "webpkit",
@@ -1166,7 +1328,7 @@
       "licenseDeclared": "MIT OR Apache-2.0",
       "licenseSelected": "MIT",
       "repository": "https://github.com/P4suta/webpkit",
-      "source": "path+local (vendored)",
+      "source": "path",
       "hasBuildScript": false
     },
     {
@@ -1269,6 +1431,15 @@
       "hasBuildScript": false
     },
     {
+      "name": "zmij",
+      "version": "1.0.23",
+      "licenseDeclared": "MIT",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/dtolnay/zmij",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": true
+    },
+    {
       "name": "zune-core",
       "version": "0.5.1",
       "licenseDeclared": "MIT OR Apache-2.0 OR Zlib",
@@ -1291,7 +1462,7 @@
       "version": "0.2.54",
       "licenseDeclared": "MIT OR Apache-2.0 OR Zlib",
       "licenseSelected": "MIT",
-      "repository": "https://github.com/etemesi254/zune-image/tree/main/zune-inflate",
+      "repository": null,
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
     },
