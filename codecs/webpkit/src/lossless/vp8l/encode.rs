@@ -2337,20 +2337,22 @@ fn emit_coded_pixels(
 /// list and NO meta-Huffman bit — exactly what [`crate::lossless::vp8l::decode`] reads for a
 /// transform's tile grid or a palette's color map. The height is implicit in
 /// `pixels.len() / width`. The pixels are coded with no color cache; the
-/// literal and greedy-LZ77 token streams are both emitted to scratch writers
-/// and the smaller kept, since copies pay off on the run-heavy tile grids and
-/// entropy image but lose on scattered ones.
+/// literal, greedy-LZ77 and optimal-parse token streams are each emitted to
+/// scratch writers and the smallest kept, since copies pay off on the
+/// run-heavy tile grids and entropy image but lose on scattered ones.
 fn emit_subimage(bw: &mut BitWriter, width: u32, pixels: &[u32]) {
     write_color_cache(bw, 0);
-    let lz77 = parse(pixels, true);
     let literals: Vec<Token> = pixels.iter().map(|&p| Token::Literal(p)).collect();
-    let tokens = if lz77.iter().any(|t| matches!(t, Token::Copy { .. }))
-        && subimage_bits(width, pixels, &lz77) < subimage_bits(width, pixels, &literals)
-    {
-        &lz77
-    } else {
-        &literals
-    };
+    let (lz77, chain) = parse_lz77(pixels);
+    let mut options = vec![literals];
+    if lz77.iter().any(|t| matches!(t, Token::Copy { .. })) {
+        options.push(parse_optimal(pixels, width, &lz77, &chain, MAX_CHAIN));
+        options.push(lz77);
+    }
+    let tokens = options
+        .iter()
+        .min_by_key(|tokens| subimage_bits(width, pixels, tokens))
+        .expect("the literal candidate is always present");
     let model = RefModel::new(tokens, pixels, width);
     emit_coded_pixels(bw, 0, &model, &model.histogram(0));
 }
