@@ -132,3 +132,13 @@ fn bitstream_and_container_hdr_metadata_are_reported_and_refused() {
         let error=StillImage::decode(&bytes).err().unwrap();assert!(error.to_string().contains("HDR"),"kind {kind}: {error}");
     }
 }
+
+#[test]
+fn nclx_full_range_flag_is_the_high_bit_and_reserved_bits_are_ignored() {
+    let bytes=include_bytes!("files/generated/film-grain.avif");
+    let flags=bytes.windows(8).position(|w|w==b"colrnclx").unwrap()+14;
+    for (byte,full_range) in [(0x80,1),(0xff,1),(0x7f,0),(0x00,0)] {
+        let mut patched=bytes.to_vec();patched[flags]=byte;
+        assert_eq!(img::still::describe(&patched).unwrap().cicp.unwrap()[3],full_range,"flags byte {byte:#04x}");
+    }
+}

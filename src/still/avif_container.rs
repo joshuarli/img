@@ -648,7 +648,7 @@ fn parse_colr(bytes: &[u8], span: &BoxSpan) -> Result<Property, Error> {
         let color_primaries = u16::from_be_bytes([remaining[4], remaining[5]]);
         let transfer_characteristics = u16::from_be_bytes([remaining[6], remaining[7]]);
         let matrix_coefficients = u16::from_be_bytes([remaining[8], remaining[9]]);
-        let full_range = remaining[10] & 1 == 1;
+        let full_range = remaining[10] & 0x80 != 0;
         return Ok(Property::ColrNclx { color_primaries, transfer_characteristics, matrix_coefficients, full_range });
     }
     if remaining.len() >= 4 && (&remaining[..4] == b"prof" || &remaining[..4] == b"rICC" || &remaining[..4] == b"ricC") {
