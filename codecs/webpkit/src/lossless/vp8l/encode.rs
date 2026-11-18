@@ -1927,6 +1927,39 @@ fn evaluate_best_tasks(
 #[must_use]
 pub(crate) fn encode_best_at(level: u8, width: u32, height: u32, argb: &[u32]) -> Vec<u8> {
     let breadth = schedule_for(level, u64::from(width) * u64::from(height));
+    encode_best_breadth(level, breadth, width, height, argb)
+}
+
+/// [`encode_best_at`] for an AUTO-resolved level. AUTO's size cap tops out at
+/// level 6 — below the [`Breadth::reparse`] band — so the iterated parse the
+/// explicit deep levels get would never run on mid-size images. AUTO adds
+/// `reparse` at levels 4-6 (the deepest breadths it can resolve) while the
+/// image stays under [`AUTO_REPARSE_PIXEL_CAP`], bounding the extra passes to
+/// the same sub-256K-pixel envelope the level-6 Fast band already pays; larger
+/// AUTO levels keep the single-pass parse because the passes multiply an
+/// already-heavy optimal parse. Explicit `Effort::level` keeps the cheaper
+/// breadth at every level — the product Fast band shares levels 1 and 6.
+pub(crate) fn encode_best_auto(level: u8, width: u32, height: u32, argb: &[u32]) -> Vec<u8> {
+    let pixels = u64::from(width) * u64::from(height);
+    let mut breadth = schedule_for(level, pixels);
+    if level >= 4 && pixels <= AUTO_REPARSE_PIXEL_CAP {
+        breadth.reparse = true;
+    }
+    encode_best_breadth(level, breadth, width, height, argb)
+}
+
+/// Pixel ceiling for the AUTO-only reparse breadth: the 256K-pixel band where
+/// AUTO resolves levels 4-6 and a worst-case reparse stays in the same
+/// tens-of-seconds envelope as the explicit level-6 encode.
+const AUTO_REPARSE_PIXEL_CAP: u64 = 0x40000;
+
+fn encode_best_breadth(
+    level: u8,
+    breadth: Breadth,
+    width: u32,
+    height: u32,
+    argb: &[u32],
+) -> Vec<u8> {
     let alpha_used = argb.iter().any(|&p| p >> 24 != 0xff);
     evaluate_best_tasks(
         build_best_tasks(breadth),

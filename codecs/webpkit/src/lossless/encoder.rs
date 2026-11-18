@@ -19,10 +19,15 @@ use crate::lossless::vp8l;
 /// set and the winner is ranked by real emitted bytes, so the result is never
 /// larger than the plain LZ77 floor at any effort.
 pub(crate) fn encode_payload(effort: Effort, width: u32, height: u32, argb: &[u32]) -> Vec<u8> {
-    let level = effort
-        .explicit_level()
-        .unwrap_or_else(|| histogram::auto_level(width, argb));
-    vp8l::encode::encode_best_at(level, width, height, argb)
+    match effort.explicit_level() {
+        Some(level) => vp8l::encode::encode_best_at(level, width, height, argb),
+        None => vp8l::encode::encode_best_auto(
+            histogram::auto_level(width, argb),
+            width,
+            height,
+            argb,
+        ),
+    }
 }
 
 /// How [`crate::lossless::encode_image`] treats the metadata inherited from the source

@@ -1442,3 +1442,19 @@ a model-cheaper/byte-larger stream; reverted. img lib suite re-run
 green (87/87) with the RLE-counts change in place; scored-path size
 is provably non-increasing since each channel keeps the cheaper of
 direct vs perturbed assignments and selection compares real bytes.
+
+AUTO-path reparse (`encode_best_auto`): AUTO's size cap tops out at
+level 6, below the explicit reparse band, so the iterated parse never
+ran on mid-size images — the band where AUTO parks most photographs
+(levels 3-4 on the corpus). Codec probes at levels 3-4 showed the
+gain is concentrated, not uniform: camera -2.5 to -2.9%, coins -0.5%,
+coffee/gravel ~0, astronaut/chelsea/grass identical (the fixed point
+converges immediately). AUTO now adds `reparse` at resolved levels
+4-6 while the image stays under 256K pixels — the same envelope the
+explicit level-6 Fast band already pays; larger AUTO levels keep the
+single-pass parse and explicit `Effort::level` is untouched, so the
+scored Fast path is unaffected. Verified end-to-end (`img convert
+--lossless`, default Balanced): camera.png 129,852 -> 126,046 B
+(-2.9%), clock_motion.png 40,642 -> 36,714 B (-9.7%), all other
+corpus fixtures byte-identical; dwebp decodes clean; 920 webpkit +
+87 img tests green.
