@@ -1797,3 +1797,25 @@ encode wall (fine-meta grids multiply the blocks x groups x
 alphabet passes). The single remap is already at a near
 fixed point; the extra rounds buy noise-level bytes at real
 wall. Reverted; single-pass HistogramRemap stands.
+
+Match-finder left-extension port (rejected): libwebp's
+FillBackwardReferences stores one best (distance, length) per
+position, then left-extends it — earlier positions inherit
+(same dist, len+k) while pixels match, reaching deep-chain
+matches a hop-capped forward walk misses. Ported into
+parse_optimal's backward DP in two variants, both carrying the
+previous position's candidate(s) forward one step when
+pixels[i] == pixels[i-dist] (inductively valid: each step
+verifies one pixel atop an already-verified match). Full
+staircase carry: chelsea L6 -30 B but camera L9 +24 B and
++~10% wall (per-position candidate copying). Single longest-
+candidate carry (libwebp semantics): chelsea L6 -26 B,
+camera L9 +22 B, all other fixtures byte-identical at neutral
+wall. Net wash-to-negative on the L9 gap fixtures: the extra
+candidates are real matches but the heuristic Q16 cost model
+misprices them often enough to lose real bytes — the same
+trap as the all-prefix-lengths DP probe. Every identified
+libwebp match-finder mechanism is now landed, strictly
+richer on our side, or measured-and-rejected; the residual
+~0.5% L9 gap has no remaining structural explanation short of
+porting libwebp's exact-cost model itself.
