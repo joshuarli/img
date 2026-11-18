@@ -92,7 +92,8 @@ fn content_level(width: u32, argb: &[u32]) -> u8 {
 /// are fixed by the format. The bins double as the input to the Huffman code
 /// builder and the [`Self::estimate_bits`] cost model, so a single walk of the
 /// token stream feeds both.
-#[cfg_attr(test, derive(PartialEq, Eq, Debug, Clone))]
+#[derive(Clone)]
+#[cfg_attr(test, derive(PartialEq, Eq, Debug))]
 pub(crate) struct Histogram {
     green: Vec<u32>,
     red: [u32; NUM_LITERAL_CODES],
@@ -241,6 +242,51 @@ impl Histogram {
             + other.extra_bits
     }
 
+    /// Per-channel total counts `[green, red, blue, alpha, dist]` — the totals
+    /// [`Self::cross_entropy_bits`] needs without rescanning each channel.
+    pub(crate) fn channel_totals(&self) -> [u64; 5] {
+        [
+            self.green.iter().map(|&n| u64::from(n)).sum(),
+            self.red.iter().map(|&n| u64::from(n)).sum(),
+            self.blue.iter().map(|&n| u64::from(n)).sum(),
+            self.alpha.iter().map(|&n| u64::from(n)).sum(),
+            self.dist.iter().map(|&n| u64::from(n)).sum(),
+        ]
+    }
+
+    /// Cost (whole bits) of coding this histogram's nonzero counts under
+    /// `cluster`'s per-symbol self-information — the cross-entropy assignment
+    /// cost libwebp's `HistogramRemap` uses to move blocks between final
+    /// clusters. `cluster_totals` must be `cluster.channel_totals()`.
+    /// `u64::MAX` when a used symbol is absent from `cluster` (uncodable there).
+    pub(crate) fn cross_entropy_bits(
+        &self,
+        cluster: &Self,
+        cluster_totals: &[u64; 5],
+    ) -> u64 {
+        let channels: [(&[u32], &[u32], u64); 5] = [
+            (&self.green, &cluster.green, cluster_totals[0]),
+            (&self.red, &cluster.red, cluster_totals[1]),
+            (&self.blue, &cluster.blue, cluster_totals[2]),
+            (&self.alpha, &cluster.alpha, cluster_totals[3]),
+            (&self.dist, &cluster.dist, cluster_totals[4]),
+        ];
+        let mut acc = 0u64;
+        for (mine, theirs, total) in channels {
+            let log_total = fixed_log2(total);
+            for (&nb, &nc) in mine.iter().zip(theirs) {
+                if nb == 0 {
+                    continue;
+                }
+                if nc == 0 {
+                    return u64::MAX;
+                }
+                acc += u64::from(nb) * (log_total - fixed_log2(u64::from(nc)));
+            }
+        }
+        acc >> LOG2_FRAC_BITS
+    }
+
     /// Estimate the encoded size, in bits, of this token distribution.
     ///
     /// The pixel-data term is the Shannon entropy of each channel
@@ -295,6 +341,10 @@ impl ClusterHistogram {
         self.histogram.estimate_bits() + META_GROUP_HEADER_BITS
     }
 
+    pub(crate) fn histogram(&self) -> &Histogram {
+        &self.histogram
+    }
+
     pub(crate) fn add_assign(&mut self, other: &Self) {
         self.histogram.add_assign(&other.histogram);
         for (a, b) in self.support.iter_mut().zip(&other.support) {
@@ -314,10 +364,6 @@ impl ClusterHistogram {
                 bits + header_bits(used)
             }).sum::<u64>() + self.histogram.extra_bits + other.histogram.extra_bits
             + META_GROUP_HEADER_BITS
-    }
-
-    pub(crate) fn into_histogram(self) -> Histogram {
-        self.histogram
     }
 }
 

@@ -1761,3 +1761,30 @@ q75 82,056 -> 80,426 B (-2.0%), q90 94,704 -> 93,074 B
 pairs); photopea-ui byte-identical at neutral wall. 73 alpha/
 lossy/encoder tests + 42 encode tests green; byte-stability
 goldens unchanged; dwebp round-trips.
+Meta-Huffman cluster reassignment (landed): libwebp's
+histogram_enc.c finishes clustering with HistogramRemap —
+after agglomerative merging it reassigns every block
+histogram to the cheapest surviving cluster by cross-entropy
+and rebuilds the group sums. Our greedy_cluster stopped at
+the merge. Ported as finish_plan: per-block histograms are
+retained through the merge (Histogram gained Clone plus
+channel_totals/cross_entropy_bits; ClusterHistogram exposes
+its histogram), each block then picks the active cluster
+minimising cross-entropy (u64::MAX when a used symbol is
+absent, so assignments stay representable), emptied clusters
+drop, and dense ids order by smallest member block as before.
+The test-only greedy_cluster_reference shares finish_plan so
+the heap-vs-scan merge equivalence oracle still holds.
+Paired A/B (stash/rebuild, interleaved binaries): L6 wins on
+8 of 13 fixtures — gravel -40, astronaut -36, grass -18,
+coffee -16, coins -12, text -8, mm-logo-opaque -4 B; camera
++2 B (the old clustering's plan no longer exists to floor
+against — self-floor only guards within a run); mm-logo-alpha,
+photopea-ui, chelsea, tworegion, clock_motion identical. L9:
+camera 124,674 -> 124,614 (-60 B, cwebp -z9 gap now ~894 B),
+coffee 340,272 -> 340,156 (-116 B), astronaut 333,186 ->
+333,050 (-136 B). L1 mirrors L6 bytes. ALPH lossy path
+q75 mm-logo-alpha 80,426 -> 80,420 B (-6 B). Wall +~1% on
+meta-using encodes (the cross-entropy pass is
+blocks x groups x alphabet, once per plan). 923 webpkit lib
+tests green; dwebp pixel-exact on a remap-affected output.

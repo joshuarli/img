@@ -201,17 +201,18 @@ fn greedy_cluster(
 ) -> Option<MetaPlan> {
     let num_blocks = block_histograms.len();
     // Seed one cluster per NON-EMPTY block (a block is empty iff its green channel
-    // is all zero — every unit type increments some green bin). `cluster_of[b]`
-    // tracks the surviving cluster of block b (None for empty blocks -> group 0).
-    let mut cluster_of: Vec<Option<usize>> = vec![None; num_blocks];
+    // is all zero — every unit type increments some green bin). `blocks[i]`
+    // retains each block's histogram so `finish_plan` can reassign blocks to the
+    // final clusters by cross-entropy.
     let mut hist: Vec<ClusterHistogram> = Vec::new();
     let mut src_block: Vec<usize> = Vec::new();
+    let mut blocks: Vec<Histogram> = Vec::new();
     for (b, h) in block_histograms.into_iter().enumerate() {
         if h.green().iter().all(|&n| n == 0) {
             continue;
         }
-        cluster_of[b] = Some(hist.len());
         src_block.push(b);
+        blocks.push(h.clone());
         hist.push(ClusterHistogram::new(h));
     }
     let n = hist.len();
@@ -272,11 +273,6 @@ fn greedy_cluster(
         est[a] = left[a].estimate_bits();
         active[b] = false;
         active_count -= 1;
-        for slot in &mut cluster_of {
-            if *slot == Some(b) {
-                *slot = Some(a);
-            }
-        }
         // Only row/col a changed; recompute its deltas against every active cluster
         // and push the fresh entries (the pre-merge ones are now stale).
         for j in 0..n {
@@ -290,32 +286,80 @@ fn greedy_cluster(
         }
     }
 
-    // Relabel surviving clusters to dense ids 0..k-1, ordered by smallest member
-    // block (deterministic; guarantees the max id appears -> decoder num_groups = k).
-    let mut actives: Vec<usize> = (0..n).filter(|&i| active[i]).collect();
-    actives.sort_by_key(|&i| src_block[i]);
-    let k = actives.len();
-    if k <= 1 {
+    finish_plan(&active, &hist, &src_block, &blocks, num_blocks, bits, entropy_xsize)
+}
+
+/// Turn the merged cluster set into a [`MetaPlan`]: reassign each block to the
+/// active cluster whose summed histogram codes it cheapest (cross-entropy —
+/// libwebp `HistogramRemap`), rebuild the group sums, drop emptied clusters,
+/// and relabel dense ids by smallest member block. `None` when <= 1 group
+/// survives. `blocks[i]` is the per-block histogram of initial cluster `i`
+/// (`src_block[i]` its entropy-block index), retained before merging.
+fn finish_plan(
+    active: &[bool],
+    hist: &[ClusterHistogram],
+    src_block: &[usize],
+    blocks: &[Histogram],
+    num_blocks: usize,
+    bits: u32,
+    entropy_xsize: u32,
+) -> Option<MetaPlan> {
+    let n = hist.len();
+    let actives: Vec<usize> = (0..n).filter(|&i| active[i]).collect();
+    if actives.len() <= 1 {
         return None;
     }
-    let mut new_id: Vec<u16> = vec![0; n];
-    for (id, &old) in actives.iter().enumerate() {
-        new_id[old] = id as u16;
+    let totals: Vec<[u64; 5]> = actives
+        .iter()
+        .map(|&c| hist[c].histogram().channel_totals())
+        .collect();
+    // assign[i] = position in `actives` of the cluster initial-cluster `i`
+    // (one entropy block) codes cheapest under.
+    let mut assign = vec![0usize; n];
+    for i in 0..n {
+        let mut best = 0usize;
+        let mut best_cost = u64::MAX;
+        for (ci, &c) in actives.iter().enumerate() {
+            let cost = blocks[i].cross_entropy_bits(hist[c].histogram(), &totals[ci]);
+            if cost < best_cost {
+                best_cost = cost;
+                best = ci;
+            }
+        }
+        assign[i] = best;
+    }
+    let green_len = blocks[0].green().len();
+    let mut sums: Vec<Histogram> = actives.iter().map(|_| Histogram::new(green_len)).collect();
+    let mut members = vec![0usize; actives.len()];
+    let mut min_block = vec![usize::MAX; actives.len()];
+    for i in 0..n {
+        sums[assign[i]].add_assign(&blocks[i]);
+        members[assign[i]] += 1;
+        min_block[assign[i]] = min_block[assign[i]].min(src_block[i]);
+    }
+    // Dense ids follow the smallest member block, as the pre-reassignment
+    // relabel did; clusters that lost every member are dropped.
+    let mut kept: Vec<(usize, usize, Histogram)> = sums
+        .into_iter()
+        .zip(members.iter().copied().zip(&min_block))
+        .enumerate()
+        .filter(|(_, (_, (m, _)))| *m > 0)
+        .map(|(ci, (h, (_, mb)))| (ci, *mb, h))
+        .collect();
+    kept.sort_by_key(|&(_, mb, _)| mb);
+    if kept.len() <= 1 {
+        return None;
+    }
+    let mut dense = vec![u16::MAX; actives.len()];
+    for (id, &(ci, _, _)) in kept.iter().enumerate() {
+        dense[ci] = id as u16;
     }
     let mut groups: Vec<u16> = vec![0; num_blocks];
-    for (b, slot) in cluster_of.iter().enumerate() {
-        if let Some(c) = *slot {
-            groups[b] = new_id[c];
-        }
+    for i in 0..n {
+        groups[src_block[i]] = dense[assign[i]];
     }
-    let mut tagged: Vec<(u16, Histogram)> = hist
-        .into_iter()
-        .enumerate()
-        .filter(|(old, _)| active[*old])
-        .map(|(old, h)| (new_id[old], h.into_histogram()))
-        .collect();
-    tagged.sort_by_key(|&(id, _)| id);
-    let group_histograms: Vec<Histogram> = tagged.into_iter().map(|(_, h)| h).collect();
+    let group_histograms: Vec<Histogram> =
+        kept.into_iter().map(|(_, _, h)| h).collect();
 
     Some(MetaPlan {
         bits,
@@ -344,25 +388,21 @@ fn merge_delta(a: &ClusterHistogram, b: &ClusterHistogram, est_a: u64, est_b: u6
     clippy::needless_range_loop,
     reason = "mirrors greedy_cluster: the triangular delta addressing is index-based"
 )]
-#[expect(
-    clippy::cast_possible_truncation,
-    reason = "dense group ids are `< MAX_GROUPS` (256), so `id as u16` is value-preserving"
-)]
 fn greedy_cluster_reference(
     block_histograms: Vec<Histogram>,
     bits: u32,
     entropy_xsize: u32,
 ) -> Option<MetaPlan> {
     let num_blocks = block_histograms.len();
-    let mut cluster_of: Vec<Option<usize>> = vec![None; num_blocks];
     let mut hist: Vec<ClusterHistogram> = Vec::new();
     let mut src_block: Vec<usize> = Vec::new();
+    let mut blocks: Vec<Histogram> = Vec::new();
     for (b, h) in block_histograms.into_iter().enumerate() {
         if h.green().iter().all(|&n| n == 0) {
             continue;
         }
-        cluster_of[b] = Some(hist.len());
         src_block.push(b);
+        blocks.push(h.clone());
         hist.push(ClusterHistogram::new(h));
     }
     let n = hist.len();
@@ -405,11 +445,6 @@ fn greedy_cluster_reference(
         est[a] = left[a].estimate_bits();
         active[b] = false;
         active_count -= 1;
-        for slot in &mut cluster_of {
-            if *slot == Some(b) {
-                *slot = Some(a);
-            }
-        }
         for j in 0..n {
             if j == a || !active[j] {
                 continue;
@@ -419,37 +454,7 @@ fn greedy_cluster_reference(
         }
     }
 
-    let mut actives: Vec<usize> = (0..n).filter(|&i| active[i]).collect();
-    actives.sort_by_key(|&i| src_block[i]);
-    let k = actives.len();
-    if k <= 1 {
-        return None;
-    }
-    let mut new_id: Vec<u16> = vec![0; n];
-    for (id, &old) in actives.iter().enumerate() {
-        new_id[old] = id as u16;
-    }
-    let mut groups: Vec<u16> = vec![0; num_blocks];
-    for (b, slot) in cluster_of.iter().enumerate() {
-        if let Some(c) = *slot {
-            groups[b] = new_id[c];
-        }
-    }
-    let mut tagged: Vec<(u16, Histogram)> = hist
-        .into_iter()
-        .enumerate()
-        .filter(|(old, _)| active[*old])
-        .map(|(old, h)| (new_id[old], h.into_histogram()))
-        .collect();
-    tagged.sort_by_key(|&(id, _)| id);
-    let group_histograms: Vec<Histogram> = tagged.into_iter().map(|(_, h)| h).collect();
-
-    Some(MetaPlan {
-        bits,
-        entropy_xsize,
-        groups,
-        group_histograms,
-    })
+    finish_plan(&active, &hist, &src_block, &blocks, num_blocks, bits, entropy_xsize)
 }
 
 #[cfg(test)]
