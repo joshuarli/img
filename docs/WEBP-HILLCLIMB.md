@@ -1740,3 +1740,8 @@ still pinned index 6 — now asserts last position. Full suites
 green: 922 webpkit lib, rayon/serial agreement, monotonicity,
 87 img lib, cli/codec_boundary/color_fidelity/optimizer/
 webp_codec integration.
+Fine meta grid on the RLE shot (landed 14d5249): the RLE meta
+shot now receives fine_meta at levels 7-9, matching the DP shot.
+mm-logo-alpha L7 24,720 -> 24,526 B (-194 B); self-floored so it
+cannot regress, and Fast/Balanced levels are untouched since
+fine_meta stays false below level 7. 922 webpkit lib tests green.
