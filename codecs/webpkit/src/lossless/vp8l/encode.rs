@@ -82,7 +82,7 @@ enum TransformPlan {
 /// through [`crate::lossless::vp8l::decode::decode`].
 #[must_use]
 pub(crate) fn encode(width: u32, height: u32, argb: &[u32]) -> Vec<u8> {
-    encode_with(width, height, argb, true, MAX_CHAIN_OPTIMAL)
+    encode_with(width, height, argb, true, MAX_CHAIN_OPTIMAL, false)
 }
 
 /// Encode as [`encode`], but with `use_lz77` cleared (the `Fast` method) the
@@ -91,13 +91,23 @@ pub(crate) fn encode(width: u32, height: u32, argb: &[u32]) -> Vec<u8> {
 ///
 /// `chain_cap` bounds the optimal-parse DP staircase walk the LZ77 search
 /// runs; callers pick it with [`effective_chain_cap`] or a fixed level cap.
+/// `meta_huffman` offers the multi-group meta-Huffman shot on each tier's
+/// token stream — the ALPH stream's search, where the single-channel plane is
+/// exactly the runny content the grouping exploits.
 #[must_use]
-pub(crate) fn encode_with(width: u32, height: u32, argb: &[u32], use_lz77: bool, chain_cap: u32) -> Vec<u8> {
+pub(crate) fn encode_with(
+    width: u32,
+    height: u32,
+    argb: &[u32],
+    use_lz77: bool,
+    chain_cap: u32,
+    meta_huffman: bool,
+) -> Vec<u8> {
     // Alpha-used is a header advisory computed once; subtract-green leaves the
     // alpha channel untouched, so both tiers share the same value.
     let alpha_used = argb.iter().any(|&p| p >> 24 != 0xff);
-    let tier0 = encode_stream(width, height, alpha_used, argb, false, use_lz77, chain_cap);
-    let tier1 = encode_stream(width, height, alpha_used, argb, true, use_lz77, chain_cap);
+    let tier0 = encode_stream(width, height, alpha_used, argb, false, use_lz77, chain_cap, meta_huffman);
+    let tier1 = encode_stream(width, height, alpha_used, argb, true, use_lz77, chain_cap, meta_huffman);
     if tier1.len() < tier0.len() {
         tier1
     } else {
@@ -132,7 +142,7 @@ const _: () = assert!(
 #[must_use]
 pub(crate) fn encode_alpha_stream(alpha: &[u8], width: u32, height: u32) -> Vec<u8> {
     let argb: Vec<u32> = alpha.iter().map(|&a| u32::from(a) << 8).collect();
-    let mut full = encode_with(width, height, &argb, true, MAX_CHAIN_OPTIMAL);
+    let mut full = encode_with(width, height, &argb, true, MAX_CHAIN_OPTIMAL, true);
     full.split_off(VP8L_HEADER_BYTES)
 }
 
@@ -151,6 +161,7 @@ fn encode_stream(
     use_subtract_green: bool,
     use_lz77: bool,
     chain_cap: u32,
+    meta_huffman: bool,
 ) -> Vec<u8> {
     // Borrow for Tier 0; own a transformed copy for Tier 1. `owned` is only
     // read on the branch that initializes it, so Tier 0 allocates nothing extra.
@@ -185,7 +196,24 @@ fn encode_stream(
     }
     // Full LZ77 + color-cache search; the pixels are already at the image width,
     // so the header and working widths coincide.
-    search_lz77(width, height, alpha_used, plans, width, pixels, chain_cap)
+    if meta_huffman {
+        search_lz77_variant(
+            width,
+            height,
+            alpha_used,
+            plans,
+            width,
+            pixels,
+            true,
+            true,
+            true,
+            false,
+            chain_cap,
+        )
+        .1
+    } else {
+        search_lz77(width, height, alpha_used, plans, width, pixels, chain_cap)
+    }
 }
 
 /// The RLE/previous-row token stream, offered only when its copies cover at
@@ -2659,8 +2687,8 @@ mod tests {
         // single-symbol codes, leaving only green to code, so Tier 1 is smaller.
         let pixels: Vec<u32> = (0..32u32).map(|v| argb(255, v, v, v)).collect();
         let au = alpha_used(&pixels);
-        let tier0 = encode_stream(32, 1, au, &pixels, false, true, MAX_CHAIN_OPTIMAL);
-        let tier1 = encode_stream(32, 1, au, &pixels, true, true, MAX_CHAIN_OPTIMAL);
+        let tier0 = encode_stream(32, 1, au, &pixels, false, true, MAX_CHAIN_OPTIMAL, false);
+        let tier1 = encode_stream(32, 1, au, &pixels, true, true, MAX_CHAIN_OPTIMAL, false);
         assert!(
             tier1.len() < tier0.len(),
             "subtract-green must shrink a grayscale ramp"
@@ -2676,8 +2704,8 @@ mod tests {
         // Tier 0 wins (also exercising the tie-goes-to-Tier-0 `<=` boundary).
         let pixels: Vec<u32> = (0..32u32).map(|v| argb(255, 0x40, v, 0x80)).collect();
         let au = alpha_used(&pixels);
-        let tier0 = encode_stream(32, 1, au, &pixels, false, true, MAX_CHAIN_OPTIMAL);
-        let tier1 = encode_stream(32, 1, au, &pixels, true, true, MAX_CHAIN_OPTIMAL);
+        let tier0 = encode_stream(32, 1, au, &pixels, false, true, MAX_CHAIN_OPTIMAL, false);
+        let tier1 = encode_stream(32, 1, au, &pixels, true, true, MAX_CHAIN_OPTIMAL, false);
         assert!(tier0.len() <= tier1.len());
         assert_eq!(encode(32, 1, &pixels), tier0);
         assert_round_trip(32, 1, &pixels);
@@ -3574,7 +3602,8 @@ mod proptests {
     use super::{
         BestTask, CrossColorCache, PlaneCache, RefModel, TransformPlan, best_cache_bits,
         emit_stream, emit_stream_meta, encode, encode_best, encode_best_at, encode_with,
-        floor_streams, meta_shot, parse_lz77, run_best_task, schedule, task_specs,
+        floor_streams, meta_shot, parse_lz77, run_best_task, schedule, search_lz77_variant,
+        task_specs,
     };
     use crate::lossless::vp8l::backref::parse_optimal;
     use crate::effort::MAX_LEVEL;
@@ -3698,7 +3727,7 @@ mod proptests {
             // The `Fast` method (`use_lz77` cleared) skips the LZ77 / color-cache
             // search and emits only the literal + subtract-green tiers; it must
             // still be exactly lossless.
-            let fast = encode_with(width, height, &pixels, false, MAX_CHAIN_OPTIMAL);
+            let fast = encode_with(width, height, &pixels, false, MAX_CHAIN_OPTIMAL, false);
             let decoded_fast = decode(&fast).expect("Fast encoder must emit decodable VP8L");
             prop_assert_eq!(decoded_fast.width, width);
             prop_assert_eq!(decoded_fast.height, height);
@@ -3889,6 +3918,39 @@ mod proptests {
         }
         let floor = floor_streams(breadth, w, h, alpha_used, &argb);
         println!("floor: {:?}", floor.iter().map(Vec::len).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn dump_alpha_stream_bytes() {
+        let Ok(path) = std::env::var("WEBPKIT_DUMP") else {
+            return;
+        };
+        let bytes = std::fs::read(&path).unwrap();
+        let w = u32::from_le_bytes(bytes[0..4].try_into().unwrap());
+        let h = u32::from_le_bytes(bytes[4..8].try_into().unwrap());
+        let rgba = &bytes[8..];
+        // Alpha plane as the green lane, exactly like encode_alpha_stream.
+        let alpha: Vec<u8> = rgba.chunks_exact(4).map(|p| p[3]).collect();
+        let argb: Vec<u32> = alpha.iter().map(|&a| u32::from(a) << 8).collect();
+        let au = argb.iter().any(|&p| p >> 24 != 0xff);
+        let current = encode_with(w, h, &argb, true, MAX_CHAIN_OPTIMAL, false).len();
+        let mut sg = argb.clone();
+        crate::lossless::transform::subtract_green::forward(&mut sg);
+        let sg_plan = [TransformPlan::SubtractGreen];
+        println!("alpha stream {}x{}: current={}", w, h, current);
+        for (name, meta, fine, reparse) in [
+            ("meta", true, false, false),
+            ("meta-fine", true, true, false),
+        ] {
+            let t = std::time::Instant::now();
+            let t0 = search_lz77_variant(w, h, au, &[], w, &argb, true, meta, fine, reparse, MAX_CHAIN_OPTIMAL).1.len();
+            let t1 = search_lz77_variant(w, h, au, &sg_plan, w, &sg, true, meta, fine, reparse, MAX_CHAIN_OPTIMAL).1.len();
+            println!("  {name}: t0={t0} t1={t1} min={} ({:.1}s)", t0.min(t1), t.elapsed().as_secs_f64());
+        }
+        let t = std::time::Instant::now();
+        let _cur = encode_with(w, h, &argb, true, MAX_CHAIN_OPTIMAL, false);
+        println!("  current-rerun: {:.1}s", t.elapsed().as_secs_f64());
+        let _ = alpha;
     }
 
     #[test]
