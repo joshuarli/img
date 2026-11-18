@@ -1484,3 +1484,14 @@ chelsea -18 B; grass and coins hold at zero (the floor protects them).
 Byte-stability goldens unchanged — the synthetic fixtures' sub-images
 never prefer copies. Cost is ~+7% L9 wall from the extra emissions;
 all levels benefit where sub-images run. dwebp verified.
+
+Timed Fast recapture at `3c95f6a`+ (`timed-fast-rle.json`, img-only,
+5 fixtures x 3 targets x 5 rounds, gate accepted, RAYON=1) vs
+`timed-fast-path.json`: all cells completed; medians within +1-6%
+wall (coffee +4.6%, transparent +5.5%, ui +1-2%, large +2%) except
+grass t95 -81.5% (the deferred-lossless ordering fix, expected).
+The residual +2-6% is the sub-image A/B emission cost on lossless
+candidates; `a76bc65` skips both scratch emits when the greedy parse
+finds no copies (byte-identical, coffee L6 back to ~7.6 s serial).
+Scored bytes are non-increasing by construction (real-byte floors
+throughout); absolute deltas are ~10-400 ms per cell.
