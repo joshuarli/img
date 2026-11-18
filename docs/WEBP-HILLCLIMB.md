@@ -1458,3 +1458,19 @@ scored Fast path is unaffected. Verified end-to-end (`img convert
 (-2.9%), clock_motion.png 40,642 -> 36,714 B (-9.7%), all other
 corpus fixtures byte-identical; dwebp decodes clean; 920 webpkit +
 87 img tests green.
+
+Sub-image LZ77 (rejected, root cause suspected): emit_subimage coded
+transform tile grids, palette maps and the meta-Huffman entropy image
+as literals only (`parse(pixels, false)`). Enabling the greedy LZ77
+parse shrank camera/astronaut/coffee/chelsea at L9 (-12 to -116 B) but
+regressed grass +134 B and coins +40 B. A self-floored pick comparing
+literal vs LZ77 token streams by an exact-cost model
+(`subimage_coded_bits`: per-channel count*length + serialized_bits +
+histogram.extra_bits) still chose LZ77 everywhere and produced
+byte-identical output to the unconditional version — so the model
+under-prices copies. Suspect: `Histogram::extra_bits` accumulates
+`prefix_encode(plane_code)` extra-bit counts for distances, which may
+not equal the extra bits `resolve` actually emits; the main stream
+never notices because selection compares real bytes, but the sub-image
+pick trusted the model. Reverted uncommitted; retry needs the emitted
+extra-bit counts threaded through CopyCost or a real-byte A/B emit.
