@@ -1,6 +1,6 @@
 # JPEG candidates
 
-This is an ARM64 macOS comparison, not an integration decision. Retain mozjpeg-rs for encoding and zune-jpeg for decoding provisionally. Use ProgressiveBalanced for Fast and Balanced and ProgressiveSmallest for Best, matching the current adapter. Revisit both roles after the fidelity refusals and timing limitations below are resolved. Zen is a benchmark reference only and is ineligible for production.
+This is an ARM64 macOS comparison. Encoder and decoder selections are provisional until gated equivalent-work timing is complete. Zen is a benchmark reference only and is ineligible for production.
 
 ## Sources and notices
 
@@ -14,115 +14,138 @@ Source archive SHA-256 values below cover the named archive, not submodules. [li
 
 ## Method and reproduction
 
-The 23 eligible inputs comprise 14 color photos, eight grayscale images and one text image. Alpha-bearing horse, photopea UI and logo images and boundary fixtures are excluded. The text image is the UI/text group. Sweep qualities 50 through 95 in steps of five, plus 97. `img-master compare` supplies every score; failures remain in the JSON. Linear interpolation uses adjacent successful sweep points without extrapolation. Each production row in a group and score uses the intersection of images bracketed by every production configuration. The parenthesized count is that intersection; XYB is context and has its own count. Empty intersections are unavailable. Mean bytes are rounded to whole bytes. Different score columns can have different images and are not comparable as totals.
+The 23 eligible images comprise 14 color photos, eight grayscale images and one text image. Alpha-bearing inputs and boundary fixtures are excluded. `prepare.py` decodes PNG samples without color conversion and decodes JPEG with pinned libjpeg-turbo at the largest M/8 scale with long side at most 2048 pixels. It writes untagged 8-bit PNG and identical PNM samples, and verifies the PNG chunk list and round-trip samples. The results JSON records each prepared PNG SHA-256 and scale. Treating samples as untagged sRGB intentionally disregards embedded color profiles and orientation; this is a qualification corpus, not a faithful color-managed rendering of every original.
 
-jpegli's default has XYB disabled; the XYB row explicitly enables it and is not a production candidate. Native MozJPEG uses progressive trellis defaults and the named chroma sampling. The two Rust CLIs use the named effort. The pinned libjpeg-turbo decoder checks each output. Progressive JPEG here means a standard JPEG bitstream decodable by libjpeg-turbo, not baseline sequential scan mode.
+Each encoder uses every prepared input. Sweep qualities 50 through 95 in steps of five, plus 97, 99 and 100; grayscale and text also use 20 through 45 in steps of five. The current img binary supplies every SSIMULACRA2 score. Interpolation uses adjacent successful sweep points without extrapolation. Each production row within a group and target uses the same images bracketed by every production configuration; counts can differ between targets. A positive relative byte percentage means the numerator is larger. XYB is context and is ineligible for production. Native MozJPEG uses progressive trellis defaults; jpegli uses its YCbCr defaults with the named sampling. The pinned libjpeg-turbo decoder checks each output.
 
-On this host, use `sh benchmarks/codecs/jpeg/build.sh` in a fresh scratch directory, with the two immutable reference binaries supplied by the brief. The script builds pinned source with at most four jobs and needs the cached Rust crates for the benchmark-only decoder harness. Run `python3 benchmarks/codecs/jpeg/sweep.py /Users/josh/d/img/.work/tmp/jpeg-candidates/full-sweep.json`. Run `python3 benchmarks/codecs/jpeg/report.py benchmarks/results/codecs/jpeg/results.json` to reproduce the tables. The standalone timing batch is `python3 benchmarks/codecs/jpeg/timed.py /Users/josh/d/img/.work/tmp/jpeg-candidates/timing.json`. It checks `perf-gate-ready` before the batch and `perf-gate-ready -1` after, discarding a failed batch. Both checks passed for the recorded batch. Timing uses quality 90, five alternating rounds, unique output paths, `perf_counter` wall time and `wait4` user CPU and peak RSS. Per-image medians are averaged by group; the range is the mean of per-image minima and maxima, and counts are common complete images. XYB uses its own complete set. Decoders use the same img-encoded fixtures, when available. Native decoders write PNM; the Rust harness retains decoded pixels in memory. The native encoders time their CLI paths while the Rust CLIs also perform their own verification, so these are not isolated codec timings.
+Run `sh benchmarks/codecs/jpeg/build.sh` in a fresh scratch directory with the two supplied immutable reference binaries and cached Rust crates. Run `python3 benchmarks/codecs/jpeg/prepare.py`, then `python3 benchmarks/codecs/jpeg/sweep.py /Users/josh/d/img/.work/tmp/jpeg-candidates/qualification-sweep.json` and `python3 benchmarks/codecs/jpeg/parity.py`. The result JSON contains the prepared input manifest and per-image sweep records. `python3 benchmarks/codecs/jpeg/report.py benchmarks/results/codecs/jpeg/results.json` reproduces all tables. The gated timing command is `python3 benchmarks/codecs/jpeg/timed.py /Users/josh/d/img/.work/tmp/jpeg-candidates/qualification-timing.json`; it resumes completed per-image batches and discards a batch when either gate fails.
+
+Encoder timing uses direct in-memory library APIs, excluding input reads, process startup and output writes. It includes encoder setup, encoding and in-memory output allocation. Each image and configuration is run five times at both sweep qualities bracketing score 90, in alternating configuration order. The report interpolates the per-quality medians and wall ranges to score 90. Encoder RSS is the larger median process peak at the two bracket points. Decoder timing includes process startup and I/O; native decoders write PNM while Rust decoders retain pixels in memory. Counts are common completed images. Wall ranges are means of per-image minima and maxima; CPU is user CPU and RSS is process peak, including input buffers.
 
 ### color photo (14 images)
 
 | Configuration | Score 80: mean bytes (n) | Score 90: mean bytes (n) | Score 95: mean bytes (n) |
 | --- | ---: | ---: | ---: |
-| jpegli | 71534 (2) | 217417 (1) | unavailable (0) |
+| jpegli-420 | 315781 (14) | 849843 (7) | unavailable (0) |
+| jpegli-444 | 301076 (14) | 798309 (7) | unavailable (0) |
 | jpegli-xyb | unavailable (0) | unavailable (0) | unavailable (0) |
-| moz-420 | 71974 (2) | 167221 (1) | unavailable (0) |
-| moz-444 | 85005 (2) | 206664 (1) | unavailable (0) |
-| img-fast | 72365 (2) | 172259 (1) | unavailable (0) |
-| img-best | 71849 (2) | 171193 (1) | unavailable (0) |
-| zen-fast | 67856 (2) | 179812 (1) | unavailable (0) |
-| zen-best | 67856 (2) | 179812 (1) | unavailable (0) |
+| moz-420 | 316084 (14) | 853244 (7) | unavailable (0) |
+| moz-444 | 350986 (14) | 873400 (7) | unavailable (0) |
+| img-fast | 318070 (14) | 857850 (7) | unavailable (0) |
+| img-best | 317252 (14) | 851937 (7) | unavailable (0) |
+| zen-fast | 321547 (14) | 830954 (7) | unavailable (0) |
+| zen-best | 321547 (14) | 830954 (7) | unavailable (0) |
+
+| Relative bytes | Score 80 | Score 90 | Score 95 |
+| --- | ---: | ---: | ---: |
+| jpegli-420 / zen-best | -1.8% (14) | +2.3% (7) | unavailable (0) |
+| jpegli-444 / zen-best | -6.4% (14) | -3.9% (7) | unavailable (0) |
+| img-fast / zen-best | -1.1% (14) | +3.2% (7) | unavailable (0) |
+| img-best / zen-best | -1.3% (14) | +2.5% (7) | unavailable (0) |
+| jpegli-420 / img-fast | -0.7% (14) | -0.9% (7) | unavailable (0) |
+| jpegli-444 / img-fast | -5.3% (14) | -6.9% (7) | unavailable (0) |
 
 ### grayscale (8 images)
 
 | Configuration | Score 80: mean bytes (n) | Score 90: mean bytes (n) | Score 95: mean bytes (n) |
 | --- | ---: | ---: | ---: |
-| jpegli | 40142 (5) | 51354 (7) | 18229 (3) |
+| jpegli-420 | 31132 (7) | 45034 (8) | 62001 (7) |
+| jpegli-444 | 31132 (7) | 45034 (8) | 62001 (7) |
 | jpegli-xyb | unavailable (0) | unavailable (0) | unavailable (0) |
-| moz-420 | 38426 (5) | 54022 (7) | 20868 (3) |
-| moz-444 | 38426 (5) | 54009 (7) | 20868 (3) |
-| img-fast | 38670 (5) | 53928 (7) | 21173 (3) |
-| img-best | 38670 (5) | 53928 (7) | 21173 (3) |
-| zen-fast | 36022 (5) | 47299 (7) | 18299 (3) |
-| zen-best | 36022 (5) | 47299 (7) | 18299 (3) |
+| moz-420 | 29536 (7) | 47361 (8) | 67746 (7) |
+| moz-444 | 29536 (7) | 47349 (8) | 67746 (7) |
+| img-fast | 29837 (7) | 47293 (8) | 68238 (7) |
+| img-best | 29837 (7) | 47293 (8) | 68238 (7) |
+| zen-fast | 27979 (7) | 41492 (8) | 60467 (7) |
+| zen-best | 27979 (7) | 41492 (8) | 60467 (7) |
+
+| Relative bytes | Score 80 | Score 90 | Score 95 |
+| --- | ---: | ---: | ---: |
+| jpegli-420 / zen-best | +11.3% (7) | +8.5% (8) | +2.5% (7) |
+| jpegli-444 / zen-best | +11.3% (7) | +8.5% (8) | +2.5% (7) |
+| img-fast / zen-best | +6.6% (7) | +14.0% (8) | +12.9% (7) |
+| img-best / zen-best | +6.6% (7) | +14.0% (8) | +12.9% (7) |
+| jpegli-420 / img-fast | +4.3% (7) | -4.8% (8) | -9.1% (7) |
+| jpegli-444 / img-fast | +4.3% (7) | -4.8% (8) | -9.1% (7) |
 
 ### ui/text (1 images)
 
 | Configuration | Score 80: mean bytes (n) | Score 90: mean bytes (n) | Score 95: mean bytes (n) |
 | --- | ---: | ---: | ---: |
-| jpegli | 9645 (1) | 21802 (1) | unavailable (0) |
+| jpegli-420 | 9645 (1) | 21802 (1) | 35658 (1) |
+| jpegli-444 | 9645 (1) | 21802 (1) | 35658 (1) |
 | jpegli-xyb | unavailable (0) | unavailable (0) | unavailable (0) |
-| moz-420 | 8917 (1) | 21271 (1) | unavailable (0) |
-| moz-444 | 8917 (1) | 21271 (1) | unavailable (0) |
-| img-fast | 8983 (1) | 21341 (1) | unavailable (0) |
-| img-best | 8983 (1) | 21341 (1) | unavailable (0) |
-| zen-fast | 8664 (1) | 18821 (1) | unavailable (0) |
-| zen-best | 8664 (1) | 18821 (1) | unavailable (0) |
+| moz-420 | 8917 (1) | 21271 (1) | 36930 (1) |
+| moz-444 | 8917 (1) | 21271 (1) | 36930 (1) |
+| img-fast | 8983 (1) | 21341 (1) | 37212 (1) |
+| img-best | 8983 (1) | 21341 (1) | 37212 (1) |
+| zen-fast | 8664 (1) | 18821 (1) | 32386 (1) |
+| zen-best | 8664 (1) | 18821 (1) | 32386 (1) |
+
+| Relative bytes | Score 80 | Score 90 | Score 95 |
+| --- | ---: | ---: | ---: |
+| jpegli-420 / zen-best | +11.3% (1) | +15.8% (1) | +10.1% (1) |
+| jpegli-444 / zen-best | +11.3% (1) | +15.8% (1) | +10.1% (1) |
+| img-fast / zen-best | +3.7% (1) | +13.4% (1) | +14.9% (1) |
+| img-best / zen-best | +3.7% (1) | +13.4% (1) | +14.9% (1) |
+| jpegli-420 / img-fast | +7.4% (1) | +2.2% (1) | -4.2% (1) |
+| jpegli-444 / img-fast | +7.4% (1) | +2.2% (1) | -4.2% (1) |
 
 ### Failures
 
-- img-best: 11 compare failures
-- img-best: 121 encode failures
-- img-fast: 11 compare failures
-- img-fast: 121 encode failures
-- jpegli: 132 compare failures
-- jpegli-xyb: 253 compare failures
-- moz-420: 132 compare failures
-- moz-444: 132 compare failures
-- zen-best: 132 encode failures
-- zen-fast: 132 encode failures
+- jpegli-xyb: 353 compare failures: input.score: ICC profile is not a validated RGB matrix or gray profile
 
 ### color photo timing
 
 | Role | Configuration | Wall ms | Wall range ms | User CPU ms | RSS MiB |
 | --- | --- | ---: | ---: | ---: | ---: |
-| encode | jpegli | 24.74 (2) | 24.34–32.36 | 20.78 | 14.38 |
-| encode | jpegli-xyb | 153.22 (14) | 152.18–188.84 | 145.42 | 51.52 |
-| encode | moz-420 | 71.84 (2) | 70.56–89.76 | 68.28 | 9.48 |
-| encode | moz-444 | 110.94 (2) | 110.50–134.35 | 106.67 | 16.12 |
-| encode | img-fast | 168.88 (2) | 166.86–203.96 | 140.37 | 196.94 |
-| encode | img-best | 244.42 (2) | 242.41–333.19 | 215.56 | 197.51 |
-| encode | zen-fast | 153.59 (2) | 151.92–190.07 | 124.99 | 198.57 |
-| encode | zen-best | 153.99 (2) | 151.39–183.72 | 124.99 | 198.59 |
-| decode | turbo | 28.50 (3) | 27.96–31.41 | 14.44 | 11.82 |
-| decode | jpegli | 32.63 (3) | 32.19–35.37 | 24.99 | 32.05 |
-| decode | zune | 22.76 (3) | 22.54–26.34 | 18.88 | 22.34 |
-| decode | zen | 25.94 (3) | 25.73–29.04 | 21.92 | 23.17 |
+| encode | jpegli-420 | not measured | not measured | not measured | not measured |
+| encode | jpegli-444 | not measured | not measured | not measured | not measured |
+| encode | moz-420 | not measured | not measured | not measured | not measured |
+| encode | moz-444 | not measured | not measured | not measured | not measured |
+| encode | img-fast | not measured | not measured | not measured | not measured |
+| encode | img-best | not measured | not measured | not measured | not measured |
+| encode | zen-fast | not measured | not measured | not measured | not measured |
+| encode | zen-best | not measured | not measured | not measured | not measured |
+| decode | turbo | not measured | not measured | not measured | not measured |
+| decode | jpegli | not measured | not measured | not measured | not measured |
+| decode | zune | not measured | not measured | not measured | not measured |
+| decode | zen | not measured | not measured | not measured | not measured |
 
 ### grayscale timing
 
 | Role | Configuration | Wall ms | Wall range ms | User CPU ms | RSS MiB |
 | --- | --- | ---: | ---: | ---: | ---: |
-| encode | jpegli | 7.57 (8) | 7.31–11.87 | 4.80 | 3.84 |
-| encode | jpegli-xyb | 10.68 (8) | 10.55–16.68 | 8.01 | 4.85 |
-| encode | moz-420 | 23.39 (8) | 23.26–37.17 | 20.76 | 3.32 |
-| encode | moz-444 | 23.50 (8) | 23.19–37.06 | 20.74 | 3.30 |
-| encode | img-fast | 46.70 (8) | 45.48–68.72 | 31.85 | 39.07 |
-| encode | img-best | 47.08 (8) | 45.91–68.12 | 31.88 | 39.05 |
-| encode | zen-fast | 41.14 (8) | 39.79–59.57 | 25.98 | 40.07 |
-| encode | zen-best | 40.89 (8) | 39.63–58.87 | 25.94 | 40.08 |
-| decode | turbo | 4.90 (8) | 4.50–7.75 | 2.03 | 2.30 |
-| decode | jpegli | 4.81 (8) | 4.68–7.34 | 2.34 | 2.67 |
-| decode | zune | 4.78 (8) | 4.62–7.20 | 2.46 | 3.13 |
-| decode | zen | 4.91 (8) | 4.77–7.37 | 2.50 | 4.86 |
+| encode | jpegli-420 | not measured | not measured | not measured | not measured |
+| encode | jpegli-444 | not measured | not measured | not measured | not measured |
+| encode | moz-420 | not measured | not measured | not measured | not measured |
+| encode | moz-444 | not measured | not measured | not measured | not measured |
+| encode | img-fast | not measured | not measured | not measured | not measured |
+| encode | img-best | not measured | not measured | not measured | not measured |
+| encode | zen-fast | not measured | not measured | not measured | not measured |
+| encode | zen-best | not measured | not measured | not measured | not measured |
+| decode | turbo | not measured | not measured | not measured | not measured |
+| decode | jpegli | not measured | not measured | not measured | not measured |
+| decode | zune | not measured | not measured | not measured | not measured |
+| decode | zen | not measured | not measured | not measured | not measured |
 
 ### ui/text timing
 
 | Role | Configuration | Wall ms | Wall range ms | User CPU ms | RSS MiB |
 | --- | --- | ---: | ---: | ---: | ---: |
-| encode | jpegli | 5.21 (1) | 4.88–8.06 | 2.61 | 3.22 |
-| encode | jpegli-xyb | 6.44 (1) | 6.26–10.04 | 3.92 | 3.97 |
-| encode | moz-420 | 10.68 (1) | 10.56–17.06 | 8.19 | 2.66 |
-| encode | moz-444 | 11.01 (1) | 10.51–16.77 | 8.24 | 2.62 |
-| encode | img-fast | 26.64 (1) | 25.37–36.30 | 13.33 | 18.73 |
-| encode | img-best | 27.84 (1) | 26.72–35.66 | 13.32 | 18.72 |
-| encode | zen-fast | 25.75 (1) | 23.76–34.62 | 11.85 | 19.92 |
-| encode | zen-best | 25.79 (1) | 23.68–33.66 | 11.75 | 19.92 |
-| decode | turbo | 4.06 (1) | 3.51–5.84 | 1.27 | 2.05 |
-| decode | jpegli | 4.05 (1) | 3.92–5.96 | 1.51 | 2.30 |
-| decode | zune | 3.75 (1) | 3.69–5.75 | 1.52 | 2.50 |
-| decode | zen | 3.89 (1) | 3.73–5.52 | 1.56 | 3.23 |
+| encode | jpegli-420 | not measured | not measured | not measured | not measured |
+| encode | jpegli-444 | not measured | not measured | not measured | not measured |
+| encode | moz-420 | not measured | not measured | not measured | not measured |
+| encode | moz-444 | not measured | not measured | not measured | not measured |
+| encode | img-fast | not measured | not measured | not measured | not measured |
+| encode | img-best | not measured | not measured | not measured | not measured |
+| encode | zen-fast | not measured | not measured | not measured | not measured |
+| encode | zen-best | not measured | not measured | not measured | not measured |
+| decode | turbo | not measured | not measured | not measured | not measured |
+| decode | jpegli | not measured | not measured | not measured | not measured |
+| decode | zune | not measured | not measured | not measured | not measured |
+| decode | zen | not measured | not measured | not measured | not measured |
 
 ## Open deficits
 
-The common color-photo sample is too small to choose a production encoder. The shared comparison rejects many files because its color transform leaves the SDR sRGB gamut; the raw records retain the diagnostics. The reference CLIs also refuse some inputs for their memory reservation or metadata. XYB scores are unavailable through the required comparison and XYB is excluded from production. The quality sweep cannot bracket every requested score; extend the sweep only after the comparison refusals are understood. Compatibility beyond successful libjpeg-turbo decoding, metadata retention, build size, Linux and end-to-end throughput remain unmeasured. Decoder selection and effort mapping need equivalent-work timing across more images.
+Timing is pending. Score 95 has no common color-photo bracket for the 4:2:0 configurations. XYB cannot be scored by the shared comparison because its ICC profile is rejected. The original images retain their profiles and full resolution; these untagged, scaled inputs do not qualify color-management, metadata, alpha, or full-resolution behavior. Linux, binary size, build cost and end-to-end throughput remain unmeasured.

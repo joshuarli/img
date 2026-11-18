@@ -9,8 +9,8 @@ zen = Path('/Users/josh/d/img/.work/refs/zen-5424df8')
 jpegli = scratch / 'jxl-build/tools/cjpegli'
 moz = scratch / 'moz-local/cjpeg-static'
 turbo = scratch / 'turbo-build/djpeg-static'
-qualities = list(range(50, 100, 5)) + [97]
-configs = ['jpegli', 'jpegli-xyb', 'moz-420', 'moz-444', 'img-fast', 'img-best', 'zen-fast', 'zen-best']
+qualities = list(range(50, 100, 5)) + [97, 99, 100]
+configs = ['jpegli-420', 'jpegli-444', 'jpegli-xyb', 'moz-420', 'moz-444', 'img-fast', 'img-best', 'zen-fast', 'zen-best']
 paths = sorted((root / 'benchmarks/corpus').glob('*.png')) + sorted((root / 'benchmarks/corpus/validation').glob('*.png')) + sorted((root / 'benchmarks/corpus/validation').glob('*.jpg'))
 paths = [p for p in paths if not p.name.startswith('boundary-') and p.name not in ('mm-logo-alpha.png', 'horse.png', 'photopea-ui.png')]
 gray = {'grass.png', 'gravel.png', 'brick.png', 'camera.png', 'cell.png', 'clock_motion.png', 'coins.png', 'microaneurysms.png'}
@@ -23,7 +23,7 @@ def run(command):
     return p.returncode, p.stdout.decode(errors='replace'), p.stderr.decode(errors='replace')
 def command(config, source, dest, quality):
     if config.startswith('jpegli'):
-        return [jpegli, source, dest, '-q', quality] + (['--xyb'] if config.endswith('xyb') else [])
+        return [jpegli, source, dest, '-q', quality] + (['--xyb'] if config.endswith('xyb') else ['--chroma_subsampling', config.split('-')[1]])
     if config.startswith('moz-'):
         return [moz, '-quality', quality, '-sample', '2x2' if config.endswith('420') else '1x1', '-outfile', dest, source]
     binary = img if config.startswith('img-') else zen
@@ -31,18 +31,20 @@ def command(config, source, dest, quality):
 
 def main():
     out = Path(sys.argv[1])
+    manifest = json.loads((scratch / 'inputs/manifest.json').read_text())
     records = json.loads(out.read_text()) if out.exists() else []
     done = {(r['input'], r['config'], r['quality']) for r in records}
-    for source in paths:
-        relative = str(source.relative_to(root))
+    for item in manifest:
+        source = scratch / 'inputs' / item['input']
+        relative = item['source']
         for config in configs:
-            for quality in qualities:
+            for quality in (list(range(20, 50, 5)) + qualities if item['channels'] == 1 else qualities):
                 if (relative, config, quality) in done:
                     continue
                 dest = scratch / 'sweep-output.jpg'
                 dest.unlink(missing_ok=True)
                 code, stdout, stderr = run(command(config, source, dest, quality))
-                record = {'input': relative, 'group': group(source), 'config': config, 'quality': quality, 'encode_exit': code}
+                record = {'input': relative, 'group': item['group'], 'config': config, 'quality': quality, 'encode_exit': code}
                 if code == 0 and dest.is_file():
                     record['bytes'] = dest.stat().st_size
                     dc, _, de = run([turbo, '-outfile', '/dev/null', dest])
