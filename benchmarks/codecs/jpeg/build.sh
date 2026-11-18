@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-scratch=/Users/josh/d/img/.work/tmp/jpeg-candidates
+scratch=${JPEG_SCRATCH:-/Users/josh/d/img/.work/tmp/jpeg-candidates}
 repo=/Users/josh/d/img/.work/wt/jpeg-candidates
 mkdir -p "$scratch"
 git clone --depth 1 --branch 3.1.1 https://github.com/libjpeg-turbo/libjpeg-turbo.git "$scratch/libjpeg-turbo"

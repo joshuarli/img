@@ -23,7 +23,7 @@ def measure(args, output=None):
     code = os.waitstatus_to_exitcode(status)
     if code == -9:
         raise SystemExit('process killed by SIGKILL: ' + str(args))
-    result = {'exit': code, 'wall_ms': elapsed * 1000, 'cpu_ms': (usage.ru_utime + usage.ru_stime) * 1000, 'rss_bytes': usage.ru_maxrss}
+    result = {'exit': code, 'wall_ms': elapsed * 1000, 'cpu_ms': usage.ru_utime * 1000, 'rss_bytes': usage.ru_maxrss}
     if output:
         result['output_bytes'] = output.stat().st_size if output.exists() else None
         output.unlink(missing_ok=True)

@@ -41,17 +41,23 @@ for (config, stage), count in sorted(counts.items()):
 
 for group in groups:
     print(f'\n### {group} timing\n')
-    print('| Role | Configuration | Wall ms | CPU ms | RSS MiB |')
-    print('| --- | --- | ---: | ---: | ---: |')
+    print('| Role | Configuration | Wall ms | Wall range ms | User CPU ms | RSS MiB |')
+    print('| --- | --- | ---: | ---: | ---: | ---: |')
     for role, candidates in [('encode', configs), ('decode', ['turbo', 'jpegli', 'zune', 'zen'])]:
+        all_samples = collections.defaultdict(list)
+        for r in timing:
+            if r['role'] == role and r['group'] == group and r['exit'] == 0:
+                all_samples[r['config'], r['input']].append(r)
+        images = {r['input'] for r in timing if r['role'] == role and r['group'] == group}
+        common = {image for image in images if all(len(all_samples[config, image]) == 5 for config in candidates if config != 'jpegli-xyb')}
         for config in candidates:
-            samples = collections.defaultdict(list)
-            for r in timing:
-                if r['role'] == role and r['group'] == group and r['config'] == config and r['exit'] == 0:
-                    samples[r['input']].append(r)
-            complete = [s for s in samples.values() if len(s) == 5]
+            selected = images if config == 'jpegli-xyb' else common
+            complete = [all_samples[config, image] for image in sorted(selected) if len(all_samples[config, image]) == 5]
             if not complete:
-                values = [timing_status] * 3 if not timing else ['unavailable'] * 3
+                values = [timing_status] * 4 if not timing else ['unavailable'] * 4
             else:
-                values = [f'{statistics.mean(statistics.median(r[key] for r in s) for s in complete) / scale:.2f} ({len(complete)})' for key, scale in [('wall_ms', 1), ('cpu_ms', 1), ('rss_bytes', 1048576)]]
+                means = [statistics.mean(statistics.median(r[key] for r in s) for s in complete) / scale for key, scale in [('wall_ms', 1), ('cpu_ms', 1), ('rss_bytes', 1048576)]]
+                low = statistics.mean(min(r['wall_ms'] for r in s) for s in complete)
+                high = statistics.mean(max(r['wall_ms'] for r in s) for s in complete)
+                values = [f'{means[0]:.2f} ({len(complete)})', f'{low:.2f}–{high:.2f}', f'{means[1]:.2f}', f'{means[2]:.2f}']
             print('| ' + ' | '.join([role, config] + values) + ' |')
