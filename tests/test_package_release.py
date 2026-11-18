@@ -16,6 +16,8 @@ NOTICES = (
     'LICENSE-MIT', 'LICENSE-APACHE', 'docs/PROVENANCE.md',
     'vendor/oxipng/LICENSE', 'vendor/libdeflater/LICENSE', 'vendor/libdeflate-sys/LICENSE',
     'vendor/libdeflate-sys/libdeflate/COPYING',
+    'vendor/libjxl/LICENSE', 'vendor/libjxl/PATENTS', 'vendor/highway/LICENSE',
+    'vendor/libjxl/third_party/libjpeg-turbo/LICENSE.md', 'vendor/libjxl/third_party/libjpeg-turbo/README.ijg',
 )
 
 

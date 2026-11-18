@@ -29,7 +29,7 @@ libc = "0.2"
 libm = "=0.2.16"
 crc32fast = "1.5"
 zune-jpeg = "=0.5.15"
-mozjpeg-rs = "=0.9.2"
+jpegli-sys = { path = "codecs/jpegli-sys" }
 # Permissive pure-Rust WebP: decode via image-webp (image-rs), encode via the
 # vendored webpkit snapshot staged for the parity campaign (MIT OR Apache-2.0).
 webpkit = { path = "codecs/webpkit", version = "0.1.0", features = ["rayon"] }

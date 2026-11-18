@@ -4,7 +4,7 @@ root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$root"
 export TMPDIR="$root/.work/tmp"
 mkdir -p "$TMPDIR"
-allowed="$root/vendor/libdeflate-sys/libdeflate/"
+allowed="$root/vendor/libdeflate-sys/libdeflate/:$root/vendor/libjxl/:$root/vendor/highway/:$root/codecs/jpegli-sys/"
 proof_dir="$(mktemp -d "$TMPDIR/native-build-proof.XXXXXX")"
 export IMG_NATIVE_TOOL_LOG="$proof_dir/invocations"
 mkdir "$IMG_NATIVE_TOOL_LOG"
@@ -48,7 +48,8 @@ fi
 python3 -I - "$IMG_NATIVE_TOOL_LOG" "$allowed" "$CARGO_TARGET_DIR" <<'PY'
 import sys
 from pathlib import Path
-log, allowed, target = sys.argv[1:4]
+log, allowed_arg, target = sys.argv[1:4]
+allowed = allowed_arg.split(":")
 sources, bad = set(), []
 for record in sorted(Path(log).iterdir()):
     lines = record.read_text().split('\n')[:-1]
@@ -57,10 +58,12 @@ for record in sorted(Path(log).iterdir()):
     cwd, args = lines[0], lines[1:]
     for arg in args:
         if arg.endswith(('.c', '.cc', '.cpp', '.cxx', '.S', '.s', '.asm')):
-            path = arg if arg.startswith('/') else f'{cwd}/{arg}'
-            if path.startswith(allowed):
-                sources.add(path[len(allowed):])
-            elif path.startswith(target):
+            path = str(Path(arg if arg.startswith('/') else f'{cwd}/{arg}').resolve())
+            if any(path.startswith(prefix) for prefix in allowed):
+                sources.add(path)
+            elif path.startswith(target + '/') and '-E' in args:
+                continue
+            elif path.startswith(target + '/') and Path(path).name in ('flag_check.c', 'flag_check.cpp') and Path(path).read_text() == 'int main(void) { return 0; }':
                 continue
             else:
                 bad.append(path)
@@ -71,6 +74,7 @@ if not sources:
     print('no native sources compiled; allowlist is stale', file=sys.stderr)
     sys.exit(1)
 print(f'native sources compiled: {len(sources)} (all under {allowed})')
+for source in sorted(sources): print(source)
 PY
 printf 'binary=%s/dist/img\nproof=%s\n' "$CARGO_TARGET_DIR$target_subdir" "$proof_dir"
 "$CARGO_TARGET_DIR$target_subdir/dist/img" --version

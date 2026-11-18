@@ -26,7 +26,9 @@ Do not distribute them as a newly licensed photographic corpus without establish
 | Component | Resolved version | Selected license |
 | --- | --- | --- |
 | zune-jpeg (JPEG decode) | 0.5.15 | MIT OR Apache-2.0 |
-| mozjpeg-rs (JPEG encode) | 0.9.2 | BSD-3-Clause |
+| jpegli (JPEG encode; libjxl) | 0.11.1 | BSD-3-Clause + PATENTS |
+| Highway (jpegli SIMD) | 457c891775a7397bdb0376bb1031e6e027af1c48 | Apache-2.0 |
+| libjpeg-turbo API headers | 8ecba3647edb6dd940463fedf38ca33a8e2a73d1 | IJG |
 | png (PNG decode) | 0.18.1 | MIT OR Apache-2.0 |
 | oxipng (PNG encode/optimize, vendored) | 10.2.1 | MIT |
 | libdeflater / libdeflate-sys (vendored bindings) | 1.26.1 | Apache-2.0 |
@@ -43,7 +45,7 @@ Do not distribute them as a newly licensed photographic corpus without establish
 
 No AGPL, GPL, LGPL or MPL package is in the default or build-binary graph; the LGPL entries in the lockfile graph are wasi-only disjunctive arms never selected on supported targets. zenavif-serialize 0.1.4 (BSD-3-Clause) is a development-only fixture tool. Native dav1d, libwebp and LittleCMS references remain development-only and never enter the production graph. The AVIF container reader is implemented in-tree at `src/still/avif_container.rs` from ISO/IEC 14496-12, ISO/IEC 23008-12 and the AV1 sequence-header spec; it was differential-tested against the retired MPL `zenavif-parse` crate before that crate was removed. zenpixels and zencodec are Apache-2.0 OR MIT and are required as metadata/descriptor types shared with fast-ssim2 and ravif.
 
-unicode-ident also requires Unicode-3.0. No package has an unknown declared license. Published locked releases are used without upstream workspace patches, and no Git dependencies are selected. Path dependencies are the in-tree WebP snapshot documented below and the `[patch.crates-io]` snapshots in [VENDOR.md](VENDOR.md).
+unicode-ident also requires Unicode-3.0. No package has an unknown declared license. Published locked releases are used without upstream workspace patches, and no Git dependencies are selected. Path dependencies are the in-tree WebP snapshot documented below, the local jpegli binding, and the `[patch.crates-io]` snapshots in [VENDOR.md](VENDOR.md).
 
 `png` 0.18.1 also independently verifies test samples. `rustybench` 0.5.0 (MIT) is development-only. Native dav1d/libwebp/LittleCMS references remain development-only and never enter the production graph. The [release source archive](RELEASE.md) contains the exact source tree, lockfile and vendored dependencies with their upstream notices.
 

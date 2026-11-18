@@ -6,8 +6,9 @@ data = json.load(open(sys.argv[1]))
 records = data if isinstance(data, list) else data['quality']
 timing = [] if isinstance(data, list) else data.get('timing', [])
 timing_status = 'not measured' if isinstance(data, list) else data.get('timing_status', 'not measured')
-configs = ['jpegli-420', 'jpegli-444', 'jpegli-xyb', 'moz-420', 'moz-444', 'img-fast', 'img-best', 'zen-fast', 'zen-best']
+configs = ['img-jpegli', 'jpegli-420', 'jpegli-444', 'jpegli-xyb', 'moz-420', 'moz-444', 'img-fast', 'img-best', 'zen-fast', 'zen-best']
 groups = ['color photo', 'grayscale', 'ui/text']
+integrated = any(r['config'] == 'img-jpegli' for r in records)
 series = collections.defaultdict(list)
 for r in records:
     if r.get('compare_exit') == 0 and r.get('turbo_exit') == 0:
@@ -18,20 +19,30 @@ for group in groups:
     print(f'\n### {group} ({len(images)} images)\n')
     print('| Configuration | Score 80: mean bytes (n) | Score 90: mean bytes (n) | Score 95: mean bytes (n) |')
     print('| --- | ---: | ---: | ---: |')
-    common = {target: [image for image in images if all(interpolate(series[group, image, config], target) is not None for config in configs if config != 'jpegli-xyb')] for target in (80, 90, 95)}
-    for config in configs:
+    common = {target: [image for image in images if all(interpolate(series[group, image, config], target) is not None for config in (('img-jpegli', 'jpegli-444', 'zen-best') if integrated else [c for c in configs if c not in ('img-jpegli', 'jpegli-xyb')]))] for target in (80, 90, 95)}
+    for config in (configs if integrated else [c for c in configs if c != 'img-jpegli']):
         values = []
         for target in (80, 90, 95):
             selected = images if config == 'jpegli-xyb' else common[target]
             matched = [v for image in selected if (v := interpolate(series[group, image, config], target)) is not None]
             values.append(f'{round(statistics.mean(matched))} ({len(matched)})' if matched else 'unavailable (0)')
         print('| ' + ' | '.join([config] + values) + ' |')
+    if integrated:
+        print('\n| Integrated versus jpegli-444 | Score 80 mean bytes (n) | Score 90 mean bytes (n) | Score 95 mean bytes (n) |')
+        print('| --- | ---: | ---: | ---: |')
+        pairs = {target: [image for image in images if all(interpolate(series[group, image, c], target) is not None for c in ('img-jpegli', 'jpegli-444'))] for target in (80, 90, 95)}
+        for config in ('img-jpegli', 'jpegli-444'):
+            values = []
+            for target in (80, 90, 95):
+                matched = [interpolate(series[group, image, config], target) for image in pairs[target]]
+                values.append(f'{round(statistics.mean(matched))} ({len(matched)})' if matched else 'unavailable (0)')
+            print('| ' + ' | '.join([config] + values) + ' |')
     print('\n| Relative bytes | Score 80 | Score 90 | Score 95 |')
     print('| --- | ---: | ---: | ---: |')
-    for config, baseline in [('jpegli-420','zen-best'), ('jpegli-444','zen-best'), ('img-fast','zen-best'), ('img-best','zen-best'), ('jpegli-420','img-fast'), ('jpegli-444','img-fast')]:
+    for config, baseline in ([('img-jpegli','jpegli-444'), ('img-jpegli','zen-best')] if integrated else []) + [('jpegli-420','zen-best'), ('jpegli-444','zen-best'), ('img-fast','zen-best'), ('img-best','zen-best'), ('jpegli-420','img-fast'), ('jpegli-444','img-fast')]:
         values = []
         for target in (80, 90, 95):
-            selected = common[target]
+            selected = [image for image in images if all(interpolate(series[group, image, c], target) is not None for c in (config, baseline))] if integrated else common[target]
             if not selected:
                 values.append('unavailable (0)')
                 continue
@@ -59,7 +70,9 @@ for group in groups:
     print(f'\n### {group} timing\n')
     print('| Role | Configuration | Wall ms | Wall range ms | User CPU ms | RSS MiB |')
     print('| --- | --- | ---: | ---: | ---: | ---: |')
-    for role, candidates in [('encode', [x for x in configs if x != 'jpegli-xyb']), ('decode', ['turbo', 'jpegli', 'zune', 'zen'])]:
+    measured = {r['config'] for r in timing if r['role'] == 'encode'}
+    encode_candidates = [x for x in configs if x != 'jpegli-xyb' and (not timing or x in measured)]
+    for role, candidates in [('encode', encode_candidates), ('decode', ['turbo', 'jpegli', 'zune', 'zen'])]:
         all_samples = collections.defaultdict(list)
         for r in timing:
             if r['role'] == role and r['group'] == group and r['exit'] == 0:
