@@ -1555,3 +1555,13 @@ codes for histogram/cost purposes; (d) `iter_max` reaches ~86 at
 staircase DP is stronger per-position but lacks the RLE/box
 candidate diversity and the plane-code distance cost model —
 candidates for the residual ~0.8% L9 gap if a cheap port pans out.
+
+Timed-capture comparability (measured): `timed-fast-subimg.json`
+read ~+57-62% wall on every cell vs `timed-fast-rle.json`, but a
+paired A/B on this host (c36530e vs HEAD binaries, interleaved,
+RAYON_NUM_THREADS=1) shows ui.png ~0.26-0.28 s and coffee.png
+score-90 ~13.7-14.6 s for BOTH binaries — statistically identical.
+The delta is host state between capture sessions, not code: the
+sub-image LZ77/optimal candidates are wall-neutral at scored Fast.
+Cross-session wall comparisons on this machine are unreliable;
+latency claims need paired same-session A/B or same-capture deltas.
