@@ -1709,3 +1709,17 @@ astronaut 333,238 vs 340,938 (-2.3%), grass 211,764 vs
 339,206 (+0.3%). The residual ~0.5-0.8% gap exists only
 against `-z 9` max effort, i.e. matcher-internals detail at
 Best tier, not a competitiveness deficit at shipped efforts.
+
+Coffee L9 diagnostic (measured, probe reverted): enumerated
+every level-9 task unpruned on coffee (600x400). Our winner
+is PredictorCross(5,4) no-SG at 340,251 B payload; cwebp
+-default's [SG+P4+CC4] emits 339,186 B. Our own [SG+P4+CC4]
+spec produces 341,423 B — 1,237 B worse than cwebp on the
+IDENTICAL transform composition, and every PredictorCross
+spec's no-SG variant beats its SG variant by ~1-1.7 KB on this
+input. Estimate bands kept and searched all relevant specs
+(kept set included (4,4) and (5,4)); nothing was pruned that
+mattered. Conclusion: the coffee loss vs default cwebp is the
+same token-stage match-selection gap isolated on camera, not a
+transform-coverage or pruning defect. The transform search is
+complete at level 9.
