@@ -1788,3 +1788,12 @@ q75 mm-logo-alpha 80,426 -> 80,420 B (-6 B). Wall +~1% on
 meta-using encodes (the cross-entropy pass is
 blocks x groups x alphabet, once per plan). 923 webpkit lib
 tests green; dwebp pixel-exact on a remap-affected output.
+Iterated cluster reassignment (rejected): extending
+HistogramRemap to k-means iteration (reassign against rebuilt
+sums until stable, cap 3) was probed on the remap winners.
+L6: gravel -12 B, coins -4 B, grass +2 B, rest identical.
+L9: camera -4 B, coffee -24 B, astronaut -16 B for +4-16%
+encode wall (fine-meta grids multiply the blocks x groups x
+alphabet passes). The single remap is already at a near
+fixed point; the extra rounds buy noise-level bytes at real
+wall. Reverted; single-pass HistogramRemap stands.
