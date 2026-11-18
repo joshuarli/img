@@ -1854,3 +1854,15 @@ current-source pure-Rust/no_std evidence refreshed after the
 HistogramRemap, RLE-meta, fine-meta and ALPH-meta landings.
 Native Linux timing remains the open evidence gap (no Linux
 host in this environment).
+
+Extended fuzz + oracle validation at `ddb143b`: the doc's
+"longer dedicated fuzz run" item closed —
+PROPTEST_CASES=4096 cargo test --release --lib lossless:: gives
+373/373 pass in 173 s (encode_best round-trips/floors/repeat
+proptests now each run 4096 cases). Independent-oracle check:
+L6 outputs for chelsea, text and coins encoded at HEAD decode
+through system dwebp to PAM and compare pixel-exact against
+the source RGBA dumps (all pixels, all four channels). Meta
+clustering audit: greedy_cluster is already heap-based
+O(n^2 log n) with MAX_ENTROPY_BLOCKS=256 bounding the u16
+indices — no algorithmic fat found.
