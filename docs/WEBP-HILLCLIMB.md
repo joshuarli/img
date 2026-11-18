@@ -1474,3 +1474,13 @@ not equal the extra bits `resolve` actually emits; the main stream
 never notices because selection compares real bytes, but the sub-image
 pick trusted the model. Reverted uncommitted; retry needs the emitted
 extra-bit counts threaded through CopyCost or a real-byte A/B emit.
+
+Sub-image LZ77 landed (`3c95f6a`): the earlier rejection's suspect was
+right that a histogram-cost floor could not see the truth, so the pick
+now emits both token streams into scratch BitWriters and keeps the
+smaller by real bit count (`BitWriter::bit_len`). L9 deltas vs the
+literal-only baseline: camera -134 B, coffee -82 B, astronaut -52 B,
+chelsea -18 B; grass and coins hold at zero (the floor protects them).
+Byte-stability goldens unchanged — the synthetic fixtures' sub-images
+never prefer copies. Cost is ~+7% L9 wall from the extra emissions;
+all levels benefit where sub-images run. dwebp verified.
