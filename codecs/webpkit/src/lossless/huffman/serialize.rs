@@ -97,47 +97,124 @@ fn write_simple_code(bw: &mut BitWriter, count: usize, sym0: u32, sym1: u32) {
 
 /// Write the normal (full) form: RLE the code lengths into tokens, transmit the
 /// meta Huffman code over the 19-symbol code-length alphabet, then the tokens.
+/// Trailing all-zero code lengths may be omitted through the decoder's
+/// max-symbol token countdown; both serializations are costed exactly and the
+/// cheaper emitted, so trimming can never cost bits.
 fn write_full_code(bw: &mut BitWriter, lengths: &[u32]) {
     bw.write_bits(0, 1); // normal (full) form
 
-    let tokens = compress_code_lengths(lengths);
+    let last = lengths.iter().rposition(|&l| l != 0).map_or(0, |i| i + 1);
+    let full = FullCode::plan(lengths);
+    let trimmed = (last < lengths.len())
+        .then(|| FullCode::plan(&lengths[..last]))
+        .filter(|t| trim_fields(t.tokens.len()).is_some());
+    let (plan, trimmed_flag) = match trimmed {
+        Some(t) if t.total_bits(true) < full.total_bits(false) => (t, true),
+        _ => (full, false),
+    };
+    plan.emit(bw, trimmed_flag);
+}
 
-    let mut hist = [0u32; CODE_LENGTH_CODES];
-    for token in &tokens {
-        hist[token.code as usize] += 1;
+/// `(x, v, length_nbits)` encoding `token_count` as the decoder's
+/// `max_symbol = 2 + read_bits(length_nbits)` countdown, where
+/// `length_nbits = 2 + 2*x`. `None` when the count is not representable.
+fn trim_fields(token_count: usize) -> Option<(u32, u32, u32)> {
+    if token_count < 2 {
+        return None;
     }
-    let cl_lengths = build_code_lengths(&hist, CODE_LENGTH_CODE_LIMIT);
+    let v = u32::try_from(token_count - 2).ok()?;
+    for x in 0u32..8 {
+        let nbits = 2 + 2 * x;
+        if v < (1 << nbits) {
+            return Some((x, v, nbits));
+        }
+    }
+    None
+}
 
-    // Trim trailing code-length codes whose length is zero (in transmission
-    // order), keeping at least the format minimum.
-    let mut codes_to_store = CODE_LENGTH_CODES;
-    while codes_to_store > MIN_CODE_LENGTH_CODES
-        && cl_lengths[usize::from(CODE_LENGTH_CODE_ORDER[codes_to_store - 1])] == 0
-    {
-        codes_to_store -= 1;
+/// One candidate serialization of the code-length token stream: the token
+/// list, the meta code built over it, and its exact transmitted bit count.
+struct FullCode {
+    tokens: Vec<Token>,
+    cl_lengths: Vec<u32>,
+    codes_to_store: usize,
+    cl_codes: Vec<(u32, u32)>,
+    token_bits: u64,
+}
+
+impl FullCode {
+    fn plan(lengths: &[u32]) -> Self {
+        let tokens = compress_code_lengths(lengths);
+        let mut hist = [0u32; CODE_LENGTH_CODES];
+        for token in &tokens {
+            hist[token.code as usize] += 1;
+        }
+        let cl_lengths = build_code_lengths(&hist, CODE_LENGTH_CODE_LIMIT);
+        let mut codes_to_store = CODE_LENGTH_CODES;
+        while codes_to_store > MIN_CODE_LENGTH_CODES
+            && cl_lengths[usize::from(CODE_LENGTH_CODE_ORDER[codes_to_store - 1])] == 0
+        {
+            codes_to_store -= 1;
+        }
+        let cl_codes = emit_codes(&cl_lengths);
+        let token_bits = tokens
+            .iter()
+            .map(|t| {
+                let (_code, emit_len) = cl_codes[t.code as usize];
+                u64::from(emit_len)
+                    + if t.code >= 16 {
+                        u64::from(CODE_LENGTH_EXTRA_BITS[(t.code - 16) as usize])
+                    } else {
+                        0
+                    }
+            })
+            .sum();
+        Self {
+            tokens,
+            cl_lengths,
+            codes_to_store,
+            cl_codes,
+            token_bits,
+        }
     }
 
-    // `codes_to_store - 4` is in `0..=15`, so the conversion never fails.
-    bw.write_bits(
-        u32::try_from(codes_to_store - MIN_CODE_LENGTH_CODES).unwrap_or(0),
-        4,
-    );
-    for &order in CODE_LENGTH_CODE_ORDER.iter().take(codes_to_store) {
-        bw.write_bits(cl_lengths[usize::from(order)], 3);
+    /// Total bits after the normal-form flag: meta-code header, max-symbol
+    /// field (`1` bit untrimmed, `1 + 3 + length_nbits` trimmed), and tokens.
+    fn total_bits(&self, trimmed: bool) -> u64 {
+        let trim_bits = if trimmed {
+            let (_, _, nbits) = trim_fields(self.tokens.len())
+                .expect("trimmed plan was costed only when representable");
+            1 + 3 + u64::from(nbits)
+        } else {
+            1
+        };
+        4 + 3 * self.codes_to_store as u64 + trim_bits + self.token_bits
     }
 
-    let cl_codes = emit_codes(&cl_lengths);
-
-    // write_trimmed_length = 0: the encoder skips the max_symbol optimization, so
-    // every token is transmitted (the decoder defaults max_symbol to num_symbols).
-    bw.write_bits(0, 1);
-
-    for token in &tokens {
-        let (code, emit_len) = cl_codes[token.code as usize];
-        bw.write_bits(code, emit_len);
-        if token.code >= 16 {
-            let width = u32::from(CODE_LENGTH_EXTRA_BITS[(token.code - 16) as usize]);
-            bw.write_bits(token.extra, width);
+    fn emit(&self, bw: &mut BitWriter, trimmed: bool) {
+        bw.write_bits(
+            u32::try_from(self.codes_to_store - MIN_CODE_LENGTH_CODES).unwrap_or(0),
+            4,
+        );
+        for &order in CODE_LENGTH_CODE_ORDER.iter().take(self.codes_to_store) {
+            bw.write_bits(self.cl_lengths[usize::from(order)], 3);
+        }
+        if trimmed {
+            let (x, v, nbits) = trim_fields(self.tokens.len())
+                .expect("trimmed plan was costed only when representable");
+            bw.write_bits(1, 1);
+            bw.write_bits(x, 3);
+            bw.write_bits(v, nbits);
+        } else {
+            bw.write_bits(0, 1);
+        }
+        for token in &self.tokens {
+            let (code, emit_len) = self.cl_codes[token.code as usize];
+            bw.write_bits(code, emit_len);
+            if token.code >= 16 {
+                let width = u32::from(CODE_LENGTH_EXTRA_BITS[(token.code - 16) as usize]);
+                bw.write_bits(token.extra, width);
+            }
         }
     }
 }

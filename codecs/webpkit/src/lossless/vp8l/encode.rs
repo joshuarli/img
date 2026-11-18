@@ -2838,8 +2838,8 @@ mod tests {
         // predictor family.
         const EXPECTED: [u64; 4] = [
             0xaa74_a8dc_ab4f_7a97,
-            0x415c_5e3d_75bf_08c9,
-            0x7a3c_4465_570a_1131,
+            0xda6c_1b70_8587_811d,
+            0xa302_bc55_3a2a_6980,
             0xa5c5_1ec6_3637_64c7,
         ];
         let got: [u64; 4] =
@@ -3423,17 +3423,16 @@ mod tests {
         // localizes an accidental output change faster than the full corpus sweep.
         const EXPECTED: [u64; 4] = [
             0xaa74_a8dc_ab4f_7a97,
-            0xa071_c300_9622_384f,
-            0x8055_bafc_bbc8_6673,
-            0x2ac6_6ad5_3623_697f,
+            0x3178_9c56_b7ea_c5a9,
+            0x0759_bd12_ffbe_1b95,
+            0x4271_5c37_9803_15bd,
         ];
-        for ((w, h, pixels), &expected) in byte_stability_cases().into_iter().zip(&EXPECTED) {
-            assert_eq!(
-                fnv1a64(&encode(w, h, &pixels)),
-                expected,
-                "encode({w}x{h}) output bytes drifted from the committed golden"
-            );
-        }
+        let got: [u64; 4] =
+            byte_stability_cases().map(|(w, h, pixels)| fnv1a64(&encode(w, h, &pixels)));
+        assert_eq!(
+            got, EXPECTED,
+            "encode output bytes drifted from the committed golden"
+        );
     }
 }
 
