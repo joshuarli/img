@@ -1,6 +1,25 @@
 # WebP correctness and Pareto hillclimb
 
-## Status — winding down 2026-11-18
+## Status — paused 2026-11-18
+
+Resume prompt: "Continue WEBP-HILLCLIMB per docs/WEBP-HILLCLIMB.md Status."
+First command: `cd codecs/webpkit && cargo test --release --lib` (baseline green).
+
+Last accepted: master `1057014` (docs-only freeze; last codec change `1ff94b0`
+HistogramRemap + `a7388d1` ALPH meta). Integration branch master is green:
+923 lib tests, 373/373 lossless at PROPTEST_CASES=4096, musl checks clean,
+dwebp pixel-exact on fresh outputs.
+
+Parked: local `experiment/webp-match-chunks` — unfinished chunked
+match-compare experiment (Nov 15), predates the landed NEON
+`match_length` kernel; retry only if `match_compare` still shows wall.
+Remote parked branches unchanged: `origin/experiment/permissive-codecs`,
+`origin/webp-hillclimb-1`, `origin/fix/avif-container-parser`.
+
+Next slice: owner-authorized unsafe/SIMD kernels — `parse_optimal` DP inner
+loop, hash-chain match walk, lossy trellis quantization (grant recorded in
+the ledger tail). Match `match_kernel.rs`'s single-unsafe-module pattern;
+byte-exactness contract required. Decode kernels were NOT granted.
 
 ## Current brief — reviewed 2026-11-15
 
