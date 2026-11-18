@@ -782,7 +782,6 @@ mod tests {
     use super::{Resolved, Token, parse, parse_lz77, parse_optimal, parse_rle, resolve};
     use crate::lossless::constants::MAX_CHAIN_OPTIMAL;
     use crate::lossless::color_cache::ColorCache;
-
     use proptest::prelude::*;
 
     /// Reproduce a token list the way the decoder would (forward element-wise
