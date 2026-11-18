@@ -1430,3 +1430,15 @@ worse still at L9. Net-negative on the product path; reverted. The
 emitted-bytes selection already protects each level internally —
 the loss is that every level's candidate *plans* shift, not that a
 worse plan wins.
+
+Reparse pass cap and chain-depth probes (rejected): raising
+REPARSE_MAX_PASSES 4 -> 8 bought camera L9 only -10 B (124,814 ->
+124,804) for up to +4 extra optimal parses — the fixed point
+converges within the cap on the corpus; reverted. Doubling
+MAX_CHAIN_OPTIMAL 256 -> 512 made camera L9 *worse* (+34 B,
+124,814 -> 124,848) at higher wall — the DP minimizes its cost
+model, not real bytes, so extra candidates can shift the parse onto
+a model-cheaper/byte-larger stream; reverted. img lib suite re-run
+green (87/87) with the RLE-counts change in place; scored-path size
+is provably non-increasing since each channel keeps the cheaper of
+direct vs perturbed assignments and selection compares real bytes.
