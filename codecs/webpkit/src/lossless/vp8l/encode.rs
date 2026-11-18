@@ -280,14 +280,33 @@ fn search_lz77_variant(
     // libwebp's third candidate family: run-length/previous-row copies only.
     // Cheap near distances beat longer far ones on run-heavy content; the
     // stream is self-floored against the candidates already folded in.
+    let ysize = pixels.len() as u32 / working_width;
     if let Some(tokens_rle) = rle_candidate(pixels, working_width) {
         let model_rle = RefModel::new(&tokens_rle, pixels, working_width);
         let (cache_rle, hist_rle) = best_cache_bits(&model_rle);
         let rle_stream = emit(cache_rle, &model_rle, &hist_rle);
         keep_smaller(&mut plain, rle_stream.clone());
         keep_smaller(&mut best, rle_stream);
+        // cwebp -z9's camera stream is exactly this shape: near-distance copies
+        // under a multi-group meta-Huffman plan. The plain RLE stream loses to
+        // the DP stream, but its token histogram is what meta grouping exploits
+        // — the shot is self-floored, so it only pays where it wins.
+        if meta_huffman {
+            meta_shot(
+                &mut best,
+                header_width,
+                header_height,
+                alpha_used,
+                plans,
+                cache_rle,
+                &model_rle,
+                false,
+                pixels,
+                working_width,
+                ysize,
+            );
+        }
     }
-    let ysize = pixels.len() as u32 / working_width;
     // Cost-model-driven optimal parse: a self-floored extra candidate (chosen only
     // when strictly smaller by real bytes), seeded from the greedy stream. Large
     // images open the deeper staircase walk at every effort level.
