@@ -94,6 +94,48 @@ pub(crate) fn parse_lz77(pixels: &[u32]) -> (Vec<Token>, HashChain) {
     (tokens, chain)
 }
 
+/// Run-length/previous-row greedy parse: at each position take the longer of
+/// the distance-1 and distance-`width` matches (preferring distance 1 on ties),
+/// else a literal. Mirrors libwebp's `BackwardReferencesRle` candidate, which
+/// wins on run-heavy content where cheap near distances beat longer far ones.
+pub(crate) fn parse_rle(pixels: &[u32], width: u32) -> Vec<Token> {
+    let n = pixels.len();
+    if n < MIN_MATCH as usize {
+        return pixels.iter().map(|&p| Token::Literal(p)).collect();
+    }
+    let mut tokens = Vec::new();
+    tokens.push(Token::Literal(pixels[0]));
+    let w = width as usize;
+    let row_distance = (width >= 1 && width <= WINDOW_SIZE).then_some(width);
+    let mut i = 1usize;
+    while i < n {
+        let max_len = (n - i).min(MAX_COPY_LENGTH as usize);
+        let rle_len = match_length(pixels, i, i - 1, max_len);
+        let row_len = if row_distance.is_some() && i >= w {
+            match_length(pixels, i, i - w, max_len)
+        } else {
+            0
+        };
+        if rle_len >= row_len && rle_len >= MIN_MATCH as usize {
+            tokens.push(Token::Copy {
+                length: rle_len as u32,
+                distance: 1,
+            });
+            i += rle_len;
+        } else if row_len >= MIN_MATCH as usize {
+            tokens.push(Token::Copy {
+                length: row_len as u32,
+                distance: width,
+            });
+            i += row_len;
+        } else {
+            tokens.push(Token::Literal(pixels[i]));
+            i += 1;
+        }
+    }
+    tokens
+}
+
 /// The greedy one-step-lazy match loop of [`parse`], factored out so the same code
 /// serves both the standalone [`parse`] (which builds its own chain) and
 /// [`parse_lz77`] (which returns the chain for reuse). Given a prebuilt `chain`,
@@ -737,7 +779,7 @@ pub(crate) fn parse_optimal(
 
 #[cfg(test)]
 mod tests {
-    use super::{Resolved, Token, parse, parse_lz77, parse_optimal, resolve};
+    use super::{Resolved, Token, parse, parse_lz77, parse_optimal, parse_rle, resolve};
     use crate::lossless::constants::MAX_CHAIN_OPTIMAL;
     use crate::lossless::color_cache::ColorCache;
     use proptest::prelude::*;
@@ -865,6 +907,29 @@ mod tests {
                 .any(|t| matches!(t, Token::Copy { distance: 1, .. })),
             "a solid run must exploit a distance-1 (RLE) copy"
         );
+        assert_eq!(decode_tokens(&tokens), pixels);
+    }
+
+    #[test]
+    fn rle_parse_uses_row_distance_for_a_repeated_row() {
+        // Two identical 4-pixel rows: positions in the second row copy from one
+        // row up (distance = width), not from scattered earlier matches.
+        let row = [1u32, 2, 3, 4];
+        let pixels: Vec<u32> = row.iter().chain(row.iter()).copied().collect();
+        let tokens = parse_rle(&pixels, 4);
+        assert!(
+            tokens
+                .iter()
+                .any(|t| matches!(t, Token::Copy { distance: 4, .. })),
+            "a repeated row must emit a distance-width copy"
+        );
+        assert_eq!(decode_tokens(&tokens), pixels);
+    }
+
+    #[test]
+    fn rle_parse_round_trips_arbitrary_pixels() {
+        let pixels: Vec<u32> = (0..300u32).map(|i| i.wrapping_mul(2654435761) >> 8).collect();
+        let tokens = parse_rle(&pixels, 17);
         assert_eq!(decode_tokens(&tokens), pixels);
     }
 

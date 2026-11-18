@@ -39,7 +39,7 @@ use crate::lossless::huffman::serialize::{serialized_bits, write_huffman_code};
 use crate::lossless::lz77::{PlaneCodeMap, prefix_encode};
 use crate::lossless::prelude::*;
 use crate::lossless::transform::{cross_color, palette, predictor, subtract_green};
-use crate::lossless::vp8l::backref::{Resolved, Token, parse, parse_lz77, parse_optimal, resolve};
+use crate::lossless::vp8l::backref::{Resolved, Token, parse, parse_lz77, parse_optimal, parse_rle, resolve};
 use crate::lossless::vp8l::meta::{self, MetaPlan};
 use crate::lossless::work::work;
 
@@ -261,6 +261,24 @@ fn search_lz77_variant(
     let lz77_stream = emit(cache_lz77, &model_lz77, &hist_lz77);
     keep_smaller(&mut plain, lz77_stream.clone());
     keep_smaller(&mut best, lz77_stream);
+    // libwebp's third candidate family: run-length/previous-row copies only.
+    // Cheap near distances beat longer far ones on run-heavy content; the
+    // stream is self-floored against the candidates already folded in.
+    let tokens_rle = parse_rle(pixels, working_width);
+    let copy_px: usize = tokens_rle
+        .iter()
+        .map(|t| match t {
+            Token::Copy { length, .. } => *length as usize,
+            Token::Literal(_) => 0,
+        })
+        .sum();
+    if copy_px * 100 >= pixels.len() {
+        let model_rle = RefModel::new(&tokens_rle, pixels, working_width);
+        let (cache_rle, hist_rle) = best_cache_bits(&model_rle);
+        let rle_stream = emit(cache_rle, &model_rle, &hist_rle);
+        keep_smaller(&mut plain, rle_stream.clone());
+        keep_smaller(&mut best, rle_stream);
+    }
     let ysize = pixels.len() as u32 / working_width;
     // Cost-model-driven optimal parse: a self-floored extra candidate (chosen only
     // when strictly smaller by real bytes), seeded from the greedy stream. Large
