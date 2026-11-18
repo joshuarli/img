@@ -1536,3 +1536,22 @@ encode wall on camera (35.7 -> 48.7 s serial). Rejected: it is
 compression breadth added to the default path while the Fast-cost
 problem stands; the numbers are recorded in case an opt-in or a
 cheaper finer-grid plan revives it.
+
+libwebp backward-reference mechanisms (source review, not yet ported):
+cwebp -z9 tries three LZ77 token streams per image — RLE-only,
+hash-chain standard, and a spatial "box" variant restricted to ~32
+plane-code window offsets — prices each with
+`VP8LHistogramEstimateBits`, keeps the best per cache setting, then
+runs `BackwardReferencesHashChainDistanceOnly` + TraceBackwards
+once on the winner. Notable differences vs ours: (a) its match
+finder walks the hash chain BACKWARD from end-of-image and
+left-extends each found match over already-passed pixels;
+(b) its DP considers only literal vs the single best chain match
+per position but prices distance through `VP8LDistanceToPlaneCode`
+(2D-locality buckets) rather than raw distance symbols;
+(c) `BackwardReferences2DLocality` rewrites copy distances to plane
+codes for histogram/cost purposes; (d) `iter_max` reaches ~86 at
+-z9 vs our 64/256 chain caps, window = LZ77_WINDOW_SIZE. Our
+staircase DP is stronger per-position but lacks the RLE/box
+candidate diversity and the plane-code distance cost model —
+candidates for the residual ~0.8% L9 gap if a cheap port pans out.
