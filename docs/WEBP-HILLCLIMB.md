@@ -1866,3 +1866,11 @@ the source RGBA dumps (all pixels, all four channels). Meta
 clustering audit: greedy_cluster is already heap-based
 O(n^2 log n) with MAX_ENTROPY_BLOCKS=256 bounding the u16
 indices — no algorithmic fat found.
+
+Owner decisions (this session): unsafe/SIMD kernels are
+authorized for the remaining hot paths — the parse_optimal DP
+inner loop, the hash-chain match walk, and lossy trellis
+quantization — as the next campaign step (not yet implemented;
+wind-down called here). Decode kernels were not in the granted
+set. The ~2,487 untracked benchmarks/results/ timing outputs
+were deleted as authorized; tracked baselines retained.
