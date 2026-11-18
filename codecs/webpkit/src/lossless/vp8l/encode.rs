@@ -300,7 +300,7 @@ fn search_lz77_variant(
                 plans,
                 cache_rle,
                 &model_rle,
-                false,
+                fine_meta,
                 pixels,
                 working_width,
                 ysize,
