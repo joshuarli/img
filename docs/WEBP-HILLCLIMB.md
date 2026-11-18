@@ -1525,3 +1525,14 @@ observed win flowed through the meta-Huffman path — plain-only
 alternates produced zero byte deltas on coffee/photopea while meta
 alternates doubled `meta_shot` planning for +43% codec wall on
 coffee L1 (2.57 -> 3.68 s). Reverted uncommitted.
+
+AUTO fine-meta (rejected on breadth grounds): enabling
+`Breadth::fine_meta` alongside the AUTO reparse band (resolved
+levels 4-6, <=256K px) reaches explicit-L9 sizes on the default
+lossless path — camera AUTO 126,024 -> 124,674 B (-1.07%),
+astronaut 337,488 -> 333,238 B (-1.26%), chelsea -0.85%,
+clock_motion -0.35%, coins/grass/coffee unchanged — at ~+36%
+encode wall on camera (35.7 -> 48.7 s serial). Rejected: it is
+compression breadth added to the default path while the Fast-cost
+problem stands; the numbers are recorded in case an opt-in or a
+cheaper finer-grid plan revives it.
