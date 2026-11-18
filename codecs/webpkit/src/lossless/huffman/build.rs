@@ -105,6 +105,88 @@ fn huffman_code_lengths(histogram: &[u32], count_min: u64) -> Vec<u32> {
     assign_depths(&pool, heap.pop().expect("one tree remains").0.1, histogram.len())
 }
 
+/// Perturb `counts` so the tree built from them run-length-encodes smaller —
+/// libwebp's `OptimizeHuffmanForRle`. Strides of near-equal counts collapse to
+/// their rounded mean (extending equal-length runs the CL encoder loves), and
+/// existing good RLE strides are left untouched. `good_for_rle` is scratch,
+/// zeroed by the caller or here; both slices share the histogram length.
+pub(crate) fn optimize_huffman_for_rle(counts: &mut [u32], good_for_rle: &mut [u8]) {
+    let length = counts
+        .iter()
+        .rposition(|&c| c != 0)
+        .map_or(0, |i| i + 1);
+    if length == 0 {
+        return;
+    }
+    good_for_rle.fill(0);
+    // Mark runs already encodable by the CL repeat codes: zero runs >= 5 and
+    // nonzero runs >= 7.
+    let mut symbol = counts[0];
+    let mut stride = 0usize;
+    for i in 0..=length {
+        if i == length || counts[i] != symbol {
+            if (symbol == 0 && stride >= 5) || (symbol != 0 && stride >= 7) {
+                for slot in good_for_rle.iter_mut().take(i).skip(i - stride) {
+                    *slot = 1;
+                }
+            }
+            stride = 1;
+            if i != length {
+                symbol = counts[i];
+            }
+        } else {
+            stride += 1;
+        }
+    }
+    // Collapse near-equal count strides to their rounded mean.
+    let mut stride = 0usize;
+    let mut limit = u64::from(counts[0]);
+    let mut sum = 0u64;
+    for i in 0..=length {
+        let collapsible = i != length
+            && counts[i].abs_diff(limit as u32) < 4;
+        let boundary = i == length
+            || good_for_rle[i] == 1
+            || (i != 0 && good_for_rle[i - 1] == 1)
+            || !collapsible;
+        if boundary {
+            if stride >= 4 || (stride >= 3 && sum == 0) {
+                let mut count = (sum + stride as u64 / 2) / stride as u64;
+                if count < 1 {
+                    count = 1;
+                }
+                if sum == 0 {
+                    count = 0;
+                }
+                for slot in counts.iter_mut().take(i).skip(i - stride) {
+                    *slot = count as u32;
+                }
+            }
+            stride = 0;
+            sum = 0;
+            limit = if i + 3 < length {
+                (u64::from(counts[i])
+                    + u64::from(counts[i + 1])
+                    + u64::from(counts[i + 2])
+                    + u64::from(counts[i + 3])
+                    + 2)
+                    / 4
+            } else if i < length {
+                u64::from(counts[i])
+            } else {
+                0
+            };
+        }
+        stride += 1;
+        if i != length {
+            sum += u64::from(counts[i]);
+            if stride >= 4 {
+                limit = (sum + stride as u64 / 2) / stride as u64;
+            }
+        }
+    }
+}
+
 /// Assign length-limited canonical code lengths for `histogram`.
 ///
 /// Returns a vector the same length as `histogram`; entry `i` is the code length

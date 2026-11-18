@@ -33,9 +33,9 @@ use crate::lossless::constants::{
     VP8L_IMAGE_SIZE_BITS, VP8L_MAGIC_BYTE, VP8L_VERSION_BITS, subsample_size,
 };
 use crate::lossless::histogram::{Histogram, shannon_bits};
-use crate::lossless::huffman::build::build_code_lengths;
+use crate::lossless::huffman::build::{build_code_lengths, optimize_huffman_for_rle};
 use crate::lossless::huffman::canonical::emit_codes;
-use crate::lossless::huffman::serialize::write_huffman_code;
+use crate::lossless::huffman::serialize::{serialized_bits, write_huffman_code};
 use crate::lossless::lz77::{PlaneCodeMap, prefix_encode};
 use crate::lossless::prelude::*;
 use crate::lossless::transform::{cross_color, palette, predictor, subtract_green};
@@ -2402,6 +2402,33 @@ fn emit_tokens(
     });
 }
 
+/// The cheaper of the direct and RLE-perturbed histogram's code lengths,
+/// priced as `Σ count·length + serialized header bits` — the same total the
+/// emitted stream pays, so the choice can never lose to the direct build.
+fn best_code_lengths(histogram: &[u32]) -> Vec<u32> {
+    let direct = build_code_lengths(histogram, MAX_MAIN_CODE_LENGTH);
+    let mut perturbed = histogram.to_vec();
+    let mut rle = vec![0u8; histogram.len()];
+    optimize_huffman_for_rle(&mut perturbed, &mut rle);
+    if perturbed.as_slice() == histogram {
+        return direct;
+    }
+    let rle_lengths = build_code_lengths(&perturbed, MAX_MAIN_CODE_LENGTH);
+    let cost = |lengths: &[u32]| {
+        histogram
+            .iter()
+            .zip(lengths)
+            .map(|(&c, &l)| u64::from(c) * u64::from(l))
+            .sum::<u64>()
+            + serialized_bits(lengths)
+    };
+    if cost(&rle_lengths) < cost(&direct) {
+        rle_lengths
+    } else {
+        direct
+    }
+}
+
 /// The prefix code for one channel: per-symbol lengths (for serialization) plus
 /// the LSB-first `(code, emit_len)` pairs used to emit each symbol.
 struct Prefix {
@@ -2414,8 +2441,11 @@ struct Prefix {
 
 impl Prefix {
     /// Build the length-limited (`<= 15`) prefix code for one channel histogram.
+    /// libwebp's `VP8LCreateHuffmanTree` first perturbs the counts so the
+    /// resulting lengths run-length-encode smaller; both assignments are priced
+    /// exactly (pixel bits + serialized header bits) and the cheaper kept.
     fn from_histogram(histogram: &[u32]) -> Self {
-        let lengths = build_code_lengths(histogram, MAX_MAIN_CODE_LENGTH);
+        let lengths = best_code_lengths(histogram);
         let codes = emit_codes(&lengths);
         Self { lengths, codes }
     }

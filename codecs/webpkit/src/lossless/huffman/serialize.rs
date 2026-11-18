@@ -102,17 +102,48 @@ fn write_simple_code(bw: &mut BitWriter, count: usize, sym0: u32, sym1: u32) {
 /// cheaper emitted, so trimming can never cost bits.
 fn write_full_code(bw: &mut BitWriter, lengths: &[u32]) {
     bw.write_bits(0, 1); // normal (full) form
+    let (plan, trimmed_flag) = choose_full(lengths);
+    plan.emit(bw, trimmed_flag);
+}
 
+/// The cheaper of the untrimmed and max-symbol-trimmed serializations of
+/// `lengths`, exactly as [`write_full_code`] emits it.
+fn choose_full(lengths: &[u32]) -> (FullCode, bool) {
     let last = lengths.iter().rposition(|&l| l != 0).map_or(0, |i| i + 1);
     let full = FullCode::plan(lengths);
     let trimmed = (last < lengths.len())
         .then(|| FullCode::plan(&lengths[..last]))
         .filter(|t| trim_fields(t.tokens.len()).is_some());
-    let (plan, trimmed_flag) = match trimmed {
+    match trimmed {
         Some(t) if t.total_bits(true) < full.total_bits(false) => (t, true),
         _ => (full, false),
-    };
-    plan.emit(bw, trimmed_flag);
+    }
+}
+
+/// Exact bit count [`write_huffman_code`] emits for `lengths` — used to price
+/// candidate code-length assignments before committing to one.
+pub(crate) fn serialized_bits(lengths: &[u32]) -> u64 {
+    let mut count = 0usize;
+    let mut sym = [0u32; 2];
+    for (index, &len) in lengths.iter().enumerate() {
+        if len != 0 {
+            if count < 2 {
+                sym[count] = u32::try_from(index).unwrap_or(u32::MAX);
+            }
+            count += 1;
+            if count == 3 {
+                break;
+            }
+        }
+    }
+    if count <= 2 && sym[0] < SIMPLE_SYMBOL_LIMIT && sym[1] < SIMPLE_SYMBOL_LIMIT {
+        // write_simple_code: form bit + count bit + first symbol (1 or 9 bits)
+        // + optional 8-bit second symbol.
+        let first = if sym[0] <= 1 { 2 } else { 9 };
+        return 2 + first + if count == 2 { 8 } else { 0 };
+    }
+    let (plan, trimmed) = choose_full(lengths);
+    1 + plan.total_bits(trimmed)
 }
 
 /// `(x, v, length_nbits)` encoding `token_count` as the decoder's
