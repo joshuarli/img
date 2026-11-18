@@ -1565,3 +1565,19 @@ The delta is host state between capture sessions, not code: the
 sub-image LZ77/optimal candidates are wall-neutral at scored Fast.
 Cross-session wall comparisons on this machine are unreliable;
 latency claims need paired same-session A/B or same-capture deltas.
+
+RLE/previous-row LZ77 candidate (landed, e3a4222): ported libwebp's
+`BackwardReferencesRle` as a third token-stream candidate in
+`search_lz77_variant` — greedy distance-1/distance-width copies only,
+self-floored on real emitted bytes, gated to >=1% copy coverage so
+photo variants pay just the O(n) parse. Codec bytes vs prior head:
+mm-logo-opaque L6 14,666 -> 11,566 (-21.1%), mm-logo-alpha L1 and
+L6 30,038 -> 28,422 (-5.4%), astronaut L9 -498 B, coins L9 -140 B,
+chelsea L9 -86 B; every other measured fixture byte-identical.
+Interleaved wall A/B (wl-base vs wl-rle2, RAYON_NUM_THREADS=1):
+coffee L1 +1-3%, L6 +1-4% codec wall; winners neutral-to-faster.
+dwebp decodes the RLE-won mm-logo-alpha stream; 41/41 encode tests
+green including byte-stability goldens. This is the first landed
+piece of the libwebp backward-reference review; remaining unported
+mechanisms: spatial "box" LZ77 variant and plane-code distance
+pricing in the DP cost model.
