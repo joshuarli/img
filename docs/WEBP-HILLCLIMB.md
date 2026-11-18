@@ -1589,3 +1589,10 @@ and mm-logo-alpha L1 -3,702 B more (24,720, -17.7% total) but cost
 +62-74% codec wall on those images and +70% on astronaut L9 for zero
 byte gain — the meta-plan merge dominates. Reverted; the plain
 coverage-gated RLE candidate (e3a4222) stands.
+
+Sub-image RLE probe (rejected, uncommitted): offering `parse_rle` as a
+fourth `emit_subimage` candidate produced byte-identical output on
+mm-logo-opaque L6 and mm-logo-alpha L1 while costing +61-65% codec
+wall — sub-images are emitted once per transform task per candidate,
+so the extra parse+scratch emit multiplies. Reverted; `rle_candidate`
+extracted as a shared helper (landed as a pure refactor).
