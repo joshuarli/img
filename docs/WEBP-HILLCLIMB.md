@@ -1833,3 +1833,13 @@ already dominate literal+meta (coins L9 identical at 70,140).
 The only level where it paid is exactly where its wall cost is
 least acceptable. Reverted; every token-stream family now has
 either a landed meta shot or a measured rejection.
+
+Transform-spec dedup probe (rejected, uncommitted): the P1
+"exact reuse of equivalent work" hypothesis tested directly —
+hashed every BufferSpec pixel stream per task on
+mm-logo-alpha (the 42.8x worst stratum): 20/20 specs across all
+ten task families produce distinct pixel streams, zero
+within-task or cross-task duplicates, so no family_search is
+repeated work worth caching. The stratum's wall is genuine
+per-spec parse+DP cost on distinct pixels — kernel-bound.
+Probe reverted.
