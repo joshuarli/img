@@ -1495,3 +1495,10 @@ candidates; `a76bc65` skips both scratch emits when the greedy parse
 finds no copies (byte-identical, coffee L6 back to ~7.6 s serial).
 Scored bytes are non-increasing by construction (real-byte floors
 throughout); absolute deltas are ~10-400 ms per cell.
+
+Sub-image optimal parse (`83629e7`): the A/B now also tries
+`parse_optimal` (MAX_CHAIN) next to literals and greedy LZ77, still
+floored on real emitted bits. L9 deltas vs the greedy-only floor:
+astronaut -18 B, camera/coffee/chelsea -6 B, coins -2 B, grass
+unchanged; ~+3% L9 wall. 370 lossless + 87 img tests green; dwebp
+verified.
