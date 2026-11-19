@@ -11,6 +11,8 @@ moz = scratch / 'moz-local/cjpeg-static'
 turbo = scratch / 'turbo-build/djpeg-static'
 qualities = list(range(50, 100, 5)) + [97, 99, 100]
 configs = ['jpegli-420', 'jpegli-444', 'jpegli-xyb', 'moz-420', 'moz-444', 'img-fast', 'img-best', 'zen-fast', 'zen-best']
+if os.environ.get('JPEG_INTEGRATED_IMG'):
+    configs.insert(0, 'img-jpegli')
 paths = sorted((root / 'benchmarks/corpus').glob('*.png')) + sorted((root / 'benchmarks/corpus/validation').glob('*.png')) + sorted((root / 'benchmarks/corpus/validation').glob('*.jpg'))
 paths = [p for p in paths if not p.name.startswith('boundary-') and p.name not in ('mm-logo-alpha.png', 'horse.png', 'photopea-ui.png')]
 gray = {'grass.png', 'gravel.png', 'brick.png', 'camera.png', 'cell.png', 'clock_motion.png', 'coins.png', 'microaneurysms.png'}
@@ -22,6 +24,8 @@ def run(command):
         raise SystemExit('process killed by SIGKILL: ' + str(command))
     return p.returncode, p.stdout.decode(errors='replace'), p.stderr.decode(errors='replace')
 def command(config, source, dest, quality):
+    if config == 'img-jpegli':
+        return [Path(os.environ.get('JPEG_INTEGRATED_IMG', root / 'target/dist/img')), 'convert', source, '-o', dest, '--format', 'jpeg', '--quality', quality, '--effort', 'balanced', '--quiet']
     if config.startswith('jpegli'):
         return [jpegli, source, dest, '-q', quality] + (['--xyb'] if config.endswith('xyb') else ['--chroma_subsampling', config.split('-')[1]])
     if config.startswith('moz-'):

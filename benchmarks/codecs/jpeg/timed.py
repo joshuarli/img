@@ -6,7 +6,8 @@ from matching import bracket
 
 env = {**os.environ, 'RAYON_NUM_THREADS': '1'}
 items = json.loads((scratch / 'inputs/manifest.json').read_text())
-quality = json.loads((root / 'benchmarks/results/codecs/jpeg/results.json').read_text())['quality']
+integrated = os.environ.get('JPEG_INTEGRATION') == '1'
+quality = json.loads((root / ('benchmarks/results/codecs/jpeg/integration.json' if integrated else 'benchmarks/results/codecs/jpeg/results.json')).read_text())['quality']
 series = {}
 for record in quality:
     if record.get('compare_exit') == 0 and record.get('turbo_exit') == 0:
@@ -37,7 +38,7 @@ def measure(args, encoder, output=None):
         output.unlink(missing_ok=True)
     return data
 
-encode_configs = [x for x in configs if x != 'jpegli-xyb']
+encode_configs = ['img-jpegli', 'jpegli-444', 'zen-best'] if integrated else [x for x in configs if x not in ('img-jpegli', 'jpegli-xyb')]
 for index, item in enumerate(items):
     if item['source'] in done: continue
     fixture = fixtures / f'{index}.jpg'
@@ -56,17 +57,18 @@ for index, item in enumerate(items):
             if points is None:
                 batch.append({'role':'encode', 'input':item['source'], 'group':item['group'], 'config':config, 'iteration':iteration, 'exit':None, 'error':'score 90 not bracketed'})
                 continue
-            exe = scratch / ('encode-jpegli' if config.startswith('jpegli-') else 'encode-moz' if config.startswith('moz-') else 'decode-target/release/jpeg-candidate-encode')
+            exe = scratch / ('encode-integrated' if config == 'img-jpegli' else 'encode-jpegli' if config.startswith('jpegli-') else 'encode-moz' if config.startswith('moz-') else 'decode-target/release/jpeg-candidate-encode')
             for point in points:
                 result = measure([exe, config, pnm, str(point['quality'])], True)
                 batch.append({'role':'encode', 'input':item['source'], 'group':item['group'], 'config':config, 'iteration':iteration, 'quality':point['quality'], 'score':point['score'], **result})
-        for config in (['turbo', 'jpegli', 'zune', 'zen'] if iteration % 2 == 0 else ['zen', 'zune', 'jpegli', 'turbo']):
-            dest = scratch / f'qualification-decode-{iteration}-{index}-{config}.pnm'
-            if config == 'turbo': args = [turbo, '-outfile', dest, fixture]
-            elif config == 'jpegli': args = [scratch / 'jxl-build/tools/djpegli', fixture, dest]
-            else: args = [scratch / 'decode-target/release/jpeg-candidate-decode', config, fixture]
-            result = measure(args, False, dest if config in ('turbo','jpegli') else None)
-            batch.append({'role':'decode', 'input':item['source'], 'group':item['group'], 'config':config, 'iteration':iteration, **result})
+        if not integrated:
+            for config in (['turbo', 'jpegli', 'zune', 'zen'] if iteration % 2 == 0 else ['zen', 'zune', 'jpegli', 'turbo']):
+                dest = scratch / f'qualification-decode-{iteration}-{index}-{config}.pnm'
+                if config == 'turbo': args = [turbo, '-outfile', dest, fixture]
+                elif config == 'jpegli': args = [scratch / 'jxl-build/tools/djpegli', fixture, dest]
+                else: args = [scratch / 'decode-target/release/jpeg-candidate-decode', config, fixture]
+                result = measure(args, False, dest if config in ('turbo','jpegli') else None)
+                batch.append({'role':'decode', 'input':item['source'], 'group':item['group'], 'config':config, 'iteration':iteration, **result})
     gate = subprocess.run(['perf-gate-ready', '-1']).returncode
     if gate:
         print(f'discarded: post-check failed for {item["source"]}', file=sys.stderr)

@@ -126,7 +126,7 @@ fn xmp_app1(xmp: &[u8]) -> Vec<u8> {
     payload
 }
 
-pub(super) fn encode(image: &StillImage, mode: super::EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, super::Error> {
+pub(super) fn encode(image: &StillImage, mode: super::EncodingMode, _effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, super::Error> {
     let EncodingMode::Quality(quality) = mode else {
         return Err(super::Error::new(super::ErrorKind::Unsupported, "JPEG lossless requires original-byte preservation"));
     };
@@ -138,23 +138,26 @@ pub(super) fn encode(image: &StillImage, mode: super::EncodingMode, effort: Effo
     let samples = opaque.samples();
     let (width, height) = opaque.dimensions();
     let quality = (quality.value().round() as u8).clamp(1, 100);
-    let preset = match effort {
-        Effort::Fast | Effort::Balanced => mozjpeg_rs::Preset::ProgressiveBalanced,
-        Effort::Best => mozjpeg_rs::Preset::ProgressiveSmallest,
-    };
-    let mut encoder = mozjpeg_rs::Encoder::new(preset).quality(quality);
-    if !opaque.is_grayscale() { encoder = encoder.subsampling(mozjpeg_rs::Subsampling::S420); }
-    if let Some(icc) = &opaque.metadata.icc_profile { encoder = encoder.icc_profile(icc.to_vec()); }
+    let gray = opaque.is_grayscale();
+    let limits = super::limits();
+    let mut encoder = jpegli_sys::Encoder::new(width, height, if gray { jpegli_sys::Color::Gray } else { jpegli_sys::Color::Rgb }, quality,
+        limits.max_memory_bytes.unwrap_or(super::IMAGE_MEMORY_BYTES) as usize,
+        limits.max_output_bytes.unwrap_or(super::MAX_INPUT_BYTES) as usize)
+        .map_err(|e| super::Error::new(super::ErrorKind::Encode, e))?;
+    if let Some(icc) = &opaque.metadata.icc_profile { encoder.icc_profile(icc).map_err(|e| super::Error::new(super::ErrorKind::Encode, e))?; }
     if let Some(exif) = &opaque.metadata.exif {
-        encoder = encoder.exif_data(exif.as_ref().strip_prefix(b"Exif\0\0").unwrap_or(exif.as_ref()).to_vec());
+        let mut payload = b"Exif\0\0".to_vec();
+        payload.extend_from_slice(exif.as_ref().strip_prefix(b"Exif\0\0").unwrap_or(exif.as_ref()));
+        encoder.app1(&payload).map_err(|e| super::Error::new(super::ErrorKind::Encode, e))?;
     }
-    if let Some(xmp) = &opaque.metadata.xmp { encoder = encoder.add_marker(1, xmp_app1(xmp)); }
-    let bytes = if opaque.is_grayscale() {
-        encoder.encode_gray_with_stop(&samples, width, height, stop)
-    } else {
-        encoder.encode_rgb_with_stop(&samples, width, height, stop)
+    if let Some(xmp) = &opaque.metadata.xmp { encoder.app1(&xmp_app1(xmp)).map_err(|e| super::Error::new(super::ErrorKind::Encode, e))?; }
+    let stride = width as usize * if gray { 1 } else { 3 };
+    for rows in samples.chunks(stride * 16) {
+        if stop.is_cancelled() { return Err(super::Error::new(super::ErrorKind::Invalid, "operation cancelled")); }
+        encoder.rows(rows, (rows.len() / stride) as u32).map_err(|e| super::Error::new(super::ErrorKind::Encode, e))?;
     }
-    .map_err(|e| super::Error::caused(super::ErrorKind::Encode, e))?;
+    if stop.is_cancelled() { return Err(super::Error::new(super::ErrorKind::Invalid, "operation cancelled")); }
+    let bytes = encoder.finish().map_err(|e| super::Error::new(super::ErrorKind::Encode, e))?;
     super::limits().check_output_size(bytes.len() as u64).map_err(|e| super::Error::caused(super::ErrorKind::Limit, e))?;
     Ok(bytes)
 }

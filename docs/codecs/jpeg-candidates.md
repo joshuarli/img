@@ -156,4 +156,34 @@ Decoder: libjpeg-turbo 3.1.1. On color photos its user CPU is 11.3 ms, against 1
 
 ## Open deficits
 
-Grayscale and text bytes trail Zen with jpegli; candidates are jpegli quantization tables tuned for luma-only output or a gray-specific adaptive quantization setting, measured before adoption. Decoder wall time needs in-process measurement. Timing covers color score 90 only where every configuration brackets it (7 of 14 images). Score 95 has no common color-photo bracket for the 4:2:0 configurations. XYB cannot be scored by the shared comparison because its ICC profile is rejected. The original images retain their profiles and full resolution; these untagged, scaled inputs do not qualify color-management, metadata, alpha, or full-resolution behavior. Linux, binary size, build cost and end-to-end throughput remain unmeasured.
+Grayscale and text bytes trail Zen with jpegli; candidates are jpegli quantization tables tuned for luma-only output or a gray-specific adaptive quantization setting, measured before adoption. Decoder wall time needs in-process measurement. Timing covers color score 90 only where every configuration brackets it (7 of 14 images). Score 95 has no common color-photo bracket for the 4:2:0 configurations. XYB cannot be scored by the shared comparison because its ICC profile is rejected. The original images retain their profiles and full resolution; these untagged, scaled inputs do not qualify color-management, metadata, alpha, or full-resolution behavior. The candidate comparison did not measure Linux timing, binary size, build cost or end-to-end throughput.
+
+## Integrated encoder
+
+The integrated `img-jpegli` encoder uses the same prepared inputs and quality sweep. All 353 matching input and quality pairs have identical byte counts and scores to `jpegli-444`. The following means use the images bracketed by both jpegli configurations at each score.
+
+| Group | Score 80 bytes (n) | Score 90 bytes (n) | Score 95 bytes (n) |
+| --- | ---: | ---: | ---: |
+| Color photo | 301076 (14) | 722874 (14) | 280480 (5) |
+| Grayscale | 27299 (8) | 45034 (8) | 62001 (7) |
+| UI/text | 9645 (1) | 21802 (1) | 35658 (1) |
+
+The integrated and reference jpegli values are identical in every cell. Against `zen-best` on their common bracketed images, integrated bytes are −6.4% and −3.9% for color at scores 80 and 90, +11.3%, +8.5%, and +2.5% for grayscale, and +11.3%, +15.8%, and +10.1% for UI/text at scores 80, 90, and 95. Zen does not bracket score 95 for any color photo. The macOS dist binary grew from 4,788,976 bytes at the base revision to 4,798,432 bytes, an increase of 9,456 bytes (0.20%).
+
+At score 90, the timing run used five alternating single-thread repetitions at each quality bracket. Each input batch passed `perf-gate-ready` before and after, and the full run passed a final `perf-gate-ready -1`. The table shows the mean of per-image interpolated medians, the mean of the interpolated per-image ranges, user CPU time, and process peak RSS. All 23 inputs completed for both jpegli encoders. Zen did not bracket score 90 on seven color photos, so the table uses the common images.
+
+| Group | Encoder | Wall ms (n) | Wall range ms | User CPU ms | Peak RSS MiB |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Color photo | img-jpegli | 48.91 (7) | 48.67–49.45 | 47.00 | 45.06 |
+| Color photo | jpegli-444 | 48.98 (7) | 48.80–49.23 | 47.40 | 29.20 |
+| Color photo | zen-best | 48.46 (7) | 48.34–48.68 | 47.22 | 25.29 |
+| Grayscale | img-jpegli | 2.27 (8) | 2.25–2.31 | 2.17 | 6.83 |
+| Grayscale | jpegli-444 | 2.24 (8) | 2.21–2.27 | 2.17 | 2.94 |
+| Grayscale | zen-best | 2.92 (8) | 2.89–2.98 | 2.81 | 3.72 |
+| UI/text | img-jpegli | 1.10 (1) | 1.09–1.11 | 1.05 | 6.06 |
+| UI/text | jpegli-444 | 1.10 (1) | 1.08–1.12 | 1.05 | 2.38 |
+| UI/text | zen-best | 1.35 (1) | 1.34–1.37 | 1.29 | 3.22 |
+
+The timing harness constructs a `StillImage` from a copy of the prepared PNM samples before starting its timer. Its RSS therefore includes that copy and the adapter's sample copy, while the standalone encoder reads the PNM into one buffer. RSS is process peak memory, not encoder-only allocation. The color wall-time ranges overlap, so this run does not establish a speed difference between the three encoders. The [integration records](../../benchmarks/results/codecs/jpeg/integration.json) contain the quality points and gated samples.
+
+To repeat the integration sweep, seed a JSON list with the `quality` array from `benchmarks/results/codecs/jpeg/results.json`, set `JPEG_INTEGRATED_IMG` to the dist binary, and run `sweep.py` on that list. Put the resulting list in `integration.json` as `quality`. The `build.sh` helper builds `encode-integrated` with the current checkout and lockfile. Run `JPEG_INTEGRATION=1 python3 benchmarks/codecs/jpeg/timed.py <scratch-output>` after `perf-gate-ready` succeeds, then run `perf-gate-ready -1` immediately afterward. Add the resulting array as `timing` and run `report.py` on `integration.json`.

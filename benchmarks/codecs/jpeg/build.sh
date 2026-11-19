@@ -46,3 +46,34 @@ EOF
 cargo build --offline --release -j4 --manifest-path "$scratch/encode/Cargo.toml" --target-dir "$scratch/decode-target"
 c++ -std=c++17 -O3 -DUSE_JPEGLI -I"$scratch/libjxl" -I"$scratch/turbo-install/include" "$repo/benchmarks/codecs/jpeg/encode.cc" "$scratch/jxl-build/lib/libjpegli-static.a" "$scratch/jxl-build/third_party/highway/libhwy.a" -o "$scratch/encode-jpegli"
 c++ -std=c++17 -O3 -I"$scratch/mozjpeg" -I"$scratch/moz-local" "$repo/benchmarks/codecs/jpeg/encode.cc" "$scratch/moz-local/libjpeg.a" -o "$scratch/encode-moz"
+root=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
+mkdir -p "$scratch/integrated"
+cat > "$scratch/integrated/Cargo.toml" <<EOF2
+[package]
+name = "jpegli-integrated-measure"
+version = "0.1.0"
+edition = "2024"
+[[bin]]
+name = "encode-integrated"
+path = "$root/benchmarks/codecs/jpeg/encode-integrated.rs"
+[dependencies]
+img = { path = "$root", features = ["build-binary"] }
+libc = "0.2"
+[profile.release]
+opt-level = 3
+lto = "thin"
+panic = "abort"
+strip = false
+[profile.dist]
+inherits = "release"
+lto = "fat"
+codegen-units = 1
+strip = true
+[patch.crates-io]
+oxipng = { path = "$root/vendor/oxipng" }
+libdeflater = { path = "$root/vendor/libdeflater" }
+libdeflate-sys = { path = "$root/vendor/libdeflate-sys" }
+EOF2
+cp "$root/Cargo.lock" "$scratch/integrated/Cargo.lock"
+cargo build --offline --profile dist -j4 --manifest-path "$scratch/integrated/Cargo.toml" --target-dir "$scratch/integrated-target"
+cp "$scratch/integrated-target/dist/encode-integrated" "$scratch/encode-integrated"

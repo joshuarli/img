@@ -124,3 +124,66 @@ fn jpeg_hdr_and_late_application_metadata_are_refused_before_pixel_changes() {
     assert_eq!(img::still::describe(&deep).unwrap().bit_depth,Some(12));
     assert_eq!(StillImage::decode(&deep).err().unwrap().kind(),ErrorKind::Unsupported);
 }
+
+#[test]
+fn jpeg_component_sampling_and_decoder_agreement() {
+    for (layout, channels) in [(SampleLayout::Rgb8, 3usize), (SampleLayout::Gray8, 1)] {
+        let pixel = if channels == 3 { vec![100, 120, 140] } else { vec![120] };
+        let samples = pixel.repeat(32 * 24);
+        let image = StillImage::from_samples(32, 24, layout, samples.clone()).unwrap();
+        for effort in [Effort::Fast, Effort::Balanced, Effort::Best] {
+            let encoded = image.encode(Format::Jpeg, mode(90.0), effort).unwrap();
+            let sof = encoded.windows(2).position(|p| p == [255, 194]).unwrap();
+            assert_eq!(encoded[sof + 9] as usize, channels);
+            for c in 0..channels { assert_eq!(encoded[sof + 11 + c * 3], 0x11); }
+            let color = if channels == 1 { ColorSpace::Luma } else { ColorSpace::RGB };
+            let options = DecoderOptions::default().jpeg_set_out_colorspace(color);
+            let mut decoder = zune_jpeg::JpegDecoder::new_with_options(ZCursor::new(&encoded), options);
+            let direct = decoder.decode().unwrap();
+            let other = Image::from_decoder(JpegDecoder::new_with_options(ZCursor::new(&encoded), options)).unwrap().flatten_frames::<u8>().remove(0);
+            assert_eq!(direct, other);
+            assert!(direct.iter().zip(&samples).all(|(&a, &b)| a.abs_diff(b) <= 3));
+        }
+    }
+}
+
+#[test]
+fn jpeg_large_icc_exif_and_xmp_survive_encoding() {
+    let image = StillImage::from_rgb8(8, 8, [30, 80, 130].repeat(64)).unwrap();
+    let base = image.encode(Format::Jpeg, mode(90.0), Effort::Fast).unwrap();
+    let icc: Vec<u8> = (0..70000).map(|i| (i % 251) as u8).collect();
+    let exif = b"II\x2a\0\x08\0\0\0\x01\0\x12\x01\x03\0\x01\0\0\0\x06\0\0\0\0\0\0\0";
+    let xmp = b"<x:xmpmeta>fixture</x:xmpmeta>";
+    let mut input = base[..2].to_vec();
+    let mut add = |marker: u8, payload: &[u8]| { input.extend_from_slice(&[255, marker]); input.extend_from_slice(&((payload.len() + 2) as u16).to_be_bytes()); input.extend_from_slice(payload); };
+    for (index, chunk) in icc.chunks(65519).enumerate() { let mut p = b"ICC_PROFILE\0".to_vec(); p.extend_from_slice(&[(index + 1) as u8, 2]); p.extend_from_slice(chunk); add(0xe2, &p); }
+    let mut exif_marker = b"Exif\0\0".to_vec(); exif_marker.extend_from_slice(exif); add(0xe1, &exif_marker);
+    let mut xmp_marker = b"http://ns.adobe.com/xap/1.0/\0".to_vec(); xmp_marker.extend_from_slice(xmp); add(0xe1, &xmp_marker);
+    input.extend_from_slice(&base[2..]);
+    let decoded = StillImage::decode(&input).unwrap();
+    let output = decoded.encode(Format::Jpeg, mode(90.0), Effort::Balanced).unwrap();
+    let info = img::still::describe(&output).unwrap(); assert!(info.icc && info.exif && info.xmp); assert_eq!(info.orientation, 6);
+    let decoded = StillImage::decode(&output).unwrap();
+    let output = decoded.encode(Format::Jpeg, mode(90.0), Effort::Fast).unwrap();
+    let mut probe = zune_jpeg::JpegDecoder::new(ZCursor::new(&output)); probe.decode_headers().unwrap();
+    assert_eq!(probe.icc_profile().unwrap(), icc);
+    assert_eq!(probe.info().unwrap().exif_data.as_deref(), Some(exif.as_slice()));
+    assert_eq!(probe.info().unwrap().xmp_data.as_deref(), Some(xmp.as_slice()));
+    assert_eq!(output.windows(12).filter(|w| *w == b"ICC_PROFILE\0").count(), 2);
+}
+
+#[test]
+fn invalid_jpeg_dimensions_return_error() {
+    assert!(StillImage::from_rgb8(0, 1, Vec::new()).is_err());
+    assert!(jpegli_sys::Encoder::new(0, 1, jpegli_sys::Color::Rgb, 90, 1024 * 1024, 1024 * 1024).is_err());
+}
+
+#[test]
+fn jpegli_output_limit_returns_an_error() {
+    let mut saw_limit = false;
+    for limit in 16..128 {
+        if let Ok(mut encoder) = jpegli_sys::Encoder::new(8, 8, jpegli_sys::Color::Rgb, 90, 1024 * 1024, limit)
+            && encoder.app1(&[42; 100]).is_err() { saw_limit = true; }
+    }
+    assert!(saw_limit);
+}

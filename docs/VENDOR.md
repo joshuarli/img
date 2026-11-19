@@ -55,3 +55,28 @@ is compiled.
 
 Binary distributions carry the license files listed above; see
 `docs/PROVENANCE.md`.
+
+## jpegli and Highway
+
+jpegli is from libjxl v0.11.1, commit `794a5dcf0d54f9f0b20d288a12e87afb91d20dfc`, BSD-3-Clause with the upstream PATENTS file. Highway is commit `457c891775a7397bdb0376bb1031e6e027af1c48`, Apache-2.0. The libjpeg API headers are from libjxl's libjpeg-turbo submodule at `8ecba3647edb6dd940463fedf38ca33a8e2a73d1`, under the IJG license. This software is based in part on the work of the Independent JPEG Group.
+
+The libjxl snapshot contains the files in `JPEGXL_INTERNAL_JPEGLI_SOURCES`, `lib/jxl/base/{bits,byte_order,common,compiler_specific,include_jpeglib,printf_macros,sanitizer_definitions,status}.h`, and the public `jxl/types.h`. It also contains the libjpeg API headers, their license texts, and libjxl's LICENSE, PATENTS, and AUTHORS. Highway contains the transitive headers needed by the library sources, including the architecture-specific `hwy/ops` headers, and `abort.cc`, `aligned_allocator.cc`, `nanobenchmark.cc`, `per_target.cc`, `print.cc`, `targets.cc`, and `timer.cc`. Tests, programs, and unrelated codecs are omitted.
+
+To regenerate the current trimmed snapshot, check out libjxl at the pinned commit with its submodules. Set `jxl_checkout` to that checkout and copy the tracked file list:
+
+```sh
+git ls-files vendor/libjxl | while IFS= read -r path; do
+    mkdir -p "$(dirname "$path")"
+    cp "$jxl_checkout/${path#vendor/libjxl/}" "$path"
+done
+git ls-files vendor/highway | while IFS= read -r path; do
+    mkdir -p "$(dirname "$path")"
+    cp "$jxl_checkout/third_party/highway/${path#vendor/highway/}" "$path"
+done
+```
+
+For an update, compare `JPEGXL_INTERNAL_JPEGLI_SOURCES` and the transitive include closure against the new upstream build. Add or remove files as needed, update the pins, and run `make native-build-check` and the JPEG tests.
+
+The local `jpegli-sys` build compiles the sources with `cc` in C++17 mode. It writes the libjpeg configuration header with the upstream values: ABI 62, 8-bit samples, and memory source and destination support. The build does not run CMake. The shim's `error_exit` throws a C++ exception that each exported shim function catches and turns into an error return, so jpegli destroys its stack objects and nothing unwinds into Rust. `HWY_DISABLED_TARGETS` limits Highway's compiled targets to NEON on ARM64 and SSE2, SSE4 and AVX2 on x86-64; SVE, AVX-512 and SSSE3 code is not built.
+
+On Alpine, the release image uses `g++` and `linux-headers`: GCC supplies its C++ headers and Highway uses the ARM hardware-capability definitions. The musl release link uses the image's static `libstdc++.a` under the existing static-link policy; macOS uses the operating system's libc++.
