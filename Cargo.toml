@@ -109,3 +109,4 @@ oxipng = { path = "vendor/oxipng" }
 libdeflater = { path = "vendor/libdeflater" }
 libdeflate-sys = { path = "vendor/libdeflate-sys" }
 rav1d = { path = "vendor/rav1d" }
+fast-ssim2 = { path = "vendor/fast-ssim2" }

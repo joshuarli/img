@@ -425,40 +425,6 @@ pub fn planes_to_positive_xyb_lo_simd(p: &mut [Vec<f32>; 3]) {
 // FastGaussian — lane-wise across rows (horizontal) and columns (vertical)
 // ===========================================================================
 
-macro_rules! gather8p {
-    ($token:expr, $p:expr, $pb:expr, $row0:expr, $w:expr, $x:expr) => {{
-        let (p, pb, row0, w, x) = ($p, $pb, $row0, $w, $x);
-        match pb {
-            Some(b) => GenericF32x8::from_array_t(
-                $token,
-                [
-                    p[row0 * w + x] * b[row0 * w + x],
-                    p[(row0 + 1) * w + x] * b[(row0 + 1) * w + x],
-                    p[(row0 + 2) * w + x] * b[(row0 + 2) * w + x],
-                    p[(row0 + 3) * w + x] * b[(row0 + 3) * w + x],
-                    p[(row0 + 4) * w + x] * b[(row0 + 4) * w + x],
-                    p[(row0 + 5) * w + x] * b[(row0 + 5) * w + x],
-                    p[(row0 + 6) * w + x] * b[(row0 + 6) * w + x],
-                    p[(row0 + 7) * w + x] * b[(row0 + 7) * w + x],
-                ],
-            ),
-            None => GenericF32x8::from_array_t(
-                $token,
-                [
-                    p[row0 * w + x],
-                    p[(row0 + 1) * w + x],
-                    p[(row0 + 2) * w + x],
-                    p[(row0 + 3) * w + x],
-                    p[(row0 + 4) * w + x],
-                    p[(row0 + 5) * w + x],
-                    p[(row0 + 6) * w + x],
-                    p[(row0 + 7) * w + x],
-                ],
-            ),
-        }
-    }};
-}
-
 /// `FastGaussian1D` applied simultaneously to 8 rows (`row0..row0+8`) of a
 /// plane — lane l runs the identical scalar sequence on row `row0 + l`, so
 /// outputs are bit-identical to the scalar `fast_gaussian_1d` per row.
@@ -473,11 +439,39 @@ fn fast_gaussian_1d_rows_inner(
     width: usize,
     row0: usize,
     out: &mut [f32],
+    columns: &mut [f32],
+    results: &mut [f32],
 ) {
     type f32x8 = GenericF32x8<Token>;
     let w = width as i64;
     let n_radius = rg.radius as i64;
     let zero = f32x8::zero_t(token);
+    let (columns, results) = (&mut columns[..8 * width], &mut results[..8 * width]);
+    let blocks = width / 8 * 8;
+    for x in (0..blocks).step_by(8) {
+        let mut rows: [f32x8; 8] = core::array::from_fn(|l| {
+            let at = (row0 + l) * width + x;
+            let v = f32x8::from_slice_t(token, &plane[at..at + 8]);
+            match plane_b {
+                Some(b) => v * f32x8::from_slice_t(token, &b[at..at + 8]),
+                None => v,
+            }
+        });
+        f32x8::transpose_8x8(&mut rows);
+        for (k, v) in rows.iter().enumerate() {
+            v.store((&mut columns[(x + k) * 8..(x + k) * 8 + 8]).try_into().unwrap());
+        }
+    }
+    for x in blocks..width {
+        for l in 0..8 {
+            let at = (row0 + l) * width + x;
+            columns[x * 8 + l] = match plane_b {
+                Some(b) => plane[at] * b[at],
+                None => plane[at],
+            };
+        }
+    }
+    let column = |x: usize| f32x8::from_slice_t(token, &columns[x * 8..x * 8 + 8]);
 
     let mut prev = [zero, zero, zero];
     let mut prev2 = [zero, zero, zero];
@@ -490,12 +484,12 @@ fn fast_gaussian_1d_rows_inner(
             let left = n - n_radius - 1;
             let right = n + n_radius - 1;
             let lv = if left >= 0 {
-                gather8p!(token, plane, plane_b, row0, width, left as usize)
+                column(left as usize)
             } else {
                 zero
             };
             let rv = if right < w {
-                gather8p!(token, plane, plane_b, row0, width, right as usize)
+                column(right as usize)
             } else {
                 zero
             };
@@ -510,10 +504,8 @@ fn fast_gaussian_1d_rows_inner(
                 o_arr[i] = o;
             }
             if n >= 0 {
-                let r = (o_arr[0] + (o_arr[1] + o_arr[2])).to_array();
-                for l in 0..8 {
-                    out[l * width + n as usize] = r[l];
-                }
+                let at = n as usize * 8;
+                (o_arr[0] + (o_arr[1] + o_arr[2])).store((&mut results[at..at + 8]).try_into().unwrap());
             }
         }};
     }
@@ -534,14 +526,14 @@ fn fast_gaussian_1d_rows_inner(
         let base = n as usize;
         let off = n_radius as usize;
         let sum = [
-            gather8p!(token, plane, plane_b, row0, width, base - off - 1)
-                + gather8p!(token, plane, plane_b, row0, width, base + off - 1),
-            gather8p!(token, plane, plane_b, row0, width, base - off)
-                + gather8p!(token, plane, plane_b, row0, width, base + off),
-            gather8p!(token, plane, plane_b, row0, width, base - off + 1)
-                + gather8p!(token, plane, plane_b, row0, width, base + off + 1),
-            gather8p!(token, plane, plane_b, row0, width, base - off + 2)
-                + gather8p!(token, plane, plane_b, row0, width, base + off + 2),
+            column(base - off - 1)
+                + column(base + off - 1),
+            column(base - off)
+                + column(base + off),
+            column(base - off + 1)
+                + column(base + off + 1),
+            column(base - off + 2)
+                + column(base + off + 2),
         ];
         let mut o4 = [[zero; 3]; 4];
         for j in 0..4 {
@@ -566,10 +558,8 @@ fn fast_gaussian_1d_rows_inner(
             prev[i] = o4[3][i];
         }
         for j in 0..4 {
-            let r = (o4[j][0] + (o4[j][1] + o4[j][2])).to_array();
-            for l in 0..8 {
-                out[l * width + base + j] = r[l];
-            }
+            let at = (base + j) * 8;
+            (o4[j][0] + (o4[j][1] + o4[j][2])).store((&mut results[at..at + 8]).try_into().unwrap());
         }
         n += 4;
     }
@@ -577,6 +567,18 @@ fn fast_gaussian_1d_rows_inner(
     while n < w {
         step_bounds!(n);
         n += 1;
+    }
+    for x in (0..blocks).step_by(8) {
+        let mut rows: [f32x8; 8] = core::array::from_fn(|k| f32x8::from_slice_t(token, &results[(x + k) * 8..(x + k) * 8 + 8]));
+        f32x8::transpose_8x8(&mut rows);
+        for (l, v) in rows.iter().enumerate() {
+            v.store((&mut out[l * width + x..l * width + x + 8]).try_into().unwrap());
+        }
+    }
+    for x in blocks..width {
+        for l in 0..8 {
+            out[l * width + x] = results[x * 8 + l];
+        }
     }
 }
 
@@ -603,10 +605,9 @@ fn fast_gaussian_vertical_x8_inner(
         f32x8::from_slice_t(token, &input[row * width + x0..row * width + x0 + 8])
     };
 
-    let mut y1_hist = [zero; 4];
-    let mut y3_hist = [zero; 4];
-    let mut y5_hist = [zero; 4];
-    let mut ctr: usize = 0;
+    let mut y1_prev = [zero; 2];
+    let mut y3_prev = [zero; 2];
+    let mut y5_prev = [zero; 2];
 
     let mut n: i64 = -n_rad + 1;
     while n < height as i64 {
@@ -627,31 +628,69 @@ fn fast_gaussian_vertical_x8_inner(
                 }
         };
 
-        ctr = ctr.wrapping_add(1);
-        let n_0 = ctr % 4;
-        let n_1 = (ctr.wrapping_sub(1)) % 4;
-        let n_2 = (ctr.wrapping_sub(2)) % 4;
-
         let y1 = splat(rg.n2[0]).mul_add_portable(
             sum,
-            splat(-rg.d1[0]).mul_add_portable(y1_hist[n_1], -y1_hist[n_2]),
+            splat(-rg.d1[0]).mul_add_portable(y1_prev[0], -y1_prev[1]),
         );
         let y3 = splat(rg.n2[1]).mul_add_portable(
             sum,
-            splat(-rg.d1[1]).mul_add_portable(y3_hist[n_1], -y3_hist[n_2]),
+            splat(-rg.d1[1]).mul_add_portable(y3_prev[0], -y3_prev[1]),
         );
         let y5 = splat(rg.n2[2]).mul_add_portable(
             sum,
-            splat(-rg.d1[2]).mul_add_portable(y5_hist[n_1], -y5_hist[n_2]),
+            splat(-rg.d1[2]).mul_add_portable(y5_prev[0], -y5_prev[1]),
         );
-        y1_hist[n_0] = y1;
-        y3_hist[n_0] = y3;
-        y5_hist[n_0] = y5;
+        y1_prev = [y1, y1_prev[0]];
+        y3_prev = [y3, y3_prev[0]];
+        y5_prev = [y5, y5_prev[0]];
 
         if n >= 0 {
             let arr = (y1 + (y3 + y5)).to_array();
             out[n as usize * out_stride + out_off..n as usize * out_stride + out_off + 8]
                 .copy_from_slice(&arr);
+        }
+        n += 1;
+    }
+}
+
+#[magetypes(v3, neon, wasm128, scalar)]
+fn fast_gaussian_vertical_x16_inner(
+    token: Token,
+    rg: &RecursiveGaussian,
+    input: &[f32],
+    width: usize,
+    height: usize,
+    x0: usize,
+    out: &mut [f32],
+) {
+    type f32x8 = GenericF32x8<Token>;
+    let n_rad = rg.radius as i64;
+    let zero = f32x8::zero_t(token);
+    let splat = |v: f32| f32x8::splat_t(token, v);
+    let load = |row: usize, g: usize| -> f32x8 {
+        let at = row * width + x0 + 8 * g;
+        f32x8::from_slice_t(token, &input[at..at + 8])
+    };
+    let (n2, d1) = (rg.n2.map(splat), rg.d1.map(|d| splat(-d)));
+    let mut prev = [[[zero; 2]; 3]; 2];
+    let mut n: i64 = -n_rad + 1;
+    while n < height as i64 {
+        let top = n - n_rad - 1;
+        let bottom = n + n_rad - 1;
+        for g in 0..2 {
+            let sum = if top < 0 {
+                if bottom < height as i64 { load(bottom as usize, g) } else { zero }
+            } else {
+                load(top as usize, g) + if bottom < height as i64 { load(bottom as usize, g) } else { zero }
+            };
+            let y: [f32x8; 3] = core::array::from_fn(|i| n2[i].mul_add_portable(sum, d1[i].mul_add_portable(prev[g][i][0], -prev[g][i][1])));
+            for i in 0..3 {
+                prev[g][i] = [y[i], prev[g][i][0]];
+            }
+            if n >= 0 {
+                let at = n as usize * width + x0 + 8 * g;
+                (y[0] + (y[1] + y[2])).store((&mut out[at..at + 8]).try_into().unwrap());
+            }
         }
         n += 1;
     }
@@ -701,6 +740,7 @@ pub(crate) fn fast_gaussian_simd_stop(
     // Each block is an independent lane-group — bit-exact under
     // `rayon` (disjoint output chunks, identical per-lane math).
     let rows8 = height / 8 * 8;
+    let (mut columns, mut results) = (vec![0.0f32; 8 * width], vec![0.0f32; 8 * width]);
     #[cfg(feature = "rayon")]
     let par = super::par_ok(width * height);
     #[cfg(feature = "rayon")]
@@ -711,8 +751,9 @@ pub(crate) fn fast_gaussian_simd_stop(
             .enumerate()
             .try_for_each(|(block, chunk)| {
                 stop.check()?;
+                let (mut columns, mut results) = (vec![0.0f32; 8 * width], vec![0.0f32; 8 * width]);
                 incant!(
-                    fast_gaussian_1d_rows_inner(rg, input, plane_b, width, block * 8, chunk),
+                    fast_gaussian_1d_rows_inner(rg, input, plane_b, width, block * 8, chunk, &mut columns, &mut results),
                     [v3, neon, wasm128, scalar]
                 );
                 Ok::<(), enough::StopReason>(())
@@ -729,7 +770,9 @@ pub(crate) fn fast_gaussian_simd_stop(
                     plane_b,
                     width,
                     row0,
-                    &mut tmp[row0 * width..]
+                    &mut tmp[row0 * width..],
+                    &mut columns,
+                    &mut results
                 ),
                 [v3, neon, wasm128, scalar]
             )
@@ -741,7 +784,7 @@ pub(crate) fn fast_gaussian_simd_stop(
             stop.check()?;
         }
         incant!(
-            fast_gaussian_1d_rows_inner(rg, input, plane_b, width, row0, &mut tmp[row0 * width..]),
+            fast_gaussian_1d_rows_inner(rg, input, plane_b, width, row0, &mut tmp[row0 * width..], &mut columns, &mut results),
             [v3, neon, wasm128, scalar]
         )
     }
@@ -761,7 +804,9 @@ pub(crate) fn fast_gaussian_simd_stop(
                     plane_b,
                     width,
                     row0,
-                    &mut tmp[row0 * width..]
+                    &mut tmp[row0 * width..],
+                    &mut columns,
+                    &mut results
                 ),
                 [v3, neon, wasm128, scalar]
             )
@@ -841,7 +886,19 @@ pub(crate) fn fast_gaussian_simd_stop(
         }
     }
     #[cfg(not(feature = "rayon"))]
-    for x0 in (0..cols8).step_by(8).chain(tail_x0) {
+    let cols16 = width / 16 * 16;
+    #[cfg(not(feature = "rayon"))]
+    for x0 in (0..cols16).step_by(16) {
+        if x0 & (STOP_COL_STRIDE - 1) == 0 {
+            stop.check()?;
+        }
+        incant!(
+            fast_gaussian_vertical_x16_inner(rg, tmp, width, height, x0, out),
+            [v3, neon, wasm128, scalar]
+        )
+    }
+    #[cfg(not(feature = "rayon"))]
+    for x0 in (cols16..cols8).step_by(8).chain(tail_x0) {
         if x0 & (STOP_COL_STRIDE - 1) == 0 {
             stop.check()?;
         }
