@@ -397,6 +397,8 @@ bool IsStreamingSupported(j_compress_ptr cinfo) {
 void AllocateBuffers(j_compress_ptr cinfo) {
   jpeg_comp_master* m = cinfo->master;
   memset(m->last_dc_coeff, 0, sizeof(m->last_dc_coeff));
+  memset(m->trellis_blocks, 0, sizeof(m->trellis_blocks));
+  memset(m->trellis_counts, 0, sizeof(m->trellis_counts));
   if (!IsStreamingSupported(cinfo) || cinfo->optimize_coding) {
     int ysize_blocks = DivCeil(cinfo->image_height, DCTSIZE);
     int num_arrays = cinfo->num_scans * ysize_blocks;
@@ -683,6 +685,7 @@ void jpegli_CreateCompress(j_compress_ptr cinfo, int version,
   cinfo->master->cicp_transfer_function = 2;  // unknown transfer function code
   cinfo->master->use_std_tables = false;
   cinfo->master->use_adaptive_quantization = true;
+  cinfo->master->use_trellis_quantization = false;
   cinfo->master->progressive_level = jpegli::kDefaultProgressiveLevel;
   cinfo->master->data_type = JPEGLI_TYPE_UINT8;
   cinfo->master->endianness = JPEGLI_NATIVE_ENDIAN;
@@ -915,6 +918,11 @@ void jpegli_add_quant_table(j_compress_ptr cinfo, int which_tbl,
 void jpegli_enable_adaptive_quantization(j_compress_ptr cinfo, boolean value) {
   CheckState(cinfo, jpegli::kEncStart);
   cinfo->master->use_adaptive_quantization = FROM_JXL_BOOL(value);
+}
+
+void jpegli_enable_trellis_quantization(j_compress_ptr cinfo, boolean value) {
+  CheckState(cinfo, jpegli::kEncStart);
+  cinfo->master->use_trellis_quantization = FROM_JXL_BOOL(value);
 }
 
 void jpegli_simple_progression(j_compress_ptr cinfo) {

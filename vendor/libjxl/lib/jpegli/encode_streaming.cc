@@ -3,6 +3,15 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Trellis quantization adapted for jpegli from MozJPEG v4.1.5 jcdctmgr.c.
+// Copyright (C) 2026 img contributors.
+// Copyright (C) 1994-1996, Thomas G. Lane.
+// Copyright (C) 1999-2006, MIYASAKA Masaru.
+// Copyright 2009 Pierre Ossman <ossman@cendio.se> for Cendio AB.
+// Copyright (C) 2011, 2014-2015, D. R. Commander.
+// Copyright (C) 2014, Mozilla Corporation.
+// Distribution conditions are in third_party/libjpeg-turbo/README.ijg.
+
 #include "lib/jpegli/encode_streaming.h"
 
 #include <cmath>
@@ -102,6 +111,108 @@ void ZigZagShuffle(int32_t* JXL_RESTRICT block) {
 }
 }  // namespace
 
+
+void UpdateTrellisRates(j_compress_ptr cinfo, int component, const int32_t* block) {
+  jpeg_comp_master* m = cinfo->master;
+  auto& prior = m->trellis_prior[component];
+  if (!m->trellis_blocks[component]) {
+    memset(prior, 16, sizeof(prior));
+    const JHUFF_TBL* table = cinfo->ac_huff_tbl_ptrs[cinfo->comp_info[component].ac_tbl_no];
+    if (!table) JPEGLI_ERROR("Missing trellis Huffman table");
+    int index = 0;
+    for (int length = 1; length <= 16; ++length) {
+      for (int i = 0; i < table->bits[length]; ++i) {
+        const int symbol = table->huffval[index++];
+        if ((symbol & 15) <= 10) prior[symbol >> 4][symbol & 15] = length;
+      }
+    }
+  }
+  auto& counts = m->trellis_counts[component];
+  auto& rates = m->trellis_rates[component];
+  int run = 0;
+  for (int i = 1; i < 64; ++i) {
+    int value = std::abs(block[kJPEGNaturalOrder[i]]);
+    if (!value) { ++run; continue; }
+    while (run >= 16) { ++counts[15][0]; run -= 16; }
+    int bits = 0;
+    while (value) { value >>= 1; ++bits; }
+    ++counts[run][std::min(bits, 10)];
+    run = 0;
+  }
+  if (run) ++counts[0][0];
+  uint64_t blocks = ++m->trellis_blocks[component];
+  if (blocks != 1 && (blocks & 511) != 0) return;
+  double total = 0;
+  for (int r = 0; r < 16; ++r) {
+    for (int b = 1; b <= 10; ++b) {
+      total += counts[r][b] + std::ldexp(256.0, -prior[r][b]);
+    }
+  }
+  total += counts[0][0] + std::ldexp(256.0, -prior[0][0]);
+  total += counts[15][0] + std::ldexp(256.0, -prior[15][0]);
+  for (int r = 0; r < 16; ++r) {
+    for (int b = 0; b <= 10; ++b) {
+      rates[r][b] = std::min(16.0, -std::log2((counts[r][b] +
+          std::ldexp(256.0, -prior[r][b])) / total));
+    }
+  }
+}
+
+void TrellisQuantize(const float* dct, const float* qmc,
+                     const float rates[16][11], int32_t* block) {
+  float norm = 0.0f;
+  for (int k = 1; k < 64; ++k) norm += dct[k] * dct[k] * 4096.0f;
+  const float lambda = 128.0f * 27554.493f / (92681.9f + norm / 63.0f);
+  float zero_cost[64] = {};
+  float cost[64] = {};
+  int previous[64] = {};
+  int chosen[64] = {};
+  for (int i = 1; i < 64; ++i) {
+    const int z = kJPEGNaturalOrder[i];
+    const float x = std::abs(dct[z] * qmc[z]);
+    zero_cost[i] = zero_cost[i - 1] + x * x * lambda;
+    cost[i] = 1e30f;
+    const int rounded = std::min(1023, static_cast<int>(x + 0.5f));
+    if (!rounded) continue;
+    int bits = 0;
+    for (int v = rounded; v; v >>= 1) ++bits;
+    float candidate_dist[11];
+    for (int b = 1; b <= bits; ++b) {
+      const int candidate = b == bits ? rounded : (1 << b) - 1;
+      const float delta = x - candidate;
+      candidate_dist[b] = delta * delta * lambda;
+    }
+    for (int j = 0; j < i; ++j) {
+      if (j && !chosen[j]) continue;
+      const int run = i - 1 - j;
+      for (int b = 1; b <= bits; ++b) {
+        const int candidate = b == bits ? rounded : (1 << b) - 1;
+        const float total = cost[j] + zero_cost[i - 1] - zero_cost[j] +
+            (run / 16) * rates[15][0] + rates[run % 16][b] + b +
+            candidate_dist[b];
+        if (total < cost[i]) {
+          cost[i] = total;
+          previous[i] = j;
+          chosen[i] = dct[z] < 0 ? -candidate : candidate;
+        }
+      }
+    }
+  }
+  float best = zero_cost[63] + rates[0][0];
+  int last = 0;
+  for (int i = 1; i < 64; ++i) {
+    if (!chosen[i]) continue;
+    float total = cost[i] + zero_cost[63] - zero_cost[i];
+    if (i != 63) total += rates[0][0];
+    if (total < best) { best = total; last = i; }
+  }
+  for (int i = 1; i < 64; ++i) block[kJPEGNaturalOrder[i]] = 0;
+  while (last) {
+    block[kJPEGNaturalOrder[last]] = chosen[last];
+    last = previous[last];
+  }
+}
+
 template <int kMode>
 void ProcessiMCURow(j_compress_ptr cinfo) {
   jpeg_comp_master* m = cinfo->master;
@@ -188,6 +299,10 @@ void ProcessiMCURow(j_compress_ptr cinfo) {
           ComputeCoefficientBlock(pixels, stride, qmc, last_dc_coeff[c],
                                   aq_strength, zero_bias_offset, zero_bias_mul,
                                   m->dct_buffer, block);
+          if (m->use_trellis_quantization && m->psnr_target == 0) {
+            UpdateTrellisRates(cinfo, c, block);
+            TrellisQuantize(m->dct_buffer, qmc, m->trellis_rates[c], block);
+          }
           if (kMode == kStreamingModeCoefficients) {
             JCOEF* cblock = &blocks[c][iy][bx][0];
             for (int k = 0; k < DCTSIZE2; ++k) {

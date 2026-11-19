@@ -1,7 +1,7 @@
 use std::{ffi::{c_float, c_int, c_void}, ptr::NonNull};
 
 unsafe extern "C" {
-    fn img_jpegli_create(width: u32, height: u32, gray: c_int, quality: c_float, memory: usize, limit: usize) -> *mut c_void;
+    fn img_jpegli_create(width: u32, height: u32, gray: c_int, quality: c_float, trellis: c_int, memory: usize, limit: usize) -> *mut c_void;
     fn img_jpegli_marker(encoder: *mut c_void, marker: c_int, data: *const u8, len: usize) -> c_int;
     fn img_jpegli_rows(encoder: *mut c_void, data: *const u8, stride: usize, count: u32) -> c_int;
     fn img_jpegli_finish(encoder: *mut c_void, data: *mut *const u8, len: *mut usize) -> c_int;
@@ -9,13 +9,15 @@ unsafe extern "C" {
 }
 #[derive(Clone, Copy)]
 pub enum Color { Gray, Rgb }
+#[derive(Clone, Copy)]
+pub enum Quantization { Standard, Trellis }
 pub struct Encoder { raw: NonNull<c_void>, stride: usize, remaining: u32 }
 impl Encoder {
-    pub fn new(width: u32, height: u32, color: Color, quality: f32, memory: usize, limit: usize) -> Result<Self, &'static str> {
+    pub fn new(width: u32, height: u32, color: Color, quality: f32, quantization: Quantization, memory: usize, limit: usize) -> Result<Self, &'static str> {
         if !(1.0..=100.0).contains(&quality) { return Err("invalid quality"); }
         let gray = matches!(color, Color::Gray);
         let stride = (width as usize).checked_mul(if gray { 1 } else { 3 }).ok_or("invalid dimensions")?;
-        let raw = unsafe { img_jpegli_create(width, height, gray as c_int, quality, memory, limit) };
+        let raw = unsafe { img_jpegli_create(width, height, gray as c_int, quality, matches!(quantization, Quantization::Trellis) as c_int, memory, limit) };
         Ok(Self { raw: NonNull::new(raw).ok_or("jpegli initialization failed")?, stride, remaining: height })
     }
     pub fn icc_profile(&mut self, data: &[u8]) -> Result<(), &'static str> { self.marker(2, data) }
