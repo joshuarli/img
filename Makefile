@@ -1,4 +1,4 @@
-.PHONY: test baseline-check decoder-reference-check ci release verify-release
+.PHONY: test baseline-check decoder-reference-check ci release verify-release bench bench-check bench-list
 
 TARGET ?= $(shell rustc -vV | awk '/^host:/ {print $$2}')
 CARGO_TARGET_DIR ?= target
@@ -38,6 +38,18 @@ benchmark-run:
 	cargo build --locked --profile dist --features build-binary
 	cargo run --locked --profile dist --all-features --example benchmark -- run
 	perf-gate-ready -1
+
+TIER ?= change
+BENCH_ARGS ?=
+
+bench:
+	./scripts/bench run --tier $(TIER) $(BENCH_ARGS)
+
+bench-check:
+	./scripts/bench check --tier $(TIER) $(BENCH_ARGS)
+
+bench-list:
+	./scripts/bench list
 
 native-build-check:
 	./scripts/check-native-build

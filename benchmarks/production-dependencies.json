@@ -6,7 +6,7 @@
     "aarch64-unknown-linux-musl",
     "x86_64-unknown-linux-musl"
   ],
-  "sourceRevision": "28dc15a0255d4fde6b56de6f963b8f70a5f8e904",
+  "sourceRevision": "7337b24e15d5eee7beb4a186e683a1ac536fe1b6",
   "packages": [
     {
       "name": "adler2",
@@ -248,7 +248,7 @@
       "licenseDeclared": "BSD-2-Clause AND BSD-3-Clause AND MIT",
       "licenseSelected": "BSD-2-Clause AND BSD-3-Clause AND MIT",
       "repository": "https://github.com/imazen/fast-ssim2",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "source": "path",
       "hasBuildScript": true
     },
     {

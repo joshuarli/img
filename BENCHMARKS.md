@@ -1,5 +1,46 @@
 # Benchmark evidence
 
+## Running benchmarks
+
+`scripts/bench` (or `make bench`, `make bench-check`, `make bench-list`) is the
+entrypoint. It compares the current checkout's distributable build (`target/dist/img`)
+with a base revision (`--base`, default `origin/master`) on the frozen qualification
+corpus, and reuses the harnesses under `benchmarks/codecs/`.
+
+```sh
+python3 -I scripts/qualification-corpus .work/qcorpus   # once; verifies pinned originals
+scripts/bench build                                      # new and base dist binaries
+scripts/bench check --tier change                        # preflight only
+scripts/bench run --tier change                          # or: make bench TIER=change
+scripts/bench run --tier scenario --only workflow-scored --dry-run
+```
+
+| Tier | What runs | Observed cost (M1) |
+| --- | --- | --- |
+| edit | harness compiles; `tests/test_bench.py` selection, preflight and guard rules | 1 s |
+| change | one gated round each: SSIMULACRA2 bit-identity (`score-exact`), scored and lossless single-image workflows, a 55-PNG batch at `-j 4` | about 1 min warm |
+| scenario | 5 gated rounds of the workflows on 12 files at three formats, 3 batch rounds at `-j 1`/`-j 4`, 9-round JPEG decode qualification | estimated 2 h |
+| full | adds AVIF and PNG decode library qualification and `make benchmark-run` | hours; manual only |
+
+Selectors: `--tier` is a ceiling (each workload runs at its highest level at or below
+it), `--only` takes workload names, `--area` takes areas, `--skip` takes names. Unknown
+names and empty selections fail. `--tier full` refuses to run without `--confirm-full`;
+use it only when a full run is explicitly requested. Preflight checks tools, binary
+freshness against `src`, `vendor`, `codecs` and the manifests, the corpus hashes, the
+decode fixtures a workload needs, free disk and leftover benchmark processes; any
+problem stops the run before anything executes and names the fix. `--dry-run` prints
+the commands and writes nothing.
+
+Each run writes `.work/bench/runs/<UTC>-<tier>/` with a per-workload `log.txt`, result
+JSON and `summary.json` (commit, dirty state, binary and corpus hashes, exit status,
+duration, kept and discarded rounds, exclusions). No budgets exist: a passing run means
+the work completed and outputs were checked (bit-identical scores; the new binary
+completes every case the base completes), not that performance is acceptable. Read
+the ratios in each log; `.work/` is disposable, so copy evidence that matters into
+`benchmarks/results/` and summarize it in `docs/CODECS.md`. Attribute a moved number
+with `sample PID` (macOS) on the slower binary, or the in-process loops
+(`benchmarks/codecs/score/score-loop.rs`, `*/decode-loop.rs`) under a profiler.
+
 ## Current WebP interpretation — 2026-11-15 review
 
 The current campaign, gate table and next tasks are in

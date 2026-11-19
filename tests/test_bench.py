@@ -1,0 +1,81 @@
+import sys
+sys.dont_write_bytecode = True
+import contextlib, importlib.machinery, importlib.util, io, os, pathlib, subprocess, sys, tempfile, unittest
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+loader = importlib.machinery.SourceFileLoader('bench', str(ROOT / 'scripts/bench'))
+spec = importlib.util.spec_from_loader('bench', loader)
+bench = importlib.util.module_from_spec(spec)
+loader.exec_module(bench)
+
+
+def names(chosen): return [w['name'] for w, _ in chosen]
+
+
+class Selection(unittest.TestCase):
+    def test_tier_is_a_ceiling_and_picks_the_highest_level_below_it(self):
+        chosen, excluded = bench.select('change')
+        self.assertIn('workflow-scored', names(chosen))
+        self.assertNotIn('jpeg-decode', names(chosen))
+        self.assertIn('jpeg-decode', [n for n, _ in excluded])
+        self.assertEqual(dict((w['name'], l) for w, l in bench.select('scenario')[0])['workflow-scored'], 'scenario')
+        self.assertEqual(names(bench.select('edit')[0]), ['harness'])
+
+    def test_names_and_areas_are_distinct_selectors(self):
+        self.assertEqual(names(bench.select('change', only=['batch'])[0]), ['batch'])
+        self.assertEqual(sorted(names(bench.select('full', areas=['decode'])[0])), ['avif-decode', 'jpeg-decode', 'png-decode'])
+        with self.assertRaises(SystemExit): bench.select('change', only=['decode'])
+        with self.assertRaises(SystemExit): bench.select('change', areas=['batch-throughput'])
+
+    def test_unknown_and_empty_selections_fail(self):
+        with self.assertRaises(SystemExit): bench.select('change', only=['nope'])
+        with self.assertRaises(SystemExit): bench.select('change', skip=['nope'])
+        with self.assertRaises(SystemExit): bench.select('change', only=['png-decode'])
+        with self.assertRaises(SystemExit): bench.select('edit', skip=['harness'])
+
+    def test_skips_are_reported_as_exclusions(self):
+        chosen, excluded = bench.select('change', skip=['batch'])
+        self.assertNotIn('batch', names(chosen))
+        self.assertIn(('batch', 'skipped by --skip'), excluded)
+
+    def test_corpus_sets_are_deterministic_dev_files(self):
+        smoke = bench.corpus_set('smoke')
+        self.assertEqual(len(smoke), len(set(smoke)))
+        self.assertTrue(set(smoke) <= set(bench.corpus_set('scenario')) <= set(bench.corpus_set('dev')))
+        self.assertFalse(bench.UNSUPPORTED & set(bench.corpus_set('dev')))
+
+
+class Guards(unittest.TestCase):
+    def run_bench(self, *args, env=None):
+        return subprocess.run([sys.executable, str(ROOT / 'scripts/bench'), *args], capture_output=True, text=True,
+                              env={**os.environ, **(env or {})}, cwd=ROOT)
+
+    def test_full_tier_needs_explicit_confirmation(self):
+        p = self.run_bench('run', '--tier', 'full', '--only', 'historical', '--base', 'HEAD')
+        self.assertNotEqual(p.returncode, 0)
+        self.assertIn('manual-only', p.stderr)
+
+    def test_failed_preflight_runs_nothing(self):
+        with tempfile.TemporaryDirectory() as empty:
+            runs = bench.WORK / 'runs'
+            before = set(runs.iterdir()) if runs.exists() else set()
+            p = self.run_bench('run', '--only', 'workflow-lossless', '--base', 'HEAD', env={'BENCH_CORPUS': empty})
+            after = set(runs.iterdir()) if runs.exists() else set()
+        self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+        self.assertIn('qualification corpus', p.stdout)
+        self.assertIn('nothing ran', p.stdout)
+        self.assertEqual(before, after)
+
+    def test_dry_run_prints_commands_and_writes_nothing(self):
+        runs = bench.WORK / 'runs'
+        before = set(runs.iterdir()) if runs.exists() else set()
+        p = self.run_bench('run', '--tier', 'scenario', '--only', 'workflow-scored', '--base', 'HEAD', '--dry-run')
+        after = set(runs.iterdir()) if runs.exists() else set()
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertIn('benchmarks/codecs/workflow.py', p.stdout)
+        self.assertIn('WORKFLOW_SCORES=90', p.stdout)
+        self.assertEqual(before, after)
+
+
+if __name__ == '__main__':
+    unittest.main()
