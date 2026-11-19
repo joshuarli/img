@@ -60,9 +60,22 @@ Binary distributions carry the license files listed above; see
 
 jpegli is from libjxl v0.11.1, commit `794a5dcf0d54f9f0b20d288a12e87afb91d20dfc`, BSD-3-Clause with the upstream PATENTS file. Highway is commit `457c891775a7397bdb0376bb1031e6e027af1c48`, Apache-2.0. The libjpeg API headers are from libjxl's libjpeg-turbo submodule at `8ecba3647edb6dd940463fedf38ca33a8e2a73d1`, under the IJG license. This software is based in part on the work of the Independent JPEG Group.
 
-The libjxl snapshot contains the files in `JPEGXL_INTERNAL_JPEGLI_SOURCES`, `lib/jxl/base` headers, and the public `types.h`, `codestream_header.h`, `parallel_runner.h`, `memory_manager.h`, and `color_encoding.h`. It also contains the libjpeg API headers, their license texts, and libjxl's LICENSE, PATENTS, and AUTHORS. Highway contains its core headers, excluding `hwy/contrib`, and `abort.cc`, `aligned_allocator.cc`, `nanobenchmark.cc`, `per_target.cc`, `print.cc`, `targets.cc`, and `timer.cc`. Tests, programs, and unrelated codecs are omitted.
+The libjxl snapshot contains the files in `JPEGXL_INTERNAL_JPEGLI_SOURCES`, `lib/jxl/base/{bits,byte_order,common,compiler_specific,include_jpeglib,printf_macros,sanitizer_definitions,status}.h`, and the public `jxl/types.h`. It also contains the libjpeg API headers, their license texts, and libjxl's LICENSE, PATENTS, and AUTHORS. Highway contains the transitive headers needed by the library sources, including the architecture-specific `hwy/ops` headers, and `abort.cc`, `aligned_allocator.cc`, `nanobenchmark.cc`, `per_target.cc`, `print.cc`, `targets.cc`, and `timer.cc`. Tests, programs, and unrelated codecs are omitted.
 
-To regenerate the snapshot, check out libjxl at the pinned commit with its submodules. Copy the files named in `lib/jxl_lists.cmake` under `JPEGXL_INTERNAL_JPEGLI_SOURCES`, the headers and license files listed above, and the seven Highway sources. Compare the include closure and source list against the upstream build before updating the pins. Run `make native-build-check` and the JPEG tests after updating.
+To regenerate the current trimmed snapshot, check out libjxl at the pinned commit with its submodules. Set `jxl_checkout` to that checkout and copy the tracked file list:
+
+```sh
+git ls-files vendor/libjxl | while IFS= read -r path; do
+    mkdir -p "$(dirname "$path")"
+    cp "$jxl_checkout/${path#vendor/libjxl/}" "$path"
+done
+git ls-files vendor/highway | while IFS= read -r path; do
+    mkdir -p "$(dirname "$path")"
+    cp "$jxl_checkout/third_party/highway/${path#vendor/highway/}" "$path"
+done
+```
+
+For an update, compare `JPEGXL_INTERNAL_JPEGLI_SOURCES` and the transitive include closure against the new upstream build. Add or remove files as needed, update the pins, and run `make native-build-check` and the JPEG tests.
 
 The local `jpegli-sys` build compiles the sources with `cc` in C++17 mode. It writes the libjpeg configuration header with the upstream values: ABI 62, 8-bit samples, and memory source and destination support. The build does not run CMake. The shim catches native C++ exceptions before using `longjmp` to return an error, so jpegli can destroy stack objects before control returns to Rust.
 
