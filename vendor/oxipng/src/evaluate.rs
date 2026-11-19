@@ -18,7 +18,8 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 #[cfg(not(feature = "parallel"))]
 use crate::rayon;
 use crate::{
-    Deadline, PngError, atomicmin::AtomicMin, deflate, filters::FilterStrategy, png::PngImage,
+    BitDepth, ColorType, Deadline, PngError, atomicmin::AtomicMin, deflate, filters::FilterStrategy,
+    png::PngImage,
 };
 
 pub(crate) struct Candidate {
@@ -62,6 +63,19 @@ pub(crate) struct Evaluator {
     // in non-parallel mode, images are evaluated synchronously
     #[cfg(not(feature = "parallel"))]
     eval_best_candidate: RefCell<Option<Candidate>>,
+}
+
+/// Unfiltered rows only pay off for palette and sub-byte images, where
+/// filter byte arithmetic is meaningless (libpng's adaptive heuristic makes
+/// the same exception), so a set that already has the per-row MinSum
+/// heuristic skips the separate unfiltered trial for other images.
+fn trial_filters(filters: &IndexSet<FilterStrategy>, image: &PngImage) -> IndexSet<FilterStrategy> {
+    let packed = matches!(image.ihdr.color_type, ColorType::Indexed { .. })
+        || image.ihdr.bit_depth != BitDepth::Eight && image.ihdr.bit_depth != BitDepth::Sixteen;
+    if packed || !filters.contains(&FilterStrategy::MinSum) || filters.len() < 2 {
+        return filters.clone();
+    }
+    filters.iter().filter(|f| **f != FilterStrategy::NONE).cloned().collect()
 }
 
 impl Evaluator {
@@ -127,7 +141,7 @@ impl Evaluator {
         let nth = self.nth.fetch_add(1, SeqCst);
         // These clones are only cheap refcounts
         let deadline = self.deadline.clone();
-        let filters = self.filters.clone();
+        let filters = trial_filters(&self.filters, &image);
         let deflater = self.deflater;
         let optimize_alpha = self.optimize_alpha;
         let final_round = self.final_round;

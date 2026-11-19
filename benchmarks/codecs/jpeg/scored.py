@@ -4,7 +4,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[3]
 scratch = Path(os.environ.get('JPEG_SCRATCH', root / '.work/tmp/jpeg-candidates'))
-binaries = {name: Path(os.environ[f'SCORED_{name.upper()}']) for name in ('img', 'zen') if os.environ.get(f'SCORED_{name.upper()}')}
+binaries = dict((label, Path(path)) for label, path in (spec.split('=', 1) for spec in os.environ['SCORED_TOOLS'].split(','))) if os.environ.get('SCORED_TOOLS') else {name: Path(os.environ[f'SCORED_{name.upper()}']) for name in ('img', 'zen') if os.environ.get(f'SCORED_{name.upper()}')}
 scores = [int(s) for s in os.environ.get('SCORED_TARGETS', '80,90,95').split(',')]
 efforts = os.environ.get('SCORED_EFFORTS', 'fast,balanced,best').split(',')
 repeats = int(os.environ.get('SCORED_REPEATS', '3'))
@@ -45,7 +45,7 @@ def main():
                         record['cpu_ms'].append(cpu)
                     if record['exit'] == 0:
                         record['bytes'] = dest.stat().st_size
-                        c = subprocess.run([str(binaries.get('img', binaries.get('zen'))), 'compare', str(source), str(dest), '--json'], capture_output=True)
+                        c = subprocess.run([str(binaries.get('img', next(iter(binaries.values())))), 'compare', str(source), str(dest), '--json'], capture_output=True)
                         record['score'] = json.loads(c.stdout)['results'][0]['score'] if c.returncode == 0 else None
                     records.append(record)
                     out.write_text(json.dumps(records, separators=(',', ':')))

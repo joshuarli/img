@@ -56,6 +56,11 @@ is compiled.
   0.49x (best) of the single-stream encoder, with total bytes +0.007%, -0.010%
   and +0.014%; the largest group change is best photo +0.06% (filter
   selection on near-ties), the largest file +0.5%.
+- Local patch, `src/evaluate.rs`: a filter set that contains MinSum skips the
+  separate unfiltered (NONE) trial unless the candidate is indexed or below
+  eight bits per sample, libpng's own exception. Preset 0 (img's fast and
+  balanced) therefore compresses one trial instead of two for RGB and gray
+  images; outputs were byte-identical on all 98 development PNGs.
 
 ## libdeflater 1.26.1 and libdeflate-sys 1.26.1
 
