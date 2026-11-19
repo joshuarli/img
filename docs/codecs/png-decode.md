@@ -1,15 +1,14 @@
-# PNG decode exactness investigation
+# PNG decode qualification
 
-The qualification stopped before timing because zune-png 0.5.2 returned incorrect alpha samples for valid 16-bit tRNS inputs. png 0.18.1 with EXPAND supplies the reference in native byte order, matching `src/still/png.rs`. Zen is an AGPL benchmark-only dependency; it is not integrated. Zen's RGBA output for grayscale with transparency is reduced to gray and alpha before comparison.
+Do not integrate a candidate: neither permissive native decoder is 10% faster than png 0.18.1. zune-png 0.5.2 is disqualified because it changes alpha on valid 16-bit grayscale and RGB tRNS samples; [the fixtures](../../benchmarks/codecs/png/decode-exact-fixtures.py) reproduce the difference. Zen is AGPL and benchmark-only.
 
-On macOS ARM64, 112 inputs (89 existing corpus and dev PNGs, 23 generated edge cases) produced two zune-png mismatches and zero zenpng mismatches. In `gray16-trns.png`, transparent value 256 instead makes sample 1 transparent; in `rgb16-trns.png`, the declared transparent RGB value remains opaque. The native-byte-order sample dumps are emitted by the comparison program.
+On an Apple M1, 137 fixtures had zero sample-hash mismatches and zero decode errors for png, zenpng 0.1.4, libspng 0.7.4 and libpng 1.6.59; each rejected six corrupt or truncated variants. The set includes 95 supported dev images, generated palette, gray, alpha, 16-bit and Adam7 cases, and img fast/best and zlib re-encodings. Five JPEG dev originals were rejected by the base CLI because of auxiliary images or trailing payloads.
 
-Reproduce from the repository root with the existing dev fixture directory:
+Nine shuffled paired rounds passed the pre/post load gates with zero discards, each sample running for at least 150 ms. Ratios below are candidate time divided by png time: lower is better. Confidence intervals bootstrap per-file median paired ratios; p95 and worst are across files. RSS uses a separate single-decode run per fixture.
 
-```sh
-python3 benchmarks/codecs/png/decode-exact-fixtures.py
-benchmarks/codecs/png/decode-exact-build.sh
-.work/tmp/png-exact/target/release/png-exact .work/tmp/png-exact/fixtures/*.png /Users/josh/d/img/.work/tmp/pngdev/*.png benchmarks/corpus/*.png benchmarks/corpus/generated/*.png
-```
+| Candidate | All files time geomean [95% CI] | p95 | Worst | RSS geomean / worst |
+| --- | --- | --- | --- | --- |
+| libspng + miniz | 2.040 [1.972, 2.111] | 2.899 | 4.109 | 0.960 / 1.023 |
+| libpng | 1.413 [1.347, 1.484] | 2.432 | 3.284 | 0.981 / 1.047 |
 
-The comparison exits 1 for the two differences. No timed qualification, corrupt-input qualification, C decoder evaluation, or integration was performed after the specified stop condition.
+The [per-class report](../../benchmarks/results/codecs/png/decode-report-2026-11-19.txt) compares each exact candidate with png and Zen and identifies worst files. [Raw samples and fixture hashes](../../benchmarks/results/codecs/png/decode-qualify-2026-11-19.json) include the binary and native-library hashes. An initial RSS run accidentally skipped decoding; it was discarded and rerun with the separately hashed corrected binary. The timed binary always decoded. The benchmark links libpng 1.6.59 locally; libspng uses miniz 2.2.0. libspng is BSD-2-Clause with libpng-2.0 portions, miniz is MIT, and libpng uses the libpng license. No candidate was added to production.

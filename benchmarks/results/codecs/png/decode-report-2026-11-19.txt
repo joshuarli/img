@@ -1,0 +1,42 @@
+spng / png: class n geomean [95% CI] p95 worst(file) | rss geomean worst
+  foreign         93 2.099 [2.007, 2.199] 3.436 4.109(input-128-palette-8.png) | 0.951 1.023
+  small           36 2.240 [2.011, 2.484] 3.745 4.109(input-128-palette-8.png) | 1.002 1.023
+  all            137 2.040 [1.972, 2.111] 2.899 4.109(input-128-palette-8.png) | 0.960 1.023
+  img-fast        42 1.911 [1.832, 1.994] 2.451 2.659(input-094-ui-text-original-02.png) | 0.983 0.998
+  large           32 1.910 [1.802, 2.026] 2.520 2.659(input-094-ui-text-original-02.png) | 0.992 0.998
+  img-best         2 2.134 [2.115, 2.153] 2.153 2.153(img-best-0.png) | 0.924 0.924
+spng / zen: class n geomean [95% CI] p95 worst(file) | rss geomean worst
+  foreign         93 1.104 [1.004, 1.204] 1.975 2.024(input-054-texture-27.png) | 0.890 0.964
+  small           36 0.758 [0.674, 0.851] 1.208 1.804(input-128-palette-8.png) | 0.944 0.964
+  all            137 1.135 [1.073, 1.208] 1.967 2.024(input-054-texture-27.png) | 0.801 0.964
+  img-fast        42 1.202 [1.172, 1.236] 1.454 1.491(input-094-ui-text-original-02.png) | 0.635 0.804
+  large           32 1.208 [1.166, 1.252] 1.488 1.491(input-094-ui-text-original-02.png) | 0.614 0.680
+  img-best         2 1.231 [1.191, 1.273] 1.273 1.273(img-best-1.png) | 0.800 0.803
+libpng / png: class n geomean [95% CI] p95 worst(file) | rss geomean worst
+  foreign         93 1.505 [1.410, 1.605] 2.498 3.284(input-033-synthetic-10.png) | 0.978 1.047
+  small           36 1.643 [1.493, 1.825] 3.264 3.284(input-033-synthetic-10.png) | 1.032 1.047
+  all            137 1.413 [1.347, 1.484] 2.432 3.284(input-033-synthetic-10.png) | 0.981 1.047
+  img-fast        42 1.222 [1.180, 1.265] 1.467 1.639(input-075-ui-text-original-05.png) | 0.991 0.999
+  large           32 1.194 [1.147, 1.244] 1.467 1.591(input-094-ui-text-original-02.png) | 0.996 0.999
+  img-best         2 1.565 [1.528, 1.603] 1.603 1.603(img-best-1.png) | 0.946 0.946
+libpng / zen: class n geomean [95% CI] p95 worst(file) | rss geomean worst
+  foreign         93 0.792 [0.710, 0.887] 1.719 1.827(input-001-grayscale-16.png) | 0.915 0.985
+  small           36 0.556 [0.477, 0.648] 1.428 1.699(input-026-synthetic-00.png) | 0.973 0.985
+  all            137 0.786 [0.728, 0.846] 1.699 1.827(input-001-grayscale-16.png) | 0.819 0.985
+  img-fast        42 0.769 [0.748, 0.788] 0.888 0.894(input-075-ui-text-original-05.png) | 0.640 0.824
+  large           32 0.755 [0.733, 0.777] 0.888 0.889(input-084-grayscale-original-04.png) | 0.617 0.684
+  img-best         2 0.903 [0.845, 0.965] 0.965 0.965(img-best-1.png) | 0.819 0.823
+zen / png: class n geomean [95% CI] p95 worst(file) | rss geomean worst
+  foreign         93 1.900 [1.730, 2.085] 4.364 5.061(input-100-flat.png) | 1.069 1.722
+  small           36 2.955 [2.659, 3.277] 5.035 5.061(input-100-flat.png) | 1.061 1.091
+  all            137 1.797 [1.684, 1.925] 3.785 5.061(input-100-flat.png) | 1.199 1.789
+  img-fast        42 1.590 [1.547, 1.634] 1.801 1.832(input-075-ui-text-original-05.png) | 1.548 1.789
+  large           32 1.581 [1.526, 1.633] 1.801 1.830(input-082-photo-28.png) | 1.615 1.789
+  img-best         2 1.732 [1.660, 1.807] 1.807 1.807(img-best-0.png) | 1.155 1.161
+png / zen: class n geomean [95% CI] p95 worst(file) | rss geomean worst
+  foreign         93 0.526 [0.480, 0.578] 0.920 0.939(input-054-texture-27.png) | 0.936 0.981
+  small           36 0.338 [0.305, 0.376] 0.600 0.765(input-119-adam7-8-6.png) | 0.942 0.965
+  all            137 0.557 [0.519, 0.594] 0.918 0.939(input-054-texture-27.png) | 0.834 0.981
+  img-fast        42 0.629 [0.612, 0.646] 0.714 0.757(input-088-texture-original-03.png) | 0.646 0.871
+  large           32 0.633 [0.612, 0.655] 0.721 0.757(input-088-texture-original-03.png) | 0.619 0.688
+  img-best         2 0.577 [0.553, 0.602] 0.602 0.602(img-best-1.png) | 0.866 0.870

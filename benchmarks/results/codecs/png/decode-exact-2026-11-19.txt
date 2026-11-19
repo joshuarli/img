@@ -1,0 +1,11 @@
+png {'fixtures': 137, 'mismatches': 0, 'errors': 0}
+zen {'fixtures': 137, 'mismatches': 0, 'errors': 0}
+spng {'fixtures': 137, 'mismatches': 0, 'errors': 0}
+libpng {'fixtures': 137, 'mismatches': 0, 'errors': 0}
+png malformed 6 accepted 0
+zen malformed 6 accepted 0
+spng malformed 6 accepted 0
+libpng malformed 6 accepted 0
+zune-png 0.5.2 prior fixture set: fixtures 112 mismatches 2 errors 0 (disqualified)
+  gray16-trns.png: alpha for gray sample 1 is 0 rather than 65535; sample 256 is 65535 rather than 0
+  rgb16-trns.png: alpha for transparent RGB (1, 256, 65535) is 65535 rather than 0
