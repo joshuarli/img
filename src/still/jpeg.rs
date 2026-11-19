@@ -137,7 +137,7 @@ pub(super) fn encode(image: &StillImage, mode: super::EncodingMode, _effort: Eff
     let opaque = image.without_opaque_alpha()?;
     let samples = opaque.sample_bytes();
     let (width, height) = opaque.dimensions();
-    let quality = (quality.value().round() as u8).clamp(1, 100);
+    let quality = quality.value().clamp(1.0, 100.0);
     let gray = opaque.is_grayscale();
     let limits = super::limits();
     let mut encoder = jpegli_sys::Encoder::new(width, height, if gray { jpegli_sys::Color::Gray } else { jpegli_sys::Color::Rgb }, quality,

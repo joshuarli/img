@@ -175,15 +175,23 @@ fn jpeg_large_icc_exif_and_xmp_survive_encoding() {
 #[test]
 fn invalid_jpeg_dimensions_return_error() {
     assert!(StillImage::from_rgb8(0, 1, Vec::new()).is_err());
-    assert!(jpegli_sys::Encoder::new(0, 1, jpegli_sys::Color::Rgb, 90, 1024 * 1024, 1024 * 1024).is_err());
+    assert!(jpegli_sys::Encoder::new(0, 1, jpegli_sys::Color::Rgb, 90.0, 1024 * 1024, 1024 * 1024).is_err());
 }
 
 #[test]
 fn jpegli_output_limit_returns_an_error() {
     let mut saw_limit = false;
     for limit in 16..128 {
-        if let Ok(mut encoder) = jpegli_sys::Encoder::new(8, 8, jpegli_sys::Color::Rgb, 90, 1024 * 1024, limit)
+        if let Ok(mut encoder) = jpegli_sys::Encoder::new(8, 8, jpegli_sys::Color::Rgb, 90.0, 1024 * 1024, limit)
             && encoder.app1(&[42; 100]).is_err() { saw_limit = true; }
     }
     assert!(saw_limit);
+}
+
+#[test]
+fn fractional_quality_selects_an_intermediate_jpegli_distance() {
+    let image = StillImage::from_samples(64, 64, SampleLayout::Rgb8, common::pixels(64, 64)).unwrap();
+    let size = |quality| image.encode(Format::Jpeg, mode(quality), Effort::Fast).unwrap().len();
+    let (low, middle, high) = (size(90.0), size(90.5), size(91.0));
+    assert!(low < middle && middle < high, "{low} {middle} {high}");
 }
