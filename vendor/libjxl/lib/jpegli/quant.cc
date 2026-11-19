@@ -649,7 +649,9 @@ void SetQuantMatrices(j_compress_ptr cinfo, float distances[NUM_QUANT_TBLS],
     base_quant_matrix[0] = kBaseQuantMatrixXYB;
     base_quant_matrix[1] = kBaseQuantMatrixXYB + DCTSIZE2;
     base_quant_matrix[2] = kBaseQuantMatrixXYB + 2 * DCTSIZE2;
-  } else if (cinfo->jpeg_color_space == JCS_YCbCr && !m->use_std_tables) {
+  } else if ((cinfo->jpeg_color_space == JCS_YCbCr ||
+              cinfo->jpeg_color_space == JCS_GRAYSCALE) &&
+             !m->use_std_tables) {
     global_scale = kGlobalScaleYCbCr;
     if (m->cicp_transfer_function == kTransferFunctionPQ) {
       global_scale *= .4f;
@@ -659,7 +661,7 @@ void SetQuantMatrices(j_compress_ptr cinfo, float distances[NUM_QUANT_TBLS],
     if (is_yuv420) {
       global_scale *= k420GlobalScale;
     }
-    if (add_two_chroma_tables) {
+    if (add_two_chroma_tables && cinfo->jpeg_color_space == JCS_YCbCr) {
       cinfo->comp_info[2].quant_tbl_no = 2;
       num_base_tables = 3;
       base_quant_matrix[0] = kBaseQuantMatrixYCbCr;
@@ -738,7 +740,8 @@ void InitQuantizer(j_compress_ptr cinfo, QuantPass pass) {
         m->zero_bias_offset[c][k] = k == 0 ? 0.0f : 0.5f;
       }
     }
-    if (cinfo->jpeg_color_space == JCS_YCbCr) {
+    if (cinfo->jpeg_color_space == JCS_YCbCr ||
+        cinfo->jpeg_color_space == JCS_GRAYSCALE) {
       float distance = QuantValsToDistance(cinfo);
       static const float kDistHQ = 1.0f;
       static const float kDistLQ = 3.0f;
@@ -755,7 +758,8 @@ void InitQuantizer(j_compress_ptr cinfo, QuantPass pass) {
         }
       }
     }
-  } else if (cinfo->jpeg_color_space == JCS_YCbCr) {
+  } else if (cinfo->jpeg_color_space == JCS_YCbCr ||
+             cinfo->jpeg_color_space == JCS_GRAYSCALE) {
     for (int c = 0; c < cinfo->num_components; ++c) {
       for (int k = 0; k < DCTSIZE2; ++k) {
         m->zero_bias_offset[c][k] =

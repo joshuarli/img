@@ -195,3 +195,19 @@ fn fractional_quality_selects_an_intermediate_jpegli_distance() {
     let (low, middle, high) = (size(90.0), size(90.5), size(91.0));
     assert!(low < middle && middle < high, "{low} {middle} {high}");
 }
+
+fn luma_quant_table(bytes: &[u8]) -> Vec<u8> {
+    let at = bytes.windows(2).position(|pair| pair == [0xff, 0xdb]).unwrap() + 4;
+    assert_eq!(bytes[at], 0, "eight-bit table 0 first");
+    bytes[at + 1..at + 65].to_vec()
+}
+
+#[test]
+fn grayscale_uses_the_perceptual_luma_quantization_of_color_output() {
+    let gray = StillImage::from_samples(32, 32, SampleLayout::Gray8, vec![90; 32 * 32]).unwrap();
+    let rgb = StillImage::from_samples(32, 32, SampleLayout::Rgb8, vec![90; 32 * 32 * 3]).unwrap();
+    for quality in [60.0, 90.0] {
+        let encode = |image: &StillImage| luma_quant_table(&image.encode(Format::Jpeg, mode(quality), Effort::Fast).unwrap());
+        assert_eq!(encode(&gray), encode(&rgb));
+    }
+}

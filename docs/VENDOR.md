@@ -105,6 +105,8 @@ git ls-files vendor/highway | while IFS= read -r path; do
 done
 ```
 
+One local patch, in `lib/jpegli/quant.cc`: grayscale output uses the perceptual YCbCr luma table, non-linear distance scaling and luma zero-bias that jpegli applies to YCbCr, instead of the Annex K table with linear scaling. Upstream applies its tuned quantization only to YCbCr. At matched SSIMULACRA2 on the grayscale and text inputs this makes the smallest attainable output 3.0%, 2.2% and 1.8% smaller than Zen Best at scores 80, 90 and 95, against 9.5%, 9.2% and 2.1% larger before. `grayscale_uses_the_perceptual_luma_quantization_of_color_output` in `tests/jpeg_codec.rs` fails without it. Reapply it after regenerating: every `JCS_YCbCr` test in `SetQuantMatrices` table selection and in `InitQuantizer`'s zero-bias setup also accepts `JCS_GRAYSCALE`, and the third chroma table is assigned only for YCbCr.
+
 For an update, compare `JPEGXL_INTERNAL_JPEGLI_SOURCES` and the transitive include closure against the new upstream build. Add or remove files as needed, update the pins, and run `make native-build-check` and the JPEG tests.
 
 The local `jpegli-sys` build compiles the sources with `cc` in C++17 mode. It writes the libjpeg configuration header with the upstream values: ABI 62, 8-bit samples, and memory source and destination support. The build does not run CMake. The shim's `error_exit` throws a C++ exception that each exported shim function catches and turns into an error return, so jpegli destroys its stack objects and nothing unwinds into Rust. `HWY_DISABLED_TARGETS` limits Highway's compiled targets to NEON on ARM64 and SSE2, SSE4 and AVX2 on x86-64; SVE, AVX-512 and SSSE3 code is not built.
