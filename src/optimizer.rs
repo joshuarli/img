@@ -152,6 +152,33 @@ fn refine_step(formats: &[Format], evaluations: &[Evaluation], settings: &mut Ve
     }
     refined
 }
+fn jpeg_refine_step(target: f64, effort: Effort, evaluations: &[Evaluation], settings: &mut Vec<(Format,Option<f32>)>) -> bool {
+    let attempts: Vec<_> = evaluations.iter().filter(|e| e.format == Format::Jpeg).collect();
+    let Some(points) = attempts.iter().map(|e| Some((e.quality?, e.score?))).collect::<Option<Vec<(f32,f64)>>>() else { return false };
+    let (slack, width) = match effort { Effort::Fast => (0.5, 1.0), Effort::Balanced => (0.15, 0.25), Effort::Best => (0.05, 0.1) };
+    let goal = target + slack * 0.5;
+    let pass = points.iter().filter(|p| p.1 >= target).min_by(|a,b| a.0.total_cmp(&b.0)).copied();
+    let fail = points.iter().filter(|p| p.1 < target && pass.is_none_or(|h| p.0 < h.0)).max_by(|a,b| a.0.total_cmp(&b.0)).copied();
+    if pass.is_some_and(|h| h.1 - target <= slack) { return false; }
+    let slope = |near: (f32,f64)| {
+        let other = points.iter().filter(|p| p.0 != near.0).min_by(|a,b| (a.0-near.0).abs().total_cmp(&(b.0-near.0).abs()));
+        other.map(|o| (o.1 - near.1) / f64::from(o.0 - near.0)).filter(|m| *m > 0.05).unwrap_or(0.6)
+    };
+    let next = match (fail, pass) {
+        (Some(lo), Some(hi)) => {
+            if hi.0 - lo.0 <= width { return false; }
+            let span = f64::from(hi.0 - lo.0);
+            let t = if hi.1 > lo.1 { ((goal - lo.1) / (hi.1 - lo.1)).clamp(0.1, 0.9) } else { 0.5 };
+            lo.0 + (t * span) as f32
+        },
+        (None, Some(hi)) if hi.0 > 1.0 => (hi.0 - ((hi.1 - goal) / slope(hi) * 1.2) as f32).max(1.0),
+        (Some(lo), None) if lo.0 < 100.0 => (lo.0 + ((goal - lo.1) / slope(lo) * 1.2) as f32).min(100.0),
+        _ => return false,
+    };
+    if points.iter().any(|p| (p.0 - next).abs() < 0.01) { return false; }
+    settings.push((Format::Jpeg, Some(next)));
+    true
+}
 fn strip_compliant(bytes: &[u8], format: Format) -> bool {
     match format {
         Format::Png => {
@@ -259,11 +286,13 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
     let formats: Vec<_> = formats.into_iter().filter(|&f| compatible(&image,f,request.fidelity)).collect();
     if formats.is_empty() { return best.ok_or_else(|| Error::new(ErrorKind::Unsupported,"no compatible destination for the requested precision, alpha or lossless contract")); }
     let cap = request.effort.candidate_cap();
+    let jpeg_only = formats == [Format::Jpeg];
     let mut settings = Vec::new();
     let mut deferred: Vec<(Format,Option<f32>)> = Vec::new();
     match request.fidelity {
         Fidelity::Lossless => for &f in &formats { settings.push((f,None)); },
         Fidelity::Quality(q) => for &f in &formats { settings.push((f,Some(q.value()))); },
+        Fidelity::Score(target) if jpeg_only => settings.push((Format::Jpeg,Some(target.value().clamp(1.0,100.0) as f32))),
         Fidelity::Score(_) => {
             let mut exact = vec![];
             for format in [Format::Png,Format::Webp] {if formats.contains(&format) {exact.push((format,None));}}
@@ -289,7 +318,10 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
             if next < settings.len() && scored_evals < scored_budget { next+=1; scored_evals+=1; break (settings[next-1].0,settings[next-1].1,false); }
             if !matches!(request.fidelity,Fidelity::Score(_)) { break 'eval; }
             if deferred_at < deferred.len() && !fast_defer { deferred_at+=1; let s=deferred[deferred_at-1]; break (s.0,s.1,true); }
-            if scored_evals < scored_budget && refine_step(&formats,&evaluations,&mut settings) { continue; }
+            if scored_evals < scored_budget && match (jpeg_only, request.fidelity) {
+                (true, Fidelity::Score(target)) => jpeg_refine_step(target.value(), request.effort, &evaluations, &mut settings),
+                _ => refine_step(&formats,&evaluations,&mut settings),
+            } { continue; }
             if deferred_at < deferred.len() { deferred_at+=1; let s=deferred[deferred_at-1]; break (s.0,s.1,true); }
             break 'eval;
         };
@@ -403,6 +435,25 @@ mod tests {
         let mut settings = vec![];
         assert!(refine_step(&[Format::Webp], &evaluations, &mut settings));
         assert_eq!(settings, vec![(Format::Webp, Some(25.0))]);
+    }
+    #[test]
+    fn jpeg_refine_step_brackets_then_lands_within_effort_slack() {
+        let curves: [fn(f32) -> f64; 3] = [|q| 20.0 + 0.75 * f64::from(q), |q| 100.0 - 900.0 / (f64::from(q) + 10.0), |q| 30.0 + 60.0 * (f64::from(q) / 100.0).powi(3)];
+        for (curve, target) in curves.into_iter().zip([80.0, 90.0, 85.0]) {
+            for (effort, slack) in [(Effort::Fast, 0.5), (Effort::Balanced, 0.15), (Effort::Best, 0.05)] {
+                let mut settings = vec![(Format::Jpeg, Some(target as f32))];
+                let mut evaluations: Vec<Evaluation> = vec![];
+                while evaluations.len() < effort.candidate_cap() {
+                    if evaluations.len() == settings.len() && !jpeg_refine_step(target, effort, &evaluations, &mut settings) { break; }
+                    let q = settings[evaluations.len()].1.unwrap();
+                    let score = curve(q);
+                    evaluations.push(eval(Format::Jpeg, Some(q), 1, Some(score), (score < target).then_some("below")));
+                }
+                let best = evaluations.iter().filter_map(|e| e.score).filter(|&s| s >= target).fold(f64::INFINITY, f64::min);
+                assert!(best - target <= slack || evaluations.len() == effort.candidate_cap(), "{effort:?} {target} {best} {}", evaluations.len());
+                assert!(evaluations.len() <= 6, "{effort:?} {target} used {}", evaluations.len());
+            }
+        }
     }
     #[test]
     fn refine_step_bisects_the_widest_passing_failing_straddle() {

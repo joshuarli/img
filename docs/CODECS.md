@@ -23,11 +23,11 @@ is met only when it is measured; an unmeasured cell counts as unmet.
 
 | # | Goal | Now |
 | --- | --- | --- |
-| G1 | Lossy bytes at matched SSIMULACRA2 80/90/95: JPEG and AVIF at least 5% smaller than Zen in every group | JPEG color −6.4/−3.9% (95 unmeasured); gray +2.5–11.3%, text +10–16%. AVIF photo Fast −5.1%, Balanced/Best −9.7% at 90 (shipping); other groups absent |
+| G1 | Lossy bytes at matched SSIMULACRA2 80/90/95: JPEG and AVIF at least 5% smaller than Zen in every group | JPEG color −6.4/−3.9% (95 unmeasured); grayscale and text −3.0/−2.2/−1.8% (smallest attainable). AVIF photo Fast −5.1%, Balanced/Best −9.7% at 90 (shipping); other groups absent |
 | G2 | Exact PNG bytes: at least 3% smaller than Zen in every group at every effort, and no image more than 1% larger | Photo 0.97–1.00×; gravel +3.4% and text +2.0% at balanced |
 | G3 | Encode latency: Fast at most half of Zen Fast's wall time; Balanced and Best no slower than Zen at the same effort | JPEG ≈ parity (48 vs 48 ms); AVIF Fast 300 ms (0.09× Zen Best, below Zen Fast's 1,063 ms), Balanced/Best 862 ms (0.26× Zen Best); PNG best up to 2.04× slower |
 | G4 | Decode latency at most 0.8× Zen; CPU and peak memory no higher than Zen | AVIF rav1d-asm 0.32× (shipping); JPEG CPU 0.81× (wall unmeasured); PNG unmeasured |
-| G5 | Scored workflow (`--score T`) reaches the target score with fewer bytes than Zen, in less time | JPEG +15–23% bytes at t95; PNG and AVIF unmeasured |
+| G5 | Scored workflow (`--score T`) reaches the target score with fewer bytes than Zen, in less time | JPEG met: every group and effort at 80/90 (95 where both reach it) is 0.63–0.99× Zen bytes at 0.08–0.51× wall time and no higher peak RSS; img reaches color 95 on 5/14 photos, Zen on none. PNG and AVIF unmeasured |
 | G6 | Batch throughput at least 1.5× Zen on the production thread pool | Unmeasured |
 
 **Zen reference:** pre-migration `rimage` at `5424df8` (zenpng 0.1.4, zenjpeg
@@ -90,24 +90,34 @@ grows 149,856 bytes (4,622,592 → 4,772,448).
    is 1.3–1.4× Zen's wall time on photos. Next: test fast with a single filter strategy.
 4. **Not yet measured:** PNG decode against Zen, the scored optimize workflow
    and batch throughput with the new encoder, and Linux native timing.
-5. **JPEG scored workflow (bytes).** First explicit `img-jpeg`/`zen-jpeg`
-   capture (untimed, grass and gravel): at score 95 img is 15–23% larger
-   than Zen (grass 167,538 vs 146,139 B; gravel 181,695 vs 147,844 B). At
-   score 80 img is smaller only because Zen overshoots. The candidate
-   comparison ([jpeg-candidates.md](codecs/jpeg-candidates.md), 23 scaled
-   untagged images, single thread, gated) selected jpegli 4:4:4 for color:
-   −6.4% / −3.9% bytes against Zen at scores 80 / 90 at equal latency
-   (48.4 vs 47.8 ms), and 4.9× faster than img fast. jpegli still trails Zen
-   on grayscale (+11.3 / +8.5 / +2.5% at 80 / 90 / 95) and the one text image
-   (+10–16%). libjpeg-turbo decodes with 19% less CPU and half the RSS of
-   Zen; in-process decode wall time is unmeasured. jpegli now ships
-   (all efforts one configuration); integrated output is byte-identical to
-   the measured candidate at equal latency. Its color encode peak RSS was
-   45 MiB against Zen's 25 MiB. JPEG and AVIF encode now borrow tightly
-   packed samples instead of copying them, which cuts harness peak RSS on the
-   largest photo from 53.7 to 44.7 MiB (JPEG) and 121.5 to 111.9 MiB (AVIF),
-   with identical output. The rest of the gap is unmeasured. Next: re-measure
-   the scored workflow and time libjpeg-turbo decode in process.
+5. **JPEG.** jpegli ships for every effort ([jpeg-candidates.md](codecs/jpeg-candidates.md)).
+   Three changes close the scored workflow (G5): fractional quality reaches
+   jpegli's distance instead of rounding; grayscale uses jpegli's perceptual
+   luma quantization (local patch, [VENDOR.md](VENDOR.md)) instead of Annex K
+   tables; and JPEG-only `--score` searches by interpolating between
+   bracketing attempts from a seed at the target, stopping within an effort
+   slack (fast 0.5, balanced 0.15, best 0.05 score points) instead of bisecting
+   fixed seeds. Gated interleaved run (`benchmarks/codecs/jpeg/scored.py`, 23
+   images, single thread, img's compare re-scores every output;
+   `benchmarks/results/codecs/jpeg/scored.json`), img/Zen geometric means:
+
+   | Group | Effort | Bytes 80 / 90 / 95 | Wall 80 / 90 / 95 |
+   | --- | --- | --- | --- |
+   | color (14) | fast | 0.63 / 0.92 / — | 0.43 / 0.51 / — |
+   | color | balanced | 0.92 / 0.98 / — | 0.17 / 0.23 / — |
+   | color | best | 0.97 / 0.96 / — | 0.09 / 0.11 / — |
+   | grayscale (8) | fast | 0.78 / 0.68 / 0.92 | 0.50 / 0.43 / 0.40 |
+   | grayscale | balanced | 0.85 / 0.93 / 0.98 | 0.26 / 0.23 / 0.19 |
+   | grayscale | best | 0.94 / 0.96 / 0.98 | 0.12 / 0.11 / 0.11 |
+   | text (1) | fast/balanced/best | 0.74–0.99 | 0.08–0.50 |
+
+   Zen fails score 90 on 6 color photos and 95 on all 14; img reaches 95 on
+   5 and every grayscale image. Zen's internal scorer accepted some outputs
+   img scores below target; those are still counted, which favors Zen. Peak
+   RSS is at or below Zen (marmolada 488 vs 510 MiB, gravel 47 vs 49). Open:
+   G1 matched-score bytes are −3.0/−2.2/−1.8% for grayscale and −6.4/−3.9%
+   for color at 80/90, short of −5%; Zen uses trellis quantization, which
+   jpegli lacks. JPEG decode wall time (zune-jpeg) against Zen is unmeasured.
 6. **AVIF.** The candidate comparison ([avif-candidates.md](codecs/avif-candidates.md),
    14 scaled untagged photos plus one gradient, single thread, gated) selected
    libaom 4:4:4: at score 90 speed 6 is 9.7% smaller than Zen Best at 863 vs
