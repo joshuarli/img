@@ -447,25 +447,10 @@ fn fast_gaussian_1d_rows_inner(
     let n_radius = rg.radius as i64;
     let zero = f32x8::zero_t(token);
     let (columns, results) = (&mut columns[..8 * width], &mut results[..8 * width]);
-    let blocks = width / 8 * 8;
-    for x in (0..blocks).step_by(8) {
-        let mut rows: [f32x8; 8] = core::array::from_fn(|l| {
+    for (x, col) in columns.chunks_exact_mut(8).enumerate() {
+        for (l, v) in col.iter_mut().enumerate() {
             let at = (row0 + l) * width + x;
-            let v = f32x8::from_slice_t(token, &plane[at..at + 8]);
-            match plane_b {
-                Some(b) => v * f32x8::from_slice_t(token, &b[at..at + 8]),
-                None => v,
-            }
-        });
-        f32x8::transpose_8x8(&mut rows);
-        for (k, v) in rows.iter().enumerate() {
-            v.store((&mut columns[(x + k) * 8..(x + k) * 8 + 8]).try_into().unwrap());
-        }
-    }
-    for x in blocks..width {
-        for l in 0..8 {
-            let at = (row0 + l) * width + x;
-            columns[x * 8 + l] = match plane_b {
+            *v = match plane_b {
                 Some(b) => plane[at] * b[at],
                 None => plane[at],
             };
@@ -568,16 +553,9 @@ fn fast_gaussian_1d_rows_inner(
         step_bounds!(n);
         n += 1;
     }
-    for x in (0..blocks).step_by(8) {
-        let mut rows: [f32x8; 8] = core::array::from_fn(|k| f32x8::from_slice_t(token, &results[(x + k) * 8..(x + k) * 8 + 8]));
-        f32x8::transpose_8x8(&mut rows);
-        for (l, v) in rows.iter().enumerate() {
-            v.store((&mut out[l * width + x..l * width + x + 8]).try_into().unwrap());
-        }
-    }
-    for x in blocks..width {
-        for l in 0..8 {
-            out[l * width + x] = results[x * 8 + l];
+    for (x, col) in results.chunks_exact(8).enumerate() {
+        for (l, &v) in col.iter().enumerate() {
+            out[l * width + x] = v;
         }
     }
 }
