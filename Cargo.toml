@@ -108,5 +108,4 @@ oxipng = { path = "vendor/oxipng" }
 libdeflater = { path = "vendor/libdeflater" }
 libdeflate-sys = { path = "vendor/libdeflate-sys" }
 rav1d = { path = "vendor/rav1d" }
-
 zune-jpeg = { path = "vendor/zune-jpeg" }

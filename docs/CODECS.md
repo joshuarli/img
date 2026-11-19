@@ -23,10 +23,10 @@ is met only when it is measured; an unmeasured cell counts as unmet.
 
 | # | Goal | Now |
 | --- | --- | --- |
-| G1 | Lossy bytes at matched SSIMULACRA2 80/90/95: JPEG and AVIF at least 5% smaller than Zen in every group | JPEG color −6.4/−3.9% (95 unmeasured); grayscale and text −3.0/−2.2/−1.8% (smallest attainable). AVIF photo Fast −5.1%, Balanced/Best −9.7% at 90 (shipping); other groups absent |
+| G1 | Lossy bytes at matched SSIMULACRA2 80/90/95: JPEG and AVIF at least 5% smaller than Zen in every group | JPEG smallest attainable vs Zen Best's passing outputs: color −12.7/−4.8% (80/90, per-image 4:4:4 or 4:2:0; Zen reaches 95 on none), grayscale −2.8/−5.1/−2.3%; unmet at gray 80/95 and color 90 by 0.2 points. AVIF photo Fast −5.1%, Balanced/Best −9.7% at 90 (shipping); other groups absent |
 | G2 | Exact PNG bytes: at least 3% smaller than Zen in every group at every effort, and no image more than 1% larger | Photo 0.97–1.00×; gravel +3.4% and text +2.0% at balanced |
 | G3 | Encode latency: Fast at most half of Zen Fast's wall time; Balanced and Best no slower than Zen at the same effort | JPEG met (direct, quality 90, in process): Fast 0.48/0.25/0.30× Zen Fast for color/gray/text (sequential scans), Balanced/Best 0.75/0.42/0.44× Zen Best; AVIF Fast 300 ms (0.09× Zen Best, below Zen Fast's 1,063 ms), Balanced/Best 862 ms (0.26× Zen Best); PNG best up to 2.04× slower |
-| G4 | Decode latency at most 0.8× Zen; CPU and peak memory no higher than Zen | AVIF rav1d-asm 0.32× (shipping); JPEG CPU 0.81× (wall unmeasured); PNG unmeasured |
+| G4 | Decode latency at most 0.8× Zen; CPU and peak memory no higher than Zen | AVIF rav1d-asm 0.32× (shipping); JPEG (vendored zune-jpeg, in process): img progressive outputs 0.97×, camera progressive 0.99×, baseline 0.43×, libjpeg-turbo/MozJPEG progressive 0.70/0.53×, grayscale 0.62× — parity, 0.8× unmet on jpegli-style progressive; PNG unmeasured |
 | G5 | Scored workflow (`--score T`) reaches the target score with fewer bytes than Zen, in less time | JPEG met: every group and effort at 80/90 (95 where both reach it) is 0.63–0.99× Zen bytes at 0.08–0.51× wall time and no higher peak RSS; img reaches color 95 on 5/14 photos, Zen on none. PNG and AVIF unmeasured |
 | G6 | Batch throughput at least 1.5× Zen on the production thread pool | Unmeasured |
 
