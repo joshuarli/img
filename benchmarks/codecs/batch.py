@@ -30,4 +30,13 @@ while r < rounds:
     samples += batch; r += 1; print('round', r, flush=True)
 json.dump({'platform': platform.platform(), 'mode': mode, 'files': [{'path': f, 'sha256': hashlib.sha256(open(f, 'rb').read()).hexdigest()} for f in files],
            'tools': [{'label': l, 'binary': b, 'sha256': hashlib.sha256(open(b, 'rb').read()).hexdigest()} for l, b in specs],
-           'discarded_rounds': discarded, 'samples': samples}, open(out, 'w'), indent=1)
+           'rounds': rounds, 'discarded_rounds': discarded, 'samples': samples}, open(out, 'w'), indent=1)
+import statistics
+for j in jobs:
+    for label, _ in specs:
+        rows = [s for s in samples if s['tool'] == label and s['jobs'] == j]
+        print(f"{mode} -j {j} {label}: {statistics.median(len(files) / s['wall'] for s in rows):.2f} img/s, cpu {statistics.median(s['cpu'] for s in rows):.1f} s, "
+              f"peak RSS {max(s['peak_rss_bytes'] for s in rows) / 2**20:.0f} MiB, completed {min(s['completed'] for s in rows)}/{len(files)}, bytes {rows[0]['output_bytes']}")
+done = {label: min(s['completed'] for s in samples if s['tool'] == label) for label, _ in specs}
+if min(done.values()) < max(done.values()) or max(done.values()) == 0:
+    print('completed-work check failed:', done); sys.exit(1)
