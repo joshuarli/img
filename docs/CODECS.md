@@ -37,7 +37,7 @@ runs establish compatibility only).
 | Exact PNG encode | ≥ 20% less wall and CPU than R at the frozen envelope | **Measured** (CLI, 5 rounds). Large images (2–7 MP): wall 0.94/0.44/0.33× Zen at fast/balanced/best with 0.95–0.97× its bytes. Small images 0.84–1.01× Zen wall. CPU 1.0–1.4× Zen on small and 1.2–2.1× on large images — open (filter trials and libdeflate work; the efficiency cores inflate CPU of parallel chunks) |
 | JPEG decode | ≤ 0.80× R, RSS ≤ R | **Measured.** vs Zen 0.31–0.88× by class; vs R (stock libjpeg-turbo 3.2.1 or patched zune) 0.90× on jpegli progressive, 0.95× on other progressive, 1.00× on baseline — open |
 | PNG decode | ≤ 0.80× R | Unmeasured |
-| AVIF decode | ≤ 0.80× R | Historical: rav1d-asm 0.32× Zen; fair dav1d boundary pending |
+| AVIF decode | ≤ 0.80× R | **Measured** ([avif-candidates.md](codecs/avif-candidates.md#paired-decode-qualification-2026-11-19), 31 fixtures, 9 gated rounds). R is dav1d 1.5.4: raw AV1 rav1d/dav1d 1.10×; AVIF→RGB img/dav1d 1.09× at 1.13–1.36× its RSS; img/Zen 0.15–0.21× — open against dav1d |
 | Scored workflow | ≤ 0.75× B, ≤ 0.80× R | JPEG historical: 0.07–0.53× Zen wall at 0.60–0.97× bytes; not re-run against B |
 | Large-image auxiliary memory | ≥ 25% below B | Measured peaks per pixel (7 MP): lossless PNG 36–71 B, scored JPEG/PNG/AVIF 187–220 B (SSIMULACRA2 float pyramids dominate), WebP and auto up to 500–720 B. Lossless PNG peak ≤ B after the copy removal; no 25% reduction yet — open |
 | Batch throughput | ≥ 1.5× R and 2× Zen at equal cores and memory | **Measured** (48 dev PNGs, gated, 3 rounds). Lossless best: 19.6 img/s at `-j 4` vs B 6.1 and Zen 5.7 (3.2×/3.4×) at 1.04×/1.14× their peak RSS; at `-j 2` 15.5 img/s within B's RSS. JPEG score 90: 5.5 img/s vs B 3.3 (1.67×) at 1.10× RSS; Zen completes 14/48 at 0.9 img/s. RSS-matched Zen comparison open |
@@ -52,7 +52,7 @@ runs establish compatibility only).
 | PNG decode | png 0.18.1 | Unchanged; not compared |
 | Palette quantization | quantizr 1.4.3 (RGBA), quantette 0.6.0 (RGB) | Unchanged |
 | AVIF encode | libavif 1.4.2 + libaom 3.13.1, 8-bit 4:4:4 | Shipping |
-| AVIF decode | rav1d 1.1.0 with assembly (vendored) | Shipping |
+| AVIF decode | rav1d 1.1.0 with assembly (vendored); planes borrowed through RGB conversion | Shipping |
 
 Mappings: PNG fast → OxiPNG preset 0, balanced → preset 0 with libdeflate 8,
 best → preset 2. JPEG fast → sequential scans, balanced/best → progressive
@@ -155,8 +155,9 @@ which measurement shows is below their actual peak (open, WebP lane). Results:
    so it needs a fidelity study before use.
 3. **JPEG decode vs stock libjpeg-turbo** (0.80× R): Huffman/AC-first and the
    per-MCU dispatch on large progressive images.
-4. **AVIF decode fairness**: identical timed boundaries for dav1d/rav1d, 4:4:4
-   shipping outputs and 4:2:0 inputs, raw AV1→YUV separately from AVIF→RGB.
+4. **AVIF decode vs dav1d**: dav1d (BSD-2-Clause, C + assembly) is 9–10% faster
+   than rav1d with lower RSS; adopting it needs a meson build in the static
+   release images.
 5. **Workflow and batch**: re-run the scored workflow against B and current
    references; batch at 1/2/4/8 workers under fixed memory caps.
 
