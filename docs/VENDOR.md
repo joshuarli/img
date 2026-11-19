@@ -138,8 +138,11 @@ is compiled.
   of a dynamically indexed four-entry ring and walks sixteen columns per call
   (eight-column blocks and the overlapped tail are unchanged). Per-lane
   arithmetic and operation order are unchanged, so blurs and scores are
-  bit-identical to the published crate; the `rayon` path, unused by img,
-  still compiles. Per-candidate scoring time fell to 0.69–0.84× on Apple M1.
+  bit-identical to the published crate. Without `rayon`, the distorted side
+  blurs and aggregates one channel at a time (channel sums are independent),
+  holding three blur planes per scale instead of nine. The `rayon` path, unused
+  by img, is unchanged and still compiles. Per-candidate scoring time fell to
+  0.67–0.82× on Apple M1.
 - Regeneration: unpack the published crate, reapply the patch with
   `git diff` from the vendoring commit, and confirm bit-identical scores with
   `benchmarks/codecs/score/build.sh` (`IMG_BASE` at an unpatched checkout) plus
