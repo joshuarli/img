@@ -156,8 +156,10 @@ which measurement shows is below their actual peak (open, WebP lane). Results:
 3. **JPEG decode vs stock libjpeg-turbo** (0.80× R): Huffman/AC-first and the
    per-MCU dispatch on large progressive images.
 4. **AVIF decode vs dav1d**: dav1d (BSD-2-Clause, C + assembly) is 9–10% faster
-   than rav1d with lower RSS; adopting it needs a meson build in the static
-   release images.
+   than rav1d with lower RSS. A `cc`-built dav1d 1.5.5 (branch
+   `perf/dav1d-decode`, parked) decodes identically to rav1d without assembly,
+   but its assembly build differs by up to 7 levels on 26 of 31 fixtures; the
+   cause is not yet found.
 5. **Workflow and batch**: re-run the scored workflow against B and current
    references; batch at 1/2/4/8 workers under fixed memory caps.
 
