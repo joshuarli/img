@@ -1,4 +1,3 @@
-#include <csetjmp>
 #include <cstdlib>
 #include <cstring>
 #include <climits>
@@ -7,13 +6,12 @@
 struct Encoder {
   jpeg_compress_struct jpeg;
   jpeg_error_mgr error;
-  jmp_buf jump;
   jpeg_destination_mgr dest;
   unsigned char* output;
   size_t capacity, size, limit;
 };
 struct JpegliError {};
-// jpegli can hold C++ objects when it invokes error_exit; unwind them before longjmp.
+// libjpeg requires error_exit not to return; throwing unwinds jpegli's C++ frames to the API boundary.
 static void fail(j_common_ptr) { throw JpegliError{}; }
 static void init(j_compress_ptr) {}
 static boolean grow(j_compress_ptr c) {
@@ -36,7 +34,6 @@ extern "C" Encoder* img_jpegli_create(unsigned width, unsigned height, int gray,
   auto* e = static_cast<Encoder*>(calloc(1, sizeof(Encoder)));
   if (!e) return nullptr;
   e->jpeg.err = jpegli_std_error(&e->error); e->error.error_exit = fail;
-  if (setjmp(e->jump)) { if (e->jpeg.mem) jpegli_destroy_compress(&e->jpeg); free(e->output); free(e); return nullptr; }
   try {
     jpegli_create_compress(&e->jpeg);
     e->jpeg.mem->max_memory_to_use = memory > LONG_MAX ? LONG_MAX : static_cast<long>(memory);
@@ -52,31 +49,27 @@ extern "C" Encoder* img_jpegli_create(unsigned width, unsigned height, int gray,
     jpegli_set_progressive_level(&e->jpeg, 2); e->jpeg.optimize_coding = TRUE;
     jpegli_start_compress(&e->jpeg, TRUE);
     return e;
-  } catch (...) {}
-  longjmp(e->jump, 1);
+  } catch (...) {
+    if (e->jpeg.mem) jpegli_destroy_compress(&e->jpeg);
+    free(e->output); free(e); return nullptr;
+  }
 }
 extern "C" int img_jpegli_marker(Encoder* e, int marker, const unsigned char* data, size_t len) {
-  if (setjmp(e->jump)) return 0;
   try {
     if (marker == 2) jpegli_write_icc_profile(&e->jpeg, data, len);
     else jpegli_write_marker(&e->jpeg, JPEG_APP0 + marker, data, len);
     return 1;
-  } catch (...) {}
-  longjmp(e->jump, 1);
+  } catch (...) { return 0; }
 }
 extern "C" int img_jpegli_rows(Encoder* e, const unsigned char* data, size_t stride, unsigned count) {
-  if (setjmp(e->jump)) return 0;
   try {
     for (unsigned i = 0; i < count; ++i) { JSAMPROW row = const_cast<JSAMPROW>(data + i * stride); if (jpegli_write_scanlines(&e->jpeg, &row, 1) != 1) return 0; }
     return 1;
-  } catch (...) {}
-  longjmp(e->jump, 1);
+  } catch (...) { return 0; }
 }
 extern "C" int img_jpegli_finish(Encoder* e, const unsigned char** data, size_t* size) {
-  if (setjmp(e->jump)) return 0;
   try {
     jpegli_finish_compress(&e->jpeg); *data = e->output; *size = e->size; return 1;
-  } catch (...) {}
-  longjmp(e->jump, 1);
+  } catch (...) { return 0; }
 }
 extern "C" void img_jpegli_destroy(Encoder* e) { jpegli_destroy_compress(&e->jpeg); free(e->output); free(e); }

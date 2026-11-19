@@ -126,7 +126,7 @@ fn xmp_app1(xmp: &[u8]) -> Vec<u8> {
     payload
 }
 
-pub(super) fn encode(image: &StillImage, mode: super::EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, super::Error> {
+pub(super) fn encode(image: &StillImage, mode: super::EncodingMode, _effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, super::Error> {
     let EncodingMode::Quality(quality) = mode else {
         return Err(super::Error::new(super::ErrorKind::Unsupported, "JPEG lossless requires original-byte preservation"));
     };
@@ -138,7 +138,6 @@ pub(super) fn encode(image: &StillImage, mode: super::EncodingMode, effort: Effo
     let samples = opaque.samples();
     let (width, height) = opaque.dimensions();
     let quality = (quality.value().round() as u8).clamp(1, 100);
-    let _ = effort;
     let gray = opaque.is_grayscale();
     let limits = super::limits();
     let mut encoder = jpegli_sys::Encoder::new(width, height, if gray { jpegli_sys::Color::Gray } else { jpegli_sys::Color::Rgb }, quality,
