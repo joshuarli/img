@@ -543,6 +543,42 @@ fn dist_scales(
             intensity,
         );
 
+        #[cfg(not(feature = "rayon"))]
+        if kernel == Kernel::Simd && maps.is_none() {
+            let mut tmp = vec![0f32; npix];
+            let (mut sigma2_sq, mut sigma12, mut mu2) =
+                (vec![0f32; npix], vec![0f32; npix], vec![0f32; npix]);
+            let (mut avg_ssim, mut avg_edgediff) = ([0f64; 6], [0f64; 12]);
+            for c in 0..3 {
+                blur_channel(kernel, rg, &xyb2[c], Some(&xyb2[c]), w, h, &mut sigma2_sq, &mut tmp);
+                blur_channel(kernel, rg, &rs.xyb1[c], Some(&xyb2[c]), w, h, &mut sigma12, &mut tmp);
+                blur_channel(kernel, rg, &xyb2[c], None, w, h, &mut mu2, &mut tmp);
+                let (ssim, edge) = simd::maps_fused_channel_simd_stop(
+                    &rs.mu1[c],
+                    &mu2,
+                    &rs.sigma1_sq[c],
+                    &sigma2_sq,
+                    &sigma12,
+                    &rs.xyb1[c],
+                    &xyb2[c],
+                    w,
+                    h,
+                    &enough::Unstoppable,
+                )
+                .map_err(Ssimulacra2Error::Cancelled)?;
+                avg_ssim[c * 2..c * 2 + 2].copy_from_slice(&ssim);
+                avg_edgediff[c * 4..c * 4 + 4].copy_from_slice(&edge);
+            }
+            scales.push(ScaleAggregates {
+                avg_ssim,
+                avg_edgediff,
+            });
+            lin2 = lin2_next;
+            w = rs.width.div_ceil(2);
+            h = rs.height.div_ceil(2);
+            continue;
+        }
+
         // Three independent blurs: σ2 = blur(xyb2·xyb2),
         // σ12 = blur(xyb1·xyb2), μ2 = blur(xyb2).
         let (sigma2_sq, sigma12, mu2);
