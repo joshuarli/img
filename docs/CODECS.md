@@ -34,7 +34,7 @@ runs establish compatibility only).
 | --- | --- | --- |
 | Direct JPEG encode | ≤ 0.80× R wall, no more CPU/RSS | Historical only: Fast 0.25–0.48× Zen Fast, Balanced/Best 0.42–0.75× Zen Best at quality 90 (not fidelity-matched). Current jpegli/MozJPEG references unmeasured |
 | Direct AVIF encode | ≤ 0.80× R wall | Historical only: speed 8 0.09×, speed 6 0.26× Zen Best |
-| Exact PNG encode | ≥ 20% less wall and CPU than R at the frozen envelope | Open: best up to 2.04× Zen wall; fast CPU 1.8–1.9× Zen |
+| Exact PNG encode | ≥ 20% less wall and CPU than R at the frozen envelope | **Measured** (CLI, 5 rounds). Large images (2–6 MP): wall 0.97/0.45/0.33× Zen at fast/balanced/best with 0.95–0.97× its bytes; 0.74/0.52/0.46× B. Small images 0.82–0.98× Zen wall. CPU 1.1–2.7× Zen — open |
 | JPEG decode | ≤ 0.80× R, RSS ≤ R | **Measured.** vs Zen 0.31–0.88× by class; vs R (stock libjpeg-turbo 3.2.1 or patched zune) 0.90× on jpegli progressive, 0.95× on other progressive, 1.00× on baseline — open |
 | PNG decode | ≤ 0.80× R | Unmeasured |
 | AVIF decode | ≤ 0.80× R | Historical: rav1d-asm 0.32× Zen; fair dav1d boundary pending |
@@ -48,7 +48,7 @@ runs establish compatibility only).
 | --- | --- | --- |
 | JPEG encode | jpegli (libjxl v0.11.1 + Highway, vendored, two patches) | Shipping |
 | JPEG decode | libjpeg-turbo 3.2.1 (vendored, refinement patch); zune-jpeg 0.5.15 parses headers and metadata | Shipping since `7b2ba88` |
-| PNG encode/optimize | OxiPNG 10.2.1 + libdeflate 1.26 (vendored) | Shipping |
+| PNG encode/optimize | OxiPNG 10.2.1 + libdeflate 1.26 (vendored, chunked-deflate patch) | Shipping |
 | PNG decode | png 0.18.1 | Unchanged; not compared |
 | Palette quantization | quantizr 1.4.3 (RGBA), quantette 0.6.0 (RGB) | Unchanged |
 | AVIF encode | libavif 1.4.2 + libaom 3.13.1, 8-bit 4:4:4 | Shipping |
@@ -98,6 +98,25 @@ identically to unpatched libjpeg-turbo.
 Rejected: jpegli progressive level 1 output decodes faster but is 1.6% larger
 (up to 5%), outside the frozen size envelope.
 
+## PNG encode (measured 2026-11-19)
+
+Large inputs now compress as 1 MiB deflate chunks in parallel, each primed
+with the preceding 32 KiB, joined by sync flushes (local libdeflate and
+OxiPNG patches, [VENDOR.md](VENDOR.md)); output is independent of the
+thread count. In process, gated, paired, 3 rounds on 98 development PNGs
+([encode-chunked-2026-11-19.json](../benchmarks/results/codecs/png/encode-chunked-2026-11-19.json),
+`benchmarks/codecs/png/encode-paired.py`, `encode-report.py`): total encode
+time 0.64× (fast), 0.48× (balanced), 0.48× (best) of B; total bytes
++0.007%, −0.010%, +0.015%; largest group change best photo +0.06%, largest
+file +0.5% (mm-logo-alpha, best) — a named size-for-speed tradeoff.
+CLI workflow ([cli-chunked-2026-11-19.json](../benchmarks/results/codecs/png/cli-chunked-2026-11-19.json),
+`run.py` then `report.py`): on the large images CPU rises about 20% over B
+because the chunks also run on the efficiency cores, and peak RSS is within
+1.11× of B (the adapter now hands one sample copy to OxiPNG instead of two).
+Images above about 8 MP are refused on this 8 GB host by the CLI's 256
+bytes-per-pixel admission reservation, as they are by Zen; measured peaks
+are about 45 bytes per pixel.
+
 ## Historical results (pre-2026-11-19, against historical Zen)
 
 - **JPEG scored workflow** (`benchmarks/results/codecs/jpeg/scored.json`, 23
@@ -116,14 +135,15 @@ Rejected: jpegli progressive level 1 output decodes faster but is 1.6% larger
 
 ## Next experiments
 
-1. **PNG best latency and CPU** (largest open deficit): profile filter trials and
-   libdeflate level 11 on the slow images; remove the lossless path's two extra
-   sample copies before OxiPNG.
-2. **JPEG decode vs stock libjpeg-turbo** (0.80× R): Huffman/AC-first and the
+1. **PNG CPU and small-image best latency**: filter trials still cost 1.1–2.7×
+   Zen's CPU; best on small images up to 1.9× Zen wall.
+2. **Admission reservation**: replace the flat 256 B/pixel estimate with
+   measured per-operation peaks so 8–16 MP inputs and more batch workers fit.
+3. **JPEG decode vs stock libjpeg-turbo** (0.80× R): Huffman/AC-first and the
    per-MCU dispatch on large progressive images.
-3. **AVIF decode fairness**: identical timed boundaries for dav1d/rav1d, 4:4:4
+4. **AVIF decode fairness**: identical timed boundaries for dav1d/rav1d, 4:4:4
    shipping outputs and 4:2:0 inputs, raw AV1→YUV separately from AVIF→RGB.
-4. **Workflow and batch**: re-run the scored workflow against B and current
+5. **Workflow and batch**: re-run the scored workflow against B and current
    references; batch at 1/2/4/8 workers under fixed memory caps.
 
 ## Deferred (low priority)
