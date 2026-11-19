@@ -23,9 +23,9 @@ is met only when it is measured; an unmeasured cell counts as unmet.
 
 | # | Goal | Now |
 | --- | --- | --- |
-| G1 | Lossy bytes at matched SSIMULACRA2 80/90/95: JPEG and AVIF at least 5% smaller than Zen in every group | JPEG color −6.4/−3.9% (95 unmeasured); gray +2.5–11.3%, text +10–16%. AVIF photo 4:4:4 −9.7% at 90; other groups absent |
+| G1 | Lossy bytes at matched SSIMULACRA2 80/90/95: JPEG and AVIF at least 5% smaller than Zen in every group | JPEG color −6.4/−3.9% (95 unmeasured); gray +2.5–11.3%, text +10–16%. AVIF photo Fast −5.1%, Balanced/Best −9.7% at 90 (shipping); other groups absent |
 | G2 | Exact PNG bytes: at least 3% smaller than Zen in every group at every effort, and no image more than 1% larger | Photo 0.97–1.00×; gravel +3.4% and text +2.0% at balanced |
-| G3 | Encode latency: Fast at most half of Zen Fast's wall time; Balanced and Best no slower than Zen at the same effort | JPEG ≈ parity (48 vs 48 ms); AVIF speed 8 0.09× and speed 6 0.34× Zen Best; PNG best up to 2.04× slower |
+| G3 | Encode latency: Fast at most half of Zen Fast's wall time; Balanced and Best no slower than Zen at the same effort | JPEG ≈ parity (48 vs 48 ms); AVIF Fast 300 ms (0.09× Zen Best, below Zen Fast's 1,063 ms), Balanced/Best 862 ms (0.26× Zen Best); PNG best up to 2.04× slower |
 | G4 | Decode latency at most 0.8× Zen; CPU and peak memory no higher than Zen | AVIF dav1d 0.42×; JPEG CPU 0.81× (wall unmeasured); PNG unmeasured |
 | G5 | Scored workflow (`--score T`) reaches the target score with fewer bytes than Zen, in less time | JPEG +15–23% bytes at t95; PNG and AVIF unmeasured |
 | G6 | Batch throughput at least 1.5× Zen on the production thread pool | Unmeasured |
@@ -46,7 +46,7 @@ the repository (release profile, sha256
 | Palette quantization | quantizr 1.4.3 (RGBA), quantette 0.6.0 (opaque RGB) | Unchanged; output now passes through OxiPNG |
 | JPEG encode | jpegli (libjxl v0.11.1 + Highway, vendored) YCbCr, 4:4:4 color, progressive level 2 ([jpeg-candidates.md](codecs/jpeg-candidates.md)) | Shipping; byte-identical to the measured candidate |
 | JPEG decode | libjpeg-turbo 3.1.1 | Selected; zune-jpeg 0.5.15 ships until integrated |
-| AVIF encode | libavif 1.4.2 + libaom 3.13.1, 8-bit 4:4:4 ([avif-candidates.md](codecs/avif-candidates.md)) | Selected; ravif 0.13.0 ships until integrated |
+| AVIF encode | libavif 1.4.2 + libaom 3.13.1, 8-bit 4:4:4 ([avif-candidates.md](codecs/avif-candidates.md)) | Shipping (vendored, `codecs/libavif-sys`) |
 | AVIF decode | libavif 1.4.2 + dav1d 1.5.4 | Selected; rav1d 1.1.0 ships until integrated |
 
 PNG effort mapping: fast → OxiPNG preset 0; balanced → preset 0 with
@@ -116,7 +116,12 @@ grows 149,856 bytes (4,622,592 → 4,772,448).
    or alpha, which img's AVIF path refuses). The lane found img read the nclx
    `full_range_flag` from bit 0 instead of bit 7, misdecoding standard
    full-range files; fixed with a regression test in `tests/avif_codec.rs`.
-   Next: vendor libavif, libaom and dav1d behind the AVIF adapter.
+   libavif + libaom now ship as the encoder: AV1 payloads are byte-identical
+   to the candidate at all 720 sweep points, with equal wall time (300 and
+   862 ms). Encode peak RSS is 75–81 MiB against the harness's 62–67 MiB
+   because img copies the samples first. The vendored libaom accepts NASM 3
+   through a one-line CMake patch (see [VENDOR.md](VENDOR.md)). Next: measure
+   rav1d with its assembly enabled against dav1d, then pick the decoder.
 
 ## Deferred (low priority)
 
