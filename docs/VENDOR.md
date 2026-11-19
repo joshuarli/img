@@ -7,6 +7,18 @@ unless its entry lists local patches. `scripts/check-native-build` compiles the
 release binary and fails if any native source outside an allowlisted snapshot
 is compiled.
 
+## zune-jpeg 0.5.15
+
+- Role: JPEG decoding (`src/still/jpeg.rs`).
+- Upstream: <https://github.com/etemesi254/zune-image>, published crate 0.5.15.
+- License: MIT OR Apache-2.0 OR Zlib; the distribution includes `LICENSE-MIT`.
+- Local patches: track progressive AC nonzero coefficients per block to skip
+  zeros during refinement. First-AC writes maintain the mask; malformed scan
+  bounds retain the original loop. This uses eight extra bytes per block.
+- Regeneration: copy the published crate from the Cargo registry, reapply the
+  patches in `src/bitstream.rs` and `src/mcu_prog.rs`, then compare decoded
+  bytes and errors with the unpatched crate, including truncated inputs.
+
 ## oxipng 10.2.1
 
 - Role: exact PNG optimization and encoding (`src/still/png.rs`).

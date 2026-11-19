@@ -199,3 +199,18 @@ To repeat the integration sweep, seed a JSON list with the `quality` array from 
 | ui/text (1) | 0.37 (0.30) | 0.54 (0.44) | 0.53 (0.43) | 1.23 | 1.23 |
 
 Fast uses sequential scans (about 2.2× faster than progressive level 2 for about 4–5% more bytes at equal quality); balanced and best use progressive level 2 with the vendored mask-walk tokenizer.
+
+## In-process decode
+
+On macOS ARM64, single-threaded release builds, five decodes per file (geometric
+mean of per-file medians, ms; gates passed before and after):
+
+| Class (files) | Stock zune | Patched zune | Zen | Turbo |
+| --- | ---: | ---: | ---: | ---: |
+| img progressive (23) | 4.340 | 3.455 | 3.547 | 3.596 |
+| camera progressive (1) | 113.785 | 102.507 | 103.666 | 89.233 |
+| turbo / moz progressive (23 each) | 2.858 / 1.745 | 2.354 / 1.572 | 3.350 / 2.973 | 2.223 / 1.308 |
+| baseline / grayscale (23 each) | 1.222 / 2.472 | 1.219 / 2.014 | 2.848 / 3.251 | 0.785 / 2.103 |
+
+Stock and patched output bytes or errors matched on 723 files, including 482
+truncations. The marmolada img output remains slower individually.

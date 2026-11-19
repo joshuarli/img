@@ -53,6 +53,14 @@ fn zune(data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<_> = env::args().collect();
     let decoder = args[1].as_str();
+    if decoder == "zune-dump" {
+        use std::io::Write;
+        match zune(&fs::read(&args[2])?) {
+            Ok(bytes) => std::io::stdout().write_all(&bytes)?,
+            Err(err) => { eprintln!("{err:?}"); std::process::exit(1); }
+        }
+        return Ok(());
+    }
     let iterations: usize = args[2].parse()?;
     for path in &args[3..] {
         let data = fs::read(path)?;
