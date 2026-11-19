@@ -36,7 +36,7 @@ runs establish compatibility only).
 | Direct AVIF encode | ≤ 0.80× R wall | Historical only: speed 8 0.09×, speed 6 0.26× Zen Best |
 | Exact PNG encode | ≥ 20% less wall and CPU than R at the frozen envelope | **Measured** (CLI, 5 rounds). Large images (2–7 MP): wall 0.94/0.44/0.33× Zen at fast/balanced/best with 0.95–0.97× its bytes. Small images 0.84–1.01× Zen wall. CPU 1.0–1.4× Zen on small and 1.2–2.1× on large images — open (filter trials and libdeflate work; the efficiency cores inflate CPU of parallel chunks) |
 | JPEG decode | ≤ 0.80× R, RSS ≤ R | **Measured.** vs Zen 0.31–0.88× by class; vs R (stock libjpeg-turbo 3.2.1 or patched zune) 0.90× on jpegli progressive, 0.95× on other progressive, 1.00× on baseline — open |
-| PNG decode | ≤ 0.80× R | Unmeasured |
+| PNG decode | ≤ 0.80× R | **Measured** ([png-decode.md](codecs/png-decode.md), 137 exact fixtures, 9 gated rounds). png 0.18.1 is the fastest exact permissive decoder, so it is R: libpng 1.6.59 1.41×, libspng 0.7.4 2.04×, zune-png disqualified (16-bit tRNS alpha). img's decoder vs Zen 0.56× time [0.52, 0.59], worst file 0.94×, at 0.83× RSS. Beating R needs decoder work in png itself — open |
 | AVIF decode | ≤ 0.80× R | **Measured** ([avif-candidates.md](codecs/avif-candidates.md#paired-decode-qualification-2026-11-19), 31 fixtures, 9 gated rounds). R is dav1d 1.5.4: raw AV1 rav1d/dav1d 1.10×; AVIF→RGB img/dav1d 1.09× at 1.13–1.36× its RSS; img/Zen 0.15–0.21× — open against dav1d |
 | Scored workflow | ≤ 0.75× B, ≤ 0.80× R | JPEG historical: 0.07–0.53× Zen wall at 0.60–0.97× bytes; not re-run against B |
 | Large-image auxiliary memory | ≥ 25% below B | Measured peaks per pixel (7 MP): lossless PNG 36–71 B, scored JPEG/PNG/AVIF 187–220 B (SSIMULACRA2 float pyramids dominate), WebP and auto up to 500–720 B. Lossless PNG peak ≤ B after the copy removal; no 25% reduction yet — open |
@@ -49,7 +49,7 @@ runs establish compatibility only).
 | JPEG encode | jpegli (libjxl v0.11.1 + Highway, vendored, two patches) | Shipping |
 | JPEG decode | libjpeg-turbo 3.2.1 (vendored, refinement patch); zune-jpeg 0.5.15 parses headers and metadata | Shipping since `7b2ba88` |
 | PNG encode/optimize | OxiPNG 10.2.1 + libdeflate 1.26 (vendored, chunked-deflate patch) | Shipping |
-| PNG decode | png 0.18.1 | Unchanged; not compared |
+| PNG decode | png 0.18.1 | Shipping; qualified against libpng, libspng, zune-png and Zen |
 | Palette quantization | quantizr 1.4.3 (RGBA), quantette 0.6.0 (RGB) | Unchanged |
 | AVIF encode | libavif 1.4.2 + libaom 3.13.1, 8-bit 4:4:4 | Shipping |
 | AVIF decode | rav1d 1.1.0 with assembly (vendored); planes borrowed through RGB conversion | Shipping |
