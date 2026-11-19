@@ -44,7 +44,7 @@ the repository (release profile, sha256
 | PNG encode/optimize | OxiPNG 10.2.1 + libdeflate 1.26 (vendored, [VENDOR.md](VENDOR.md)) | Shipping |
 | PNG decode | png 0.18.1 | Unchanged; not yet compared with Zen |
 | Palette quantization | quantizr 1.4.3 (RGBA), quantette 0.6.0 (opaque RGB) | Unchanged; output now passes through OxiPNG |
-| JPEG encode | jpegli (libjxl v0.11.1) YCbCr, 4:4:4 color ([jpeg-candidates.md](codecs/jpeg-candidates.md)) | Selected; mozjpeg-rs 0.9.2 ships until integrated |
+| JPEG encode | jpegli (libjxl v0.11.1 + Highway, vendored) YCbCr, 4:4:4 color, progressive level 2 ([jpeg-candidates.md](codecs/jpeg-candidates.md)) | Shipping; byte-identical to the measured candidate |
 | JPEG decode | libjpeg-turbo 3.1.1 | Selected; zune-jpeg 0.5.15 ships until integrated |
 | AVIF encode | libavif 1.4.2 + libaom 3.13.1, 8-bit 4:4:4 ([avif-candidates.md](codecs/avif-candidates.md)) | Selected; ravif 0.13.0 ships until integrated |
 | AVIF decode | libavif 1.4.2 + dav1d 1.5.4 | Selected; rav1d 1.1.0 ships until integrated |
@@ -100,8 +100,12 @@ grows 149,856 bytes (4,622,592 → 4,772,448).
    (48.4 vs 47.8 ms), and 4.9× faster than img fast. jpegli still trails Zen
    on grayscale (+11.3 / +8.5 / +2.5% at 80 / 90 / 95) and the one text image
    (+10–16%). libjpeg-turbo decodes with 19% less CPU and half the RSS of
-   Zen; in-process decode wall time is unmeasured. Next: vendor jpegli and
-   libjpeg-turbo behind the JPEG adapter.
+   Zen; in-process decode wall time is unmeasured. jpegli now ships
+   (all efforts one configuration); integrated output is byte-identical to
+   the measured candidate at equal latency. Its color encode peak RSS is
+   45 MiB against Zen's 25 MiB because the adapter copies samples twice.
+   Next: remove those copies, re-measure the scored workflow, and time
+   libjpeg-turbo decode in process.
 6. **AVIF.** The candidate comparison ([avif-candidates.md](codecs/avif-candidates.md),
    14 scaled untagged photos plus one gradient, single thread, gated) selected
    libaom 4:4:4: at score 90 speed 6 is 9.7% smaller than Zen Best at 863 vs
