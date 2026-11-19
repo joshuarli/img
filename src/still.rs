@@ -275,7 +275,7 @@ impl StillImage {
     /// Encode a candidate without silently discarding alpha or reducing precision.
     pub fn encode(&self, format: Format, mode: EncodingMode, effort: Effort) -> Result<Vec<u8>, Error> { self.encode_cancellable(format,mode,effort,&crate::cancellation::Cancellation::default()) }
 
-    pub(crate) fn encode_jpeg_cancellable(&self, quality: Quality, sampling: JpegSampling, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> { jpeg::encode_sampled(self, quality, sampling, stop) }
+    pub(crate) fn encode_jpeg_cancellable(&self, quality: Quality, sampling: JpegSampling, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> { jpeg::encode_sampled(self, quality, sampling, effort, stop) }
 
     /// Encode with cooperative codec cancellation where supported.
     pub fn encode_cancellable(&self, format: Format, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {

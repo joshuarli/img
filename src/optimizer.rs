@@ -376,7 +376,7 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
             if gated { None } else {
                 let t = Instant::now();
                 let r = match (sampling, quality) {
-                    (Some(sampling), Some(q)) => image.encode_jpeg_cancellable(Quality::new(q).unwrap(), sampling, cancelled),
+                    (Some(sampling), Some(q)) => image.encode_jpeg_cancellable(Quality::new(q).unwrap(), sampling, request.effort, cancelled),
                     _ => image.encode_cancellable(format,quality.map(|q|EncodingMode::Quality(Quality::new(q).unwrap())).unwrap_or(EncodingMode::Lossless),request.effort,cancelled),
                 };
                 encode_ms = t.elapsed().as_secs_f64()*1000.0;

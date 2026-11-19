@@ -7,12 +7,14 @@ use zune_image::{codecs::jpeg::JpegDecoder, image::Image};
 fn mode(quality: f32) -> EncodingMode { EncodingMode::Quality(Quality::new(quality).unwrap()) }
 
 #[test]
-fn progressive_rgb_and_gray_have_independent_decode_proof() {
-    for layout in [SampleLayout::Rgb8, SampleLayout::Gray8] {
+fn sequential_fast_and_progressive_rgb_and_gray_have_independent_decode_proof() {
+    for (layout, effort) in [SampleLayout::Rgb8, SampleLayout::Gray8].into_iter().flat_map(|layout| [Effort::Fast, Effort::Balanced, Effort::Best].map(|effort| (layout, effort))) {
         let samples = if layout == SampleLayout::Rgb8 { common::pixels(48, 32) } else { vec![137; 48 * 32] };
         let image = StillImage::from_samples(48, 32, layout, samples).unwrap();
-        let bytes = image.encode(Format::Jpeg, mode(90.0), Effort::Fast).unwrap();
-        assert!(bytes.windows(2).any(|pair| pair == [0xff, 0xc2]));
+        let bytes = image.encode(Format::Jpeg, mode(90.0), effort).unwrap();
+        let progressive = bytes.windows(2).any(|pair| pair == [0xff, 0xc2]);
+        assert_eq!(progressive, effort != Effort::Fast, "{effort:?}");
+        assert_eq!(bytes.windows(2).any(|pair| pair == [0xff, 0xc0]), effort == Effort::Fast, "{effort:?}");
         if layout == SampleLayout::Gray8 {
             let mut probe = zune_jpeg::JpegDecoder::new(ZCursor::new(&bytes));
             probe.decode_headers().unwrap();
@@ -84,7 +86,7 @@ fn fixed_seed_dimension_cases_stay_within_the_boundary() {
 
 #[test]
 fn four_component_jpeg_is_refused_before_implicit_cmyk_conversion() {
-    let image=StillImage::from_rgb8(8,8,common::pixels(8,8)).unwrap();let mut bytes=image.encode(Format::Jpeg,mode(80.0),Effort::Fast).unwrap();
+    let image=StillImage::from_rgb8(8,8,common::pixels(8,8)).unwrap();let mut bytes=image.encode(Format::Jpeg,mode(80.0),Effort::Balanced).unwrap();
     let at=bytes.windows(2).position(|p|p==[255,194]).unwrap();let length=u16::from_be_bytes([bytes[at+2],bytes[at+3]]) as usize;
     bytes[at+9]=4;bytes[at+2..at+4].copy_from_slice(&((length+3) as u16).to_be_bytes());bytes.splice(at+2+length..at+2+length,[4,17,0]);
     let mut probe=zune_jpeg::JpegDecoder::new(ZCursor::new(&bytes));probe.decode_headers().unwrap();
@@ -111,7 +113,7 @@ fn jpeg_auxiliary_images_cannot_be_silently_extracted_as_a_single_frame() {
 
 #[test]
 fn jpeg_hdr_and_late_application_metadata_are_refused_before_pixel_changes() {
-    let jpeg=StillImage::from_rgb8(24,16,common::pixels(24,16)).unwrap().encode(Format::Jpeg,mode(80.0),Effort::Fast).unwrap();
+    let jpeg=StillImage::from_rgb8(24,16,common::pixels(24,16)).unwrap().encode(Format::Jpeg,mode(80.0),Effort::Balanced).unwrap();
     let hdr=b"urn:iso:std:iso:ts:21496:-1\0\0\0\0\0";
     let mut tagged=jpeg[..2].to_vec();tagged.extend_from_slice(&[255,226]);tagged.extend_from_slice(&((hdr.len()+2) as u16).to_be_bytes());tagged.extend_from_slice(hdr);tagged.extend_from_slice(&jpeg[2..]);
     assert!(img::still::describe(&tagged).unwrap().hdr_metadata);
@@ -133,7 +135,7 @@ fn jpeg_component_sampling_and_decoder_agreement() {
         let image = StillImage::from_samples(32, 24, layout, samples.clone()).unwrap();
         for effort in [Effort::Fast, Effort::Balanced, Effort::Best] {
             let encoded = image.encode(Format::Jpeg, mode(90.0), effort).unwrap();
-            let sof = encoded.windows(2).position(|p| p == [255, 194]).unwrap();
+            let sof = encoded.windows(2).position(|p| p == [255, if effort == Effort::Fast { 192 } else { 194 }]).unwrap();
             assert_eq!(encoded[sof + 9] as usize, channels);
             for c in 0..channels { assert_eq!(encoded[sof + 11 + c * 3], 0x11); }
             let color = if channels == 1 { ColorSpace::Luma } else { ColorSpace::RGB };
@@ -175,14 +177,14 @@ fn jpeg_large_icc_exif_and_xmp_survive_encoding() {
 #[test]
 fn invalid_jpeg_dimensions_return_error() {
     assert!(StillImage::from_rgb8(0, 1, Vec::new()).is_err());
-    assert!(jpegli_sys::Encoder::new(0, 1, jpegli_sys::Color::Rgb, 90.0, 1024 * 1024, 1024 * 1024).is_err());
+    assert!(jpegli_sys::Encoder::new(0, 1, jpegli_sys::Color::Rgb, jpegli_sys::Scans::Progressive, 90.0, 1024 * 1024, 1024 * 1024).is_err());
 }
 
 #[test]
 fn jpegli_output_limit_returns_an_error() {
     let mut saw_limit = false;
     for limit in 16..128 {
-        if let Ok(mut encoder) = jpegli_sys::Encoder::new(8, 8, jpegli_sys::Color::Rgb, 90.0, 1024 * 1024, limit)
+        if let Ok(mut encoder) = jpegli_sys::Encoder::new(8, 8, jpegli_sys::Color::Rgb, jpegli_sys::Scans::Progressive, 90.0, 1024 * 1024, limit)
             && encoder.app1(&[42; 100]).is_err() { saw_limit = true; }
     }
     assert!(saw_limit);
@@ -216,7 +218,7 @@ fn grayscale_uses_the_perceptual_luma_quantization_of_color_output() {
 fn jpegli_rgb420_halves_chroma_and_rgb_keeps_it_full() {
     let pixels = common::pixels(32, 32);
     let luma_sampling = |color| {
-        let mut encoder = jpegli_sys::Encoder::new(32, 32, color, 90.0, 1 << 20, 1 << 20).unwrap();
+        let mut encoder = jpegli_sys::Encoder::new(32, 32, color, jpegli_sys::Scans::Progressive, 90.0, 1 << 20, 1 << 20).unwrap();
         encoder.rows(&pixels, 32).unwrap();
         let bytes = encoder.finish().unwrap();
         let sof = bytes.windows(2).position(|pair| pair == [0xff, 0xc2]).unwrap();

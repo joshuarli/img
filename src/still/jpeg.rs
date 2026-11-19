@@ -126,14 +126,14 @@ fn xmp_app1(xmp: &[u8]) -> Vec<u8> {
     payload
 }
 
-pub(super) fn encode(image: &StillImage, mode: super::EncodingMode, _effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, super::Error> {
+pub(super) fn encode(image: &StillImage, mode: super::EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, super::Error> {
     let EncodingMode::Quality(quality) = mode else {
         return Err(super::Error::new(super::ErrorKind::Unsupported, "JPEG lossless requires original-byte preservation"));
     };
-    encode_sampled(image, quality, super::JpegSampling::Yuv444, stop)
+    encode_sampled(image, quality, super::JpegSampling::Yuv444, effort, stop)
 }
 
-pub(super) fn encode_sampled(image: &StillImage, quality: super::Quality, sampling: super::JpegSampling, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, super::Error> {
+pub(super) fn encode_sampled(image: &StillImage, quality: super::Quality, sampling: super::JpegSampling, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, super::Error> {
     if stop.is_cancelled() { return Err(super::Error::new(super::ErrorKind::Invalid, "operation cancelled")); }
     if image.bit_depth() != 8 {
         return Err(super::Error::new(super::ErrorKind::Unsupported, "JPEG encoding requires eight-bit samples"));
@@ -144,7 +144,8 @@ pub(super) fn encode_sampled(image: &StillImage, quality: super::Quality, sampli
     let quality = quality.value().clamp(1.0, 100.0);
     let gray = opaque.is_grayscale();
     let limits = super::limits();
-    let mut encoder = jpegli_sys::Encoder::new(width, height, match (gray, sampling) { (true, _) => jpegli_sys::Color::Gray, (false, super::JpegSampling::Yuv444) => jpegli_sys::Color::Rgb, (false, super::JpegSampling::Yuv420) => jpegli_sys::Color::Rgb420 }, quality,
+    let mut encoder = jpegli_sys::Encoder::new(width, height, match (gray, sampling) { (true, _) => jpegli_sys::Color::Gray, (false, super::JpegSampling::Yuv444) => jpegli_sys::Color::Rgb, (false, super::JpegSampling::Yuv420) => jpegli_sys::Color::Rgb420 },
+        if effort == Effort::Fast { jpegli_sys::Scans::Sequential } else { jpegli_sys::Scans::Progressive }, quality,
         limits.max_memory_bytes.unwrap_or(super::IMAGE_MEMORY_BYTES) as usize,
         limits.max_output_bytes.unwrap_or(super::MAX_INPUT_BYTES) as usize)
         .map_err(|e| super::Error::new(super::ErrorKind::Encode, e))?;

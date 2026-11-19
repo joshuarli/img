@@ -73,7 +73,31 @@ strip = true
 oxipng = { path = "$root/vendor/oxipng" }
 libdeflater = { path = "$root/vendor/libdeflater" }
 libdeflate-sys = { path = "$root/vendor/libdeflate-sys" }
+rav1d = { path = "$root/vendor/rav1d" }
 EOF2
 cp "$root/Cargo.lock" "$scratch/integrated/Cargo.lock"
 cargo build --offline --profile dist -j4 --manifest-path "$scratch/integrated/Cargo.toml" --target-dir "$scratch/integrated-target"
 cp "$scratch/integrated-target/dist/encode-integrated" "$scratch/encode-integrated"
+mkdir -p "$scratch/encode-loop"
+cat > "$scratch/encode-loop/Cargo.toml" <<EOF3
+[package]
+name = "jpeg-encode-loop"
+version = "0.1.0"
+edition = "2024"
+[[bin]]
+name = "jpeg-encode-loop"
+path = "$root/benchmarks/codecs/jpeg/encode-loop.rs"
+[dependencies]
+img = { path = "$root", features = ["build-binary"] }
+zenjpeg = { version = "=0.8.4", default-features = false, features = ["decoder", "zencodec", "yuv"] }
+enough = "=0.4.5"
+[profile.release]
+lto = "thin"
+codegen-units = 1
+[patch.crates-io]
+oxipng = { path = "$root/vendor/oxipng" }
+libdeflater = { path = "$root/vendor/libdeflater" }
+libdeflate-sys = { path = "$root/vendor/libdeflate-sys" }
+rav1d = { path = "$root/vendor/rav1d" }
+EOF3
+cargo build --offline --release -j4 --manifest-path "$scratch/encode-loop/Cargo.toml" --target-dir "$scratch/encode-loop-target"

@@ -187,3 +187,15 @@ At score 90, the timing run used five alternating single-thread repetitions at e
 The timing harness constructs a `StillImage` from a copy of the prepared PNM samples before starting its timer. Its RSS therefore includes that copy and the adapter's sample copy, while the standalone encoder reads the PNM into one buffer. RSS is process peak memory, not encoder-only allocation. The color wall-time ranges overlap, so this run does not establish a speed difference between the three encoders. The [integration records](../../benchmarks/results/codecs/jpeg/integration.json) contain the quality points and gated samples.
 
 To repeat the integration sweep, seed a JSON list with the `quality` array from `benchmarks/results/codecs/jpeg/results.json`, set `JPEG_INTEGRATED_IMG` to the dist binary, and run `sweep.py` on that list. Put the resulting list in `integration.json` as `quality`. The `build.sh` helper builds `encode-integrated` with the current checkout and lockfile. Run `JPEG_INTEGRATION=1 python3 benchmarks/codecs/jpeg/timed.py <scratch-output>` after `perf-gate-ready` succeeds, then run `perf-gate-ready -1` immediately afterward. Add the resulting array as `timing` and run `report.py` on `integration.json`.
+
+## Direct encode latency
+
+`benchmarks/codecs/jpeg/encode-loop.rs` (built by `build.sh`) encodes each prepared PNM in process at quality 90 with img at every effort and with Zen's encoder configured as Zen's production path (4:2:0, jpegli baseline or progressive preset). Nine alternating repetitions per image after one warm-up; the gated run is in `benchmarks/results/codecs/jpeg/encode-latency.jsonl`. Mean of per-image medians, ms (img/Zen geometric mean):
+
+| Group | img fast | img balanced | img best | Zen fast | Zen best |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| color (14) | 12.53 (0.48) | 19.23 (0.75) | 19.20 (0.74) | 25.67 | 25.65 |
+| grayscale (8) | 0.78 (0.25) | 1.34 (0.42) | 1.33 (0.42) | 3.04 | 3.03 |
+| ui/text (1) | 0.37 (0.30) | 0.54 (0.44) | 0.53 (0.43) | 1.23 | 1.23 |
+
+Fast uses sequential scans (about 2.2× faster than progressive level 2 for about 4–5% more bytes at equal quality); balanced and best use progressive level 2 with the vendored mask-walk tokenizer.

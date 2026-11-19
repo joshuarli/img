@@ -5,6 +5,7 @@
 
 #include "lib/jpegli/entropy_coding.h"
 
+#include <cstring>
 #include <vector>
 
 #include "lib/jpegli/encode_internal.h"
@@ -62,6 +63,35 @@ size_t EstimateNumTokens(j_compress_ptr cinfo, size_t mcu_y, size_t ysize_mcus,
 
 namespace {
 HWY_EXPORT(ComputeTokensSequential);
+
+uint64_t PackFlags(const uint8_t* flags) {
+  uint64_t mask = 0;
+  for (int group = 0; group < 8; ++group) {
+    uint64_t bytes;
+    memcpy(&bytes, flags + 8 * group, 8);
+    mask |= ((bytes * 0x0102040810204080ull) >> 56) << (8 * group);
+  }
+  return mask;
+}
+
+uint64_t RangeMask(int Ss, int Se) {
+  return (Se == 63 ? ~0ull : (1ull << (Se + 1)) - 1) & ~((1ull << Ss) - 1);
+}
+
+uint64_t CodedMask(const coeff_t* block, int Ss, int Se, int Al) {
+  alignas(16) uint8_t flags[64];
+  for (int k = 0; k < 64; ++k) {
+    const int value = block[k];
+    flags[k] = ((value < 0 ? -value : value) >> Al) != 0;
+  }
+  return PackFlags(flags) & RangeMask(Ss, Se);
+}
+
+uint64_t PresentMask(const coeff_t* block, int Ss, int Se) {
+  alignas(16) uint8_t flags[64];
+  for (int k = 0; k < 64; ++k) flags[k] = block[k] != 0;
+  return PackFlags(flags) & RangeMask(Ss, Se);
+}
 
 void TokenizeProgressiveDC(const coeff_t* coeffs, int context, int Al,
                            coeff_t* last_dc_coeff, Token** next_token) {
@@ -133,17 +163,18 @@ void TokenizeACProgressiveScan(j_compress_ptr cinfo, int scan_index,
         restarts_to_go = restart_interval;
       }
       const coeff_t* block = &blocks[0][bx][0];
-      coeff_t temp2;
-      coeff_t temp;
-      int r = 0;
+      const uint64_t present = PresentMask(block, Ss, Se);
+      uint64_t coded = CodedMask(block, Ss, Se, Al);
+      const int num_future_nzeros = __builtin_popcountll(present & ~coded);
       int num_nzeros = 0;
-      int num_future_nzeros = 0;
-      for (int k = Ss; k <= Se; ++k) {
-        temp = block[k];
-        if (temp == 0) {
-          r++;
-          continue;
-        }
+      int last = Ss - 1;
+      while (coded) {
+        const int k = jxl::Num0BitsBelowLS1Bit_Nonzero(coded);
+        coded &= coded - 1;
+        int r = k - last - 1;
+        last = k;
+        coeff_t temp = block[k];
+        coeff_t temp2;
         if (temp < 0) {
           temp = -temp;
           temp >>= Al;
@@ -151,11 +182,6 @@ void TokenizeACProgressiveScan(j_compress_ptr cinfo, int scan_index,
         } else {
           temp >>= Al;
           temp2 = temp;
-        }
-        if (temp == 0) {
-          r++;
-          num_future_nzeros++;
-          continue;
         }
         if (eob_run > 0) emit_eob_run();
         while (r > 15) {
@@ -166,9 +192,8 @@ void TokenizeACProgressiveScan(j_compress_ptr cinfo, int scan_index,
         int symbol = (r << 4u) + nbits;
         *m->next_token++ = Token(context, symbol, temp2 & ((1 << nbits) - 1));
         ++num_nzeros;
-        r = 0;
       }
-      if (r > 0) {
+      if (last < Se) {
         ++eob_run;
         if (eob_run == 0x7FFF) emit_eob_run();
       }
@@ -228,20 +253,18 @@ void TokenizeACRefinementScan(j_compress_ptr cinfo, int scan_index,
       int num_refinement_bits = 0;
       int num_nzeros = 0;
       int r = 0;
-      for (int k = Ss; k <= Se; ++k) {
+      uint64_t coded = CodedMask(block, Ss, Se, Al);
+      int last = Ss - 1;
+      while (coded) {
+        const int k = jxl::Num0BitsBelowLS1Bit_Nonzero(coded);
+        coded &= coded - 1;
+        r += k - last - 1;
+        last = k;
         int absval = block[k];
-        if (absval == 0) {
-          r++;
-          continue;
-        }
         const int mask = absval >> (8 * sizeof(int) - 1);
         absval += mask;
         absval ^= mask;
         absval >>= Al;
-        if (absval == 0) {
-          r++;
-          continue;
-        }
         while (r > 15) {
           token.symbol = 0xf0;
           token.refbits = num_refinement_bits;
@@ -266,6 +289,7 @@ void TokenizeACRefinementScan(j_compress_ptr cinfo, int scan_index,
         next_eob_token = next_token;
         eob_run = eob_refbits = 0;
       }
+      r += Se - last;
       if (r > 0 || num_eob_refinement_bits + num_refinement_bits > 0) {
         ++eob_run;
         eob_refbits += num_eob_refinement_bits + num_refinement_bits;
