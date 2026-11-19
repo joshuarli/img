@@ -8,7 +8,7 @@ timing = data.get('timing', [])
 timing_status = data.get('timing_status', 'not measured')
 configs = ['aom-s4-420', 'aom-s6-420', 'aom-s8-420', 'aom-s4-444', 'aom-s6-444', 'aom-s8-444',
            'svt-s4-420', 'svt-s8-420', 'img-fast', 'img-balanced', 'img-best',
-           'zen-fast', 'zen-balanced', 'zen-best']
+           'zen-fast', 'zen-balanced', 'zen-best', 'img-libaom-fast', 'img-libaom-balanced', 'img-libaom-best']
 timing_configs = configs + ['aom-s6-t4']
 groups = ['photo', 'synthetic gradient']
 targets = (80, 90, 95)
@@ -34,7 +34,8 @@ for group in groups:
              ('aom-s4-444', 'zen-best'), ('aom-s6-444', 'zen-best'), ('aom-s8-444', 'zen-best'),
              ('svt-s4-420', 'zen-best'), ('svt-s8-420', 'zen-best'),
              ('aom-s6-444', 'img-fast'), ('img-fast', 'zen-fast'), ('img-best', 'zen-best'),
-             ('img-fast', 'img-best')]
+             ('img-fast', 'img-best'), ('img-libaom-fast', 'aom-s8-444'),
+             ('img-libaom-balanced', 'aom-s6-444'), ('img-libaom-best', 'aom-s6-444')]
     for config, baseline in pairs:
         values = []
         for target in targets:
