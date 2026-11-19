@@ -141,9 +141,40 @@ Decoder: libavif with dav1d 1.5.4. On 14 photos its mean is 46.7 ms against 69.5
 
 ## Open deficits and unknowns
 
-- Current img cannot read standard full-range nclx; native full-range output was measured only with the optional `colr` property removed. A production integration must fix `src/still/avif_container.rs:651` or omit the property deliberately.
+- The candidate sweep renamed the `colr` property to `free` because img then misread nclx full range. Commit a9ce3fa fixed that, and the integrated encoder keeps the standard `colr` nclx property. The box has the same size as the `free` box, so the file bytes match too.
 - 4:2:0 cannot reach SSIMULACRA2 90 on five of fourteen photos and caps at 87.8 on the gradient. 4:4:4 reaches 95.2 at quality 100 and 88.1 on the gradient, so score 95 exists only for four photos. The gradient fails every encoder at score 90 and is reported only at 80.
 - Alpha, grayscale, 10/12-bit, grids, animation, HDR, ICC, EXIF/XMP and non-square pixels are excluded. Only BT.601, default tuning, no tiling and no adaptive-quantization sweep were measured. SVT-AV1 was measured only in 4:2:0 at presets 4 and 8.
 - Timing covers score 90 only, at a 2048-pixel long side; full resolution and color-managed inputs are unmeasured.
 - Decode timing excludes container parsing for rav1d only; dav1d and Zen include it. zenavif 0.1.6 with rav1d-safe 0.5.7 panics on ravif-produced 4:4:4 output (`looprestoration_arm.rs`), so it cannot decode current img files reliably.
 - Linux, Windows, other architectures and integration cost are unmeasured. Static libraries are 7.9 MB (libaom), 5.4 MB (SVT-AV1), 1.0 MB (dav1d) and 0.3 MB (libavif); the libaom-linked helper is 7.2 MB. The capture took about 2h55m: roughly 20m building, 83m sweeping and 73m gated timing.
+
+## Integrated encoder
+
+`src/still/avif.rs` encodes through `codecs/libavif-sys` with the selected configuration: speed 8 for Fast, speed 6 for Balanced and Best. The sweep used the same 15 inputs and qualities, `benchmarks/codecs/avif/encode-integrated.rs` and the integration commit's `compare`. At each point it also ran the matching candidate (`aom-s8-444` for Fast, `aom-s6-444` otherwise). All 720 AV1 payloads are byte-identical to the candidate's, and the matched-score file bytes equal the candidate rows in every cell. Results are in `benchmarks/results/codecs/avif/integration.json`.
+
+| Group | Encoder | Score 80 bytes (n) | Score 90 bytes (n) | Score 95 bytes (n) |
+| --- | --- | ---: | ---: | ---: |
+| photo | img-libaom-fast | 249502 (14) | 704535 (14) | 366732 (4) |
+| photo | img-libaom-balanced, best | 239018 (14) | 670354 (14) | 335693 (4) |
+| photo | zen-best | 283317 (14) | 742361 (14) | 609594 (1) |
+| synthetic gradient | img-libaom-fast | 4342 (1) | unavailable | unavailable |
+| synthetic gradient | img-libaom-balanced, best | 3264 (1) | unavailable | unavailable |
+| synthetic gradient | zen-best | 4293 (1) | unavailable | unavailable |
+
+At score 90 on photos, Fast uses 5.1% fewer bytes than Zen Best and Balanced/Best 9.7% fewer. At score 80 the savings are 11.9% and 15.6%. On the gradient, Fast is 1.1% larger than Zen Best at score 80; Balanced/Best is 24.0% smaller.
+
+Timing used five alternating single-thread repetitions at the score-90 brackets, with `perf-gate-ready` before and `-1` after each input batch and a final `-1`. Times are means of per-image interpolated medians. RSS is the process peak.
+
+| Encoder | Wall ms (n) | Wall range ms | User CPU ms | Peak RSS MiB |
+| --- | ---: | ---: | ---: | ---: |
+| img-libaom-fast | 300.24 (14) | 299.71–308.41 | 294.13 | 75.46 |
+| aom-s8-444 | 300.10 (14) | 299.25–307.96 | 300.09 | 62.03 |
+| img-libaom-balanced | 862.24 (14) | 860.98–880.77 | 848.52 | 80.78 |
+| img-libaom-best | 862.54 (14) | 861.15–881.03 | 848.66 | 80.78 |
+| aom-s6-444 | 864.31 (14) | 861.25–870.92 | 864.27 | 67.45 |
+| zen-fast | 1062.97 (9) | 1056.77–1066.69 | 1051.23 | 86.10 |
+| zen-best | 3343.04 (14) | 3329.16–3349.04 | 3318.41 | 77.78 |
+
+Wall time matches the standalone candidates. Fast takes 0.09 times Zen Best's time; it is also well under Zen Fast's mean, although Zen Fast brackets score 90 on only nine photos. Peak RSS is 13 MiB above the standalone harness because img copies the decoded samples before encoding. The Fast row is 10.7 MiB under Zen Fast's mean (on Zen's nine photos), and Balanced/Best is 3.0 MiB above Zen Best.
+
+On x86-64 the vendored libaom builds its SSE2, SSSE3 and AVX2 assembly with NASM. Linux timing is unmeasured.
