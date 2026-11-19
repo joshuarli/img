@@ -87,6 +87,9 @@ libc = "=0.2.183"
 EOF
 cargo build --offline --release -j4 --manifest-path "$scratch/encode/Cargo.toml" --target-dir "$scratch/encode-target"
 cargo build --offline --release -j4 --manifest-path "$scratch/decode/Cargo.toml" --target-dir "$scratch/decode-target"
+mkdir -p "$scratch/decode-asm"
+sed 's/features = \["bitdepth_8"\]/features = ["bitdepth_8", "asm", "asm_arm64_dotprod", "asm_arm64_i8mm"]/' "$scratch/decode/Cargo.toml" > "$scratch/decode-asm/Cargo.toml"
+cargo build --offline --release -j4 --manifest-path "$scratch/decode-asm/Cargo.toml" --target-dir "$scratch/decode-asm-target"
 
 mkdir -p "$scratch/integrated"
 cat > "$scratch/integrated/Cargo.toml" <<EOF

@@ -7,9 +7,9 @@ from matching import bracket
 env = {**os.environ, 'RAYON_NUM_THREADS': '1'}
 fixtures = scratch / 'qualification-fixtures'
 fixtures.mkdir(parents=True, exist_ok=True)
-encode_configs = os.environ.get('AVIF_TIMING_CONFIGS', ','.join(configs + ['aom-s6-t4'])).split(',')
+encode_configs = [c for c in os.environ.get('AVIF_TIMING_CONFIGS', ','.join(configs + ['aom-s6-t4'])).split(',') if c]
 series_config = {'aom-s6-t4': 'aom-s6-420'}
-decode_configs = os.environ.get('AVIF_TIMING_DECODE', 'dav1d,rav1d,zen').split(',') if os.environ.get('AVIF_TIMING_DECODE', 'dav1d,rav1d,zen') else []
+decode_configs = [c for c in os.environ.get('AVIF_TIMING_DECODE', 'dav1d,rav1d,zen').split(',') if c]
 
 def gate(direction=None):
     deadline = time.monotonic() + 5400
@@ -160,6 +160,8 @@ def main():
                         args = [avifcodec, 'decode', fixture, dest]
                     elif config == 'zen':
                         args = [decode_bin, 'zen', fixture, dest]
+                    elif config == 'rav1d-asm':
+                        args = [scratch / 'decode-asm-target/release/avif-candidate-decode', 'rav1d', obu, dest]
                     else:
                         args = [decode_bin, 'rav1d', obu, dest]
                     batch.append({'role': 'decode', 'input': item['source'], 'group': item['group'], 'config': config,

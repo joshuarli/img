@@ -178,3 +178,20 @@ Timing used five alternating single-thread repetitions at the score-90 brackets,
 Wall time matches the standalone candidates. Fast takes 0.09 times Zen Best's time; it is also well under Zen Fast's mean, although Zen Fast brackets score 90 on only nine photos. Peak RSS is 13 MiB above the standalone harness because img copies the decoded samples before encoding. The Fast row is 10.7 MiB under Zen Fast's mean (on Zen's nine photos), and Balanced/Best is 3.0 MiB above Zen Best.
 
 On x86-64 the vendored libaom builds its SSE2, SSSE3 and AVX2 assembly with NASM. Linux timing is unmeasured.
+
+## rav1d with assembly
+
+rav1d 1.1.0 was rebuilt with `asm`, `asm_arm64_dotprod` and `asm_arm64_i8mm` (config `rav1d-asm`; `benchmarks/codecs/avif/build.sh`). Two packaging defects in the published crate block this. It omits `src/arm/asm-offsets.h`, so the ARM assembly does not build; the measurement copied the header from upstream tag v1.1.0 (commit `782dab2135ea64a057c097088a13eb8ed3cc3320`) into a scratch copy of the crate. And `asm` with only `bitdepth_8` fails to compile (missing `dav1d_ipred_pixel_set_16bpc_neon`), so `bitdepth_16` is also enabled. SVE2 assembly is excluded because Apple silicon has no SVE. Decoded RGB is byte-identical to the pure-Rust build on the fixtures checked (inputs 0, 3 and 7).
+
+The same score-90 4:2:0 fixtures were rerun for all decoders, with five alternating single-thread repetitions and `perf-gate-ready` before and `-1` after each batch (`benchmarks/results/codecs/avif/decode-asm.json`):
+
+| Group | Decoder | Wall ms (n) | Wall range ms | User CPU ms | Peak RSS MiB |
+| --- | --- | ---: | ---: | ---: | ---: |
+| photo | rav1d-asm | 34.63 (14) | 34.54–34.78 | 33.72 | 15.87 |
+| photo | dav1d | 45.71 (14) | 45.57–46.19 | 45.67 | 16.94 |
+| photo | rav1d | 67.13 (14) | 67.01–67.59 | 66.12 | 15.77 |
+| photo | zen | 108.80 (14) | 108.42–109.83 | 106.99 | 24.58 |
+| synthetic gradient | rav1d-asm | 8.36 (1) | 8.27–8.48 | 7.42 | 17.08 |
+| synthetic gradient | dav1d | 23.92 (1) | 23.83–24.12 | 23.92 | 19.00 |
+
+rav1d-asm decodes in 0.32 times Zen's time and 0.76 times dav1d's, with lower memory than either. The rav1d timing excludes container parsing, which dav1d's includes; img's parser is in-tree and bounded. The dav1d selection is withdrawn: img keeps rav1d with assembly enabled. 4:4:4 decode and Linux timing are unmeasured.

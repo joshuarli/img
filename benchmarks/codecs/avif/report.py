@@ -72,7 +72,7 @@ for group in groups:
     print(f'\n### {group} timing\n')
     print('| Role | Configuration | Threads | Wall ms | Wall range ms | User CPU ms | RSS MiB |')
     print('| --- | --- | ---: | ---: | ---: | ---: | ---: |')
-    for role, candidates in [('encode', timing_configs), ('decode', ['dav1d', 'rav1d', 'zen'])]:
+    for role, candidates in [('encode', timing_configs), ('decode', ['dav1d', 'rav1d', 'rav1d-asm', 'zen'])]:
         all_samples = collections.defaultdict(list)
         for r in timing:
             if r['role'] == role and r['group'] == group and r['exit'] == 0:
