@@ -1,0 +1,134 @@
+[package]
+name = "fast-ssim2"
+version = "0.9.1"
+edition = "2024"
+description = "Fast SSIMULACRA2 image quality metric with SIMD acceleration"
+repository = "https://github.com/imazen/fast-ssim2"
+homepage = "https://github.com/imazen/fast-ssim2"
+documentation = "https://docs.rs/fast-ssim2"
+readme = "README.md"
+exclude = [
+    "test_data",
+    "CLAUDE.md",
+    "CONTEXT-HANDOFF.md",
+    "FEEDBACK.md",
+    ".claude/",
+    ".superwork/",
+    ".zenbench/",
+    "copter-report/",
+    "Cross.toml",
+    "justfile",
+    "Cargo.toml.original.txt",
+    "fuzz/",
+]
+license = "BSD-2-Clause AND BSD-3-Clause AND MIT"
+keywords = ["image", "quality", "ssim", "ssimulacra2", "perceptual"]
+categories = ["multimedia::images", "algorithms"]
+
+# When changing MSRV: Also update README and .github/workflows/rust.yml
+rust-version = "1.89.0"
+
+[dependencies]
+archmage = { version = "0.9.17", features = ["macros"] }
+enough = "0.4.4"
+magetypes = { version = "0.9.30" }
+num-traits = "0.2.19"
+rayon = { version = "1.12.0", optional = true }
+thiserror = "2.0.20"
+linear-srgb = { version = "0.6.7", default-features = false, features = ["transfer"] }
+bytemuck = { version = "1.25.2", default-features = false }
+zenpixels = { version = ">=0.2.16, <0.4.0", default-features = false }
+
+[dev-dependencies]
+almost-enough = "0.4.4"
+image = "0.25.10"
+rand = "0.10.2"
+chrono = "0.4.45"
+png = "0.18.1"
+which = "8.0.6"
+sha2 = "0.11.0"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+zenbench = { version = "0.1.2", features = ["criterion-compat"] }
+zenjpeg = { git = "https://github.com/imazen/zenjpeg", rev = "8f703a6eeaad080045aa4c1b3713a25df2e15529" }
+enough = "0.4.4"
+iai-callgrind = "0.16.1"
+# `testable_dispatch` lets benches/tier_isolation.rs disable the baseline SIMD
+# token (NEON on aarch64) so the scalar arm is real rather than a second
+# measurement of the SIMD path.
+archmage = { version = "0.9.17", features = ["std", "macros", "testable_dispatch"] }
+
+[package.metadata.docs.rs]
+features = ["imgref", "rayon", "hdr-pu"]
+
+[features]
+default = []
+# Development-only kernel access; no API stability guarantee.
+unstable-internals = []
+imgref = ["zenpixels/imgref"]  # ImgRef/ImgVec → PixelSlice conversions (rgb-crate pixel types)
+rayon = ["dep:rayon"]
+hdr-pu = []  # Deprecated PU21 scoring; native HDR uses the standard APIs.
+
+[[example]]
+name = "mem_strip"
+
+
+[[example]]
+name = "obench"
+required-features = ["unstable-internals"]
+
+
+[[example]]
+name = "orfcmp"
+required-features = ["unstable-internals"]
+
+
+[[example]]
+name = "permute_score"
+required-features = ["unstable-internals"]
+
+
+[[example]]
+name = "precompute_benchmark"
+
+
+[[example]]
+name = "sweep_bench"
+required-features = ["unstable-internals"]
+
+
+[[bench]]
+name = "pipeline_iai"
+required-features = ["unstable-internals"]
+harness = false
+
+[[bench]]
+name = "benches"
+harness = false
+
+[[bench]]
+name = "tier_isolation"
+harness = false
+
+[lints.clippy]
+uninlined_format_args = "allow"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(feature, values("avx512"))'] }
+
+
+[[example]]
+name = "cbrt_bench"
+required-features = ["unstable-internals"]
+
+[[example]]
+name = "flat_probe"
+required-features = ["unstable-internals"]
+
+[[test]]
+name = "jpeg_parity"
+required-features = ["unstable-internals"]
+
+[[bench]]
+name = "blur_stride"
+harness = false
