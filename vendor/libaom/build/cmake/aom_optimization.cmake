@@ -214,8 +214,10 @@ endfunction()
 function(test_nasm)
   execute_process(COMMAND ${CMAKE_ASM_NASM_COMPILER} -hf
                   OUTPUT_VARIABLE nasm_helptext)
+  execute_process(COMMAND ${CMAKE_ASM_NASM_COMPILER} -h
+                  OUTPUT_VARIABLE nasm_optionstext)
 
-  if(NOT "${nasm_helptext}" MATCHES "-Ox")
+  if(NOT "${nasm_helptext}${nasm_optionstext}" MATCHES "-O(x|flags)")
     message(
       FATAL_ERROR "Unsupported nasm: multipass optimization not supported.")
   endif()
