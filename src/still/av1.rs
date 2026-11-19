@@ -1,7 +1,6 @@
 //! Safe wrapper over the BSD-2-Clause rav1d AV1 decoder.
 //!
 //! The raw dav1d-style API is the only permissive pure-Rust AV1 decode path.
-//! This module copies decoded planes out, so callers never see rav1d types.
 
 use std::mem::MaybeUninit;
 use std::ptr::NonNull;
@@ -24,13 +23,24 @@ pub(super) enum Chroma {
 pub(super) struct DecodedStill {
     pub width: u32,
     pub height: u32,
-    pub y: Vec<u8>,
-    pub u: Vec<u8>,
-    pub v: Vec<u8>,
+    picture: PictureGuard,
+    plane_lengths: [usize; 3],
+    pub y_stride: u32,
+    pub chroma_stride: u32,
     pub chroma: Chroma,
-    pub chroma_width: usize,
     pub full_range: bool,
     pub matrix: u8,
+}
+
+impl DecodedStill {
+    pub fn planes(&self) -> [&[u8]; 3] {
+        std::array::from_fn(|index| {
+            let data = self.picture.0.data[index].expect("validated AV1 plane");
+            // SAFETY: The default rav1d allocator initializes each full plane, including stride padding.
+            // The validated lengths end within those planes, and self owns the picture for the borrow.
+            unsafe { std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), self.plane_lengths[index]) }
+        })
+    }
 }
 
 struct PictureGuard(Dav1dPicture);
@@ -147,29 +157,29 @@ pub(super) fn decode_still(data: &[u8], stop: &crate::cancellation::Cancellation
     let chroma_stride = usize::try_from(picture.stride[1]).map_err(|_| Error::new(ErrorKind::Invalid, "negative AV1 chroma stride"))?;
     if y_stride < width_us { return Err(Error::new(ErrorKind::Invalid, "AV1 luma stride is smaller than the image width")); }
     if chroma_stride < chroma_width { return Err(Error::new(ErrorKind::Invalid, "AV1 chroma stride is smaller than the chroma width")); }
-    let plane = |index: usize, stride: usize, rows: usize, row_bytes: usize| -> Result<Vec<u8>, Error> {
-        let base = picture.data[index].ok_or_else(|| Error::new(ErrorKind::Invalid, "AV1 decoder returned a missing plane"))?;
-        let size = row_bytes.checked_mul(rows).ok_or_else(|| Error::new(ErrorKind::Limit, "AV1 plane size overflow"))?;
-        let mut out = Vec::with_capacity(size);
-        for row in 0..rows {
-            let start = row.checked_mul(stride).ok_or_else(|| Error::new(ErrorKind::Limit, "AV1 plane stride overflow"))?;
-            let row_ptr = unsafe { base.as_ptr().cast::<u8>().add(start) };
-            out.extend_from_slice(unsafe { std::slice::from_raw_parts(row_ptr, row_bytes) });
-        }
-        Ok(out)
+    let plane_length = |index: usize, stride: usize, rows: usize, row_bytes: usize| -> Result<usize, Error> {
+        picture.data[index].ok_or_else(|| Error::new(ErrorKind::Invalid, "AV1 decoder returned a missing plane"))?;
+        let size = rows.checked_sub(1).and_then(|n| n.checked_mul(stride)).and_then(|n| n.checked_add(row_bytes))
+            .filter(|&n| n <= isize::MAX as usize).ok_or_else(|| Error::new(ErrorKind::Limit, "AV1 plane size overflow"))?;
+        Ok(size)
     };
-    let y = plane(0, y_stride, height_us, width_us)?;
-    let u = plane(1, chroma_stride, chroma_height, chroma_width)?;
-    let v = plane(2, chroma_stride, chroma_height, chroma_width)?;
+    let plane_lengths = [plane_length(0, y_stride, height_us, width_us)?,
+        plane_length(1, chroma_stride, chroma_height, chroma_width)?,
+        plane_length(2, chroma_stride, chroma_height, chroma_width)?];
+    let y_stride = u32::try_from(y_stride).map_err(|_| Error::new(ErrorKind::Limit, "AV1 luma stride overflow"))?;
+    let chroma_stride = u32::try_from(chroma_stride).map_err(|_| Error::new(ErrorKind::Limit, "AV1 chroma stride overflow"))?;
+    let full_range = sequence.color_range != 0;
+    let matrix = sequence.mtrx as u8;
+    let picture = displayed.pop().expect("validated single AV1 picture");
     Ok(DecodedStill {
         width,
         height,
-        y,
-        u,
-        v,
+        picture,
+        plane_lengths,
+        y_stride,
+        chroma_stride,
         chroma,
-        chroma_width,
-        full_range: sequence.color_range != 0,
-        matrix: sequence.mtrx as u8,
+        full_range,
+        matrix,
     })
 }

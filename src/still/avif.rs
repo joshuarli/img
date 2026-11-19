@@ -26,6 +26,7 @@ pub(super) fn decode(bytes: &[u8], stop: &crate::cancellation::Cancellation) -> 
     if bitstream_hdr(&data)? {return Err(Error::new(ErrorKind::Unsupported,"AVIF HDR metadata requires independently validated processing"));}
     let frame = super::av1::decode_still(&data, stop)?;
     let (width, height) = (frame.width, frame.height);
+    let [y, u, v] = frame.planes();
     let (matrix, full_range) = match parser.color_info() {
         Some(avif_container::ColorInformation::Nclx { color_primaries: 1, transfer_characteristics: 13, matrix_coefficients, full_range }) => (matrix_coefficients as u8, full_range),
         Some(avif_container::ColorInformation::IccProfile(_)) | None => (frame.matrix, frame.full_range),
@@ -35,21 +36,21 @@ pub(super) fn decode(bytes: &[u8], stop: &crate::cancellation::Cancellation) -> 
         if frame.chroma != Chroma::I444 || !full_range { return Err(Error::new(ErrorKind::Unsupported, "AVIF identity matrix requires full-range 4:4:4")); }
         let mut pixels = vec![0; width as usize * height as usize * 3];
         for row in 0..height as usize {
-            let y_at = row * width as usize;
-            let u_at = row * frame.chroma_width;
+            let y_at = row * frame.y_stride as usize;
+            let u_at = row * frame.chroma_stride as usize;
             for x in 0..width as usize {
-                let at = (y_at + x) * 3;
-                pixels[at] = frame.v[u_at + x];
-                pixels[at + 1] = frame.y[y_at + x];
-                pixels[at + 2] = frame.u[u_at + x];
+                let at = (row * width as usize + x) * 3;
+                pixels[at] = v[u_at + x];
+                pixels[at + 1] = y[y_at + x];
+                pixels[at + 2] = u[u_at + x];
             }
         }
         pixels
     } else {
         let matrix = match matrix { 1 => yuv::YuvStandardMatrix::Bt709, 6 => yuv::YuvStandardMatrix::Bt601,
             _ => return Err(Error::new(ErrorKind::Unsupported, "AVIF matrix coefficients are unsupported")) };
-        let image = yuv::YuvPlanarImage { y_plane: &frame.y, y_stride: width,
-            u_plane: &frame.u, u_stride: frame.chroma_width as u32, v_plane: &frame.v, v_stride: frame.chroma_width as u32, width, height };
+        let image = yuv::YuvPlanarImage { y_plane: y, y_stride: frame.y_stride,
+            u_plane: u, u_stride: frame.chroma_stride, v_plane: v, v_stride: frame.chroma_stride, width, height };
         let range = if full_range { yuv::YuvRange::Full } else { yuv::YuvRange::Limited };
         let mut pixels = vec![0; width as usize * height as usize * 3];
         let result = match frame.chroma {
