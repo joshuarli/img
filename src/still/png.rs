@@ -286,7 +286,7 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, sto
         EncodingMode::Quality(quality) => palette_path(image, quality, effort)?,
         EncodingMode::Lossless => {
             let samples = if image.bit_depth() == 16 {
-                image.sample_bytes().chunks_exact(2).flat_map(|p| u16::from_ne_bytes([p[0], p[1]]).to_be_bytes()).collect()
+                image.sample_bytes().as_chunks::<2>().0.iter().flat_map(|p| u16::from_ne_bytes(*p).to_be_bytes()).collect()
             } else { image.samples() };
             png_encode(image, effort, samples, None)?
         },
