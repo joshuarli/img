@@ -19,6 +19,9 @@ fn main() {
         println!("cargo:warning=Dynamic linking failed; falling back to static build.");
     }
 
+    println!("cargo:rerun-if-changed=libdeflate");
+    println!("cargo:rerun-if-changed=build.rs");
+
     let mut build = cc::Build::new();
 
     build

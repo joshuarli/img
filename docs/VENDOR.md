@@ -46,7 +46,16 @@ is compiled.
 - License: MIT (`vendor/oxipng/LICENSE`).
 - Features: `default-features = false`, `parallel`. The CLI (`binary`),
   `zopfli`, `sanity-checks`, `freestanding` and `system-libdeflate` are off.
-- Local patches: none.
+- Local patch, `src/deflate/deflater.rs`: at libdeflate levels 5 and above,
+  filtered image data of at least 2 MiB is compressed as 1 MiB chunks in
+  parallel (rayon, serially without `parallel`), each primed with the
+  preceding 32 KiB through `deflate_compress_chunk`, joined by sync flushes
+  into one zlib stream with the whole-input Adler-32. Output depends on the
+  chunk size, not on the thread count. On 98 development PNGs (gated, paired,
+  3 rounds) total encode time falls to 0.65x (fast), 0.49x (balanced) and
+  0.49x (best) of the single-stream encoder, with total bytes +0.007%, -0.010%
+  and +0.014%; the largest group change is best photo +0.06% (filter
+  selection on near-ties), the largest file +0.5%.
 
 ## libdeflater 1.26.1 and libdeflate-sys 1.26.1
 
@@ -57,9 +66,9 @@ is compiled.
   `0cbb8285d2e2bd4b8d4155840ae81929354b4ba0d7b3c272c84761ffa2141e1f` and
   `d7870e5fbd2766179a937c725fb11f4ca0ef025d982beb61bd3ce755425bd19c`).
 - Bundled C: libdeflate v1.26 from <https://github.com/ebiggers/libdeflate>.
-  `vendor/libdeflate-sys/libdeflate/` is byte-identical to the v1.26 release
-  tarball (sha256
-  `bba03fffc5538576213675ce6968fcff6ce2e67d82e4d5febea2d05f9f13cf85`).
+  `vendor/libdeflate-sys/libdeflate/` is the v1.26 release tarball (sha256
+  `bba03fffc5538576213675ce6968fcff6ce2e67d82e4d5febea2d05f9f13cf85`) plus
+  the patch below.
 - Licenses: libdeflater/libdeflate-sys Apache-2.0
   (`vendor/libdeflater/LICENSE`, `vendor/libdeflate-sys/LICENSE`);
   libdeflate MIT (`vendor/libdeflate-sys/libdeflate/COPYING`).
@@ -69,7 +78,13 @@ is compiled.
   is probed or linked.
 - Supported targets: aarch64-apple-darwin, aarch64-unknown-linux-musl,
   x86_64-unknown-linux-musl (static).
-- Local patches: none.
+- Local patches: `libdeflate_deflate_compress_chunk()` (`lib/deflate_compress.c`,
+  `libdeflate.h`) compresses bytes that follow up to 32 KiB of history: the
+  lazy and near-optimal compressors insert the history into their
+  matchfinders without output, and non-final chunks end in an empty stored
+  block instead of a final block. Levels below 5 return 0. libdeflater binds
+  it as `Compressor::deflate_compress_chunk`, and libdeflate-sys's `build.rs`
+  declares `rerun-if-changed` for the C tree so edits rebuild it.
 
 ## rav1d 1.1.0
 

@@ -199,3 +199,25 @@ fn reducible_sixteen_bit_samples_still_keep_sixteen_bit_precision() {
         let encoded=image.encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();let decoded=StillImage::decode(&encoded).unwrap();assert_eq!(decoded.bit_depth(),16,"{layout:?}");assert_eq!(decoded.samples(),image.samples());
     }
 }
+
+#[test]
+fn multi_megabyte_lossless_png_is_exact_at_every_effort() {
+    let (width, height) = (1024u32, 1100u32);
+    let mut state = 0x2545_f491u32;
+    let samples: Vec<u8> = (0..width * height * 3).map(|i| {
+        state ^= state << 13; state ^= state >> 17; state ^= state << 5;
+        let row = i / (width * 3);
+        if row % 300 < 150 { (i % 251) as u8 ^ (row as u8 & 7) } else { (state >> 24) as u8 & 0x3f }
+    }).collect();
+    let image = StillImage::from_samples(width, height, SampleLayout::Rgb8, samples).unwrap();
+    for effort in [Effort::Fast, Effort::Balanced, Effort::Best] {
+        let bytes = image.encode(Format::Png, EncodingMode::Lossless, effort).unwrap();
+        let mut decoder = png::Decoder::new(Cursor::new(&bytes));
+        decoder.set_transformations(png::Transformations::EXPAND);
+        let mut reader = decoder.read_info().unwrap();
+        let mut output = vec![0; reader.output_buffer_size().unwrap()];
+        let info = reader.next_frame(&mut output).unwrap();
+        assert_eq!(&output[..info.buffer_size()], image.samples(), "{effort:?}");
+        assert_eq!(image.encode(Format::Png, EncodingMode::Lossless, effort).unwrap(), bytes, "{effort:?} output is not reproducible");
+    }
+}

@@ -88,6 +88,23 @@ libdeflate_deflate_compress(struct libdeflate_compressor *compressor,
 			    void *out, size_t out_nbytes_avail);
 
 /*
+ * libdeflate_deflate_compress_chunk() compresses the in_nbytes bytes that
+ * follow prefix_nbytes (at most 32768) bytes of history at 'in'.  Matches may
+ * refer into the history, which itself is not output.  Unless 'final' is
+ * nonzero, no block is final and the output ends with an empty stored block,
+ * like zlib's Z_SYNC_FLUSH, so that consecutive chunks of one input, each
+ * primed with the bytes before it and only the last final, concatenate into
+ * one valid DEFLATE stream.  Only compression levels 5 and above support it;
+ * it returns 0 for lower levels, a longer prefix, input short enough to be
+ * stored uncompressed, or insufficient output space.
+ */
+LIBDEFLATEAPI size_t
+libdeflate_deflate_compress_chunk(struct libdeflate_compressor *compressor,
+				  const void *in, size_t prefix_nbytes,
+				  size_t in_nbytes, int final,
+				  void *out, size_t out_nbytes_avail);
+
+/*
  * libdeflate_deflate_compress_bound() returns a worst-case upper bound on the
  * number of bytes of compressed data that may be produced by compressing any
  * buffer of length less than or equal to 'in_nbytes' using

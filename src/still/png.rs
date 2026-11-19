@@ -136,7 +136,7 @@ fn oxipng_options(image: &StillImage, effort: Effort) -> oxipng::Options {
     options
 }
 
-fn png_encode(image: &StillImage, effort: Effort, samples: &[u8], indexed: Option<(Vec<u8>, Option<Vec<u8>>)>) -> Result<Vec<u8>, Error> {
+fn png_encode(image: &StillImage, effort: Effort, samples: Vec<u8>, indexed: Option<(Vec<u8>, Option<Vec<u8>>)>) -> Result<Vec<u8>, Error> {
     use oxipng::{BitDepth, ColorType, RawImage};
     let (width, height) = image.dimensions();
     let (color_type, bit_depth) = match indexed {
@@ -158,7 +158,7 @@ fn png_encode(image: &StillImage, effort: Effort, samples: &[u8], indexed: Optio
         ),
     };
     let encode_error = |e: oxipng::PngError| Error::caused(ErrorKind::Encode, e);
-    let mut raw = RawImage::new(width, height, color_type, bit_depth, samples.to_vec()).map_err(encode_error)?;
+    let mut raw = RawImage::new(width, height, color_type, bit_depth, samples).map_err(encode_error)?;
     if let Some(icc) = image.metadata.icc_profile.as_deref() {
         let mut data = b"ICC Profile\0\0".to_vec();
         data.extend_from_slice(&fdeflate::compress_to_vec(icc));
@@ -201,7 +201,7 @@ fn palette_path(image: &StillImage, quality: super::Quality, effort: Effort) -> 
         let palette_bytes: Vec<u8> = entries.iter().flat_map(|c| [c.r, c.g, c.b]).collect();
         let alpha_bytes: Vec<u8> = entries.iter().map(|c| c.a).collect();
         let trns = alpha_bytes.iter().any(|&a| a != 255).then_some(alpha_bytes);
-        return png_encode(image, effort, &indices, Some((palette_bytes, trns)));
+        return png_encode(image, effort, indices, Some((palette_bytes, trns)));
     }
     let size = quantette::PaletteSize::from_usize_clamped(colors);
     let rgb: Vec<quantette::deps::palette::Srgb<u8>> = samples.chunks_exact(channels).map(|p| quantette::deps::palette::Srgb::new(p[0], p[1], p[2])).collect();
@@ -213,7 +213,7 @@ fn palette_path(image: &StillImage, quality: super::Quality, effort: Effort) -> 
         .input_image(reference)
         .output_srgb8_indexed_image();
     let palette_bytes: Vec<u8> = quantized.palette().iter().flat_map(|c| [c.red, c.green, c.blue]).collect();
-    png_encode(image, effort, quantized.indices(), Some((palette_bytes, None)))
+    png_encode(image, effort, quantized.indices().to_vec(), Some((palette_bytes, None)))
 }
 
 pub(super) fn decode(bytes: &[u8], stop: &crate::cancellation::Cancellation) -> Result<StillImage, Error> {
@@ -285,11 +285,10 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, sto
     let bytes = match mode {
         EncodingMode::Quality(quality) => palette_path(image, quality, effort)?,
         EncodingMode::Lossless => {
-            let samples = image.samples();
             let samples = if image.bit_depth() == 16 {
-                samples.chunks_exact(2).flat_map(|p| u16::from_ne_bytes([p[0], p[1]]).to_be_bytes()).collect()
-            } else { samples };
-            png_encode(image, effort, &samples, None)?
+                image.sample_bytes().chunks_exact(2).flat_map(|p| u16::from_ne_bytes([p[0], p[1]]).to_be_bytes()).collect()
+            } else { image.samples() };
+            png_encode(image, effort, samples, None)?
         },
     };
     let mut metadata = image.png_metadata.clone();

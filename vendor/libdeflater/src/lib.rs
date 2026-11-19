@@ -76,6 +76,7 @@ use libdeflate_sys::{libdeflate_decompressor,
                             libdeflate_compressor,
                             libdeflate_deflate_compress_bound,
                             libdeflate_deflate_compress,
+                            libdeflate_deflate_compress_chunk,
                             libdeflate_zlib_compress_bound,
                             libdeflate_zlib_compress,
                             libdeflate_gzip_compress_bound,
@@ -457,6 +458,35 @@ impl Compressor {
                                                  out_ptr,
                                                  out_deflate_data.len());
 
+            if sz != 0 {
+                Ok(sz)
+            } else {
+                Err(CompressionError::InsufficientSpace)
+            }
+        }
+    }
+
+    /// Compresses `data[prefix..]` as
+    /// [`deflate`](https://tools.ietf.org/html/rfc1951) data whose matches
+    /// may refer into `data[..prefix]` (at most 32 KiB), which is not
+    /// output. Unless `last`, the output has no final block and ends in an
+    /// empty stored block (a sync flush), so consecutive chunks, each primed
+    /// with the bytes before it, concatenate into one stream. Requires
+    /// compression level 5 or higher.
+    pub fn deflate_compress_chunk(&mut self,
+                                  data: &[u8],
+                                  prefix: usize,
+                                  last: bool,
+                                  out_deflate_data: &mut [u8]) -> CompressionResult<usize> {
+        assert!(prefix <= data.len());
+        unsafe {
+            let sz = libdeflate_deflate_compress_chunk(self.p.as_ptr(),
+                                                       data.as_ptr() as *const std::ffi::c_void,
+                                                       prefix,
+                                                       data.len() - prefix,
+                                                       last as std::ffi::c_int,
+                                                       out_deflate_data.as_mut_ptr() as *mut std::ffi::c_void,
+                                                       out_deflate_data.len());
             if sz != 0 {
                 Ok(sz)
             } else {

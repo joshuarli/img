@@ -87,6 +87,14 @@ extern "C" {
                                        out: *mut ::std::os::raw::c_void,
                                        out_nbytes_avail: usize) -> usize;
 
+    pub fn libdeflate_deflate_compress_chunk(compressor: *mut libdeflate_compressor,
+                                             in_: *const ::std::os::raw::c_void,
+                                             prefix_nbytes: usize,
+                                             in_nbytes: usize,
+                                             final_: ::std::os::raw::c_int,
+                                             out: *mut ::std::os::raw::c_void,
+                                             out_nbytes_avail: usize) -> usize;
+
     pub fn libdeflate_zlib_compress_bound(compressor: *mut libdeflate_compressor,
                                           in_nbytes: usize) -> usize;
 
