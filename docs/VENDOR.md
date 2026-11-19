@@ -41,6 +41,36 @@ is compiled.
   x86_64-unknown-linux-musl (static).
 - Local patches: none.
 
+## rav1d 1.1.0
+
+- Role: AV1 decode for AVIF (`src/still/av1.rs`), with upstream assembly.
+- Upstream: <https://github.com/memorysafety/rav1d>, crates.io `rav1d 1.1.0`,
+  checksum `1932f060d5e7bd49dc9f8b272c1dc5e9ce0ffe141c28be900265d3989b36c9ed`.
+- License: BSD-2-Clause (`vendor/rav1d/COPYING`).
+- Local patches: none to Rust or C sources. The published package excludes
+  `*.h`, so it omits `src/arm/asm-offsets.h`, which `src/arm/asm.S` includes.
+  The snapshot adds that file byte-identical to upstream tag v1.1.0 (commit
+  `782dab2135ea64a057c097088a13eb8ed3cc3320`, blob
+  `538de71b32f73894f0855b23ea625a89108929b6`, sha256
+  `b658d1084ebb60e504050fd85800c7d3b5658eb4a76d24ed9c59bb49af96d94f`).
+- Features: `bitdepth_8`, `bitdepth_16`, `asm`, `asm_arm64_dotprod`,
+  `asm_arm64_i8mm`, `asm_arm64_sve2`. The assembler build needs
+  `bitdepth_16`: `src/ipred.rs` references `dav1d_ipred_pixel_set_16bpc_neon`
+  from a runtime-dispatched match even when only eight-bit output is enabled,
+  and upstream supplies that symbol in `ipred16.S`. Enabling upstream's 16-bit
+  build is preferred to patching the crate. img still refuses high-precision
+  AVIF in its own shim, so eight-bit decoding is unchanged. SVE2 is
+  runtime-detected and provides 16-bit paths only; it builds with Apple clang
+  and Alpine clang.
+- Build: ARM64 compiles `src/arm/64/*.S` with `cc -march=armv8.6-a(+sve2)`.
+  x86-64 assembles `src/x86/*.asm` with NASM through nasm-rs (minimum 2.14.0;
+  NASM 3.01 works) and archives the objects with `cc`. LTO and `panic=abort`
+  come from the img profile.
+- Regeneration: reinstall the published crate, copy it verbatim, and re-add
+  `src/arm/asm-offsets.h` from the same upstream tag. Confirm with `diff -r`
+  against the registry source, then rerun `make native-build-check` and the
+  AVIF tests.
+
 ## Updating a snapshot
 
 1. Bump the version in `Cargo.toml` and run `cargo update -p <crate>` with the
