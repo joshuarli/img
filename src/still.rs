@@ -253,6 +253,7 @@ impl StillImage {
     pub fn format(&self) -> Format { self.format }
     /// Packed decoded samples, including hidden RGB and alpha.
     pub fn samples(&self) -> Vec<u8> { self.pixels.copy_to_contiguous_bytes() }
+    pub(crate) fn sample_bytes(&self) -> Cow<'_, [u8]> { self.pixels.as_contiguous_bytes().map_or_else(|| Cow::Owned(self.samples()), Cow::Borrowed) }
     /// Whether decoded samples contain an alpha channel.
     pub fn has_alpha(&self) -> bool { self.pixels.has_alpha() }
     /// Whether decoded samples are grayscale.
@@ -278,7 +279,7 @@ impl StillImage {
     fn without_opaque_alpha(&self) -> Result<Cow<'_ , Self>, Error> {
         if !self.has_alpha() { return Ok(Cow::Borrowed(self)); }
         let channels = self.pixels.descriptor().channels();
-        let samples = self.samples();
+        let samples = self.sample_bytes();
         if samples.chunks_exact(channels).any(|p| p[channels - 1] != 255) {
             return Err(Error::new(ErrorKind::Unsupported, "JPEG cannot represent nonopaque alpha"));
         }

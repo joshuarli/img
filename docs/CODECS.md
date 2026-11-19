@@ -102,10 +102,12 @@ grows 149,856 bytes (4,622,592 → 4,772,448).
    (+10–16%). libjpeg-turbo decodes with 19% less CPU and half the RSS of
    Zen; in-process decode wall time is unmeasured. jpegli now ships
    (all efforts one configuration); integrated output is byte-identical to
-   the measured candidate at equal latency. Its color encode peak RSS is
-   45 MiB against Zen's 25 MiB because the adapter copies samples twice.
-   Next: remove those copies, re-measure the scored workflow, and time
-   libjpeg-turbo decode in process.
+   the measured candidate at equal latency. Its color encode peak RSS was
+   45 MiB against Zen's 25 MiB. JPEG and AVIF encode now borrow tightly
+   packed samples instead of copying them, which cuts harness peak RSS on the
+   largest photo from 53.7 to 44.7 MiB (JPEG) and 121.5 to 111.9 MiB (AVIF),
+   with identical output. The rest of the gap is unmeasured. Next: re-measure
+   the scored workflow and time libjpeg-turbo decode in process.
 6. **AVIF.** The candidate comparison ([avif-candidates.md](codecs/avif-candidates.md),
    14 scaled untagged photos plus one gradient, single thread, gated) selected
    libaom 4:4:4: at score 90 speed 6 is 9.7% smaller than Zen Best at 863 vs

@@ -110,7 +110,7 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, sto
     if image.metadata.xmp.is_some() { return Err(Error::new(ErrorKind::Unsupported, "AVIF encoding cannot embed XMP with the selected encoder")); }
     let (width, height) = image.dimensions();
     let speed = match effort { Effort::Fast => 8, Effort::Balanced | Effort::Best => 6 };
-    let encoded = libavif_sys::encode(width, height, &image.samples(), speed, quality.value().round().clamp(1.0, 100.0) as u8, image.metadata.exif.as_deref())
+    let encoded = libavif_sys::encode(width, height, &image.sample_bytes(), speed, quality.value().round().clamp(1.0, 100.0) as u8, image.metadata.exif.as_deref())
         .map_err(|e| Error::new(ErrorKind::Encode, e))?;
     super::limits().check_output_size(encoded.len() as u64).map_err(|e| Error::caused(ErrorKind::Limit, e))?;
     Ok(encoded)

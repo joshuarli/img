@@ -135,7 +135,7 @@ pub(super) fn encode(image: &StillImage, mode: super::EncodingMode, _effort: Eff
         return Err(super::Error::new(super::ErrorKind::Unsupported, "JPEG encoding requires eight-bit samples"));
     }
     let opaque = image.without_opaque_alpha()?;
-    let samples = opaque.samples();
+    let samples = opaque.sample_bytes();
     let (width, height) = opaque.dimensions();
     let quality = (quality.value().round() as u8).clamp(1, 100);
     let gray = opaque.is_grayscale();
