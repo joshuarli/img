@@ -38,7 +38,7 @@ Do not distribute them as a newly licensed photographic corpus without establish
 | image-webp (WebP decode) | 0.2.4 | MIT OR Apache-2.0 |
 | webpkit (WebP encode, vendored path dependency, experimental) | `cc1311ebf` | MIT OR Apache-2.0 |
 | webpkit conformance fixtures + `webpkit-samples` (dev-only) | `cc1311ebf` | MIT OR Apache-2.0 |
-| rav1d (AV1 decode) | 1.1.0 | BSD-2-Clause |
+| rav1d (AV1 decode, vendored, assembly) | 1.1.0 | BSD-2-Clause |
 | libavif (AVIF encode) | 1.4.2 | BSD-2-Clause |
 | libaom (AVIF encode) | 3.13.1 | BSD-2-Clause and AOM Patent License 1.0 |
 | fast-ssim2 | 0.9.1 | BSD-2-Clause AND BSD-3-Clause AND MIT |

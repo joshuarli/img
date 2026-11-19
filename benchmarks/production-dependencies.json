@@ -6,7 +6,7 @@
     "aarch64-unknown-linux-musl",
     "x86_64-unknown-linux-musl"
   ],
-  "sourceRevision": "42823f6a69ab5254690bb73ad602d694a67bdf0f",
+  "sourceRevision": "82ccec3d72108d7f5806f4529de4666630edcb27",
   "packages": [
     {
       "name": "adler2",
@@ -752,7 +752,7 @@
       "licenseDeclared": "BSD-2-Clause",
       "licenseSelected": "BSD-2-Clause",
       "repository": "https://github.com/memorysafety/rav1d",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "source": "path",
       "hasBuildScript": true
     },
     {
