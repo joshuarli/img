@@ -24,6 +24,7 @@ packages = dist / 'packages'
 packages.mkdir()
 notices = [
     'LICENSE-MIT', 'LICENSE-APACHE', 'docs/PROVENANCE.md',
+    'vendor/zune-jpeg/LICENSE-MIT',
     'vendor/oxipng/LICENSE', 'vendor/libdeflater/LICENSE', 'vendor/libdeflate-sys/LICENSE',
     'vendor/libdeflate-sys/libdeflate/COPYING',
     'vendor/libaom/LICENSE', 'vendor/libaom/PATENTS', 'vendor/libavif/LICENSE',
