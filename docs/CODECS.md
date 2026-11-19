@@ -34,7 +34,7 @@ runs establish compatibility only).
 | --- | --- | --- |
 | Direct JPEG encode | ≤ 0.80× R wall, no more CPU/RSS | Historical only: Fast 0.25–0.48× Zen Fast, Balanced/Best 0.42–0.75× Zen Best at quality 90 (not fidelity-matched). Current jpegli/MozJPEG references unmeasured |
 | Direct AVIF encode | ≤ 0.80× R wall | Historical only: speed 8 0.09×, speed 6 0.26× Zen Best |
-| Exact PNG encode | ≥ 20% less wall and CPU than R at the frozen envelope | **Measured** (CLI, 5 rounds). Large images (2–6 MP): wall 0.97/0.45/0.33× Zen at fast/balanced/best with 0.95–0.97× its bytes; 0.74/0.52/0.46× B. Small images 0.82–0.98× Zen wall. CPU 1.1–2.7× Zen — open |
+| Exact PNG encode | ≥ 20% less wall and CPU than R at the frozen envelope | **Measured** (CLI, 5 rounds). Large images (2–7 MP): wall 0.94/0.44/0.33× Zen at fast/balanced/best with 0.95–0.97× its bytes. Small images 0.84–1.01× Zen wall. CPU 1.0–1.4× Zen on small and 1.2–2.1× on large images — open (filter trials and libdeflate work; the efficiency cores inflate CPU of parallel chunks) |
 | JPEG decode | ≤ 0.80× R, RSS ≤ R | **Measured.** vs Zen 0.31–0.88× by class; vs R (stock libjpeg-turbo 3.2.1 or patched zune) 0.90× on jpegli progressive, 0.95× on other progressive, 1.00× on baseline — open |
 | PNG decode | ≤ 0.80× R | Unmeasured |
 | AVIF decode | ≤ 0.80× R | Historical: rav1d-asm 0.32× Zen; fair dav1d boundary pending |
@@ -146,8 +146,10 @@ which measurement shows is below their actual peak (open, WebP lane). Results:
 
 ## Next experiments
 
-1. **PNG CPU and small-image best latency**: filter trials still cost 1.1–2.7×
-   Zen's CPU; best on small images up to 1.9× Zen wall.
+1. **PNG CPU and small-image best latency**: fast and balanced now skip the
+   unfiltered trial for non-palette images (CPU 0.72–0.92× of the previous
+   build, identical bytes); best's four eval trials still cost up to 2.6× Zen's
+   CPU on small images, and best on small images is up to 1.9× Zen wall.
 2. **Scoring memory**: SSIMULACRA2 reference and comparison buffers are about
    190 B/pixel of the scored workflow; fast-ssim2's strip mode is approximate,
    so it needs a fidelity study before use.
