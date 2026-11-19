@@ -94,6 +94,15 @@ pub enum EncodingMode {
     Quality(Quality),
 }
 
+/// JPEG chroma sampling for color output; grayscale output has no chroma.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum JpegSampling {
+    /// Full-resolution chroma.
+    Yuv444,
+    /// Chroma halved in both directions.
+    Yuv420,
+}
+
 /// Supported still-image containers, in deterministic tie order.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Format {
@@ -265,6 +274,8 @@ impl StillImage {
 
     /// Encode a candidate without silently discarding alpha or reducing precision.
     pub fn encode(&self, format: Format, mode: EncodingMode, effort: Effort) -> Result<Vec<u8>, Error> { self.encode_cancellable(format,mode,effort,&crate::cancellation::Cancellation::default()) }
+
+    pub(crate) fn encode_jpeg_cancellable(&self, quality: Quality, sampling: JpegSampling, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> { jpeg::encode_sampled(self, quality, sampling, stop) }
 
     /// Encode with cooperative codec cancellation where supported.
     pub fn encode_cancellable(&self, format: Format, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {

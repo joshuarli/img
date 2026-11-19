@@ -30,7 +30,7 @@ static void term(j_compress_ptr c) {
   auto* e = reinterpret_cast<Encoder*>(c);
   e->size = e->capacity - e->dest.free_in_buffer;
 }
-extern "C" Encoder* img_jpegli_create(unsigned width, unsigned height, int gray, float quality, size_t memory, size_t limit) {
+extern "C" Encoder* img_jpegli_create(unsigned width, unsigned height, int gray, int subsample, float quality, size_t memory, size_t limit) {
   auto* e = static_cast<Encoder*>(calloc(1, sizeof(Encoder)));
   if (!e) return nullptr;
   e->jpeg.err = jpegli_std_error(&e->error); e->error.error_exit = fail;
@@ -44,7 +44,7 @@ extern "C" Encoder* img_jpegli_create(unsigned width, unsigned height, int gray,
     e->jpeg.image_width = width; e->jpeg.image_height = height;
     e->jpeg.input_components = gray ? 1 : 3; e->jpeg.in_color_space = gray ? JCS_GRAYSCALE : JCS_RGB;
     jpegli_set_defaults(&e->jpeg);
-    if (!gray) { e->jpeg.comp_info[0].h_samp_factor = 1; e->jpeg.comp_info[0].v_samp_factor = 1; }
+    if (!gray) { e->jpeg.comp_info[0].h_samp_factor = subsample ? 2 : 1; e->jpeg.comp_info[0].v_samp_factor = subsample ? 2 : 1; }
     float distance = quality >= 100 ? 0.01f : quality >= 30 ? 0.1f + (100 - quality) * 0.09f : 53.0f / 3000.0f * quality * quality - 23.0f / 20.0f * quality + 25.0f;
     jpegli_set_distance(&e->jpeg, distance, TRUE);
     jpegli_enable_adaptive_quantization(&e->jpeg, distance < 0.3f);

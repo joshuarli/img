@@ -211,3 +211,19 @@ fn grayscale_uses_the_perceptual_luma_quantization_of_color_output() {
         assert_eq!(encode(&gray), encode(&rgb));
     }
 }
+
+#[test]
+fn jpegli_rgb420_halves_chroma_and_rgb_keeps_it_full() {
+    let pixels = common::pixels(32, 32);
+    let luma_sampling = |color| {
+        let mut encoder = jpegli_sys::Encoder::new(32, 32, color, 90.0, 1 << 20, 1 << 20).unwrap();
+        encoder.rows(&pixels, 32).unwrap();
+        let bytes = encoder.finish().unwrap();
+        let sof = bytes.windows(2).position(|pair| pair == [0xff, 0xc2]).unwrap();
+        assert_eq!(bytes[sof + 9], 3);
+        assert!(StillImage::decode(&bytes).is_ok());
+        bytes[sof + 11]
+    };
+    assert_eq!(luma_sampling(jpegli_sys::Color::Rgb), 0x11);
+    assert_eq!(luma_sampling(jpegli_sys::Color::Rgb420), 0x22);
+}

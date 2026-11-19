@@ -252,7 +252,7 @@ fn execute(job:&Job,args:&Arguments,budget:u64)->Result<Completed,Failure> {
         .map_err(|e|Failure::new(&job.input,job.destinations.first().map(|p|p.1.as_path()),match e.kind() {still::ErrorKind::Encode=>"output.encode",still::ErrorKind::Score=>"input.score",still::ErrorKind::Unsupported=>"input.unsupported",still::ErrorKind::Limit=>"input.limit",still::ErrorKind::Invalid=>"input.decode"},&e,if e.kind()==still::ErrorKind::Encode {4} else {3}))?;
     let output=job.destinations.iter().find(|p|p.0==outcome.format).map(|p|p.1.clone()).ok_or_else(||Failure::new(&job.input,None,"output.plan","winner has no planned destination",4))?;
     if CANCELLED.load(Ordering::Relaxed) {return Err(Failure::new(&job.input,Some(&output),"input.cancelled","cancelled before publication",3));}
-    if args.verbose {for evaluation in &outcome.evaluations {eprintln!("{}: {:?} quality={:?} bytes={:?} score={:?} encodeMs={:.3} failure={:?}",job.input.display(),evaluation.format,evaluation.quality,evaluation.bytes,evaluation.score,evaluation.encode_ms,evaluation.failure);}}
+    if args.verbose {for evaluation in &outcome.evaluations {eprintln!("{}: {:?} quality={:?} sampling={:?} bytes={:?} score={:?} encodeMs={:.3} failure={:?}",job.input.display(),evaluation.format,evaluation.quality,evaluation.sampling,evaluation.bytes,evaluation.score,evaluation.encode_ms,evaluation.failure);}}
     if output==Path::new("-") {stdout_bytes(&outcome.bytes,false).map_err(|e|Failure::new(&job.input,Some(&output),"output.io",e,4))?;}
     else if !(args.in_place && outcome.unchanged) {
         publication::create_parent(&output).map_err(|e|Failure::new(&job.input,Some(&output),"output.path",e,4))?;
