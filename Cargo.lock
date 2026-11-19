@@ -525,6 +525,7 @@ dependencies = [
  "lexopt",
  "libavif-sys",
  "libc",
+ "libjpeg-turbo-sys",
  "libm",
  "log",
  "moxcms",
@@ -654,6 +655,14 @@ name = "libdeflater"
 version = "1.26.1"
 dependencies = [
  "libdeflate-sys",
+]
+
+[[package]]
+name = "libjpeg-turbo-sys"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "cmake",
 ]
 
 [[package]]
@@ -1743,6 +1752,8 @@ dependencies = [
 [[package]]
 name = "zune-jpeg"
 version = "0.5.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "27bc9d5b815bc103f142aa054f561d9187d191692ec7c2d1e2b4737f8dbd7296"
 dependencies = [
  "zune-core",
 ]

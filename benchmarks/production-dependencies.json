@@ -6,7 +6,7 @@
     "aarch64-unknown-linux-musl",
     "x86_64-unknown-linux-musl"
   ],
-  "sourceRevision": "82ccec3d72108d7f5806f4529de4666630edcb27",
+  "sourceRevision": "28dc15a0255d4fde6b56de6f963b8f70a5f8e904",
   "packages": [
     {
       "name": "adler2",
@@ -439,6 +439,15 @@
       "repository": "https://github.com/libdeflater/libdeflater",
       "source": "path",
       "hasBuildScript": false
+    },
+    {
+      "name": "libjpeg-turbo-sys",
+      "version": "0.1.0",
+      "licenseDeclared": "IJG AND BSD-3-Clause",
+      "licenseSelected": "IJG AND BSD-3-Clause",
+      "repository": null,
+      "source": "path",
+      "hasBuildScript": true
     },
     {
       "name": "libm",

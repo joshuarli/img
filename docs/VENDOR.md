@@ -7,17 +7,35 @@ unless its entry lists local patches. `scripts/check-native-build` compiles the
 release binary and fails if any native source outside an allowlisted snapshot
 is compiled.
 
-## zune-jpeg 0.5.15
+## libjpeg-turbo 3.2.1
 
-- Role: JPEG decoding (`src/still/jpeg.rs`).
-- Upstream: <https://github.com/etemesi254/zune-image>, published crate 0.5.15.
-- License: MIT OR Apache-2.0 OR Zlib; the distribution includes `LICENSE-MIT`.
-- Local patches: track progressive AC nonzero coefficients per block to skip
-  zeros during refinement. First-AC writes maintain the mask; malformed scan
-  bounds retain the original loop. This uses eight extra bytes per block.
-- Regeneration: copy the published crate from the Cargo registry, reapply the
-  patches in `src/bitstream.rs` and `src/mcu_prog.rs`, then compare decoded
-  bytes and errors with the unpatched crate, including truncated inputs.
+- Role: JPEG sample decoding (`src/still/jpeg.rs` through
+  `codecs/libjpeg-turbo-sys`); the published zune-jpeg 0.5.15 crate still
+  parses headers and metadata. zune-jpeg was vendored with a refinement patch
+  until libjpeg-turbo replaced it (history: `bdaab5c`).
+- Upstream: <https://github.com/libjpeg-turbo/libjpeg-turbo>, release 3.2.1,
+  tarball `libjpeg-turbo-3.2.1.tar.gz` (sha256
+  `c27ad72a68da151177929aa969ae773a2da5ac2af9ce946079314fdac8cece7f`),
+  extracted unmodified into `vendor/libjpeg-turbo`.
+- License: IJG and BSD-3-Clause (`LICENSE.md`, `README.ijg`); this software is
+  based in part on the work of the Independent JPEG Group.
+- Build: CMake, static libjpeg API library only, SIMD required (NEON on ARM64,
+  NASM on x86-64); TurboJPEG, tools, tests and arithmetic coding are off. The
+  shim decodes with the accurate integer IDCT and fancy upsampling, turns every
+  libjpeg warning into an error and applies img's memory limit.
+- Local patch, `src/jdphuff.c` (`decode_mcu_AC_refine`): each block's
+  already-nonzero band coefficients become a 64-bit zigzag mask (NEON table
+  lookup on ARM64, scalar loop elsewhere), and zero runs and correction bits
+  are located with bit scans, reading correction bits up to 16 at a time,
+  instead of testing every coefficient. Decoded samples and errors are
+  identical to the unpatched release on 816 valid, truncated and bit-flipped
+  inputs; only the byte count in corrupt-data warnings can differ, because
+  the bit buffer refills at different points. It cuts jpegli progressive
+  decode by about a quarter.
+- Regeneration: download and verify the release tarball, replace the tree,
+  reapply the patch (`git diff` of `vendor/libjpeg-turbo/src/jdphuff.c`
+  against the tarball), then compare decoded samples with the unpatched
+  release and rerun `make native-build-check` and the JPEG tests.
 
 ## oxipng 10.2.1
 

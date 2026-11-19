@@ -25,7 +25,8 @@ Do not distribute them as a newly licensed photographic corpus without establish
 
 | Component | Resolved version | Selected license |
 | --- | --- | --- |
-| zune-jpeg (JPEG decode) | 0.5.15 | MIT OR Apache-2.0 |
+| libjpeg-turbo (JPEG decode, vendored, patched) | 3.2.1 | IJG AND BSD-3-Clause |
+| zune-jpeg (JPEG header and metadata parsing) | 0.5.15 | MIT OR Apache-2.0 |
 | jpegli (JPEG encode; libjxl) | 0.11.1 | BSD-3-Clause + PATENTS |
 | Highway (jpegli SIMD) | 457c891775a7397bdb0376bb1031e6e027af1c48 | Apache-2.0 |
 | libjpeg-turbo API headers | 8ecba3647edb6dd940463fedf38ca33a8e2a73d1 | IJG |

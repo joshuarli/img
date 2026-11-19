@@ -14,7 +14,6 @@ BINARIES = (
 )
 NOTICES = (
     'LICENSE-MIT', 'LICENSE-APACHE', 'docs/PROVENANCE.md',
-    'vendor/zune-jpeg/LICENSE-MIT',
     'vendor/oxipng/LICENSE', 'vendor/libdeflater/LICENSE', 'vendor/libdeflate-sys/LICENSE',
     'vendor/libdeflate-sys/libdeflate/COPYING',
     'vendor/libaom/LICENSE', 'vendor/libaom/PATENTS', 'vendor/libavif/LICENSE',
@@ -23,6 +22,7 @@ NOTICES = (
     'vendor/libaom/third_party/vector/LICENSE', 'vendor/libaom/third_party/x86inc/LICENSE',
     'vendor/libjxl/LICENSE', 'vendor/libjxl/PATENTS', 'vendor/highway/LICENSE',
     'vendor/libjxl/third_party/libjpeg-turbo/LICENSE.md', 'vendor/libjxl/third_party/libjpeg-turbo/README.ijg',
+    'vendor/libjpeg-turbo/LICENSE.md', 'vendor/libjpeg-turbo/README.ijg',
 )
 
 

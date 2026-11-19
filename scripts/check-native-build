@@ -4,7 +4,7 @@ root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$root"
 export TMPDIR="$root/.work/tmp"
 mkdir -p "$TMPDIR"
-allowed="$root/vendor/libdeflate-sys/libdeflate/:$root/vendor/libjxl/:$root/vendor/highway/:$root/codecs/jpegli-sys/:$root/vendor/libaom/:$root/vendor/libavif/:$root/codecs/libavif-sys/:$root/vendor/rav1d/"
+allowed="$root/vendor/libdeflate-sys/libdeflate/:$root/vendor/libjxl/:$root/vendor/highway/:$root/codecs/jpegli-sys/:$root/vendor/libaom/:$root/vendor/libavif/:$root/codecs/libavif-sys/:$root/vendor/rav1d/:$root/vendor/libjpeg-turbo/:$root/codecs/libjpeg-turbo-sys/"
 proof_dir="$(mktemp -d "$TMPDIR/native-build-proof.XXXXXX")"
 export IMG_NATIVE_TOOL_LOG="$proof_dir/invocations"
 mkdir "$IMG_NATIVE_TOOL_LOG"
@@ -32,7 +32,8 @@ real_cmake="$(command -v cmake)"
 cat > "$proof_dir/cmake" <<WRAP
 #!/bin/sh
 if test "\$PWD" = "$root/codecs/libavif-sys" && test "\$#" -eq 1 && test "\$1" = --version; then exec "$real_cmake" "\$@"; fi
-case "\$PWD" in "\$CARGO_TARGET_DIR"/*/build/libavif-sys*/out/build) exec "$real_cmake" "\$@" ;; esac
+if test "\$PWD" = "$root/codecs/libjpeg-turbo-sys" && test "\$#" -eq 1 && test "\$1" = --version; then exec "$real_cmake" "\$@"; fi
+case "\$PWD" in "\$CARGO_TARGET_DIR"/*/build/libavif-sys*/out/build|"\$CARGO_TARGET_DIR"/*/build/libjpeg-turbo-sys*/out/build) exec "$real_cmake" "\$@" ;; esac
 printf 'DENIED cmake %s %s\n' "\$PWD" "\$*" > "\$(mktemp "\$IMG_NATIVE_TOOL_LOG/denied.XXXXXX")"
 exit 97
 WRAP
@@ -81,9 +82,9 @@ for record in sorted(Path(log).iterdir()):
             path = str(Path(arg if arg.startswith('/') else f'{cwd}/{arg}').resolve())
             if any(path.startswith(prefix) for prefix in allowed):
                 sources.add(path)
-            elif re.fullmatch(re.escape(target) + r'/[^/]+/build/libavif-sys/[^/]+/out/build/CMakeFiles/CMakeScratch/TryCompile-[^/]+/src\.(c|cxx)', path):
+            elif re.fullmatch(re.escape(target) + r'/[^/]+/build/(libavif-sys|libjpeg-turbo-sys)/[^/]+/out/build/CMakeFiles/CMakeScratch/TryCompile-[^/]+/[A-Za-z_]+\.(c|cxx)', path):
                 continue
-            elif re.fullmatch(re.escape(target) + r'/[^/]+/build/libavif-sys/[^/]+/out/build/CMakeFiles/[^/]+/CompilerId(C|CXX)/CMake(C|CXX)CompilerId\.(c|cpp)', path):
+            elif re.fullmatch(re.escape(target) + r'/[^/]+/build/(libavif-sys|libjpeg-turbo-sys)/[^/]+/out/build/CMakeFiles/[^/]+/CompilerId(C|CXX)/CMake(C|CXX)CompilerId\.(c|cpp)', path):
                 continue
             elif re.fullmatch(r'.*/share/cmake/Modules/CMake(C|CXX)CompilerABI\.(c|cpp)', path) and '/CMakeScratch/TryCompile-' in cwd:
                 continue

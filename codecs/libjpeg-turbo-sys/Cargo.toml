@@ -1,0 +1,11 @@
+[package]
+name = "libjpeg-turbo-sys"
+version = "0.1.0"
+edition = "2024"
+license = "IJG AND BSD-3-Clause"
+publish = false
+links = "jpeg"
+
+[build-dependencies]
+cc = "1"
+cmake = "0.1"

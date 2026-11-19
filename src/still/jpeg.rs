@@ -102,7 +102,8 @@ pub(super) fn decode(bytes: &[u8], stop: &crate::cancellation::Cancellation, str
     if metadata_bytes.is_none_or(|n| n > MAX_METADATA_BYTES) {
         return Err(super::Error::new(super::ErrorKind::Limit, "decoded metadata exceeds 8 MiB"));
     }
-    let samples = decoder.decode().map_err(|e| super::Error::caused(super::ErrorKind::Invalid, e))?;
+    let max_memory = super::limits().max_memory_bytes.unwrap_or(super::IMAGE_MEMORY_BYTES) as usize;
+    let samples = libjpeg_turbo_sys::decode(bytes, structure.width, structure.height, gray, max_memory).map_err(|e| super::Error::new(super::ErrorKind::Invalid, e))?;
     let mut image = StillImage::from_samples(structure.width, structure.height, layout, samples)?;
     image.format = Format::Jpeg;
     image.info.format = zencodec::ImageFormat::Jpeg;
