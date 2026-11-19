@@ -233,7 +233,46 @@ fn read(job:&Job,in_place:bool)->Result<(Vec<u8>,Option<InputSource>),Failure> {
     let bytes=still::read_bounded(&mut source).map_err(|e|Failure::new(&job.input,None,"input.limit",e,3))?;Ok((bytes,Some(source)))
 }
 fn details(header:&still::Description)->Value {json!({"width":header.width,"height":header.height,"bitDepth":header.bit_depth,"alpha":header.alpha,"grayscale":header.grayscale,"icc":header.icc,"cicp":header.cicp,"orientation":header.orientation,"animation":header.animation,"grid":header.grid,"rotationCcwDegrees":header.rotation_ccw_degrees,"mirrorAxis":header.mirror_axis,"pixelAspectRatio":header.pixel_aspect_ratio,"hdrMetadata":header.hdr_metadata,"exif":header.exif,"xmp":header.xmp})}
-fn execute(job:&Job,args:&Arguments,budget:u64)->Result<Completed,Failure> {
+/// Working memory admitted for one image. Lossless work is bounded by the
+/// decoded samples (measured peaks: 36-71 bytes per pixel for RGB8 and Gray8
+/// PNG); scored and quality work keeps the 256 bytes per pixel that covers
+/// SSIMULACRA2's float pyramids (measured 187-220 for JPEG, PNG palette and
+/// AVIF). WebP and automatic format selection keep the original reservation.
+fn reservation(header:&still::Description,input:usize,lossless:bool,legacy:bool)->u64 {
+    let pixels=u64::from(header.width).saturating_mul(u64::from(header.height));
+    let input=input as u64;
+    if legacy {return pixels.saturating_mul(256).saturating_add(input).saturating_add(still::MAX_INPUT_BYTES*2);}
+    let headroom=input.saturating_mul(3).saturating_add(64<<20);
+    if lossless {
+        let channels=u64::from(if header.grayscale==Some(true) {1u8} else {3})+u64::from(header.alpha);
+        let sample=if header.bit_depth.unwrap_or(8)>8 {2} else {1};
+        pixels.saturating_mul(48).saturating_add(pixels.saturating_mul(channels*sample*24)).saturating_add(headroom)
+    } else {pixels.saturating_mul(256).saturating_add(headroom)}
+}
+/// Bytes of working memory shared by concurrently processed images.
+struct MemoryBudget {total:u64,free:Mutex<u64>,released:Condvar}
+struct Reserved<'a> {budget:&'a MemoryBudget,bytes:u64}
+impl MemoryBudget {
+    fn new(total:u64)->Self {Self {total,free:Mutex::new(total),released:Condvar::new()}}
+    /// Wait until `bytes` are free; fails with the total when they never can be.
+    fn reserve(&self,bytes:u64)->Result<Reserved<'_>,u64> {
+        if bytes>self.total {return Err(self.total);}
+        let mut free=self.free.lock().unwrap_or_else(|e|e.into_inner());
+        while *free<bytes && !CANCELLED.load(Ordering::Relaxed) {
+            free=self.released.wait_timeout(free,Duration::from_millis(50)).unwrap_or_else(|e|e.into_inner()).0;
+        }
+        *free=free.saturating_sub(bytes);
+        Ok(Reserved {budget:self,bytes})
+    }
+}
+impl Drop for Reserved<'_> {
+    fn drop(&mut self) {
+        let mut free=self.budget.free.lock().unwrap_or_else(|e|e.into_inner());
+        *free=(*free+self.bytes).min(self.budget.total);
+        self.budget.released.notify_all();
+    }
+}
+fn execute(job:&Job,args:&Arguments,budget:&MemoryBudget)->Result<Completed,Failure> {
     if let Some(failure)=&job.failure {return Err(failure.clone());}
     if args.verbose {eprintln!("{}: admitted",job.input.display());}
     let start=Instant::now();
@@ -243,9 +282,9 @@ fn execute(job:&Job,args:&Arguments,budget:u64)->Result<Completed,Failure> {
     if args.command==Command::Inspect {
         return Ok(Completed {input:job.input.clone(),output:None,status:"inspected",value:json!({"input":job.input.to_str(),"output":null,"format":header.format.extension(),"inputBytes":bytes.len(),"outputBytes":null,"score":null,"elapsedMs":start.elapsed().as_secs_f64()*1000.0,"status":"inspected","warnings":[],"image":details(&header)})});
     }
-    let reservation=u64::from(header.width).saturating_mul(u64::from(header.height)).saturating_mul(256).saturating_add(bytes.len() as u64).saturating_add(still::MAX_INPUT_BYTES*2);
-    if reservation>budget {return Err(Failure::new(&job.input,None,"input.limit",format!("image working reservation {reservation} exceeds per-worker memory budget {budget}"),3));}
     let inferred=job.destinations.first().map(|d|d.0).or(job.format).ok_or_else(||Failure::new(&job.input,None,"input.format","input format unavailable",3))?;
+    let reservation=reservation(&header,bytes.len(),matches!(args.fidelity,optimizer::Fidelity::Lossless),args.auto||inferred==Format::Webp);
+    let _reserved=budget.reserve(reservation).map_err(|total|Failure::new(&job.input,None,"input.limit",format!("image working reservation {reservation} exceeds memory budget {total}"),3))?;
     let operation=if args.command==Command::Convert {Operation::Convert(inferred)} else {Operation::Optimize(if args.auto {FormatSelection::Auto} else if args.format.is_some()||args.output.is_some() {FormatSelection::Exact(inferred)} else {FormatSelection::Source})};
     let cancellation=Cancellation::from_static(&CANCELLED);
     let outcome=optimizer::process_cancellable(&bytes,Request {operation,fidelity:args.fidelity,effort:args.effort,metadata:args.metadata,max_dimension:args.max_dimension},&cancellation)
@@ -283,6 +322,21 @@ fn compare(jobs:&[Job],budget:u64)->Result<Completed,Failure> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn memory_budget_admits_within_total_and_waits_for_release() {
+        let budget=MemoryBudget::new(100);
+        assert_eq!(budget.reserve(101).err(),Some(100));
+        let held=budget.reserve(70).unwrap();
+        let (sent,received)=std::sync::mpsc::sync_channel(1);
+        std::thread::scope(|scope| {
+            scope.spawn(|| {let _second=budget.reserve(60).unwrap();sent.send(()).unwrap();});
+            assert!(received.recv_timeout(Duration::from_millis(200)).is_err());
+            drop(held);
+            received.recv_timeout(Duration::from_secs(3)).unwrap();
+        });
+        assert_eq!(*budget.free.lock().unwrap(),100);
+    }
 
     #[test]
     fn waiting_in_place_job_observes_cancellation() {
@@ -345,9 +399,9 @@ pub(crate) fn run(args:Arguments)->u8 {
         let jobs=match plan(&args) {Ok(jobs)=>jobs,Err(error)=>{eprintln!("error: {error}");return 2;}};
         let cpu=std::thread::available_parallelism().map(usize::from).unwrap_or(1);
         let memory=img::limits::SystemBudget::probe(1).per_image_bytes();
-        let workers=args.jobs.min(cpu).min((memory/still::IMAGE_MEMORY_BYTES).max(1) as usize).min(jobs.len()).max(1);
-        let budget=memory/workers as u64;
-        if args.verbose {eprintln!("workers={workers} requested={} perWorkerMemoryBytes={budget} decodedQueue=0",args.jobs);}
+        let workers=args.jobs.min(cpu).min(jobs.len()).max(1);
+        let budget=MemoryBudget::new(memory);
+        if args.verbose {eprintln!("workers={workers} requested={} memoryBudgetBytes={memory} decodedQueue=0",args.jobs);}
         if args.command==Command::Compare {return report(&args,vec![compare(&jobs,memory)]);}
         let next=AtomicUsize::new(0);let slots=Mutex::new((0..jobs.len()).map(|_|None).collect::<Vec<_>>());
         std::thread::scope(|scope| {
@@ -358,7 +412,7 @@ pub(crate) fn run(args:Arguments)->u8 {
                         let index=next.fetch_add(1,Ordering::Relaxed);
                         let Some(job)=jobs.get(index) else {break;};
                         if CANCELLED.load(Ordering::Relaxed) {break;}
-                        let result=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||execute(job,&args,budget)))
+                        let result=std::panic::catch_unwind(std::panic::AssertUnwindSafe(||execute(job,&args,&budget)))
                             .unwrap_or_else(|_|Err(Failure::new(&job.input,None,"output.worker","worker panicked",4)));
                         slots.lock().unwrap_or_else(|e|e.into_inner())[index]=Some(result);
                     }

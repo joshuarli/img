@@ -39,8 +39,8 @@ runs establish compatibility only).
 | PNG decode | ≤ 0.80× R | Unmeasured |
 | AVIF decode | ≤ 0.80× R | Historical: rav1d-asm 0.32× Zen; fair dav1d boundary pending |
 | Scored workflow | ≤ 0.75× B, ≤ 0.80× R | JPEG historical: 0.07–0.53× Zen wall at 0.60–0.97× bytes; not re-run against B |
-| Large-image auxiliary memory | ≥ 25% below B | Unmeasured |
-| Batch throughput | ≥ 1.5× R and 2× Zen at equal cores and memory | Unmeasured |
+| Large-image auxiliary memory | ≥ 25% below B | Measured peaks per pixel (7 MP): lossless PNG 36–71 B, scored JPEG/PNG/AVIF 187–220 B (SSIMULACRA2 float pyramids dominate), WebP and auto up to 500–720 B. Lossless PNG peak ≤ B after the copy removal; no 25% reduction yet — open |
+| Batch throughput | ≥ 1.5× R and 2× Zen at equal cores and memory | **Measured** (48 dev PNGs, gated, 3 rounds). Lossless best: 19.6 img/s at `-j 4` vs B 6.1 and Zen 5.7 (3.2×/3.4×) at 1.04×/1.14× their peak RSS; at `-j 2` 15.5 img/s within B's RSS. JPEG score 90: 5.5 img/s vs B 3.3 (1.67×) at 1.10× RSS; Zen completes 14/48 at 0.9 img/s. RSS-matched Zen comparison open |
 
 ## Selected implementations
 
@@ -117,6 +117,17 @@ Images above about 8 MP are refused on this 8 GB host by the CLI's 256
 bytes-per-pixel admission reservation, as they are by Zen; measured peaks
 are about 45 bytes per pixel.
 
+## Batch admission (2026-11-19)
+
+The CLI admitted at most `available/2 ÷ 4 GiB` workers (one on most hosts,
+as in Zen) and reserved 256 B/pixel plus 256 MiB per image. Images now
+reserve from one shared budget: lossless 48 B/pixel plus 24 B per decoded
+sample byte plus three times the input and 64 MiB; scored and quality work
+256 B/pixel plus the same headroom; WebP and auto keep the original formula,
+which measurement shows is below their actual peak (open, WebP lane). Results:
+[benchmarks/results/batch](../benchmarks/results/batch), runner
+`benchmarks/codecs/batch.py`.
+
 ## Historical results (pre-2026-11-19, against historical Zen)
 
 - **JPEG scored workflow** (`benchmarks/results/codecs/jpeg/scored.json`, 23
@@ -137,8 +148,9 @@ are about 45 bytes per pixel.
 
 1. **PNG CPU and small-image best latency**: filter trials still cost 1.1–2.7×
    Zen's CPU; best on small images up to 1.9× Zen wall.
-2. **Admission reservation**: replace the flat 256 B/pixel estimate with
-   measured per-operation peaks so 8–16 MP inputs and more batch workers fit.
+2. **Scoring memory**: SSIMULACRA2 reference and comparison buffers are about
+   190 B/pixel of the scored workflow; fast-ssim2's strip mode is approximate,
+   so it needs a fidelity study before use.
 3. **JPEG decode vs stock libjpeg-turbo** (0.80× R): Huffman/AC-first and the
    per-MCU dispatch on large progressive images.
 4. **AVIF decode fairness**: identical timed boundaries for dav1d/rav1d, 4:4:4
