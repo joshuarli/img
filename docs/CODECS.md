@@ -97,7 +97,9 @@ grows 149,856 bytes (4,622,592 → 4,772,448).
    tables; and JPEG-only `--score` searches by interpolating between
    bracketing attempts from a seed at the target, stopping within an effort
    slack (fast 0.5, balanced 0.15, best 0.05 score points) instead of bisecting
-   fixed seeds. Color at balanced and best also searches 4:2:0, seeded from
+   fixed seeds. Fast searches with sequential scans and publishes a
+   progressive re-encode of the winner (same coefficients, so the same
+   score, about 4% smaller). Color at balanced and best also searches 4:2:0, seeded from
    the 4:4:4 result, and keeps the smaller verified output; adaptive
    quantization is on only below distance 0.3. Gated interleaved run
    (`benchmarks/codecs/jpeg/scored.py`, 23 images, single thread, img's compare
@@ -106,13 +108,13 @@ grows 149,856 bytes (4,622,592 → 4,772,448).
 
    | Group | Effort | Bytes 80 / 90 / 95 | Wall 80 / 90 / 95 |
    | --- | --- | --- | --- |
-   | color (14) | fast | 0.60 / 0.88 / — | 0.40 / 0.46 / — |
-   | color | balanced | 0.85 / 0.88 / — | 0.34 / 0.32 / — |
-   | color | best | 0.90 / 0.86 / — | 0.19 / 0.16 / — |
-   | grayscale (8) | fast | 0.78 / 0.66 / 0.91 | 0.49 / 0.41 / 0.36 |
-   | grayscale | balanced | 0.85 / 0.91 / 0.97 | 0.25 / 0.18 / 0.19 |
-   | grayscale | best | 0.94 / 0.94 / 0.97 | 0.11 / 0.11 / 0.10 |
-   | text (1) | all | 0.74–1.005 | 0.08–0.50 |
+   | color (14) | fast | 0.60 / 0.88 / — | 0.44 / 0.47 / — |
+   | color | balanced | 0.85 / 0.88 / — | 0.31 / 0.29 / — |
+   | color | best | 0.90 / 0.86 / — | 0.17 / 0.14 / — |
+   | grayscale (8) | fast | 0.76 / 0.65 / 0.91 | 0.53 / 0.45 / 0.42 |
+   | grayscale | balanced | 0.85 / 0.91 / 0.97 | 0.24 / 0.17 / 0.18 |
+   | grayscale | best | 0.94 / 0.94 / 0.97 | 0.11 / 0.11 / 0.09 |
+   | text (1) | all | 0.74–1.005 | 0.07–0.52 |
 
    Zen fails score 90 on 6 color photos and 95 on all 14; img reaches 95 on
    5 and every grayscale image. Zen's internal scorer accepted some outputs
@@ -123,7 +125,14 @@ grows 149,856 bytes (4,622,592 → 4,772,448).
    −12.7/−4.8% for color. A MozJPEG trellis port (branch `feat/jpeg-trellis`,
    parked) saved under 1%, and full MozJPEG trellis with img's tables is only
    0.5–3.9% smaller at 4.8× the encode time, so trellis is not pursued. Text
-   at best/80 is 1.005× Zen (one image). JPEG decode wall time (zune-jpeg) against Zen is unmeasured.
+   at best/80 is 1.005× Zen (one image). Decode: vendored zune-jpeg with a
+   nonzero-mask refinement patch decodes img's progressive output in 0.96×
+   and a progressive camera original in 0.99× Zen's time (gated, in process;
+   `benchmarks/results/codecs/jpeg/decode-progressive.json`), and baseline,
+   libjpeg-turbo, MozJPEG and grayscale files in 0.43–0.71×. Batching
+   correction-bit reads was measured 3% slower and dropped. 0.8× on jpegli
+   progressive output remains open: refinement decoding is still about half
+   the decode time. JPEG decode wall time (zune-jpeg) against Zen is unmeasured.
 6. **AVIF.** The candidate comparison ([avif-candidates.md](codecs/avif-candidates.md),
    14 scaled untagged photos plus one gradient, single thread, gated) selected
    libaom 4:4:4: at score 90 speed 6 is 9.7% smaller than Zen Best at 863 vs

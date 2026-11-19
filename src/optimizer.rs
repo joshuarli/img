@@ -301,6 +301,8 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
     let jpeg_samplings: &[JpegSampling] = if image.is_grayscale() || request.effort == Effort::Fast { &[JpegSampling::Yuv444] } else { &[JpegSampling::Yuv444, JpegSampling::Yuv420] };
     let mut jpeg_settings: Vec<(f32,JpegSampling)> = Vec::new();
     let mut jpeg_next = 0;
+    let mut progressive_repack: Option<(f32,JpegSampling)> = None;
+    let mut repacked = false;
     match request.fidelity {
         Fidelity::Lossless => for &f in &formats { settings.push((f,None)); },
         Fidelity::Quality(q) => for &f in &formats { settings.push((f,Some(q.value()))); },
@@ -326,13 +328,19 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
     let mut scored_evals = 0usize;
     'eval: while evaluations.len() < cap {
         if cancelled.is_cancelled() { return Err(Error::new(ErrorKind::Invalid,"processing cancelled")); }
+        let mut repack_attempt = false;
         let (format,quality,from_deferred,sampling) = loop {
+            if let Some((q,s)) = progressive_repack.take() { scored_evals+=1; repack_attempt=true; break (Format::Jpeg,Some(q),false,Some(s)); }
             if jpeg_next < jpeg_settings.len() && scored_evals < scored_budget { jpeg_next+=1; scored_evals+=1; let (q,s)=jpeg_settings[jpeg_next-1]; break (Format::Jpeg,Some(q),false,Some(s)); }
             if next < settings.len() && scored_evals < scored_budget { next+=1; scored_evals+=1; break (settings[next-1].0,settings[next-1].1,false,None); }
             if !matches!(request.fidelity,Fidelity::Score(_)) { break 'eval; }
             if deferred_at < deferred.len() && !fast_defer { deferred_at+=1; let s=deferred[deferred_at-1]; break (s.0,s.1,true,None); }
             if scored_evals < scored_budget && match (jpeg_only, request.fidelity) {
-                (true, Fidelity::Score(target)) => jpeg_refine_step(target.value(), request.effort, jpeg_samplings, &evaluations, &mut jpeg_settings),
+                (true, Fidelity::Score(target)) => jpeg_refine_step(target.value(), request.effort, jpeg_samplings, &evaluations, &mut jpeg_settings) || (request.effort == Effort::Fast && !repacked && {
+                    repacked = true;
+                    progressive_repack = evaluations.iter().filter(|e| e.format == Format::Jpeg && e.failure.is_none()).min_by_key(|e| e.bytes).and_then(|e| Some((e.quality?, e.sampling?)));
+                    progressive_repack.is_some()
+                }),
                 _ => refine_step(&formats,&evaluations,&mut settings),
             } { continue; }
             if deferred_at < deferred.len() { deferred_at+=1; let s=deferred[deferred_at-1]; break (s.0,s.1,true,None); }
@@ -376,7 +384,7 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
             if gated { None } else {
                 let t = Instant::now();
                 let r = match (sampling, quality) {
-                    (Some(sampling), Some(q)) => image.encode_jpeg_cancellable(Quality::new(q).unwrap(), sampling, request.effort, cancelled),
+                    (Some(sampling), Some(q)) => image.encode_jpeg_cancellable(Quality::new(q).unwrap(), sampling, if repack_attempt { Effort::Balanced } else { request.effort }, cancelled),
                     _ => image.encode_cancellable(format,quality.map(|q|EncodingMode::Quality(Quality::new(q).unwrap())).unwrap_or(EncodingMode::Lossless),request.effort,cancelled),
                 };
                 encode_ms = t.elapsed().as_secs_f64()*1000.0;

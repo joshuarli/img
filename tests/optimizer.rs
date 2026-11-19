@@ -132,3 +132,14 @@ fn score_search_selects_the_deep_lossless_candidate_when_lossy_cannot_qualify() 
     assert!(result.evaluations.iter().filter(|e|e.quality.is_some()).all(|e|e.failure.is_some()));
     assert_eq!(result.evaluations.iter().filter(|e|e.quality.is_none()).count(),1);
 }
+#[test]
+fn fast_jpeg_score_search_publishes_a_progressive_repack_of_the_sequential_winner() {
+    let bytes=StillImage::from_rgb8(256,192,common::pixels(256,192)).unwrap().encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
+    let result=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Jpeg),fidelity:Fidelity::Score(ScoreTarget::new(85.0).unwrap()),effort:Effort::Fast,..Request::default() }).unwrap();
+    let last=result.evaluations.last().unwrap();
+    let sequential=result.evaluations[..result.evaluations.len()-1].iter().filter(|e|e.failure.is_none()).min_by_key(|e|e.bytes).unwrap();
+    assert_eq!((last.quality,last.sampling,last.score),(sequential.quality,sequential.sampling,sequential.score));
+    assert!(last.bytes<sequential.bytes);
+    assert!(result.bytes.windows(2).any(|pair|pair==[0xff,0xc2]));
+    assert_eq!(result.bytes.len(),last.bytes.unwrap());
+}
