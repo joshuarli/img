@@ -33,6 +33,7 @@ notices = [
     'vendor/libjxl/LICENSE', 'vendor/libjxl/PATENTS', 'vendor/highway/LICENSE',
     'vendor/libjxl/third_party/libjpeg-turbo/LICENSE.md', 'vendor/libjxl/third_party/libjpeg-turbo/README.ijg',
     'vendor/libjpeg-turbo/LICENSE.md', 'vendor/libjpeg-turbo/README.ijg',
+    'vendor/fast-ssim2/LICENSE', 'vendor/fast-ssim2/LICENSE.arm', 'vendor/fast-ssim2/LICENSE.libjxl',
 ]
 for directory, filename in artifacts.items():
     source = dist / directory / filename

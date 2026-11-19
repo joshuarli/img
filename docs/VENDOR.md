@@ -121,6 +121,30 @@ is compiled.
   against the registry source, then rerun `make native-build-check` and the
   AVIF tests.
 
+## fast-ssim2 0.9.1
+
+- Role: SSIMULACRA2 scoring of encoded candidates (`src/perceptual.rs`).
+- Upstream: <https://github.com/imazen/fast-ssim2>, crates.io
+  `fast-ssim2 0.9.1`, checksum
+  `e1f3216821c49c3988daa5f35451152559093e7b55c065ec3240ec60a11cc61b`
+  (VCS commit `b02184f76193973ea28df8fb6a8584e821810d60`).
+- License: BSD-2-Clause AND BSD-3-Clause AND MIT (`LICENSE`, `LICENSE.arm`,
+  `LICENSE.libjxl`).
+- Local patch, `src/pipeline/simd.rs` (recursive Gaussian): the horizontal
+  pass copies each eight-row strip into a column-major scratch strip, runs the
+  unchanged eight-lane IIR on contiguous vectors and copies the results back,
+  instead of gathering eight strided rows per lane and scattering each output.
+  The vertical pass keeps the previous two filter states in registers instead
+  of a dynamically indexed four-entry ring and walks sixteen columns per call
+  (eight-column blocks and the overlapped tail are unchanged). Per-lane
+  arithmetic and operation order are unchanged, so blurs and scores are
+  bit-identical to the published crate; the `rayon` path, unused by img,
+  still compiles. Per-candidate scoring time fell to 0.69–0.84× on Apple M1.
+- Regeneration: unpack the published crate, reapply the patch with
+  `git diff` from the vendoring commit, and confirm bit-identical scores with
+  `benchmarks/codecs/score/build.sh` (`IMG_BASE` at an unpatched checkout) plus
+  `tests/metric_reference.rs`.
+
 ## Updating a snapshot
 
 1. Bump the version in `Cargo.toml` and run `cargo update -p <crate>` with the
