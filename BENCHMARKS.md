@@ -9,17 +9,18 @@ corpus, and reuses the harnesses under `benchmarks/codecs/`.
 
 ```sh
 python3 -I scripts/qualification-corpus .work/qcorpus   # once; verifies pinned originals
-scripts/bench build                                      # new and base dist binaries
+scripts/bench build                                      # new and base dist binaries, base worktree
 scripts/bench check --tier change                        # preflight only
 scripts/bench run --tier change                          # or: make bench TIER=change
 scripts/bench run --tier scenario --only workflow-scored --dry-run
+scripts/bench profile -- optimize IN -o OUT --score 90   # sampled CPU profile of one case
 ```
 
 | Tier | What runs | Observed cost (M1) |
 | --- | --- | --- |
-| edit | harness compiles; `tests/test_bench.py` selection, preflight and guard rules | 1 s |
-| change | one gated round each: SSIMULACRA2 bit-identity (`score-exact`), scored and lossless single-image workflows, a 55-PNG batch at `-j 4` | about 1 min warm |
-| scenario | 5 gated rounds of the workflows on 12 files at three formats, 3 batch rounds at `-j 1`/`-j 4`, 9-round JPEG decode qualification | estimated 2 h |
+| edit | harness scripts compile; `tests/test_bench.py` selection, preflight, guard and budget rules | 1 s |
+| change | one gated round each: SSIMULACRA2 bit-identity and per-score time (`score-exact`), in-process PNG encode (`png-encode`), scored and lossless single-image workflows, a 55-PNG batch at `-j 4` | about 1 min warm; about 3 min when the in-process loops rebuild |
+| scenario | 5 gated rounds of the workflows and PNG encode on 12 files, 3 batch rounds at `-j 1`/`-j 4`, 9-round JPEG decode qualification | estimated 2 h |
 | full | adds AVIF and PNG decode library qualification and `make benchmark-run` | hours; manual only |
 
 Selectors: `--tier` is a ceiling (each workload runs at its highest level at or below
@@ -31,15 +32,30 @@ decode fixtures a workload needs, free disk and leftover benchmark processes; an
 problem stops the run before anything executes and names the fix. `--dry-run` prints
 the commands and writes nothing.
 
+**Budgets.** `benchmarks/budgets.json` holds the regression budgets (new/base): 5% for
+wall, CPU, peak RSS, encode and scoring time, 0.2% for output bytes, and a 10% limit
+per individual case. A metric *regresses* when the bootstrap 95% CI lower bound of its
+geomean ratio exceeds the budget, is *within budget* when the upper bound is at or
+below it, and is otherwise *inconclusive*; cases over the per-case limit are listed.
+One-round change tiers are often inconclusive; rerun the workload at `--tier scenario`
+before acting on a suspected regression. Correctness gates are separate and always
+fail the workload: score bits must match the base, the new build must complete every
+case the base completes, and lossless encodes must round-trip exactly.
+
 Each run writes `.work/bench/runs/<UTC>-<tier>/` with a per-workload `log.txt`, result
-JSON and `summary.json` (commit, dirty state, binary and corpus hashes, exit status,
-duration, kept and discarded rounds, exclusions). No budgets exist: a passing run means
-the work completed and outputs were checked (bit-identical scores; the new binary
-completes every case the base completes), not that performance is acceptable. Read
-the ratios in each log; `.work/` is disposable, so copy evidence that matters into
-`benchmarks/results/` and summarize it in `docs/CODECS.md`. Attribute a moved number
-with `sample PID` (macOS) on the slower binary, or the in-process loops
-(`benchmarks/codecs/score/score-loop.rs`, `*/decode-loop.rs`) under a profiler.
+JSON, `*.verdict.json` and `summary.json` (commit, dirty state, binary and corpus
+hashes, exit status, budget verdicts, duration, kept and discarded rounds, exclusions).
+Exit status is nonzero for any failure or regression. `.work/` is disposable: copy
+evidence that matters into `benchmarks/results/` and summarize it in `docs/CODECS.md`.
+
+**Attributing a change.** `scripts/bench profile [--binary new|base] -- ARGS` runs one
+symbolized release build (`cargo build --release --features build-binary`) under
+macOS `sample` or Linux `perf` and writes the top-of-stack table to
+`.work/bench/profiles/`. Runs shorter than about a second capture little; profile the
+in-process loops instead (`.work/bench/loops/target-*/release/score-loop` and
+`png-encode-loop`, built by `benchmarks/codecs/loops-build.sh`), which repeat the work.
+Peak RSS per case is in every workflow and batch result; keep profiled runs separate
+from timed ones.
 
 ## Current WebP interpretation — 2026-11-15 review
 

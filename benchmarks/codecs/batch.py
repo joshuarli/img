@@ -2,7 +2,10 @@
 """Gated batch throughput: python3 batch.py OUT.json ROUNDS INDIR MODE LABEL=BINARY... -- JOBS...
 MODE is 'lossless' (PNG lossless, best) or 'jpeg90' (JPEG --score 90, balanced). Each run converts every
 input in INDIR into a fresh --out-dir; wall, user+sys CPU and peak RSS come from wait4."""
-import json, os, subprocess, sys, time, hashlib, shutil, platform
+import json, os, pathlib, subprocess, sys, time, hashlib, shutil, platform
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import verdict
 args = sys.argv[1:]; split = args.index('--')
 out, rounds, indir, mode = args[0], int(args[1]), args[2], args[3]
 specs = [s.split('=', 1) for s in args[4:split]]; jobs = [int(j) for j in args[split + 1:]]
@@ -37,6 +40,12 @@ for j in jobs:
         rows = [s for s in samples if s['tool'] == label and s['jobs'] == j]
         print(f"{mode} -j {j} {label}: {statistics.median(len(files) / s['wall'] for s in rows):.2f} img/s, cpu {statistics.median(s['cpu'] for s in rows):.1f} s, "
               f"peak RSS {max(s['peak_rss_bytes'] for s in rows) / 2**20:.0f} MiB, completed {min(s['completed'] for s in rows)}/{len(files)}, bytes {rows[0]['output_bytes']}")
+med = lambda label, j, key: statistics.median(s[key] for s in samples if s['tool'] == label and s['jobs'] == j)
+new_label, base_label = specs[0][0], specs[-1][0]
+regressed = len(specs) == 2 and verdict.write(pathlib.Path(out).with_suffix('.verdict.json'), [
+    verdict.judge('seconds_per_image', [(f'{mode} -j {j}', med(new_label, j, 'wall') / med(base_label, j, 'wall')) for j in jobs]),
+    verdict.judge('peak_rss_bytes', [(f'{mode} -j {j}', med(new_label, j, 'peak_rss_bytes') / med(base_label, j, 'peak_rss_bytes')) for j in jobs])])
 done = {label: min(s['completed'] for s in samples if s['tool'] == label) for label, _ in specs}
 if min(done.values()) < max(done.values()) or max(done.values()) == 0:
     print('completed-work check failed:', done); sys.exit(1)
+sys.exit(3 if regressed else 0)

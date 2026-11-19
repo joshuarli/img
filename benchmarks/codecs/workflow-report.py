@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 """python3 workflow-report.py RUN.json NEW BASE: per-case median ratios NEW/BASE, geomean with bootstrap 95% CI, p95, worst."""
-import json, math, random, statistics, sys
+import json, math, pathlib, random, statistics, sys
 from collections import defaultdict
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+sys.dont_write_bytecode = True
+import verdict
 doc = json.load(open(sys.argv[1])); new, base = sys.argv[2], sys.argv[3]
 by = defaultdict(lambda: defaultdict(list))
 for s in doc['samples']:
     if s['exit'] == 0: by[(s['input'], s['format'], s['score'])][s['tool']].append(s)
+def ratios(metric, keys): return [(k, statistics.median(x[metric] for x in by[k][new]) / statistics.median(x[metric] for x in by[k][base])) for k in keys]
 def summary(metric, keys):
-    ratios = [(k, statistics.median(x[metric] for x in by[k][new]) / statistics.median(x[metric] for x in by[k][base])) for k in keys]
-    logs = [math.log(v) for _, v in ratios]; rng = random.Random(0)
+    ratios_ = ratios(metric, keys)
+    logs = [math.log(v) for _, v in ratios_]; rng = random.Random(0)
     boot = sorted(math.exp(statistics.fmean(rng.choices(logs, k=len(logs)))) for _ in range(2000))
-    vals = sorted(v for _, v in ratios); worst = max(ratios, key=lambda kv: kv[1])
-    return f'{metric:15} n={len(ratios):3} geomean {math.exp(statistics.fmean(logs)):.3f} [{boot[50]:.3f}, {boot[1949]:.3f}] p95 {vals[min(len(vals) - 1, int(0.95 * len(vals)))]:.3f} worst {worst[1]:.3f} {worst[0]}'
+    vals = sorted(v for _, v in ratios_); worst = max(ratios_, key=lambda kv: kv[1])
+    return f'{metric:15} n={len(ratios_):3} geomean {math.exp(statistics.fmean(logs)):.3f} [{boot[50]:.3f}, {boot[1949]:.3f}] p95 {vals[min(len(vals) - 1, int(0.95 * len(vals)))]:.3f} worst {worst[1]:.3f} {worst[0]}'
 keys = [k for k in by if by[k][new] and by[k][base]]
 same = sum(1 for k in keys if {x['sha256'] for x in by[k][new]} == {x['sha256'] for x in by[k][base]})
 failed = sorted({(s['tool'], s['input'], s['format'], s['score']) for s in doc['samples'] if s['exit']})
@@ -23,5 +27,8 @@ for group in sorted({k[1] for k in keys}) + ['all']:
     if not keys: break
     ks = [k for k in keys if group in ('all', k[1])]
     print(group); [print('  ' + summary(m, ks)) for m in ('wall', 'cpu', 'peak_rss_bytes', 'bytes')]
+regressed = bool(keys) and verdict.write(pathlib.Path(sys.argv[1]).with_suffix('.verdict.json'),
+                                        [verdict.judge(m, [('/'.join(map(str, k)), r) for k, r in ratios(m, keys)]) for m in ('wall', 'cpu', 'peak_rss_bytes', 'bytes')])
 if lost:
-    print(f'{new} failed cases {base} completed:', *lost); sys.exit(1)
+    print(f'{new} failed cases {base} completed:', *lost)
+sys.exit(1 if lost else 3 if regressed else 0)
