@@ -17,7 +17,7 @@ fn main() {
     let mut config = String::new();
     for (key, value) in [
         ("CONFIG_8BPC", true), ("CONFIG_16BPC", true), ("HAVE_ASM", true), ("CONFIG_ASM_DEBUG", false),
-        ("TRIM_DSP_FUNCTIONS", false), ("CONFIG_LOG", true), ("HAVE_CLOCK_GETTIME", true),
+        ("TRIM_DSP_FUNCTIONS", true), ("CONFIG_LOG", true), ("HAVE_CLOCK_GETTIME", true),
         ("HAVE_SIGACTION", true), ("HAVE_POSIX_MEMALIGN", true), ("HAVE_MEMALIGN", linux),
         ("HAVE_ALIGNED_ALLOC", linux), ("HAVE_DLSYM", linux), ("HAVE_SYS_TYPES_H", true),
         ("HAVE_UNISTD_H", true), ("HAVE_IO_H", false), ("HAVE_PTHREAD_NP_H", false),
@@ -26,12 +26,13 @@ fn main() {
         ("HAVE_C11_GENERIC", true), ("ENDIANNESS_BIG", false), ("ARCH_AARCH64", arm), ("ARCH_ARM", false),
         ("ARCH_X86", !arm), ("ARCH_X86_64", !arm), ("ARCH_X86_32", false), ("ARCH_PPC64LE", false),
         ("ARCH_RISCV", false), ("ARCH_RV32", false), ("ARCH_RV64", false), ("ARCH_LOONGARCH", false),
-        ("ARCH_LOONGARCH32", false), ("ARCH_LOONGARCH64", false), ("HAVE_AS_FUNC", linux),
-        ("HAVE_AS_ARCH_DIRECTIVE", linux), ("HAVE_AS_ARCHEXT_DOTPROD_DIRECTIVE", linux),
-        ("HAVE_AS_ARCHEXT_I8MM_DIRECTIVE", linux), ("HAVE_AS_ARCHEXT_SVE_DIRECTIVE", linux),
-        ("HAVE_AS_ARCHEXT_SVE2_DIRECTIVE", linux), ("HAVE_DOTPROD", arm), ("HAVE_I8MM", arm), ("HAVE_SVE2", arm),
+        ("ARCH_LOONGARCH32", false), ("ARCH_LOONGARCH64", false), ("HAVE_AS_FUNC", arm && linux),
+        ("HAVE_AS_ARCH_DIRECTIVE", arm), ("HAVE_AS_ARCHEXT_DOTPROD_DIRECTIVE", arm),
+        ("HAVE_AS_ARCHEXT_I8MM_DIRECTIVE", arm), ("HAVE_AS_ARCHEXT_SVE_DIRECTIVE", arm),
+        ("HAVE_AS_ARCHEXT_SVE2_DIRECTIVE", arm), ("HAVE_DOTPROD", arm), ("HAVE_I8MM", arm), ("HAVE_SVE", arm), ("HAVE_SVE2", arm),
     ] { config.push_str(&format!("#define {key} {}\n", u8::from(value))); }
     if !linux { config.push_str("#define PREFIX 1\n"); }
+    if arm { config.push_str("#define PIC 3\n#define AS_ARCH_LEVEL armv8.6-a+crc\n"); }
     fs::write(out.join("config.h"), config).unwrap();
     fs::write(out.join("vcs_version.h"), "#define DAV1D_VERSION \"1.5.5\"\n").unwrap();
     let common = "cdf cpu ctx data decode dequant_tables getbits intra_edge itx_1d lf_mask lib log mem msac obu pal picture qm ref refmvs scan tables thread_task warpmv wedge";
@@ -44,10 +45,10 @@ fn main() {
     }
     let mut b = build(&root, &out);
     for name in common.split_whitespace() { b.file(root.join(format!("src/{name}.c"))); }
-    if arm {
+    if std::env::var_os("DAV1D_NOASM").is_some() {
+    } else if arm {
         b.file(root.join("src/arm/cpu.c"));
         let mut assembly = build(&root, &out);
-        assembly.flag("-march=armv8.6-a+sve2");
         for name in "itx lf_mask looprestoration_common msac refmvs cdef filmgrain ipred loopfilter looprestoration mc mc_dotprod cdef16 filmgrain16 ipred16 itx16 loopfilter16 looprestoration16 mc16 mc16_sve".split_whitespace() {
             assembly.file(root.join(format!("src/arm/64/{name}.S")));
         }
