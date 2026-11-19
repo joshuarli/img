@@ -101,33 +101,4 @@ libdeflate-sys = { path = "$root/vendor/libdeflate-sys" }
 rav1d = { path = "$root/vendor/rav1d" }
 EOF3
 cargo build --offline --release -j4 --manifest-path "$scratch/encode-loop/Cargo.toml" --target-dir "$scratch/encode-loop-target"
-mkdir -p "$scratch/decode-loop"
-cat > "$scratch/decode-loop/Cargo.toml" <<EOF4
-[package]
-name = "jpeg-decode-loop"
-version = "0.1.0"
-edition = "2024"
-build = "build.rs"
-[[bin]]
-name = "jpeg-decode-loop"
-path = "$root/benchmarks/codecs/jpeg/decode-loop.rs"
-[dependencies]
-zune-jpeg = "=0.5.15"
-zune-core = "=0.5.1"
-zenjpeg = "=0.8.4"
-enough = "=0.4.5"
-[build-dependencies]
-cc = "=1.4.7"
-[profile.release]
-lto = "thin"
-codegen-units = 1
-EOF4
-cat > "$scratch/decode-loop/build.rs" <<EOF5
-fn main() {
-    cc::Build::new().cpp(true).std("c++17").opt_level(3).include("$scratch/libjxl").include("$scratch/jxl-build/lib/include/jpegli").include("$scratch/jxl-build/lib/include").file("$root/benchmarks/codecs/jpeg/decode-jpegli.cc").compile("decodejpegli");
-    for d in ["$scratch/turbo-build", "$scratch/jxl-build/lib", "$scratch/jxl-build/third_party/highway"] { println!("cargo:rustc-link-search=native={d}"); }
-    for l in ["turbojpeg", "jpegli-static", "hwy"] { println!("cargo:rustc-link-lib=static={l}"); }
-    println!("cargo:rustc-link-lib=c++");
-}
-EOF5
-cargo build --offline --release -j4 --manifest-path "$scratch/decode-loop/Cargo.toml" --target-dir "$scratch/decode-target"
+JPEG_SCRATCH="$scratch" "$root/benchmarks/codecs/jpeg/decode-build.sh"

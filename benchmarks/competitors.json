@@ -1,0 +1,25 @@
+{
+  "refreshed": "2026-11-19",
+  "platform": {"os": "macOS 27.2.1", "cpu": "Apple M1 (4P+4E), 8 GB", "cc": "Apple clang 21.0.0 (clang-2100.4.1.1)", "rustc": "1.102.0-nightly (5b7b37aef 2026-11-08)", "cmake": "4.4.5"},
+  "baselines": {
+    "img": {"commit": "f0ceea6aae093ba50d747dca51737458257a2caf", "note": "frozen starting point B for this campaign; release profile"},
+    "zen-historical": {"commit": "rimage 5424df8", "crates": "zenjpeg 0.8.4, zenpng 0.1.4, zenavif 0.1.6", "sha256": "38a2d911f6bae232ac4b25e6fb283a22e349b35d1e827f0b4245f3d02307a9be", "license": "AGPL, benchmark only"}
+  },
+  "current": {
+    "zenjpeg": {"version": "0.8.4", "source": "crates.io (latest release; equals the historical pin)", "dispatch": "runtime (archmage), single thread", "use": "in-process decode harness"},
+    "zenpng": {"version": "0.1.4", "source": "crates.io latest release (equals historical pin)"},
+    "zenavif": {"version": "0.1.6 crates.io; GitHub tag v0.1.7 unpublished", "source": "crates.io"},
+    "libjpeg-turbo": {"version": "3.2.1", "tarball_sha256": "c27ad72a68da151177929aa969ae773a2da5ac2af9ce946079314fdac8cece7f", "build": "CMake Release, static, SIMD (NEON), no arithmetic coding", "use": "production decoder (patched) and stock reference"},
+    "zune-jpeg": {"version": "0.5.15", "variants": ["upstream crate", "img vendored nonzero-mask patch at f0ceea6"]},
+    "jpegli": {"version": "libjxl v0.11.1 794a5dcf (vendored, patched); standalone google/jpegli has no release tag", "note": "standalone google/jpegli pin pending"},
+    "mozjpeg": {"version": "v4.1.5 (benchmarks/codecs/jpeg/build.sh)", "latest_release": "v4.1.1 GitHub release; v4.1.5 tag"},
+    "oxipng": {"version": "10.2.1", "libdeflate": "1.26"},
+    "png": {"version": "0.18.1", "fdeflate": "0.3.7"},
+    "libspng": {"version": "v0.7.4", "note": "not yet built"},
+    "libpng": {"version": "1.7.0beta89 tag latest; 1.6.x stable", "note": "not yet built"},
+    "libavif": {"version": "1.4.2"},
+    "libaom": {"version": "3.13.1"},
+    "rav1d": {"version": "1.1.0", "note": "vendored with assembly"},
+    "dav1d": {"note": "version used by avif-candidates; fair harness pending"}
+  }
+}

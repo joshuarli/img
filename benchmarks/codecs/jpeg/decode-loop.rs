@@ -1,87 +1,97 @@
-use std::{env, error::Error, ffi::c_void, fs, hint::black_box, time::Instant};
+use std::{env, error::Error, fs, hint::black_box, time::Instant};
 
-unsafe extern "C" {
-    fn tj3Init(init_type: i32) -> *mut c_void;
-    fn tj3DecompressHeader(handle: *mut c_void, jpeg: *const u8, size: usize) -> i32;
-    fn tj3Get(handle: *mut c_void, param: i32) -> i32;
-    fn tj3Decompress8(handle: *mut c_void, jpeg: *const u8, size: usize, dst: *mut u8, pitch: i32, format: i32) -> i32;
-    fn tj3Destroy(handle: *mut c_void);
-    fn img_jpegli_decode(data: *const u8, size: usize, out: *mut *mut u8) -> isize;
-    fn free(ptr: *mut c_void);
-}
-const TJINIT_DECOMPRESS: i32 = 1;
-const TJPARAM_JPEGWIDTH: i32 = 5;
-const TJPARAM_JPEGHEIGHT: i32 = 6;
-const TJPARAM_COLORSPACE: i32 = 4;
-const TJCS_GRAY: i32 = 2;
-const TJPF_RGB: i32 = 0;
-const TJPF_GRAY: i32 = 6;
+#[cfg(feature = "direct")]
+mod direct {
+    use std::{error::Error, ffi::c_void, hint::black_box};
+    unsafe extern "C" {
+        fn img_jpegli_decode(data: *const u8, size: usize, out: *mut *mut u8) -> isize;
+        fn free(ptr: *mut c_void);
+    }
 
-fn turbo(data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
-    unsafe {
-        let handle = tj3Init(TJINIT_DECOMPRESS);
-        if handle.is_null() { return Err("tj3Init".into()); }
-        if tj3DecompressHeader(handle, data.as_ptr(), data.len()) != 0 { tj3Destroy(handle); return Err("header".into()); }
-        let (width, height) = (tj3Get(handle, TJPARAM_JPEGWIDTH) as usize, tj3Get(handle, TJPARAM_JPEGHEIGHT) as usize);
-        let (format, channels) = if tj3Get(handle, TJPARAM_COLORSPACE) == TJCS_GRAY { (TJPF_GRAY, 1) } else { (TJPF_RGB, 3) };
-        let mut out = vec![0u8; width * height * channels];
-        let status = tj3Decompress8(handle, data.as_ptr(), data.len(), out.as_mut_ptr(), (width * channels) as i32, format);
-        tj3Destroy(handle);
-        if status != 0 { return Err("decompress".into()); }
-        Ok(out)
+    fn header(data: &[u8]) -> Result<(u32, u32, bool), Box<dyn Error>> {
+        let mut probe = zune_jpeg::JpegDecoder::new(zune_core::bytestream::ZCursor::new(data));
+        probe.decode_headers()?;
+        let info = probe.info().ok_or("info")?;
+        Ok((info.width.into(), info.height.into(), info.components == 1))
+    }
+
+    pub fn turbo(data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+        let (width, height, gray) = header(data)?;
+        Ok(libjpeg_turbo_sys::decode(data, width, height, gray, usize::MAX >> 1)?)
+    }
+
+    pub fn jpegli(data: &[u8]) -> Result<usize, Box<dyn Error>> {
+        let mut out = std::ptr::null_mut();
+        let len = unsafe { img_jpegli_decode(data.as_ptr(), data.len(), &mut out) };
+        black_box(out);
+        unsafe { free(out.cast()) };
+        if len < 0 { return Err("jpegli".into()); }
+        Ok(len as usize)
+    }
+
+    pub fn zune(data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
+        use zune_core::{bytestream::ZCursor, colorspace::ColorSpace, options::DecoderOptions};
+        let (_, _, gray) = header(data)?;
+        let options = DecoderOptions::default().jpeg_set_out_colorspace(if gray { ColorSpace::Luma } else { ColorSpace::RGB });
+        Ok(zune_jpeg::JpegDecoder::new_with_options(ZCursor::new(data), options).decode()?)
+    }
+
+    pub fn zen(data: &[u8]) -> Result<usize, Box<dyn Error>> {
+        let image = zenjpeg::decoder::Decoder::new().decode(data, enough::Unstoppable)?;
+        black_box(&image);
+        Ok(0)
     }
 }
 
-fn jpegli(data: &[u8]) -> Result<usize, Box<dyn Error>> {
-    let mut out = std::ptr::null_mut();
-    let len = unsafe { img_jpegli_decode(data.as_ptr(), data.len(), &mut out) };
-    black_box(out);
-    unsafe { free(out.cast()) };
-    if len < 0 { return Err("jpegli".into()); }
-    Ok(len as usize)
-}
+fn img(data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> { Ok(img::still::StillImage::decode(data)?.samples()) }
 
-fn zune(data: &[u8]) -> Result<Vec<u8>, Box<dyn Error>> {
-    use zune_core::{bytestream::ZCursor, colorspace::ColorSpace, options::DecoderOptions};
-    let mut probe = zune_jpeg::JpegDecoder::new(ZCursor::new(data));
-    probe.decode_headers()?;
-    let gray = probe.info().ok_or("info")?.components == 1;
-    let options = DecoderOptions::default().jpeg_set_out_colorspace(if gray { ColorSpace::Luma } else { ColorSpace::RGB });
-    Ok(zune_jpeg::JpegDecoder::new_with_options(ZCursor::new(data), options).decode()?)
+fn run(decoder: &str, data: &[u8]) -> Result<usize, Box<dyn Error>> {
+    Ok(match decoder {
+        "img" => black_box(img(data)?).len(),
+        #[cfg(feature = "direct")]
+        "zune" => black_box(direct::zune(data)?).len(),
+        #[cfg(feature = "direct")]
+        "turbo" => black_box(direct::turbo(data)?).len(),
+        #[cfg(feature = "direct")]
+        "jpegli" => direct::jpegli(data)?,
+        #[cfg(feature = "direct")]
+        "zen" => direct::zen(data)?,
+        _ => return Err(format!("unknown decoder {decoder}").into()),
+    })
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<_> = env::args().collect();
     let decoder = args[1].as_str();
-    if decoder == "zune-dump" {
+    if let Some(name) = decoder.strip_suffix("-dump") {
         use std::io::Write;
-        match zune(&fs::read(&args[2])?) {
+        let data = fs::read(&args[2])?;
+        let bytes = match name {
+            "img" => img(&data),
+            #[cfg(feature = "direct")]
+            "zune" => direct::zune(&data),
+            #[cfg(feature = "direct")]
+            "turbo" => direct::turbo(&data),
+            _ => Err("unknown decoder".into()),
+        };
+        match bytes {
             Ok(bytes) => std::io::stdout().write_all(&bytes)?,
-            Err(err) => { eprintln!("{err:?}"); std::process::exit(1); }
+            Err(err) => { eprintln!("{err}"); std::process::exit(1); }
         }
         return Ok(());
     }
-    let iterations: usize = args[2].parse()?;
+    let min_ms: f64 = args[2].parse()?;
     for path in &args[3..] {
         let data = fs::read(path)?;
-        let run = |data: &[u8]| -> Result<usize, Box<dyn Error>> {
-            Ok(match decoder {
-                "zune" => black_box(zune(data)?).len(),
-                "turbo" => black_box(turbo(data)?).len(),
-                "jpegli" => jpegli(data)?,
-                "zen" => { let image = zenjpeg::decoder::Decoder::new().decode(data, enough::Unstoppable)?; black_box(&image); 0 },
-                _ => return Err("unknown decoder".into()),
-            })
-        };
-        run(&data)?;
-        let mut times = Vec::with_capacity(iterations);
-        for _ in 0..iterations {
-            let start = Instant::now();
-            run(&data)?;
-            times.push(start.elapsed().as_secs_f64() * 1000.0);
+        run(decoder, &data)?;
+        let start = Instant::now();
+        let mut iterations = 0u32;
+        while start.elapsed().as_secs_f64() * 1000.0 < min_ms || iterations == 0 {
+            run(decoder, &data)?;
+            iterations += 1;
         }
-        times.sort_by(f64::total_cmp);
-        println!("{{\"decoder\":\"{decoder}\",\"input\":\"{path}\",\"median_ms\":{:.4},\"min_ms\":{:.4}}}", times[iterations / 2], times[0]);
+        let total = start.elapsed().as_secs_f64() * 1000.0;
+        println!("{{\"decoder\":\"{decoder}\",\"input\":\"{path}\",\"iterations\":{iterations},\"mean_ms\":{:.5}}}", total / f64::from(iterations));
     }
     Ok(())
 }
