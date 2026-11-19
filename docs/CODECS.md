@@ -1,6 +1,6 @@
 # JPEG, PNG and AVIF codec campaign
 
-## Status — 2026-11-18
+## Status — 2026-11-19
 
 **Goal:** the strongest practical permissively licensed image optimizer. For
 JPEG, PNG and AVIF, adopt the strongest maintained upstream implementation per
@@ -26,8 +26,8 @@ is met only when it is measured; an unmeasured cell counts as unmet.
 | G1 | Lossy bytes at matched SSIMULACRA2 80/90/95: JPEG and AVIF at least 5% smaller than Zen in every group | JPEG smallest attainable vs Zen Best's passing outputs: color −12.7/−4.8% (80/90, per-image 4:4:4 or 4:2:0; Zen reaches 95 on none), grayscale −2.8/−5.1/−2.3%; unmet at gray 80/95 and color 90 by 0.2 points. AVIF photo Fast −5.1%, Balanced/Best −9.7% at 90 (shipping); other groups absent |
 | G2 | Exact PNG bytes: at least 3% smaller than Zen in every group at every effort, and no image more than 1% larger | Photo 0.97–1.00×; gravel +3.4% and text +2.0% at balanced |
 | G3 | Encode latency: Fast at most half of Zen Fast's wall time; Balanced and Best no slower than Zen at the same effort | JPEG met (direct, quality 90, in process): Fast 0.48/0.25/0.30× Zen Fast for color/gray/text (sequential scans), Balanced/Best 0.75/0.42/0.44× Zen Best; AVIF Fast 300 ms (0.09× Zen Best, below Zen Fast's 1,063 ms), Balanced/Best 862 ms (0.26× Zen Best); PNG best up to 2.04× slower |
-| G4 | Decode latency at most 0.8× Zen; CPU and peak memory no higher than Zen | AVIF rav1d-asm 0.32× (shipping); JPEG (vendored zune-jpeg, in process): img progressive outputs 0.97×, camera progressive 0.99×, baseline 0.43×, libjpeg-turbo/MozJPEG progressive 0.70/0.53×, grayscale 0.62× — parity, 0.8× unmet on jpegli-style progressive; PNG unmeasured |
-| G5 | Scored workflow (`--score T`) reaches the target score with fewer bytes than Zen, in less time | JPEG met: every group and effort at 80/90 (95 where both reach it) is 0.63–0.99× Zen bytes at 0.08–0.51× wall time and no higher peak RSS; img reaches color 95 on 5/14 photos, Zen on none. PNG and AVIF unmeasured |
+| G4 | Decode latency at most 0.8× Zen; CPU and peak memory no higher than Zen | AVIF rav1d-asm 0.32× (shipping); JPEG (vendored zune-jpeg, in process): img progressive outputs 0.97×, camera progressive 0.99×, baseline 0.43×, libjpeg-turbo/MozJPEG progressive 0.70/0.53×, grayscale 0.62× — parity, 0.8× unmet on jpegli-style progressive; decode peak RSS equal (25.8 vs 26.1 MiB, 66.2 vs 66.6); single-threaded, so CPU tracks wall; PNG unmeasured |
+| G5 | Scored workflow (`--score T`) reaches the target score with fewer bytes than Zen, in less time | JPEG: every group and effort at 80/90 (95 where both reach it) is 0.60–0.97× Zen bytes at 0.07–0.53× wall time and no higher peak RSS, except text at best/80 (one image, 1.005×); img reaches color 95 on 5/14 photos, Zen on none. PNG and AVIF unmeasured |
 | G6 | Batch throughput at least 1.5× Zen on the production thread pool | Unmeasured |
 
 **Zen reference:** pre-migration `rimage` at `5424df8` (zenpng 0.1.4, zenjpeg
@@ -132,7 +132,9 @@ grows 149,856 bytes (4,622,592 → 4,772,448).
    libjpeg-turbo, MozJPEG and grayscale files in 0.43–0.71×. Batching
    correction-bit reads was measured 3% slower and dropped. 0.8× on jpegli
    progressive output remains open: refinement decoding is still about half
-   the decode time. JPEG decode wall time (zune-jpeg) against Zen is unmeasured.
+   the decode time. Remaining byte levers measured and rejected: per-image
+   adaptive-quantization choice on grayscale (under 1%) and MozJPEG scan
+   optimization without trellis (1.4–2.5% larger on grayscale). JPEG decode wall time (zune-jpeg) against Zen is unmeasured.
 6. **AVIF.** The candidate comparison ([avif-candidates.md](codecs/avif-candidates.md),
    14 scaled untagged photos plus one gradient, single thread, gated) selected
    libaom 4:4:4: at score 90 speed 6 is 9.7% smaller than Zen Best at 863 vs
