@@ -1,0 +1,8 @@
+[package]
+name = "dav1d-sys"
+version = "0.1.0"
+edition = "2024"
+links = "dav1d"
+
+[build-dependencies]
+cc = "1"

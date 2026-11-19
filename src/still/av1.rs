@@ -1,15 +1,62 @@
-//! Safe wrapper over the BSD-2-Clause rav1d AV1 decoder.
-//!
-//! The raw dav1d-style API is the only permissive pure-Rust AV1 decode path.
+//! Safe wrapper over the BSD-2-Clause dav1d AV1 decoder.
 
 use std::mem::MaybeUninit;
 use std::ptr::NonNull;
 
-use rav1d::include::dav1d::dav1d::{Dav1dContext, Dav1dSettings};
-use rav1d::include::dav1d::data::Dav1dData;
-use rav1d::include::dav1d::headers::*;
-use rav1d::include::dav1d::picture::Dav1dPicture;
-use rav1d::src::lib::{dav1d_close, dav1d_data_create, dav1d_data_unref, dav1d_default_settings, dav1d_get_picture, dav1d_open, dav1d_picture_unref, dav1d_send_data};
+use dav1d_sys as _;
+use std::ffi::{c_int, c_void};
+
+#[repr(C)]
+struct Dav1dSettings {
+    n_threads: c_int, max_frame_delay: c_int, apply_grain: c_int,
+    operating_point: c_int, all_layers: c_int, frame_size_limit: u32,
+    allocator: [usize; 3], logger: [usize; 2], strict_std_compliance: c_int,
+    output_invisible_frames: c_int, inloop_filters: c_int, decode_frame_type: c_int,
+    reserved: [u8; 16],
+}
+#[repr(C)]
+#[derive(Default)]
+struct Dav1dDataProps { timestamp: i64, duration: i64, offset: i64, size: usize, user_data: [usize; 2] }
+#[repr(C)]
+#[derive(Default)]
+struct Dav1dData { data: Option<NonNull<u8>>, sz: usize, reference: Option<NonNull<c_void>>, m: Dav1dDataProps }
+#[repr(C)]
+#[derive(Default)]
+struct PictureParameters { w: c_int, h: c_int, layout: c_int, bpc: c_int }
+#[repr(C)]
+#[derive(Default)]
+struct Dav1dPicture {
+    seq_hdr: Option<NonNull<Dav1dSequenceHeader>>, frame_hdr: Option<NonNull<c_void>>,
+    data: [Option<NonNull<c_void>>; 3], stride: [isize; 2], p: PictureParameters,
+    m: Dav1dDataProps, content_light: Option<NonNull<c_void>>, mastering_display: Option<NonNull<c_void>>,
+    itut_t35: Option<NonNull<c_void>>, n_itut_t35: usize, reserved: [usize; 4],
+    refs: [usize; 5], reserved_ref: [usize; 4], reference: usize, allocator_data: usize,
+}
+#[repr(C)]
+struct OperatingPoint { major_level: u8, minor_level: u8, initial_display_delay: u8, idc: u16, tier: u8, decoder_model_param_present: u8, display_model_param_present: u8 }
+#[repr(C)]
+struct Dav1dSequenceHeader {
+    profile: u8, max_width: c_int, max_height: c_int, layout: c_int, pri: c_int,
+    trc: c_int, mtrx: c_int, chr: c_int, hbd: u8, color_range: u8,
+    num_operating_points: u8, operating_points: [OperatingPoint; 32], still_picture: u8,
+}
+type Dav1dContext = NonNull<c_void>;
+const DAV1D_PIXEL_LAYOUT_I400: c_int = 0;
+const DAV1D_PIXEL_LAYOUT_I420: c_int = 1;
+const DAV1D_PIXEL_LAYOUT_I422: c_int = 2;
+const DAV1D_PIXEL_LAYOUT_I444: c_int = 3;
+const DAV1D_COLOR_PRI_BT709: c_int = 1;
+const DAV1D_TRC_SRGB: c_int = 13;
+unsafe extern "C" {
+    fn dav1d_default_settings(settings: *mut Dav1dSettings);
+    fn dav1d_open(context: *mut Option<Dav1dContext>, settings: *const Dav1dSettings) -> c_int;
+    fn dav1d_close(context: *mut Option<Dav1dContext>);
+    fn dav1d_data_create(data: *mut Dav1dData, size: usize) -> *mut u8;
+    fn dav1d_data_unref(data: *mut Dav1dData);
+    fn dav1d_send_data(context: Dav1dContext, data: *mut Dav1dData) -> c_int;
+    fn dav1d_get_picture(context: Dav1dContext, picture: *mut Dav1dPicture) -> c_int;
+    fn dav1d_picture_unref(picture: *mut Dav1dPicture);
+}
 
 use super::{Error, ErrorKind};
 
@@ -36,7 +83,7 @@ impl DecodedStill {
     pub fn planes(&self) -> [&[u8]; 3] {
         std::array::from_fn(|index| {
             let data = self.picture.0.data[index].expect("validated AV1 plane");
-            // SAFETY: The default rav1d allocator initializes each full plane, including stride padding.
+            // SAFETY: The default dav1d allocator initializes each full plane, including stride padding.
             // The validated lengths end within those planes, and self owns the picture for the borrow.
             unsafe { std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), self.plane_lengths[index]) }
         })
@@ -47,7 +94,7 @@ struct PictureGuard(Dav1dPicture);
 
 impl Drop for PictureGuard {
     fn drop(&mut self) {
-        unsafe { dav1d_picture_unref(Some(NonNull::from(&mut self.0))) };
+        unsafe { dav1d_picture_unref(&mut self.0) };
     }
 }
 
@@ -56,7 +103,7 @@ struct ContextGuard(Option<Dav1dContext>);
 impl Drop for ContextGuard {
     fn drop(&mut self) {
         if self.0.is_some() {
-            unsafe { dav1d_close(Some(NonNull::from(&mut self.0))) };
+            unsafe { dav1d_close(&mut self.0) };
         }
     }
 }
@@ -66,52 +113,52 @@ fn error_code(code: std::ffi::c_int) -> std::ffi::c_int { code.unsigned_abs() as
 pub(super) fn decode_still(data: &[u8], stop: &crate::cancellation::Cancellation) -> Result<DecodedStill, Error> {
     if stop.is_cancelled() { return Err(Error::new(ErrorKind::Invalid, "operation cancelled")); }
     let mut settings = MaybeUninit::<Dav1dSettings>::uninit();
-    unsafe { dav1d_default_settings(NonNull::from(&mut settings).cast::<Dav1dSettings>()) };
+    unsafe { dav1d_default_settings(settings.as_mut_ptr()) };
     let settings = unsafe { settings.assume_init_mut() };
     settings.n_threads = 1;
     settings.max_frame_delay = 1;
     settings.apply_grain = 1;
     settings.frame_size_limit = super::MAX_PIXELS as u32;
     let mut context = None;
-    let open = unsafe { dav1d_open(Some(NonNull::from(&mut context)), Some(NonNull::from(settings))) };
-    if open.0 != 0 {
-        return Err(Error::new(ErrorKind::Invalid, format!("AV1 decoder open failed with error {}", error_code(open.0))));
+    let open = unsafe { dav1d_open(&mut context, settings) };
+    if open != 0 {
+        return Err(Error::new(ErrorKind::Invalid, format!("AV1 decoder open failed with error {}", error_code(open))));
     }
     let _guard = ContextGuard(context);
     let ctx = context.ok_or_else(|| Error::new(ErrorKind::Invalid, "AV1 decoder open returned no context"))?;
 
     let mut data_slot = Dav1dData::default();
-    let buffer = unsafe { dav1d_data_create(Some(NonNull::from(&mut data_slot)), data.len()) };
+    let buffer = unsafe { dav1d_data_create(&mut data_slot, data.len()) };
     let Some(buffer) = NonNull::new(buffer) else {
-        unsafe { dav1d_data_unref(Some(NonNull::from(&mut data_slot))) };
+        unsafe { dav1d_data_unref(&mut data_slot) };
         return Err(Error::new(ErrorKind::Limit, "could not allocate an AV1 decoder buffer"));
     };
     unsafe { std::ptr::copy_nonoverlapping(data.as_ptr(), buffer.as_ptr(), data.len()) };
     let send = (|| -> Result<Vec<PictureGuard>, Error> {
         let mut displayed = Vec::new();
         loop {
-            let result = unsafe { dav1d_send_data(Some(ctx), Some(NonNull::from(&mut data_slot))) };
-            if result.0 == 0 { return Ok(displayed); }
-            if result.0 != -(libc::EAGAIN as std::ffi::c_int) {
-                return Err(Error::new(ErrorKind::Invalid, format!("AV1 decoder rejected the image with error {}", error_code(result.0))));
+            let result = unsafe { dav1d_send_data(ctx, &mut data_slot) };
+            if result == 0 { return Ok(displayed); }
+            if result != -(libc::EAGAIN as std::ffi::c_int) {
+                return Err(Error::new(ErrorKind::Invalid, format!("AV1 decoder rejected the image with error {}", error_code(result))));
             }
             let mut pending = Dav1dPicture::default();
-            let drain = unsafe { dav1d_get_picture(Some(ctx), Some(NonNull::from(&mut pending))) };
-            if drain.0 != 0 {
-                unsafe { dav1d_picture_unref(Some(NonNull::from(&mut pending))) };
-                return Err(Error::new(ErrorKind::Invalid, format!("AV1 decoder rejected the image with error {}", error_code(result.0))));
+            let drain = unsafe { dav1d_get_picture(ctx, &mut pending) };
+            if drain != 0 {
+                unsafe { dav1d_picture_unref(&mut pending) };
+                return Err(Error::new(ErrorKind::Invalid, format!("AV1 decoder rejected the image with error {}", error_code(result))));
             }
             displayed.push(PictureGuard(pending));
         }
     })();
-    unsafe { dav1d_data_unref(Some(NonNull::from(&mut data_slot))) };
+    unsafe { dav1d_data_unref(&mut data_slot) };
     let mut displayed = send?;
 
     loop {
         let mut picture = Dav1dPicture::default();
-        let result = unsafe { dav1d_get_picture(Some(ctx), Some(NonNull::from(&mut picture))) };
-        if result.0 != 0 {
-            unsafe { dav1d_picture_unref(Some(NonNull::from(&mut picture))) };
+        let result = unsafe { dav1d_get_picture(ctx, &mut picture) };
+        if result != 0 {
+            unsafe { dav1d_picture_unref(&mut picture) };
             break;
         }
         displayed.push(PictureGuard(picture));

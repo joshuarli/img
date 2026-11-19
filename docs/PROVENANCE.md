@@ -39,17 +39,17 @@ Do not distribute them as a newly licensed photographic corpus without establish
 | image-webp (WebP decode) | 0.2.4 | MIT OR Apache-2.0 |
 | webpkit (WebP encode, vendored path dependency, experimental) | `cc1311ebf` | MIT OR Apache-2.0 |
 | webpkit conformance fixtures + `webpkit-samples` (dev-only) | `cc1311ebf` | MIT OR Apache-2.0 |
-| rav1d (AV1 decode, vendored, assembly) | 1.1.0 | BSD-2-Clause |
+| dav1d (AV1 decode, vendored, assembly) | 1.5.5 | BSD-2-Clause |
 | libavif (AVIF encode) | 1.4.2 | BSD-2-Clause |
 | libaom (AVIF encode) | 3.13.1 | BSD-2-Clause and AOM Patent License 1.0 |
 | fast-ssim2 | 0.9.1 | BSD-2-Clause AND BSD-3-Clause AND MIT |
 | moxcms / libm / zune-image / zune-core | 0.8.1 / 0.2.16 / 0.5.0 / 0.5.1 | BSD-3-Clause OR Apache-2.0 / MIT / MIT OR Apache-2.0 OR Zlib / MIT OR Apache-2.0 OR Zlib |
 
-No AGPL, GPL, LGPL or MPL package is in the default or build-binary graph; the LGPL entries in the lockfile graph are wasi-only disjunctive arms never selected on supported targets. zenavif-serialize 0.1.4 (BSD-3-Clause) is a development-only fixture tool. Native dav1d, libwebp and LittleCMS references remain development-only and never enter the production graph. The AVIF container reader is implemented in-tree at `src/still/avif_container.rs` from ISO/IEC 14496-12, ISO/IEC 23008-12 and the AV1 sequence-header spec; it was differential-tested against the retired MPL `zenavif-parse` crate before that crate was removed. zenpixels and zencodec are Apache-2.0 OR MIT and are required as metadata/descriptor types shared with fast-ssim2.
+No AGPL, GPL, LGPL or MPL package is in the default or build-binary graph; the LGPL entries in the lockfile graph are wasi-only disjunctive arms never selected on supported targets. zenavif-serialize 0.1.4 (BSD-3-Clause) is a development-only fixture tool. libwebp and LittleCMS references remain development-only and never enter the production graph. The AVIF container reader is implemented in-tree at `src/still/avif_container.rs` from ISO/IEC 14496-12, ISO/IEC 23008-12 and the AV1 sequence-header spec; it was differential-tested against the retired MPL `zenavif-parse` crate before that crate was removed. zenpixels and zencodec are Apache-2.0 OR MIT and are required as metadata/descriptor types shared with fast-ssim2.
 
 unicode-ident also requires Unicode-3.0. No package has an unknown declared license. Published locked releases are used without upstream workspace patches, and no Git dependencies are selected. Path dependencies are the in-tree WebP snapshot documented below, the local jpegli binding, and the `[patch.crates-io]` snapshots in [VENDOR.md](VENDOR.md).
 
-`png` 0.18.1 also independently verifies test samples. `rustybench` 0.5.0 (MIT) is development-only. Native dav1d/libwebp/LittleCMS references remain development-only and never enter the production graph. The [release source archive](RELEASE.md) contains the exact source tree, lockfile and vendored dependencies with their upstream notices.
+`png` 0.18.1 also independently verifies test samples. `rustybench` 0.5.0 (MIT) is development-only. Native libwebp/LittleCMS references remain development-only and never enter the production graph. The [release source archive](RELEASE.md) contains the exact source tree, lockfile and vendored dependencies with their upstream notices.
 
 ## Permissive WebP backend (experimental)
 
