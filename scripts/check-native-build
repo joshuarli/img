@@ -4,7 +4,7 @@ root="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$root"
 export TMPDIR="$root/.work/tmp"
 mkdir -p "$TMPDIR"
-allowed="$root/vendor/libdeflate-sys/libdeflate/:$root/vendor/libjxl/:$root/vendor/highway/:$root/codecs/jpegli-sys/"
+allowed="$root/vendor/libdeflate-sys/libdeflate/:$root/vendor/libjxl/:$root/vendor/highway/:$root/codecs/jpegli-sys/:$root/vendor/libaom/:$root/vendor/libavif/:$root/codecs/libavif-sys/"
 proof_dir="$(mktemp -d "$TMPDIR/native-build-proof.XXXXXX")"
 export IMG_NATIVE_TOOL_LOG="$proof_dir/invocations"
 mkdir "$IMG_NATIVE_TOOL_LOG"
@@ -27,7 +27,27 @@ printf 'DENIED %s %s\n' "$0" "$*" > "$(mktemp "$IMG_NATIVE_TOOL_LOG/denied.XXXXX
 exit 97
 GUARD
 chmod +x "$proof_dir/denied"
-for tool in cmake pkg-config nasm bindgen; do cp "$proof_dir/denied" "$proof_dir/$tool"; done
+for tool in pkg-config bindgen; do cp "$proof_dir/denied" "$proof_dir/$tool"; done
+real_cmake="$(command -v cmake)"
+cat > "$proof_dir/cmake" <<WRAP
+#!/bin/sh
+if test "\$PWD" = "$root/codecs/libavif-sys" && test "\$#" -eq 1 && test "\$1" = --version; then exec "$real_cmake" "\$@"; fi
+case "\$PWD" in "\$CARGO_TARGET_DIR"/*/build/libavif-sys*/out/build) exec "$real_cmake" "\$@" ;; esac
+printf 'DENIED cmake %s %s\n' "\$PWD" "\$*" > "\$(mktemp "\$IMG_NATIVE_TOOL_LOG/denied.XXXXXX")"
+exit 97
+WRAP
+chmod +x "$proof_dir/cmake"
+if command -v nasm >/dev/null 2>&1; then
+    real_nasm="$(command -v nasm)"
+    cat > "$proof_dir/nasm" <<WRAP
+#!/bin/sh
+record="\$(mktemp "\$IMG_NATIVE_TOOL_LOG/cc.XXXXXX")"
+printf '%s\n' "\$PWD" > "\$record"
+for arg in "\$@"; do printf '%s\n' "\$arg" >> "\$record"; done
+exec "$real_nasm" "\$@"
+WRAP
+    chmod +x "$proof_dir/nasm"
+fi
 export CC="$proof_dir/cc" CXX="$proof_dir/c++" HOST_CC="$proof_dir/cc" HOST_CXX="$proof_dir/c++" TARGET_CC="$proof_dir/cc" TARGET_CXX="$proof_dir/c++"
 export CMAKE="$proof_dir/cmake" NASM="$proof_dir/nasm" PKG_CONFIG="$proof_dir/pkg-config"
 export LIBCLANG_PATH="$proof_dir/no-libclang"
@@ -46,7 +66,7 @@ else
     cargo build --locked --profile dist --features build-binary
 fi
 python3 -I - "$IMG_NATIVE_TOOL_LOG" "$allowed" "$CARGO_TARGET_DIR" <<'PY'
-import sys
+import sys, re
 from pathlib import Path
 log, allowed_arg, target = sys.argv[1:4]
 allowed = allowed_arg.split(":")
@@ -61,6 +81,14 @@ for record in sorted(Path(log).iterdir()):
             path = str(Path(arg if arg.startswith('/') else f'{cwd}/{arg}').resolve())
             if any(path.startswith(prefix) for prefix in allowed):
                 sources.add(path)
+            elif re.fullmatch(re.escape(target) + r'/[^/]+/build/libavif-sys/[^/]+/out/build/CMakeFiles/CMakeScratch/TryCompile-[^/]+/src\.(c|cxx)', path):
+                continue
+            elif re.fullmatch(re.escape(target) + r'/[^/]+/build/libavif-sys/[^/]+/out/build/CMakeFiles/[^/]+/CompilerId(C|CXX)/CMake(C|CXX)CompilerId\.(c|cpp)', path):
+                continue
+            elif re.fullmatch(r'.*/share/cmake/Modules/CMake(C|CXX)CompilerABI\.(c|cpp)', path) and '/CMakeScratch/TryCompile-' in cwd:
+                continue
+            elif re.fullmatch(re.escape(target) + r'/[^/]+/build/libavif-sys/[^/]+/out/build/(gen_src/aom_(version|av1|pc|dsp)_no_op\.c|config/aom_config\.c)', path):
+                continue
             elif path.startswith(target + '/') and '-E' in args:
                 continue
             elif path.startswith(target + '/') and Path(path).name in ('flag_check.c', 'flag_check.cpp') and Path(path).read_text() == 'int main(void) { return 0; }':

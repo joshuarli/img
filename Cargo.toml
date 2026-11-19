@@ -37,13 +37,12 @@ image-webp = "=0.2.4"
 # Upstream memorysafety.org Rust port of dav1d, BSD-2-Clause. The assembler
 # feature stays off; decoding is pure Rust.
 rav1d = { version = "=1.1.0", default-features = false, features = ["bitdepth_8"] }
-ravif = { version = "=0.13.0", default-features = false }
+libavif-sys = { path = "codecs/libavif-sys" }
 yuv = { version = "=0.8.20", default-features = false }
 moxcms = { version = "=0.8.1", features = ["extended_range"] }
 fast-ssim2 = { version = "=0.9.1", default-features = false }
 bytemuck = "1.25"
 zencodec = "=0.1.26"
-imgref = "1"
 zenpixels = { version = "=0.2.16", default-features = false, features = ["std", "icc"] }
 rgb = { version = "0.8" }
 log = "0.4"

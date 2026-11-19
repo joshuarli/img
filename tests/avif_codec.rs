@@ -142,3 +142,52 @@ fn nclx_full_range_flag_is_the_high_bit_and_reserved_bits_are_ignored() {
         assert_eq!(img::still::describe(&patched).unwrap().cicp.unwrap()[3],full_range,"flags byte {byte:#04x}");
     }
 }
+
+#[test]
+fn encoded_avif_signals_full_range_srgb_444_and_matches_native_at_each_effort() {
+    let image = StillImage::from_rgb8(48, 32, common::pixels(48, 32)).unwrap();
+    for effort in [Effort::Fast, Effort::Balanced, Effort::Best] {
+        let bytes = image.encode(Format::Avif, mode(), effort).unwrap();
+        assert_eq!(img::still::describe(&bytes).unwrap().cicp, Some([1, 13, 6, 1]));
+        let at = bytes.windows(8).position(|w| w == b"colrnclx").unwrap();
+        assert_eq!(&bytes[at + 8..at + 15], &[0, 1, 0, 13, 0, 6, 0x80]);
+        let config = avif_raw::av1c_fields(&bytes);
+        assert!(!config.high_bitdepth && !config.chroma_subsampling_x && !config.chroma_subsampling_y);
+        check_native(&bytes);
+    }
+}
+
+#[test]
+fn avif_exif_round_trips_and_unrepresentable_metadata_is_refused() {
+    let image = StillImage::from_rgb8(8, 8, common::pixels(8, 8)).unwrap();
+    let base = image.encode(Format::Jpeg, mode(), Effort::Fast).unwrap();
+    let exif = b"II\x2a\0\x08\0\0\0\x01\0\x12\x01\x03\0\x01\0\0\0\x06\0\0\0\0\0\0\0";
+    for (marker, payload) in [
+        (0xe1, [b"Exif\0\0".as_slice(), exif].concat()),
+        (0xe1, [b"http://ns.adobe.com/xap/1.0/\0".as_slice(), b"<xmp/>"].concat()),
+        (0xe2, [b"ICC_PROFILE\0\x01\x01".as_slice(), b"not srgb"].concat()),
+    ] {
+        let mut input = base[..2].to_vec();
+        input.extend_from_slice(&[255, marker]);
+        input.extend_from_slice(&((payload.len() + 2) as u16).to_be_bytes());
+        input.extend_from_slice(&payload);
+        input.extend_from_slice(&base[2..]);
+        let tagged = StillImage::decode(&input).unwrap();
+        let output = tagged.encode(Format::Avif, mode(), Effort::Fast);
+        if marker == 0xe1 && payload.starts_with(b"Exif") {
+            let output = output.unwrap();
+            assert!(img::still::describe(&output).unwrap().exif);
+            assert!(output.windows(exif.len()).any(|window| window == exif));
+            let jpeg = StillImage::decode(&output).unwrap().encode(Format::Jpeg, mode(), Effort::Fast).unwrap();
+            assert!(jpeg.windows(exif.len()).any(|window| window == exif));
+        } else {
+            assert!(output.is_err());
+        }
+    }
+}
+
+#[test]
+fn libavif_invalid_metadata_returns_error() {
+    let result = libavif_sys::encode(8, 8, &common::pixels(8, 8), 8, 80, Some(b"not exif"));
+    assert!(result.is_err());
+}

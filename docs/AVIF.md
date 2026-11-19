@@ -1,6 +1,6 @@
 # AVIF representation support
 
-The bounded still-image path uses ravif 0.13.0 (BSD-3-Clause, scalar rav1e) for opaque eight-bit encoding. Direct quality [0,100] maps to native quality [1,100] clamped. Effort fast, balanced, best maps to native speed 10, 8, 6. Codec threads are disabled.
+The bounded still-image path uses libavif 1.4.2 and libaom 3.13.1 (BSD-2-Clause) for opaque eight-bit encoding. Direct quality [0,100] is rounded and clamped to native quality [1,100]. Effort fast, balanced, best maps to native speed 8, 6, 6. Encoding uses one thread. Cancellation is checked before encoding; libaom cannot be interrupted during encoding. Output uses 8-bit 4:4:4 full-range BT.601 matrix with BT.709 primaries and sRGB transfer, signaled by a standard nclx property.
 
 Decoding uses a bounded unsafe shim over rav1d 1.1.0 (BSD-2-Clause, bitdepth_8, assembler features disabled) with AV1 film grain applied. Container color signaling is checked when present. Otherwise color is taken from the decoded AV1 sequence header. Eight-bit SDR sRGB signaling is required. Full and limited YUV ranges have explicit conversion paths, and decoded RGB carries full-range identity-matrix CICP. An independent dav1d test decodes the pinned fixtures and compares samples.
 
@@ -12,4 +12,4 @@ The unaccepted alpha experiment is preserved at local branch `campaign/s5-alpha-
 
 The decoder shim exists because rav1d's raw dav1d-style API is the only permissive pure-Rust AV1 decode path; it bounds allocations, drains and copies planes out of rav1d-owned memory, and never exposes rav1d types across the boundary. Replacing it requires independent external matrix and range cases, including the regressions linked above.
 
-The ISOBMFF/AVIF container reader is implemented in-tree at `src/still/avif_container.rs`, written from ISO/IEC 14496-12, ISO/IEC 23008-12 and the AV1 sequence-header spec (bounded, dependency-free, corruption-hardened, cancellation-aware). zenavif-serialize 0.1.4 retains BSD-3-Clause (development-only fixture tool). rav1d and rav1e are pure Rust in this configuration; no assembler or C FFI feature is selected.
+The ISOBMFF/AVIF container reader is implemented in-tree at `src/still/avif_container.rs`, written from ISO/IEC 14496-12, ISO/IEC 23008-12 and the AV1 sequence-header spec (bounded, dependency-free, corruption-hardened, cancellation-aware). zenavif-serialize 0.1.4 retains BSD-3-Clause (development-only fixture tool). rav1d is pure Rust in this configuration; its assembler feature is disabled.

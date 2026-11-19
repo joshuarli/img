@@ -1,0 +1,11 @@
+[package]
+name = "libavif-sys"
+version = "0.1.0"
+edition = "2024"
+license = "BSD-2-Clause"
+publish = false
+links = "avif"
+
+[build-dependencies]
+cc = "1"
+cmake = "0.1"

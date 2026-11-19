@@ -3,7 +3,7 @@ FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4c
 ARG TARGETARCH
 
 RUN apk add --no-cache \
-    build-base clang22 cmake dav1d-dev git linux-headers make mold nasm pkgconf python3 rustup
+    build-base clang22 cmake dav1d-dev git linux-headers make mold nasm perl pkgconf python3 rustup
 
 ENV PATH="/root/.cargo/bin:$PATH" \
     CC=clang \

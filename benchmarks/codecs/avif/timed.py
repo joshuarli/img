@@ -7,9 +7,9 @@ from matching import bracket
 env = {**os.environ, 'RAYON_NUM_THREADS': '1'}
 fixtures = scratch / 'qualification-fixtures'
 fixtures.mkdir(parents=True, exist_ok=True)
-encode_configs = configs + ['aom-s6-t4']
+encode_configs = os.environ.get('AVIF_TIMING_CONFIGS', ','.join(configs + ['aom-s6-t4'])).split(',')
 series_config = {'aom-s6-t4': 'aom-s6-420'}
-decode_configs = ['dav1d', 'rav1d', 'zen']
+decode_configs = os.environ.get('AVIF_TIMING_DECODE', 'dav1d,rav1d,zen').split(',') if os.environ.get('AVIF_TIMING_DECODE', 'dav1d,rav1d,zen') else []
 
 def gate(direction=None):
     deadline = time.monotonic() + 5400
@@ -140,7 +140,9 @@ def main():
                         continue
                     for point in points:
                         dest = scratch / f'qualification-encode-{iteration}-{index}-{config}.avif'
-                        if config == 'aom-s6-t4':
+                        if config.startswith('img-libaom-'):
+                            args = [scratch / 'integrated-target/dist/encode-integrated', config, source_pnm, point['quality'], dest]
+                        elif config == 'aom-s6-t4':
                             args = [avifcodec, 'encode', source_pnm, dest, item['width'], item['height'], 420, 6, point['quality'], 4]
                         elif config.startswith('aom-'):
                             _, speed, chroma = config.split('-')

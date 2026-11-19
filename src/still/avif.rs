@@ -109,16 +109,9 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, sto
     }
     if image.metadata.xmp.is_some() { return Err(Error::new(ErrorKind::Unsupported, "AVIF encoding cannot embed XMP with the selected encoder")); }
     let (width, height) = image.dimensions();
-    let rgb: Vec<rgb::RGB8> = image.samples().chunks_exact(3).map(|px| rgb::RGB8::new(px[0], px[1], px[2])).collect();
-    let dims = imgref::Img::new(rgb, width as usize, height as usize);
-    let speed = match effort { Effort::Fast => 10, Effort::Balanced => 8, Effort::Best => 6 };
-    let mut encoder = ravif::Encoder::new()
-        .with_quality(quality.value().clamp(1.0, 100.0))
-        .with_speed(speed)
-        .with_bit_depth(ravif::BitDepth::Eight)
-        .with_num_threads(Some(1));
-    if let Some(exif) = &image.metadata.exif { encoder = encoder.with_exif(exif.as_ref().to_vec()); }
-    let encoded = encoder.encode_rgb(dims.as_ref()).map_err(|e| Error::caused(ErrorKind::Encode, e))?;
-    super::limits().check_output_size(encoded.avif_file.len() as u64).map_err(|e| Error::caused(ErrorKind::Limit, e))?;
-    Ok(encoded.avif_file)
+    let speed = match effort { Effort::Fast => 8, Effort::Balanced | Effort::Best => 6 };
+    let encoded = libavif_sys::encode(width, height, &image.samples(), speed, quality.value().round().clamp(1.0, 100.0) as u8, image.metadata.exif.as_deref())
+        .map_err(|e| Error::new(ErrorKind::Encode, e))?;
+    super::limits().check_output_size(encoded.len() as u64).map_err(|e| Error::caused(ErrorKind::Limit, e))?;
+    Ok(encoded)
 }

@@ -6,7 +6,7 @@
     "aarch64-unknown-linux-musl",
     "x86_64-unknown-linux-musl"
   ],
-  "sourceRevision": "350495deb98920c3968c3d8357d97a7513267e55",
+  "sourceRevision": "42823f6a69ab5254690bb73ad602d694a67bdf0f",
   "packages": [
     {
       "name": "adler2",
@@ -18,24 +18,6 @@
       "hasBuildScript": false
     },
     {
-      "name": "aligned",
-      "version": "0.4.3",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/rust-embedded-community/aligned",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "aligned-vec",
-      "version": "0.6.4",
-      "licenseDeclared": "MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/sarah-ek/aligned-vec/",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
       "name": "almost-enough",
       "version": "0.4.5",
       "licenseDeclared": "MIT OR Apache-2.0",
@@ -43,15 +25,6 @@
       "repository": "https://github.com/imazen/enough",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
-    },
-    {
-      "name": "anyhow",
-      "version": "1.0.104",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/dtolnay/anyhow",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": true
     },
     {
       "name": "archmage",
@@ -68,33 +41,6 @@
       "licenseDeclared": "MIT OR Apache-2.0",
       "licenseSelected": "MIT",
       "repository": "https://github.com/imazen/archmage",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "arg_enum_proc_macro",
-      "version": "0.3.4",
-      "licenseDeclared": "MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/lu-zero/arg_enum_proc_macro",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "arrayvec",
-      "version": "0.7.8",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/bluss/arrayvec",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "as-slice",
-      "version": "0.2.1",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/japaric/as-slice",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
     },
@@ -135,33 +81,6 @@
       "hasBuildScript": false
     },
     {
-      "name": "av-scenechange",
-      "version": "0.14.1",
-      "licenseDeclared": "MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/rust-av/av-scenechange",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": true
-    },
-    {
-      "name": "av1-grain",
-      "version": "0.2.5",
-      "licenseDeclared": "BSD-2-Clause",
-      "licenseSelected": "BSD-2-Clause",
-      "repository": "https://github.com/rust-av/av1-grain",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "avif-serialize",
-      "version": "0.8.9",
-      "licenseDeclared": "BSD-3-Clause",
-      "licenseSelected": "BSD-3-Clause",
-      "repository": "https://github.com/kornelski/avif-serialize",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
       "name": "bitflags",
       "version": "2.13.2",
       "licenseDeclared": "MIT OR Apache-2.0",
@@ -171,38 +90,11 @@
       "hasBuildScript": false
     },
     {
-      "name": "bitstream-io",
-      "version": "4.10.0",
-      "licenseDeclared": "MIT/Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/tuffy/bitstream-io",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
       "name": "bitvec",
       "version": "1.1.1",
       "licenseDeclared": "MIT",
       "licenseSelected": "MIT",
       "repository": "https://github.com/bitvecto-rs/bitvec",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "built",
-      "version": "0.8.1",
-      "licenseDeclared": "MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/lukaslueg/built",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "bumpalo",
-      "version": "3.20.3",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/fitzgen/bumpalo",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
     },
@@ -270,6 +162,15 @@
       "hasBuildScript": false
     },
     {
+      "name": "cmake",
+      "version": "0.1.58",
+      "licenseDeclared": "MIT OR Apache-2.0",
+      "licenseSelected": "MIT",
+      "repository": "https://github.com/rust-lang/cmake-rs",
+      "source": "registry+https://github.com/rust-lang/crates.io-index",
+      "hasBuildScript": false
+    },
+    {
       "name": "crc32fast",
       "version": "1.5.2",
       "licenseDeclared": "MIT OR Apache-2.0",
@@ -329,24 +230,6 @@
       "licenseDeclared": "MIT OR Apache-2.0",
       "licenseSelected": "MIT",
       "repository": "https://github.com/imazen/enough",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "equator",
-      "version": "0.4.2",
-      "licenseDeclared": "MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/sarah-ek/equator/",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "equator-macro",
-      "version": "0.4.2",
-      "licenseDeclared": "MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/sarah-ek/equator/",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
     },
@@ -459,29 +342,11 @@
       "hasBuildScript": false
     },
     {
-      "name": "imgref",
-      "version": "1.12.3",
-      "licenseDeclared": "CC0-1.0 OR Apache-2.0",
-      "licenseSelected": "Apache-2.0",
-      "repository": "https://github.com/kornelski/imgref",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
       "name": "indexmap",
       "version": "2.14.2",
       "licenseDeclared": "Apache-2.0 OR MIT",
       "licenseSelected": "MIT",
       "repository": "https://github.com/indexmap-rs/indexmap",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "itertools",
-      "version": "0.14.0",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/rust-itertools/itertools",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
     },
@@ -538,6 +403,15 @@
       "repository": "https://github.com/blyxxyz/lexopt",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
+    },
+    {
+      "name": "libavif-sys",
+      "version": "0.1.0",
+      "licenseDeclared": "BSD-2-Clause",
+      "licenseSelected": "BSD-2-Clause",
+      "repository": null,
+      "source": "path",
+      "hasBuildScript": true
     },
     {
       "name": "libc",
@@ -612,29 +486,11 @@
       "hasBuildScript": false
     },
     {
-      "name": "loop9",
-      "version": "0.1.5",
-      "licenseDeclared": "MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://gitlab.com/kornelski/loop9.git",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
       "name": "magetypes",
       "version": "0.9.31",
       "licenseDeclared": "MIT OR Apache-2.0",
       "licenseSelected": "MIT",
       "repository": "https://github.com/imazen/archmage",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "maybe-rayon",
-      "version": "0.1.1",
-      "licenseDeclared": "MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/shssoichiro/maybe-rayon",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
     },
@@ -693,78 +549,6 @@
       "hasBuildScript": false
     },
     {
-      "name": "new_debug_unreachable",
-      "version": "1.0.6",
-      "licenseDeclared": "MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/mbrubeck/rust-debug-unreachable",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "no_std_io2",
-      "version": "0.9.4",
-      "licenseDeclared": "Apache-2.0 OR MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/wcampbell0x2a/no-std-io2",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "nom",
-      "version": "8.0.0",
-      "licenseDeclared": "MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/rust-bakery/nom",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "noop_proc_macro",
-      "version": "0.3.0",
-      "licenseDeclared": "MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/lu-zero/noop_proc_macro",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "num-bigint",
-      "version": "0.4.8",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/rust-num/num-bigint",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "num-derive",
-      "version": "0.4.2",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/rust-num/num-derive",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "num-integer",
-      "version": "0.1.47",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/rust-num/num-integer",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "num-rational",
-      "version": "0.4.2",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/rust-num/num-rational",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
       "name": "num-traits",
       "version": "0.2.19",
       "licenseDeclared": "MIT OR Apache-2.0",
@@ -788,15 +572,6 @@
       "licenseDeclared": "Zlib OR Apache-2.0 OR MIT",
       "licenseSelected": "MIT",
       "repository": "https://github.com/madsmtm/objc2",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "once_cell",
-      "version": "1.21.4",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/matklad/once_cell",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
     },
@@ -873,15 +648,6 @@
       "hasBuildScript": true
     },
     {
-      "name": "pastey",
-      "version": "0.1.1",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/as1100k/pastey",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
       "name": "png",
       "version": "0.18.1",
       "licenseDeclared": "MIT OR Apache-2.0",
@@ -898,24 +664,6 @@
       "repository": "https://github.com/dtolnay/proc-macro2",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": true
-    },
-    {
-      "name": "profiling",
-      "version": "1.0.18",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/aclysma/profiling",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "profiling-procmacros",
-      "version": "1.0.18",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/aclysma/profiling",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
     },
     {
       "name": "pxfm",
@@ -1006,24 +754,6 @@
       "repository": "https://github.com/memorysafety/rav1d",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": true
-    },
-    {
-      "name": "rav1e",
-      "version": "0.8.1",
-      "licenseDeclared": "BSD-2-Clause",
-      "licenseSelected": "BSD-2-Clause",
-      "repository": "https://github.com/xiph/rav1e/",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": true
-    },
-    {
-      "name": "ravif",
-      "version": "0.13.0",
-      "licenseDeclared": "BSD-3-Clause",
-      "licenseSelected": "BSD-3-Clause",
-      "repository": "https://github.com/kornelski/cavif-rs",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
     },
     {
       "name": "raw-cpuid",
@@ -1161,29 +891,11 @@
       "hasBuildScript": false
     },
     {
-      "name": "simd_helpers",
-      "version": "0.1.0",
-      "licenseDeclared": "MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/lu-zero/simd_helpers",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
       "name": "smallvec",
       "version": "1.16.2",
       "licenseDeclared": "MIT OR Apache-2.0",
       "licenseSelected": "MIT",
       "repository": "https://github.com/servo/rust-smallvec",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "stable_deref_trait",
-      "version": "1.2.1",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/storyyeller/stable_deref_trait",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
     },
@@ -1278,51 +990,6 @@
       "hasBuildScript": false
     },
     {
-      "name": "v_frame",
-      "version": "0.3.9",
-      "licenseDeclared": "BSD-2-Clause",
-      "licenseSelected": "BSD-2-Clause",
-      "repository": "https://github.com/rust-av/v_frame",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "wasm-bindgen",
-      "version": "0.2.129",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/wasm-bindgen/wasm-bindgen",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": true
-    },
-    {
-      "name": "wasm-bindgen-macro",
-      "version": "0.2.129",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/macro",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "wasm-bindgen-macro-support",
-      "version": "0.2.129",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/wasm-bindgen/wasm-bindgen/tree/main/crates/macro-support",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "wasm-bindgen-shared",
-      "version": "0.2.129",
-      "licenseDeclared": "MIT OR Apache-2.0",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/wasm-bindgen/wasm-bindgen/tree/master/crates/shared",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": true
-    },
-    {
       "name": "webpkit",
       "version": "0.1.0",
       "licenseDeclared": "MIT OR Apache-2.0",
@@ -1355,15 +1022,6 @@
       "licenseDeclared": "MIT",
       "licenseSelected": "MIT",
       "repository": "https://github.com/myrrlyn/wyz",
-      "source": "registry+https://github.com/rust-lang/crates.io-index",
-      "hasBuildScript": false
-    },
-    {
-      "name": "y4m",
-      "version": "0.8.0",
-      "licenseDeclared": "MIT",
-      "licenseSelected": "MIT",
-      "repository": "https://github.com/image-rs/y4m.git",
       "source": "registry+https://github.com/rust-lang/crates.io-index",
       "hasBuildScript": false
     },

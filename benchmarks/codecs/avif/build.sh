@@ -87,3 +87,28 @@ libc = "=0.2.183"
 EOF
 cargo build --offline --release -j4 --manifest-path "$scratch/encode/Cargo.toml" --target-dir "$scratch/encode-target"
 cargo build --offline --release -j4 --manifest-path "$scratch/decode/Cargo.toml" --target-dir "$scratch/decode-target"
+
+mkdir -p "$scratch/integrated"
+cat > "$scratch/integrated/Cargo.toml" <<EOF
+[package]
+name = "libaom-integrated-measure"
+version = "0.1.0"
+edition = "2024"
+[[bin]]
+name = "encode-integrated"
+path = "$repo/benchmarks/codecs/avif/encode-integrated.rs"
+[dependencies]
+img = { path = "$repo", features = ["build-binary"] }
+libc = "0.2"
+[profile.dist]
+inherits = "release"
+lto = "fat"
+codegen-units = 1
+strip = true
+[patch.crates-io]
+oxipng = { path = "$repo/vendor/oxipng" }
+libdeflater = { path = "$repo/vendor/libdeflater" }
+libdeflate-sys = { path = "$repo/vendor/libdeflate-sys" }
+EOF
+cp "$repo/Cargo.lock" "$scratch/integrated/Cargo.lock"
+cargo build --offline --profile dist -j4 --manifest-path "$scratch/integrated/Cargo.toml" --target-dir "$scratch/integrated-target"
