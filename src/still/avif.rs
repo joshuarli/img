@@ -99,7 +99,7 @@ pub(super) fn bitstream_hdr(mut data:&[u8])->Result<bool,Error> {
     Ok(false)
 }
 
-pub(super) fn native_quality(quality: super::Quality) -> u8 { quality.value().round().clamp(1.0, 100.0) as u8 }
+pub(super) fn native_quality(quality: super::Quality) -> u8 { libavif_sys::qindex(quality.value()) }
 
 pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
     let EncodingMode::Quality(quality) = mode else { return Err(Error::new(ErrorKind::Unsupported, "strict lossless AVIF encoding is unsupported")); };

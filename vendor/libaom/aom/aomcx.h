@@ -1617,6 +1617,12 @@ enum aome_enc_control_id {
    */
   AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS = 172,
 
+  /*!\brief img control to set the constant-quality base qindex (1..255)
+   * directly instead of through the 0..63 cq-level scale, unsigned int
+   * parameter. 0 derives the qindex from cq-level.
+   */
+  AV1E_SET_IMG_CQ_QINDEX = 1000,
+
   // Any new encoder control IDs should be added above.
   // Maximum allowed encoder control ID is 229.
   // No encoder control ID should be added below.
@@ -2359,6 +2365,9 @@ AOM_CTRL_USE_TYPE(AV1E_SET_SCREEN_CONTENT_DETECTION_MODE,
 
 AOM_CTRL_USE_TYPE(AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS, unsigned int)
 #define AOM_CTRL_AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS
+
+AOM_CTRL_USE_TYPE(AV1E_SET_IMG_CQ_QINDEX, unsigned int)
+#define AOM_CTRL_AV1E_SET_IMG_CQ_QINDEX
 
 /*!\endcond */
 /*! @} - end defgroup aom_encoder */

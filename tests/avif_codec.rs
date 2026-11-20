@@ -191,3 +191,13 @@ fn libavif_invalid_metadata_returns_error() {
     let result = libavif_sys::encode(8, 8, &common::pixels(8, 8), 8, 80, Some(b"not exif"));
     assert!(result.is_err());
 }
+
+#[test]
+fn fractional_quality_reaches_quantizers_between_integer_qualities() {
+    let image=StillImage::from_rgb8(64,48,common::pixels(64,48)).unwrap();
+    let encode=|q:f32|image.encode(Format::Avif,EncodingMode::Quality(Quality::new(q).unwrap()),Effort::Fast).unwrap();
+    let (low,middle,high)=(encode(90.0),encode(90.5),encode(91.0));
+    assert_ne!(middle,low); assert_ne!(middle,high);
+    assert!(low.len()<=middle.len() && middle.len()<=high.len());
+    assert_eq!(encode(90.1),low);
+}

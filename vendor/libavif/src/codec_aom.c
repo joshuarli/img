@@ -503,6 +503,16 @@ static avifBool avifProcessAOMOptionsPostInit(avifCodec * codec, avifBool alpha)
             continue;
         }
 
+        if (avifKeyEqualsName(entry->key, "img-cq-qindex", alpha)) {
+            char * end;
+            const unsigned long qindex = strtoul(entry->value, &end, 10);
+            if (*end != '\0' || qindex > 255 ||
+                aom_codec_control(&codec->internal->encoder, AV1E_SET_IMG_CQ_QINDEX, (unsigned int)qindex) != AOM_CODEC_OK) {
+                return AVIF_FALSE;
+            }
+            continue;
+        }
+
 #if defined(HAVE_AOM_CODEC_SET_OPTION)
         const char * prefix = alpha ? "alpha:" : "color:";
         size_t prefixLen = 6;
@@ -640,7 +650,7 @@ static const int tuneIqQualityToQuantizer[101] = {
 
 static avifBool aomCodecEncodeFinish(avifCodec * codec, avifCodecEncodeOutput * output);
 
-static int aomQualityToQuantizer(int quality, avifBool isTuneIq)
+int aomQualityToQuantizer(int quality, avifBool isTuneIq)
 {
     int quantizer;
 
