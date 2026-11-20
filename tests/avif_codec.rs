@@ -241,3 +241,51 @@ fn libaom_row_threads_encode_identically_for_every_count_above_one() {
     assert_eq!(encode(3), two);
     assert_eq!(encode(4), two);
 }
+
+/// Rewrites the primary item's `iloc` entry as `extents` copies of (offset 0, whole file) and pads the file
+/// with a `free` box to `file_len`, so every extent fits the file but their sum is `extents * file_len`.
+fn overlapping_extents(valid: &[u8], extents: usize, file_len: usize) -> Vec<u8> {
+    let be32 = |at: usize| u32::from_be_bytes(valid[at..at + 4].try_into().unwrap()) as usize;
+    let mut top = 0;
+    while &valid[top + 4..top + 8] != b"meta" { top += be32(top); }
+    let meta_end = top + be32(top);
+    let mut child = top + 12;
+    while &valid[child + 4..child + 8] != b"iloc" { child += be32(child); }
+    let item_id = &valid[child + 16..child + 18];
+    let iloc_end = child + be32(child);
+    let mut iloc = Vec::new();
+    iloc.extend_from_slice(b"\0\0\0\0iloc\0\0\0\0\x44\0\0\x01");
+    iloc.extend_from_slice(item_id);
+    iloc.extend_from_slice(&[0, 0]);
+    iloc.extend_from_slice(&(extents as u16).to_be_bytes());
+    for _ in 0..extents { iloc.extend_from_slice(&[0; 4]); iloc.extend_from_slice(&(file_len as u32).to_be_bytes()); }
+    let iloc_len = iloc.len() as u32;
+    iloc[..4].copy_from_slice(&iloc_len.to_be_bytes());
+    let mut out = valid[..child].to_vec();
+    out.extend_from_slice(&iloc);
+    out.extend_from_slice(&valid[iloc_end..]);
+    let meta_len = (meta_end - top - (iloc_end - child) + iloc.len()) as u32;
+    out[top..top + 4].copy_from_slice(&meta_len.to_be_bytes());
+    assert!(out.len() + 8 <= file_len, "file_len must leave room for a free box");
+    out.extend_from_slice(&((file_len - out.len()) as u32).to_be_bytes());
+    out.extend_from_slice(b"free");
+    out.resize(file_len, 0);
+    out
+}
+
+#[test]
+fn overlapping_item_extents_larger_than_the_file_are_refused_before_any_allocation() {
+    let image = StillImage::from_rgb8(16, 16, common::pixels(16, 16)).unwrap();
+    let valid = image.encode(Format::Avif, mode(), Effort::Fast).unwrap();
+    assert!(img::still::describe(&valid).is_ok());
+    // 1,000 extents of the whole 100,000-byte file: each fits, together they claim 100 MB.
+    let bomb = overlapping_extents(&valid, 1000, 100_000);
+    assert_eq!(bomb.len(), 100_000);
+    for error in [img::still::describe(&bomb).err().unwrap(), StillImage::decode(&bomb).err().unwrap()] {
+        assert!(error.to_string().contains("item extents exceed the file size"), "{error}");
+    }
+    // One extent of the whole file stays legal at the container level.
+    let single = overlapping_extents(&valid, 1, 100_000);
+    let error = img::still::describe(&single).map(|_| ()).err().map(|e| e.to_string());
+    assert!(!error.unwrap_or_default().contains("exceed the file size"));
+}

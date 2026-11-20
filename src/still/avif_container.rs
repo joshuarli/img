@@ -1065,7 +1065,12 @@ pub(super) fn read<'a>(bytes: &'a [u8], stop: &Cancellation) -> Result<AvifConta
     let primary_item_id = state.primary_item_id.ok_or_else(|| invalid("missing pitm box"))?;
     let idat = state.idat_payload_start;
     for item in state.items.iter_mut() {
+        // Extents may repeat or overlap, so each one fitting in the file does not bound their sum. A real item
+        // is a subset of the file; item_data allocates this sum, so refuse a larger one before anything reads it.
+        let mut item_bytes = 0u64;
         for extent in item.extents.iter_mut() {
+            item_bytes = item_bytes.checked_add(extent.length).ok_or_else(|| invalid("item size overflow"))?;
+            if item_bytes > bytes.len() as u64 { return Err(invalid("item extents exceed the file size")); }
             let absolute = if item.construction_method == 1 {
                 let base = idat.ok_or_else(|| invalid("item data references missing idat box"))? as u64;
                 base.checked_add(extent.offset).ok_or_else(|| invalid("item extent exceeds the file"))?

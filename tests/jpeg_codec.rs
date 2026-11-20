@@ -229,3 +229,56 @@ fn jpegli_rgb420_halves_chroma_and_rgb_keeps_it_full() {
     assert_eq!(luma_sampling(jpegli_sys::Color::Rgb), 0x11);
     assert_eq!(luma_sampling(jpegli_sys::Color::Rgb420), 0x22);
 }
+
+/// A legal gray progressive JPEG: one DC scan of zero differences, then `scans` more repeated AC scans that each
+/// code one end-of-band run per 16,384 blocks. `side` must be a multiple of 1,024.
+fn scan_bomb(side: usize, scans: usize) -> Vec<u8> {
+    let blocks = (side / 8) * (side / 8);
+    let mut out = vec![0xff, 0xd8, 0xff, 0xdb, 0, 67, 0];
+    out.extend_from_slice(&[1; 64]);
+    out.extend_from_slice(&[0xff, 0xc2, 0, 11, 8]);
+    out.extend_from_slice(&(side as u16).to_be_bytes());
+    out.extend_from_slice(&(side as u16).to_be_bytes());
+    out.extend_from_slice(&[1, 1, 0x11, 0]);
+    // DC table: category 0 is the one-bit code 0. AC table: symbol 0xe0 (EOB run of 2^14 + 14 bits) is the code 0.
+    out.extend_from_slice(&[0xff, 0xc4, 0, 20, 0x00, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x00]);
+    out.extend_from_slice(&[0xff, 0xc4, 0, 20, 0x10, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xe0]);
+    out.extend_from_slice(&[0xff, 0xda, 0, 8, 1, 1, 0x00, 0, 0, 0x00]);
+    out.resize(out.len() + blocks / 8, 0);
+    for _ in 0..scans {
+        out.extend_from_slice(&[0xff, 0xda, 0, 8, 1, 1, 0x00, 1, 63, 0x00]);
+        out.resize(out.len() + (blocks / 16384 * 15).div_ceil(8), 0);
+    }
+    out.extend_from_slice(&[0xff, 0xd9]);
+    out
+}
+
+#[test]
+fn scan_count_is_bounded_before_any_decode() {
+    let started = std::time::Instant::now();
+    let at_limit = scan_bomb(1024, 255);
+    assert_eq!(StillImage::decode(&at_limit).unwrap().dimensions(), (1024, 1024));
+    for bomb in [scan_bomb(1024, 256), scan_bomb(4096, 20_000)] {
+        for error in [StillImage::decode(&bomb).err().unwrap(), img::still::describe(&bomb).err().unwrap()] {
+            assert_eq!(error.kind(), ErrorKind::Limit);
+            assert!(error.to_string().contains("more than 256 scans"), "{error}");
+        }
+    }
+    assert!(started.elapsed() < std::time::Duration::from_secs(10), "{:?}", started.elapsed());
+}
+
+#[test]
+fn cancellation_interrupts_a_running_progressive_decode() {
+    // 256 scans in all (the DC scan and 255 AC scans) over 16 MP is under the scan bound but takes far longer than the cancel delay to decode.
+    let bomb = scan_bomb(4096, 255);
+    let stop = img::cancellation::Cancellation::default();
+    let started = std::time::Instant::now();
+    let canceller = stop.clone();
+    let result = std::thread::scope(|scope| {
+        scope.spawn(move || { std::thread::sleep(std::time::Duration::from_millis(2)); canceller.cancel(); });
+        StillImage::decode_cancellable(&bomb, &stop)
+    });
+    let error = result.err().expect("a decode cancelled 2 ms in must not return pixels");
+    assert_eq!(error.to_string(), "operation cancelled");
+    assert!(started.elapsed() < std::time::Duration::from_secs(1), "{:?}", started.elapsed());
+}

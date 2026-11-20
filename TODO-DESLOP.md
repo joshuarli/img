@@ -65,24 +65,6 @@ Step 2, Diagnose, done: reviewed decode of untrusted input (dimension and alloca
 - **Fix with:** deslop
 - **Effort:** M
 
-### DSLP-9 · P2 · AVIF overlapping iloc extents amplify a 262 KB file into a 4.3 GB allocation
-
-- **Area:** decode · avif
-- **Where:** src/still/avif_container.rs item_data (extent sum bounded only by IMAGE_MEMORY_BYTES, 4 GiB) and its callers primary_metadata, primary_data, av1_config, grid_config, exif_payload, xmp; src/runtime.rs admission
-- **Problem:** Each iloc extent is checked against the file length, but extents may overlap or repeat, and up to 16,384 are allowed in total. item_data sums their lengths against the 4 GiB memory ceiling, then try_reserve_exact and copies that many bytes. Reproduced on a debug build of a180d19: a 64x64 AVIF whose iloc was rewritten to 16,384 extents of (offset 0, length 262,000) with the file padded to 262,000 bytes. `img inspect` prints `AV1 sequence header missing` after peak RSS 4,300,406,784 bytes in 0.69 s (about 16,000 times the file); `img convert -o out.png --lossless` reaches the same peak. IMG_MEMORY_BUDGET=1073741824 does not change it, because admission reserves only the 262 KB input before describe() runs and never counts item data. A 20,000-byte file with 1,000 extents peaks at 27 MB. By code reading, exif_payload copies the item again with to_vec, so an Exif item built the same way peaks near 8 GB (not reproduced). Several parallel jobs multiply the peak.
-- **Recommendation:** Reject an item whose extent lengths sum to more than the container file length (a real item cannot exceed it), or reject overlapping extents; keep the 4 GiB ceiling as a second bound. Return Invalid for the container, not Limit. Charge item data to the admission reservation or avoid the copy for single-extent items. Add a test in tests/avif_codec.rs that rewrites a valid AVIF's iloc as above and asserts an error and bounded memory (for example by running the binary with a low RLIMIT or asserting the error before any 16 MiB allocation).
-- **Fix with:** security
-- **Effort:** S
-
-### DSLP-10 · P2 · Progressive JPEG scan count is unbounded: 40 bytes of input cost 1 ms of uninterruptible decode
-
-- **Area:** decode · jpeg
-- **Where:** src/still/jpeg.rs structure and decode; codecs/libjpeg-turbo-sys/shim.c img_turbo_decode; docs/CLI.md cancellation
-- **Problem:** structure() walks every marker but never counts scans, and libjpeg-turbo decodes each one over the whole image. Reproduced on a debug build of a180d19 with a hand-built 4096x4096 grayscale progressive JPEG (one DC scan, then N repeated 40-byte AC scans that each code 16 end-of-band runs, all legal, no warning): N=1 (32,948 bytes) converts in 1.20 s; N=200 (40,908 bytes) 1.37 s; N=20,000 (832,908 bytes) 16.9 s, so about 0.8 ms of CPU per 40-byte scan at constant 100 MB RSS. Extrapolated to the 128 MiB input cap this is roughly 3.3 million scans, on the order of 45 minutes of one core per image (extrapolation, not measured). Cancellation does not help: SIGTERM sent 3 s into the N=20,000 decode exited after 15 s (exit 143), because jpeg::decode checks the stop flag only before libjpeg runs, although docs/CLI.md says signals cancel and join workers and lists only the AV1 and PNG writer as uninterruptible. A sample of 13 corpus and generated JPEGs has at most 13 scans.
-- **Recommendation:** Count SOS markers in structure() and refuse a stream with more scans than a bound set from the corpus and from jpegli and libjpeg progressive scripts (start near 64 and measure), returning Unsupported or Limit before any decode. Optionally add a progress_mgr callback in shim.c that polls the cancellation flag per scan and per row batch, and document JPEG decode in the CLI cancellation paragraph either way. Add a test that builds the scan bomb from the recipe in this ticket (progressive gray JPEG, repeated AC first scans of end-of-band runs) and asserts a fast refusal, and keep tests/jpeg_codec.rs and the benchmark corpus decoding unchanged.
-- **Fix with:** security
-- **Effort:** S
-
 ### DSLP-11 · P3 · JPEG pixel and dimension limits are checked after the decode has allocated
 
 - **Area:** decode · jpeg
