@@ -280,7 +280,7 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
         image = image.strip_metadata(if matches!(request.fidelity,Fidelity::Lossless) { SamplePreservation::Exact } else { SamplePreservation::AllowReorientation })?;
     }
     if let Some(dimension) = request.max_dimension { image = image.resize_to_fit(dimension)?; }
-    let metric = match request.fidelity { Fidelity::Lossless => None, _ => Some(PerceptualReference::new_cancellable(&image,request.scoring_memory,cancelled)?) };
+    let metric = match request.fidelity { Fidelity::Score(_) => Some(PerceptualReference::new_cancellable(&image,request.scoring_memory,cancelled)?), Fidelity::Lossless | Fidelity::Quality(_) => None };
     let identity_score = metric.as_ref().map(|_|100.0);
     let optimize = matches!(request.operation, Operation::Optimize(_));
     let formats = match request.operation {
@@ -408,6 +408,8 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
                     validate_metadata(&image,&candidate,format)?;
                     if matches!(request.fidelity,Fidelity::Lossless) {
                         if !samples_equal(&image,&candidate) { return Err(Error::new(ErrorKind::Score,"exact decoded samples differ")); }
+                        Ok(None)
+                    } else if matches!(request.fidelity,Fidelity::Quality(_)) {
                         Ok(None)
                     } else {
                         let score=if samples_equal(&image,&candidate) {100.0} else {metric.as_ref().unwrap().score_decoded(&candidate)?};

@@ -161,3 +161,10 @@ fn quantized_score_searches_stop_once_adjacent_controls_straddle_the_target() {
         assert!(between==encode(winner) || between==encode(below), "{format:?} left an unexplored control between {below} and {winner}");
     }
 }
+#[test]
+fn direct_quality_does_not_score_candidates() {
+    let bytes=source();
+    let result=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Jpeg),fidelity:Fidelity::Quality(Quality::new(80.0).unwrap()),..Request::default() }).unwrap();
+    assert_eq!(result.score,None);
+    assert!(result.evaluations.iter().all(|e|e.score.is_none() && e.failure.is_none()));
+}
