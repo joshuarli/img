@@ -150,9 +150,12 @@ which measurement shows is below their actual peak (open, WebP lane). Results:
    unfiltered trial for non-palette images (CPU 0.72–0.92× of the previous
    build, identical bytes); best's four eval trials still cost up to 2.6× Zen's
    CPU on small images, and best on small images is up to 1.9× Zen wall.
-2. **Scoring memory**: SSIMULACRA2 reference and comparison buffers are about
-   190 B/pixel of the scored workflow; fast-ssim2's strip mode is approximate,
-   so it needs a fidelity study before use.
+2. **Scoring wall time**: SSIMULACRA2 dominates scored JPEG. fast-ssim2's
+   `rayon` feature keeps scores bit-identical and cuts per-score time to 0.84×,
+   but its parallel paths materialize full planes and bypass the streamed
+   distorted-side blurs: the scored workflow rose to 1.27× peak RSS (2.55× on a
+   1.2 MP JPEG) and up to 2.3× CPU (`8412759`, change tier). Parallelism has to
+   live inside the streamed path with bounded per-thread scratch.
 3. **JPEG decode vs stock libjpeg-turbo** (0.80× R): Huffman/AC-first and the
    per-MCU dispatch on large progressive images.
 4. **AVIF decode vs dav1d**: dav1d (BSD-2-Clause, C + assembly) is 9–10% faster
