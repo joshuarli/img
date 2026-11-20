@@ -6,6 +6,7 @@
 #include "lib/jpegli/memory_manager.h"
 
 #include <string.h>
+#include <sys/mman.h>
 
 #include <hwy/aligned_allocator.h>
 #include <vector>
@@ -32,10 +33,13 @@ namespace {
 struct MemoryManager {
   struct jpeg_memory_mgr pub;
   std::vector<void*> owned_ptrs[2 * JPOOL_NUMPOOLS];
+  std::vector<size_t> owned_sizes[2 * JPOOL_NUMPOOLS];
   uint64_t pool_memory_usage[2 * JPOOL_NUMPOOLS];
   uint64_t total_memory_usage;
   uint64_t peak_memory_usage;
 };
+
+constexpr size_t kMappedThreshold = size_t{1} << 20;
 
 void* Alloc(j_common_ptr cinfo, int pool_id, size_t sizeofobject) {
   MemoryManager* mem = reinterpret_cast<MemoryManager*>(cinfo->mem);
@@ -48,8 +52,14 @@ void* Alloc(j_common_ptr cinfo, int pool_id, size_t sizeofobject) {
     JPEGLI_ERROR("Total memory usage exceeding %ld",
                  mem->pub.max_memory_to_use);
   }
+  // img patch: map large objects directly so freeing returns their pages
+  // instead of leaving them dirty in the allocator's large-block cache.
   void* p;
-  if (pool_id < JPOOL_NUMPOOLS) {
+  if (sizeofobject >= kMappedThreshold) {
+    p = mmap(nullptr, sizeofobject, PROT_READ | PROT_WRITE,
+             MAP_PRIVATE | MAP_ANON, -1, 0);
+    if (p == MAP_FAILED) p = nullptr;
+  } else if (pool_id < JPOOL_NUMPOOLS) {
     p = malloc(sizeofobject);
   } else {
     p = hwy::AllocateAlignedBytes(sizeofobject, nullptr, nullptr);
@@ -58,6 +68,7 @@ void* Alloc(j_common_ptr cinfo, int pool_id, size_t sizeofobject) {
     JPEGLI_ERROR("Out of memory");
   }
   mem->owned_ptrs[pool_id].push_back(p);
+  mem->owned_sizes[pool_id].push_back(sizeofobject);
   mem->pool_memory_usage[pool_id] += sizeofobject;
   mem->total_memory_usage += sizeofobject;
   mem->peak_memory_usage =
@@ -129,6 +140,7 @@ T** AccessVirtualArray(j_common_ptr cinfo, Control* ptr, JDIMENSION start_row,
 void ClearPool(j_common_ptr cinfo, int pool_id) {
   MemoryManager* mem = reinterpret_cast<MemoryManager*>(cinfo->mem);
   mem->owned_ptrs[pool_id].clear();
+  mem->owned_sizes[pool_id].clear();
   mem->total_memory_usage -= mem->pool_memory_usage[pool_id];
   mem->pool_memory_usage[pool_id] = 0;
 }
@@ -138,12 +150,17 @@ void FreePool(j_common_ptr cinfo, int pool_id) {
   if (pool_id < 0 || pool_id >= JPOOL_NUMPOOLS) {
     JPEGLI_ERROR("Invalid pool id %d", pool_id);
   }
-  for (void* ptr : mem->owned_ptrs[pool_id]) {
-    free(ptr);
+  for (size_t i = 0; i < mem->owned_ptrs[pool_id].size(); ++i) {
+    void* ptr = mem->owned_ptrs[pool_id][i];
+    size_t size = mem->owned_sizes[pool_id][i];
+    if (size >= kMappedThreshold) munmap(ptr, size); else free(ptr);
   }
   ClearPool(cinfo, pool_id);
-  for (void* ptr : mem->owned_ptrs[JPOOL_NUMPOOLS + pool_id]) {
-    hwy::FreeAlignedBytes(ptr, nullptr, nullptr);
+  const int aligned = JPOOL_NUMPOOLS + pool_id;
+  for (size_t i = 0; i < mem->owned_ptrs[aligned].size(); ++i) {
+    void* ptr = mem->owned_ptrs[aligned][i];
+    size_t size = mem->owned_sizes[aligned][i];
+    if (size >= kMappedThreshold) munmap(ptr, size); else hwy::FreeAlignedBytes(ptr, nullptr, nullptr);
   }
   ClearPool(cinfo, JPOOL_NUMPOOLS + pool_id);
 }

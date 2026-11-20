@@ -19,7 +19,7 @@ scripts/bench profile -- optimize IN -o OUT --score 90   # sampled CPU profile o
 | Tier | What runs | Observed cost (M1) |
 | --- | --- | --- |
 | edit | harness scripts compile; `tests/test_bench.py` selection, preflight, guard and budget rules | 1 s |
-| change | one gated round each: SSIMULACRA2 bit-identity and per-score time (`score-exact`), in-process PNG encode (`png-encode`), scored and lossless single-image workflows, a 55-PNG batch at `-j 4` | about 1 min warm; about 3 min when the in-process loops rebuild |
+| change | one gated round each: SSIMULACRA2 bit-identity and per-score time (`score-exact`), in-process PNG encode (`png-encode`), scored and lossless single-image workflows, three rounds of a 55-PNG batch at `-j 4` | about 1 min warm; about 3 min when the in-process loops rebuild |
 | scenario | 5 gated rounds of the workflows and PNG encode on 12 files, 3 batch rounds at `-j 1`/`-j 4`, 9-round JPEG decode qualification | estimated 2 h |
 | full | adds AVIF and PNG decode library qualification and `make benchmark-run` | hours; manual only |
 

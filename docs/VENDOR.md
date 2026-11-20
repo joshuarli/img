@@ -23,6 +23,10 @@ is compiled.
   NASM on x86-64); TurboJPEG, tools, tests and arithmetic coding are off. The
   shim decodes with the accurate integer IDCT and fancy upsampling, turns every
   libjpeg warning into an error and applies img's memory limit.
+- Local patch, `src/jmemnobs.c`: `jpeg_get_large` and `jpeg_free_large` map
+  objects of at least 1 MiB (whole-image progressive coefficient buffers)
+  directly with `mmap`/`munmap`, so each candidate decode returns its pages
+  instead of leaving them in the system allocator's large-block cache.
 - Local patch, `src/jdphuff.c` (`decode_mcu_AC_refine`): each block's
   already-nonzero band coefficients become a 64-bit zigzag mask (NEON table
   lookup on ARM64, scalar loop elsewhere), and zero runs and correction bits
@@ -199,6 +203,8 @@ done
 One local patch, in `lib/jpegli/quant.cc`: grayscale output uses the perceptual YCbCr luma table, non-linear distance scaling and luma zero-bias that jpegli applies to YCbCr, instead of the Annex K table with linear scaling. Upstream applies its tuned quantization only to YCbCr. At matched SSIMULACRA2 on the grayscale and text inputs this makes the smallest attainable output 3.0%, 2.2% and 1.8% smaller than Zen Best at scores 80, 90 and 95, against 9.5%, 9.2% and 2.1% larger before. `grayscale_uses_the_perceptual_luma_quantization_of_color_output` in `tests/jpeg_codec.rs` fails without it. Reapply it after regenerating: every `JCS_YCbCr` test in `SetQuantMatrices` table selection and in `InitQuantizer`'s zero-bias setup also accepts `JCS_GRAYSCALE`, and the third chroma table is assigned only for YCbCr.
 
 A second local patch, in `lib/jpegli/entropy_coding.cc`, speeds the progressive AC tokenizers: each block's coded and nonzero coefficients are packed into 64-bit masks and only set bits are visited, instead of testing every coefficient of every scan. Output is byte-identical (322 encodes: all 23 qualification inputs at qualities 40–100, balanced and best). It cuts color balanced encode at quality 90 from 30.6 to 19.2 ms. Reapply it by replacing the per-coefficient loops in `TokenizeACProgressiveScan` and `TokenizeACRefinementScan` with the mask walk.
+
+A third local patch, in `lib/jpegli/memory_manager.cc`, maps pool allocations of at least 1 MiB directly with `mmap` and unmaps them when the pool is freed, recording each block's size, instead of `malloc` or Highway's aligned allocator. Output is unchanged; freed coefficient and token buffers stop lingering in the system allocator's large-block cache between candidate encodes (see `src/allocator.rs`). Reapply it in `Alloc` and `FreePool`.
 
 For an update, compare `JPEGXL_INTERNAL_JPEGLI_SOURCES` and the transitive include closure against the new upstream build. Add or remove files as needed, update the pins, and run `make native-build-check` and the JPEG tests.
 
