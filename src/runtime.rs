@@ -1,5 +1,5 @@
 use std::{collections::{BTreeMap,BTreeSet},ffi::OsString,fs,io,os::unix::fs::MetadataExt,path::{Path,PathBuf},sync::{Condvar,Mutex,OnceLock,atomic::{AtomicBool,AtomicI32,AtomicUsize,Ordering}},time::{Duration,Instant}};
-use img::{cancellation::Cancellation,optimizer::{self,FormatSelection,Operation,Request},publication::{self,Destination,ReplacementSource,Source},still::{self,Format}};
+use img::{cancellation::Cancellation,optimizer::{self,FormatSelection,Operation,Request},perceptual::ReferenceMemory,publication::{self,Destination,ReplacementSource,Source},still::{self,Format}};
 use serde_json::{Value,json};
 use crate::cli::{Arguments,Command};
 static CANCELLED:AtomicBool=AtomicBool::new(false);
@@ -233,23 +233,31 @@ fn read(job:&Job,in_place:bool)->Result<(Vec<u8>,Option<InputSource>),Failure> {
     let bytes=still::read_bounded(&mut source).map_err(|e|Failure::new(&job.input,None,"input.limit",e,3))?;Ok((bytes,Some(source)))
 }
 fn details(header:&still::Description)->Value {json!({"width":header.width,"height":header.height,"bitDepth":header.bit_depth,"alpha":header.alpha,"grayscale":header.grayscale,"icc":header.icc,"cicp":header.cicp,"orientation":header.orientation,"animation":header.animation,"grid":header.grid,"rotationCcwDegrees":header.rotation_ccw_degrees,"mirrorAxis":header.mirror_axis,"pixelAspectRatio":header.pixel_aspect_ratio,"hdrMetadata":header.hdr_metadata,"exif":header.exif,"xmp":header.xmp})}
-/// Working memory admitted for one image. Lossless work is bounded by the
-/// decoded samples (measured peaks: 36-71 bytes per pixel for RGB8 and Gray8
-/// PNG); scored and quality work reserves 160 bytes per pixel, 1.25 times the
-/// measured peaks for planar SSIMULACRA2 scoring (99-129 for JPEG, PNG palette
-/// and AVIF at 3-8 MP). WebP and automatic format selection keep the original
-/// reservation.
-const SCORED_BYTES_PER_PIXEL:u64=160;
-fn reservation(header:&still::Description,input:usize,lossless:bool,legacy:bool)->u64 {
+/// Working memory admitted for one image and the scoring mode it fits.
+/// Lossless work is bounded by the decoded samples (measured peaks: 36-71
+/// bytes per pixel for RGB8 and Gray8 PNG). Scored and quality work reserves
+/// 112 bytes per pixel for the fast reference (1.3 times measured peak
+/// footprints of 73-86 for JPEG, PNG palette and AVIF at 3-8 MP) and falls
+/// back to 72 for the compact reference (1.33 times 35-54) when the fast
+/// reservation cannot fit the budget. WebP and automatic format selection
+/// keep the original reservation.
+const FAST_SCORED_BYTES_PER_PIXEL:u64=112;
+const COMPACT_SCORED_BYTES_PER_PIXEL:u64=72;
+fn reservation(header:&still::Description,input:usize,lossless:bool,legacy:bool,total:u64)->(u64,ReferenceMemory) {
     let pixels=u64::from(header.width).saturating_mul(u64::from(header.height));
     let input=input as u64;
-    if legacy {return pixels.saturating_mul(256).saturating_add(input).saturating_add(still::MAX_INPUT_BYTES*2);}
+    if legacy {return (pixels.saturating_mul(256).saturating_add(input).saturating_add(still::MAX_INPUT_BYTES*2),ReferenceMemory::Fast);}
     let headroom=input.saturating_mul(3).saturating_add(64<<20);
     if lossless {
         let channels=u64::from(if header.grayscale==Some(true) {1u8} else {3})+u64::from(header.alpha);
         let sample=if header.bit_depth.unwrap_or(8)>8 {2} else {1};
-        pixels.saturating_mul(48).saturating_add(pixels.saturating_mul(channels*sample*24)).saturating_add(headroom)
-    } else {pixels.saturating_mul(SCORED_BYTES_PER_PIXEL).saturating_add(headroom)}
+        return (pixels.saturating_mul(48).saturating_add(pixels.saturating_mul(channels*sample*24)).saturating_add(headroom),ReferenceMemory::Fast);
+    }
+    scored_reservation(pixels,headroom,total)
+}
+fn scored_reservation(pixels:u64,headroom:u64,total:u64)->(u64,ReferenceMemory) {
+    let fast=pixels.saturating_mul(FAST_SCORED_BYTES_PER_PIXEL).saturating_add(headroom);
+    if fast<=total {(fast,ReferenceMemory::Fast)} else {(pixels.saturating_mul(COMPACT_SCORED_BYTES_PER_PIXEL).saturating_add(headroom),ReferenceMemory::Compact)}
 }
 /// Bytes of working memory shared by concurrently processed images.
 struct MemoryBudget {total:u64,free:Mutex<u64>,released:Condvar}
@@ -285,11 +293,11 @@ fn execute(job:&Job,args:&Arguments,budget:&MemoryBudget)->Result<Completed,Fail
         return Ok(Completed {input:job.input.clone(),output:None,status:"inspected",value:json!({"input":job.input.to_str(),"output":null,"format":header.format.extension(),"inputBytes":bytes.len(),"outputBytes":null,"score":null,"elapsedMs":start.elapsed().as_secs_f64()*1000.0,"status":"inspected","warnings":[],"image":details(&header)})});
     }
     let inferred=job.destinations.first().map(|d|d.0).or(job.format).ok_or_else(||Failure::new(&job.input,None,"input.format","input format unavailable",3))?;
-    let reservation=reservation(&header,bytes.len(),matches!(args.fidelity,optimizer::Fidelity::Lossless),args.auto||inferred==Format::Webp);
+    let (reservation,scoring_memory)=reservation(&header,bytes.len(),matches!(args.fidelity,optimizer::Fidelity::Lossless),args.auto||inferred==Format::Webp,budget.total);
     let _reserved=budget.reserve(reservation).map_err(|total|Failure::new(&job.input,None,"input.limit",format!("image working reservation {reservation} exceeds memory budget {total}"),3))?;
     let operation=if args.command==Command::Convert {Operation::Convert(inferred)} else {Operation::Optimize(if args.auto {FormatSelection::Auto} else if args.format.is_some()||args.output.is_some() {FormatSelection::Exact(inferred)} else {FormatSelection::Source})};
     let cancellation=Cancellation::from_static(&CANCELLED);
-    let outcome=optimizer::process_cancellable(&bytes,Request {operation,fidelity:args.fidelity,effort:args.effort,metadata:args.metadata,max_dimension:args.max_dimension},&cancellation)
+    let outcome=optimizer::process_cancellable(&bytes,Request {operation,fidelity:args.fidelity,effort:args.effort,metadata:args.metadata,max_dimension:args.max_dimension,scoring_memory},&cancellation)
         .map_err(|e|Failure::new(&job.input,job.destinations.first().map(|p|p.1.as_path()),match e.kind() {still::ErrorKind::Encode=>"output.encode",still::ErrorKind::Score=>"input.score",still::ErrorKind::Unsupported=>"input.unsupported",still::ErrorKind::Limit=>"input.limit",still::ErrorKind::Invalid=>"input.decode"},&e,if e.kind()==still::ErrorKind::Encode {4} else {3}))?;
     let output=job.destinations.iter().find(|p|p.0==outcome.format).map(|p|p.1.clone()).ok_or_else(||Failure::new(&job.input,None,"output.plan","winner has no planned destination",4))?;
     if CANCELLED.load(Ordering::Relaxed) {return Err(Failure::new(&job.input,Some(&output),"input.cancelled","cancelled before publication",3));}
@@ -312,11 +320,11 @@ fn compare(jobs:&[Job],budget:u64)->Result<Completed,Failure> {
     let reference_header=still::describe(&original).map_err(|e|Failure::new(&reference.input,None,"input.decode",e,3))?;
     let candidate_header=still::describe(&encoded).map_err(|e|Failure::new(&candidate.input,None,"input.decode",e,3))?;
     let area=|header:&still::Description|u64::from(header.width).saturating_mul(u64::from(header.height));
-    let reservation=area(&reference_header).max(area(&candidate_header)).saturating_mul(SCORED_BYTES_PER_PIXEL).saturating_add(original.len() as u64).saturating_add(encoded.len() as u64);
+    let (reservation,memory)=scored_reservation(area(&reference_header).max(area(&candidate_header)),original.len() as u64+encoded.len() as u64,budget);
     if reservation>budget {return Err(Failure::new(&candidate.input,None,"input.limit","comparison exceeds memory budget",3));}
     let dimensions=|header:&still::Description|if header.orientation>=5 {(header.height,header.width)} else {(header.width,header.height)};
     if dimensions(&reference_header)!=dimensions(&candidate_header) {return Err(Failure::new(&candidate.input,None,"input.score","score dimensions differ",3));}
-    let score=img::perceptual::compare(&original,&encoded).map_err(|e|Failure::new(&candidate.input,None,"input.score",e,3))?;
+    let score=img::perceptual::compare_with_memory(&original,&encoded,memory).map_err(|e|Failure::new(&candidate.input,None,"input.score",e,3))?;
     let format=Format::sniff(&encoded).map_err(|e|Failure::new(&candidate.input,None,"input.format",e,3))?;
     Ok(Completed {input:candidate.input.clone(),output:None,status:"compared",value:json!({"input":candidate.input.to_str(),"output":null,"format":format.extension(),"inputBytes":encoded.len(),"outputBytes":null,"score":score,"elapsedMs":start.elapsed().as_secs_f64()*1000.0,"status":"compared","warnings":[],"reference":reference.input.to_str()})})
 }
@@ -325,6 +333,13 @@ fn compare(jobs:&[Job],budget:u64)->Result<Completed,Failure> {
 mod tests {
     use super::*;
 
+    #[test]
+    fn scored_admission_falls_back_to_the_compact_reference_before_refusing() {
+        let mega=1_000_000;
+        assert_eq!(scored_reservation(mega,0,FAST_SCORED_BYTES_PER_PIXEL*mega),(FAST_SCORED_BYTES_PER_PIXEL*mega,ReferenceMemory::Fast));
+        assert_eq!(scored_reservation(mega,0,FAST_SCORED_BYTES_PER_PIXEL*mega-1),(COMPACT_SCORED_BYTES_PER_PIXEL*mega,ReferenceMemory::Compact));
+        assert!(COMPACT_SCORED_BYTES_PER_PIXEL<FAST_SCORED_BYTES_PER_PIXEL);
+    }
     #[test]
     fn memory_budget_admits_within_total_and_waits_for_release() {
         let budget=MemoryBudget::new(100);

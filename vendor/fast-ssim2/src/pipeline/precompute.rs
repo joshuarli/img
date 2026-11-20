@@ -72,6 +72,7 @@ fn ref_scales(
     kernel: Kernel,
     stop: &dyn enough::Stop,
     intensity: f32,
+    store_blurred: bool,
 ) -> Result<Vec<RefScale>, Ssimulacra2Error> {
     let rg = create_recursive_gaussian(1.5);
     let mut out = Vec::with_capacity(NUM_SCALES);
@@ -94,6 +95,21 @@ fn ref_scales(
             intensity,
         );
 
+        if !store_blurred {
+            out.push(RefScale {
+                xyb1,
+                mu1: Default::default(),
+                sigma1_sq: Default::default(),
+                width: w,
+                height: h,
+            });
+            lin1 = lin1_next;
+            gw = w;
+            gh = h;
+            w = nw;
+            h = nh;
+            continue;
+        }
         // mu1 = blur(xyb1); sigma1 = blur(xyb1·xyb1) — the product fuses
         // into the blur input read (identical f32 product).
         let (mu1, sigma1_sq);
@@ -248,8 +264,8 @@ impl ReferenceCache {
         }
         let stacks = if source.alpha.is_some() {
             vec![
-                ref_scales(linearize(source, 0.1), w, h, kernel, stop, 255.0)?,
-                ref_scales(linearize(source, 0.9), w, h, kernel, stop, 255.0)?,
+                ref_scales(linearize(source, 0.1), w, h, kernel, stop, 255.0, true)?,
+                ref_scales(linearize(source, 0.9), w, h, kernel, stop, 255.0, true)?,
             ]
         } else {
             vec![ref_scales(
@@ -259,6 +275,7 @@ impl ReferenceCache {
                 kernel,
                 stop,
                 255.0,
+                true,
             )?]
         };
         Ok(Self {
@@ -302,13 +319,29 @@ impl ReferenceCache {
         stop: &dyn enough::Stop,
         intensity: f32,
     ) -> Result<Self, Ssimulacra2Error> {
+        Self::new_linear_sets_stored(lin_sets, width, height, has_alpha, kernel, stop, intensity, true)
+    }
+
+    /// [`Self::new_linear_sets_with_options`]; without `store_blurred` each
+    /// scale keeps only its XYB planes and comparisons recompute μ1 and σ1²
+    /// row by row (bit-identical, two more blur streams per channel).
+    pub(crate) fn new_linear_sets_stored(
+        lin_sets: Vec<[Vec<f32>; 3]>,
+        width: usize,
+        height: usize,
+        has_alpha: bool,
+        kernel: Kernel,
+        stop: &dyn enough::Stop,
+        intensity: f32,
+        store_blurred: bool,
+    ) -> Result<Self, Ssimulacra2Error> {
         if width < 8 || height < 8 {
             return Err(Ssimulacra2Error::InvalidImageSize);
         }
         Ok(Self {
             stacks: lin_sets
                 .into_iter()
-                .map(|l| ref_scales(l, width, height, kernel, stop, intensity))
+                .map(|l| ref_scales(l, width, height, kernel, stop, intensity, store_blurred))
                 .collect::<Result<_, _>>()?,
             width,
             height,
@@ -547,8 +580,15 @@ fn dist_scales(
         if kernel == Kernel::Simd && maps.is_none() && w >= 8 && h >= 8 {
             let (mut avg_ssim, mut avg_edgediff) = ([0f64; 6], [0f64; 12]);
             for c in 0..3 {
-                let (ssim, edge) =
-                    simd::maps_streamed_channel(rg, &rs.xyb1[c], &xyb2[c], &rs.mu1[c], &rs.sigma1_sq[c], w, h);
+                let stored = !rs.mu1[c].is_empty();
+                let (ssim, edge) = simd::maps_streamed_channel(
+                    rg,
+                    &rs.xyb1[c],
+                    &xyb2[c],
+                    stored.then(|| (&rs.mu1[c][..], &rs.sigma1_sq[c][..])),
+                    w,
+                    h,
+                );
                 avg_ssim[c * 2..c * 2 + 2].copy_from_slice(&ssim);
                 avg_edgediff[c * 4..c * 4 + 4].copy_from_slice(&edge);
             }
@@ -562,6 +602,26 @@ fn dist_scales(
             continue;
         }
 
+        let materialized;
+        let (ref_mu1, ref_sigma1_sq) = if rs.mu1[0].is_empty() {
+            let mut tmp = vec![0f32; npix];
+            let blur = |a: &[f32], b: Option<&[f32]>, tmp: &mut Vec<f32>| {
+                let mut o = vec![0f32; npix];
+                blur_channel(kernel, rg, a, b, w, h, &mut o, tmp);
+                o
+            };
+            materialized = (
+                [blur(&rs.xyb1[0], None, &mut tmp), blur(&rs.xyb1[1], None, &mut tmp), blur(&rs.xyb1[2], None, &mut tmp)],
+                [
+                    blur(&rs.xyb1[0], Some(&rs.xyb1[0]), &mut tmp),
+                    blur(&rs.xyb1[1], Some(&rs.xyb1[1]), &mut tmp),
+                    blur(&rs.xyb1[2], Some(&rs.xyb1[2]), &mut tmp),
+                ],
+            );
+            (&materialized.0, &materialized.1)
+        } else {
+            (&rs.mu1, &rs.sigma1_sq)
+        };
         // Three independent blurs: σ2 = blur(xyb2·xyb2),
         // σ12 = blur(xyb1·xyb2), μ2 = blur(xyb2).
         let (sigma2_sq, sigma12, mu2);
@@ -651,9 +711,9 @@ fn dist_scales(
 
         let (avg_ssim, avg_edgediff) = if kernel == Kernel::Scalar {
             super::maps::maps_fused(
-                &rs.mu1,
+                ref_mu1,
                 &mu2,
-                &rs.sigma1_sq,
+                ref_sigma1_sq,
                 &sigma2_sq,
                 &sigma12,
                 &rs.xyb1,
@@ -673,9 +733,9 @@ fn dist_scales(
                         let (mut s0, mut s1) = (0f64, 0f64);
                         incant!(
                             simd::ssim_map_inner(
-                                &rs.mu1[c],
+                                &ref_mu1[c],
                                 &mu2[c],
-                                &rs.sigma1_sq[c],
+                                &ref_sigma1_sq[c],
                                 &sigma2_sq[c],
                                 &sigma12[c],
                                 &mut s0,
@@ -689,7 +749,7 @@ fn dist_scales(
                             h,
                             w,
                             &rs.xyb1[c],
-                            &rs.mu1[c],
+                            &ref_mu1[c],
                             &xyb2[c],
                             &mu2[c],
                             &mut e,
@@ -715,9 +775,9 @@ fn dist_scales(
                 (so, eo)
             } else {
                 simd::maps_fused_simd(
-                    &rs.mu1,
+                    ref_mu1,
                     &mu2,
-                    &rs.sigma1_sq,
+                    ref_sigma1_sq,
                     &sigma2_sq,
                     &sigma12,
                     &rs.xyb1,
@@ -729,9 +789,9 @@ fn dist_scales(
             #[cfg(not(feature = "rayon"))]
             let simd_parts = {
                 simd::maps_fused_simd(
-                    &rs.mu1,
+                    ref_mu1,
                     &mu2,
-                    &rs.sigma1_sq,
+                    ref_sigma1_sq,
                     &sigma2_sq,
                     &sigma12,
                     &rs.xyb1,
@@ -749,9 +809,9 @@ fn dist_scales(
         if let Some(sink) = maps.as_deref_mut() {
             sink.push(
                 super::maps::scale_maps_stop(
-                    &rs.mu1,
+                    ref_mu1,
                     &mu2,
-                    &rs.sigma1_sq,
+                    ref_sigma1_sq,
                     &sigma2_sq,
                     &sigma12,
                     &rs.xyb1,

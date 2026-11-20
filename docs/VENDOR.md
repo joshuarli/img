@@ -161,6 +161,11 @@ is compiled.
   and the sums accumulate in pixel order, so scores are bit-identical;
   `tests/score_planar.rs` checks this against the uncached
   `compute_ssimulacra2` for odd sizes, gray and alpha.
+- Local patch, `Ssimulacra2Reference::from_linear_planes_compact`: the
+  reference keeps only each scale's XYB planes, and comparisons stream μ1 and
+  σ1² beside the distorted blurs (five row streams per channel instead of
+  three). Scores are bit-identical (same test, both modes); a scored 8 MP JPEG
+  peaks at 41 instead of 73 B/px of footprint and takes about 15-20% longer.
 - Regeneration: unpack the published crate, reapply the patch with
   `git diff` from the vendoring commit, and confirm bit-identical scores with
   `benchmarks/codecs/score/build.sh` (`IMG_BASE` at an unpatched checkout) plus

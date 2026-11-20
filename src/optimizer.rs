@@ -1,6 +1,6 @@
 //! Bounded, deterministic selection over verified encoded still images.
 use std::{num::NonZeroU32, time::Instant};
-use crate::{perceptual::{PerceptualReference, ScoreTarget}, still::{Effort, EncodingMode, Error, ErrorKind, Format, JpegSampling, Quality, SamplePreservation, StillImage}};
+use crate::{perceptual::{PerceptualReference, ReferenceMemory, ScoreTarget}, still::{Effort, EncodingMode, Error, ErrorKind, Format, JpegSampling, Quality, SamplePreservation, StillImage}};
 
 /// Requested fidelity contract.
 #[derive(Clone, Copy, Debug)]
@@ -51,9 +51,11 @@ pub struct Request {
     pub metadata: MetadataPolicy,
     /// Optional aspect-preserving maximum side; never enlarges.
     pub max_dimension: Option<NonZeroU32>,
+    /// Scoring reference memory; results are identical in either mode.
+    pub scoring_memory: ReferenceMemory,
 }
 impl Default for Request {
-    fn default() -> Self { Self { operation: Operation::Optimize(FormatSelection::Source), fidelity: Fidelity::Score(ScoreTarget::default()), effort: Effort::Balanced, metadata: MetadataPolicy::Keep, max_dimension: None } }
+    fn default() -> Self { Self { operation: Operation::Optimize(FormatSelection::Source), fidelity: Fidelity::Score(ScoreTarget::default()), effort: Effort::Balanced, metadata: MetadataPolicy::Keep, max_dimension: None, scoring_memory: ReferenceMemory::Fast } }
 }
 /// One actual encode attempt, including unsuccessful or disqualified attempts.
 #[derive(Clone, Debug)]
@@ -274,7 +276,7 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
         image = image.strip_metadata(if matches!(request.fidelity,Fidelity::Lossless) { SamplePreservation::Exact } else { SamplePreservation::AllowReorientation })?;
     }
     if let Some(dimension) = request.max_dimension { image = image.resize_to_fit(dimension)?; }
-    let metric = match request.fidelity { Fidelity::Lossless => None, _ => Some(PerceptualReference::new_cancellable(&image,cancelled)?) };
+    let metric = match request.fidelity { Fidelity::Lossless => None, _ => Some(PerceptualReference::new_cancellable(&image,request.scoring_memory,cancelled)?) };
     let identity_score = metric.as_ref().map(|_|100.0);
     let optimize = matches!(request.operation, Operation::Optimize(_));
     let formats = match request.operation {

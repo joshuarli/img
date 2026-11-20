@@ -160,6 +160,28 @@ impl Ssimulacra2Reference {
         height: usize,
         config: &Ssimulacra2Config<'_>,
     ) -> Result<Self, Ssimulacra2Error> {
+        Self::from_linear_planes_stored(planes, width, height, config, true)
+    }
+
+    /// [`Self::from_linear_planes`] storing only each scale's XYB planes:
+    /// about a third of the reference memory, while every comparison
+    /// recomputes the reference blurs row by row. Scores are bit-identical.
+    pub fn from_linear_planes_compact(
+        planes: [Vec<f32>; 3],
+        width: usize,
+        height: usize,
+        config: &Ssimulacra2Config<'_>,
+    ) -> Result<Self, Ssimulacra2Error> {
+        Self::from_linear_planes_stored(planes, width, height, config, false)
+    }
+
+    fn from_linear_planes_stored(
+        planes: [Vec<f32>; 3],
+        width: usize,
+        height: usize,
+        config: &Ssimulacra2Config<'_>,
+        store_blurred: bool,
+    ) -> Result<Self, Ssimulacra2Error> {
         config.check_stop()?;
         if config.strip.is_some() {
             return Err(Ssimulacra2Error::InvalidConfiguration(
@@ -173,7 +195,7 @@ impl Ssimulacra2Reference {
         let stop = config.stop.unwrap_or(&enough::Unstoppable);
         let (w, h) = (width.max(8), height.max(8));
         Ok(Self {
-            cache: ReferenceCache::new_linear_sets_with_options(
+            cache: ReferenceCache::new_linear_sets_stored(
                 vec![pad_or_pass(planes, width, height, w, h)],
                 w,
                 h,
@@ -181,6 +203,7 @@ impl Ssimulacra2Reference {
                 crate::pipeline::Kernel::from_impl(config.impl_type),
                 stop,
                 255.0,
+                store_blurred,
             )?,
             original_width: width,
             original_height: height,

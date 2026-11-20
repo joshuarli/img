@@ -21,6 +21,18 @@ impl Default for ScoreTarget {
     fn default() -> Self { Self(95.0) }
 }
 
+/// How much SSIMULACRA2 reference state to keep between candidates.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum ReferenceMemory {
+    /// Keep every scale's blurred reference planes (about 48 bytes per pixel).
+    #[default]
+    Fast,
+    /// Keep only each scale's XYB planes (about 16 bytes per pixel) and
+    /// recompute the reference blurs during every comparison. Scores are
+    /// bit-identical; scored optimization takes roughly a sixth longer.
+    Compact,
+}
+
 enum MetricReferences {
     Tiny([Vec<f32>; 3]),
     Opaque(Ssimulacra2Reference),
@@ -51,13 +63,21 @@ fn over(value: f32, a: u8, background: f32) -> f32 {
 
 impl PerceptualReference {
     /// Prepare an orientation-correct SDR reference exactly once.
-    pub fn new(image: &StillImage) -> Result<Self, Error> { Self::new_cancellable(image,&crate::cancellation::Cancellation::default()) }
+    pub fn new(image: &StillImage) -> Result<Self, Error> { Self::with_memory(image, ReferenceMemory::Fast) }
 
-    pub(crate) fn new_cancellable(image: &StillImage, stop: &crate::cancellation::Cancellation) -> Result<Self, Error> {
+    /// [`Self::new`] with an explicit memory and speed tradeoff.
+    pub fn with_memory(image: &StillImage, memory: ReferenceMemory) -> Result<Self, Error> {
+        Self::new_cancellable(image, memory, &crate::cancellation::Cancellation::default())
+    }
+
+    pub(crate) fn new_cancellable(image: &StillImage, memory: ReferenceMemory, stop: &crate::cancellation::Cancellation) -> Result<Self, Error> {
         let mut config=fast_ssim2::Ssimulacra2Config::default();config.stop=Some(stop);
         let PreparedPlanes { width, height, mut planes, alpha } = image.prepare_planar()?;
         let (w, h) = (width as usize, height as usize);
-        let reference = |planes| Ssimulacra2Reference::from_linear_planes(planes, w, h, &config).map_err(|e| Error::caused(ErrorKind::Score, e));
+        let reference = |planes| match memory {
+            ReferenceMemory::Fast => Ssimulacra2Reference::from_linear_planes(planes, w, h, &config),
+            ReferenceMemory::Compact => Ssimulacra2Reference::from_linear_planes_compact(planes, w, h, &config),
+        }.map_err(|e| Error::caused(ErrorKind::Score, e));
         let metric = if width < 8 || height < 8 { MetricReferences::Tiny(planes) }
         else if let Some(alpha) = &alpha {
             let black = reference(composited(&planes, alpha, 0.0))?;
@@ -97,6 +117,9 @@ impl PerceptualReference {
 }
 
 /// Compare encoded representations without adding a pass/fail threshold.
-pub fn compare(reference: &[u8], candidate: &[u8]) -> Result<f64, Error> {
-    PerceptualReference::new(&StillImage::decode(reference)?)?.score_encoded(candidate)
+pub fn compare(reference: &[u8], candidate: &[u8]) -> Result<f64, Error> { compare_with_memory(reference, candidate, ReferenceMemory::Fast) }
+
+/// [`compare`] with an explicit memory and speed tradeoff.
+pub fn compare_with_memory(reference: &[u8], candidate: &[u8], memory: ReferenceMemory) -> Result<f64, Error> {
+    PerceptualReference::with_memory(&StillImage::decode(reference)?, memory)?.score_encoded(candidate)
 }
