@@ -3,7 +3,7 @@
 TARGET ?= $(shell rustc -vV | awk '/^host:/ {print $$2}')
 CARGO_TARGET_DIR ?= target
 
-export RUSTC_WRAPPER := kache
+export RUSTC_WRAPPER ?= $(shell command -v kache 2>/dev/null)
 export TMPDIR := $(CURDIR)/.work/tmp
 
 test:

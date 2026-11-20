@@ -1,0 +1,27 @@
+#!/bin/sh
+# Installs the packages and pinned Rust toolchain that `make lint test` needs on Debian, Ubuntu or Alpine.
+set -eu
+cd "$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)"
+sudo=
+if [ "$(id -u)" -ne 0 ]; then sudo=sudo; fi
+if command -v apt-get >/dev/null; then
+    $sudo apt-get update
+    DEBIAN_FRONTEND=noninteractive $sudo apt-get install -y --no-install-recommends \
+        build-essential ca-certificates clang cmake curl git libdav1d-dev nasm perl pkg-config python3
+elif command -v apk >/dev/null; then
+    $sudo apk add --no-cache build-base clang cmake curl dav1d-dev git linux-headers make mold nasm perl pkgconf python3 rustup tar
+else
+    echo "setup-dev: unsupported distribution; install the packages listed in docs/DEVELOPMENT.md" >&2
+    exit 1
+fi
+if ! command -v rustup >/dev/null; then
+    if command -v rustup-init >/dev/null; then
+        rustup-init -y --default-toolchain none --no-modify-path
+    else
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none --no-modify-path
+    fi
+fi
+PATH="$HOME/.cargo/bin:$PATH"
+rustup toolchain install "$(sed -n 's/^channel *= *"\(.*\)"/\1/p' rust-toolchain.toml)" --component rust-src --component clippy
+cargo fetch --locked
+echo "setup-dev: done; add \$HOME/.cargo/bin to PATH, then run make lint test"
