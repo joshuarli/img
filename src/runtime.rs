@@ -223,27 +223,41 @@ impl InputSource {
 impl io::Read for InputSource {
     fn read(&mut self,bytes:&mut [u8])->io::Result<usize> {match self {Self::Read(source)=>source.read(bytes),Self::Replacement(source)=>source.read(bytes)}}
 }
-fn read(job:&Job,in_place:bool)->Result<(Vec<u8>,Option<InputSource>),Failure> {
-    if job.input==Path::new("-") {return stdin_bytes().map(|b|(b,None)).map_err(|e|Failure::new(&job.input,None,"input.io",e,3));}
+/// Opens a file input; stdin yields `None`.
+fn open(job:&Job,in_place:bool)->Result<Option<InputSource>,Failure> {
+    if job.input==Path::new("-") {return Ok(None);}
     let source=if in_place {ReplacementSource::open(&job.input).map(InputSource::Replacement)} else {Source::open(&job.input).map(InputSource::Read)};
-    let mut source=source.map_err(|e|if in_place && e.kind()==io::ErrorKind::WouldBlock {
+    let source=source.map_err(|e|if in_place && e.kind()==io::ErrorKind::WouldBlock {
         Failure::new(&job.input,None,"input.conflict","another in-place writer owns the source directory",3)
     } else {Failure::new(&job.input,None,"input.io",e,3)})?;
     if job.id.is_some_and(|id|id!=source.source().file_id()) {return Err(Failure::new(&job.input,None,"input.changed","source identity changed after planning",3));}
-    let bytes=still::read_bounded(&mut source).map_err(|e|Failure::new(&job.input,None,"input.limit",e,3))?;Ok((bytes,Some(source)))
+    Ok(Some(source))
+}
+fn read_bytes(job:&Job,source:Option<&mut InputSource>)->Result<Vec<u8>,Failure> {
+    match source {
+        None=>stdin_bytes().map_err(|e|Failure::new(&job.input,None,"input.io",e,3)),
+        Some(source)=>still::read_bounded(source).map_err(|e|Failure::new(&job.input,None,"input.limit",e,3)),
+    }
+}
+fn read(job:&Job,in_place:bool)->Result<(Vec<u8>,Option<InputSource>),Failure> {
+    let mut source=open(job,in_place)?;let bytes=read_bytes(job,source.as_mut())?;Ok((bytes,source))
 }
 fn details(header:&still::Description)->Value {json!({"width":header.width,"height":header.height,"bitDepth":header.bit_depth,"alpha":header.alpha,"grayscale":header.grayscale,"icc":header.icc,"cicp":header.cicp,"orientation":header.orientation,"animation":header.animation,"grid":header.grid,"rotationCcwDegrees":header.rotation_ccw_degrees,"mirrorAxis":header.mirror_axis,"pixelAspectRatio":header.pixel_aspect_ratio,"hdrMetadata":header.hdr_metadata,"exif":header.exif,"xmp":header.xmp})}
 /// Working memory admitted for one image and the scoring mode it fits.
 /// Lossless work is bounded by the decoded samples (measured peaks: 36-71
-/// bytes per pixel for RGB8 and Gray8 PNG). Scored and quality work reserves
-/// 112 bytes per pixel for the fast reference (1.3 times measured peak
-/// footprints of 73-86 for JPEG, PNG palette and AVIF at 3-8 MP) and falls
-/// back to 72 for the compact reference (1.33 times 35-54) when the fast
-/// reservation cannot fit the budget. WebP and automatic format selection
-/// keep the original reservation.
+/// bytes per pixel for RGB8 and Gray8 PNG). Scored and quality work on opaque
+/// layouts reserves 112 bytes per pixel for the fast reference (measured peak
+/// footprints 67-93 for RGB, gray and ICC-tagged JPEG, PNG and AVIF work at
+/// 1-16 MP) and falls back to 72 for the compact reference (measured 26-60)
+/// when the fast reservation cannot fit the budget. A declared alpha channel
+/// reserves for the two metric references kept for nonopaque images: 160 fast
+/// and 80 compact (measured 124 and 60 on a 16 MP RGBA PNG). WebP and automatic
+/// format selection keep the original reservation.
 const FAST_SCORED_BYTES_PER_PIXEL:u64=112;
 const COMPACT_SCORED_BYTES_PER_PIXEL:u64=72;
-fn reservation(header:&still::Description,input:usize,lossless:bool,legacy:bool,total:u64)->(u64,ReferenceMemory) {
+const FAST_ALPHA_SCORED_BYTES_PER_PIXEL:u64=160;
+const COMPACT_ALPHA_SCORED_BYTES_PER_PIXEL:u64=80;
+fn reservation(header:&still::Description,input:usize,lossless:bool,legacy:bool,fast_limit:u64)->(u64,ReferenceMemory) {
     let pixels=u64::from(header.width).saturating_mul(u64::from(header.height));
     let input=input as u64;
     if legacy {return (pixels.saturating_mul(256).saturating_add(input).saturating_add(still::MAX_INPUT_BYTES*2),ReferenceMemory::Fast);}
@@ -253,17 +267,33 @@ fn reservation(header:&still::Description,input:usize,lossless:bool,legacy:bool,
         let sample=if header.bit_depth.unwrap_or(8)>8 {2} else {1};
         return (pixels.saturating_mul(48).saturating_add(pixels.saturating_mul(channels*sample*24)).saturating_add(headroom),ReferenceMemory::Fast);
     }
-    scored_reservation(pixels,headroom,total)
+    scored_reservation(pixels,header.alpha,headroom,fast_limit)
 }
-fn scored_reservation(pixels:u64,headroom:u64,total:u64)->(u64,ReferenceMemory) {
-    let fast=pixels.saturating_mul(FAST_SCORED_BYTES_PER_PIXEL).saturating_add(headroom);
-    if fast<=total {(fast,ReferenceMemory::Fast)} else {(pixels.saturating_mul(COMPACT_SCORED_BYTES_PER_PIXEL).saturating_add(headroom),ReferenceMemory::Compact)}
+/// Chooses the fast reference when its reservation is at most `fast_limit`.
+fn scored_reservation(pixels:u64,alpha:bool,headroom:u64,fast_limit:u64)->(u64,ReferenceMemory) {
+    let (fast,compact)=if alpha {(FAST_ALPHA_SCORED_BYTES_PER_PIXEL,COMPACT_ALPHA_SCORED_BYTES_PER_PIXEL)} else {(FAST_SCORED_BYTES_PER_PIXEL,COMPACT_SCORED_BYTES_PER_PIXEL)};
+    let fast=pixels.saturating_mul(fast).saturating_add(headroom);
+    if fast<=fast_limit {(fast,ReferenceMemory::Fast)} else {(pixels.saturating_mul(compact).saturating_add(headroom),ReferenceMemory::Compact)}
 }
 /// Bytes of working memory shared by concurrently processed images.
-struct MemoryBudget {total:u64,free:Mutex<u64>,released:Condvar}
+///
+/// A job reserves its compressed input before reading it and grows that
+/// reservation to its full working set while holding `admission`, so at most
+/// one waiting job holds memory, and that memory is already counted.
+struct MemoryBudget {total:u64,free:Mutex<u64>,released:Condvar,admission:Mutex<()>}
 struct Reserved<'a> {budget:&'a MemoryBudget,bytes:u64}
+impl Reserved<'_> {
+    /// Waits until the reservation covers `total` bytes.
+    fn grow(&mut self,total:u64)->Result<(),u64> {
+        if total<=self.bytes {return Ok(());}
+        if total>self.budget.total {return Err(self.budget.total);}
+        let extra=self.budget.reserve(total-self.bytes)?;
+        self.bytes+=extra.bytes;std::mem::forget(extra);Ok(())
+    }
+}
 impl MemoryBudget {
-    fn new(total:u64)->Self {Self {total,free:Mutex::new(total),released:Condvar::new()}}
+    fn new(total:u64)->Self {Self {total,free:Mutex::new(total),released:Condvar::new(),admission:Mutex::new(())}}
+    fn free_now(&self)->u64 {*self.free.lock().unwrap_or_else(|e|e.into_inner())}
     /// Wait until `bytes` are free; fails with the total when they never can be.
     fn reserve(&self,bytes:u64)->Result<Reserved<'_>,u64> {
         if bytes>self.total {return Err(self.total);}
@@ -287,14 +317,24 @@ fn execute(job:&Job,args:&Arguments,budget:&MemoryBudget)->Result<Completed,Fail
     if args.verbose {eprintln!("{}: admitted",job.input.display());}
     let start=Instant::now();
     let _directory=if args.in_place {Some(InPlaceDirectory::acquire(&job.input,&CANCELLED).map_err(|e|Failure::new(&job.input,None,if e.kind()==io::ErrorKind::Interrupted {"input.cancelled"} else {"input.io"},e,3))?)} else {None};
-    let (bytes,source)=read(job,args.in_place)?;
+    let admission=budget.admission.lock().unwrap_or_else(|e|e.into_inner());
+    let mut source=open(job,args.in_place)?;
+    let declared=source.as_ref().and_then(|s|s.source().metadata().ok()).map_or(0,|m|m.len()).min(still::MAX_INPUT_BYTES);
+    let limit=|reservation:u64|move |total|Failure::new(&job.input,None,"input.limit",format!("image working reservation {reservation} exceeds memory budget {total}"),3);
+    let mut reserved=budget.reserve(declared).map_err(limit(declared))?;
+    let bytes=read_bytes(job,source.as_mut())?;
+    reserved.grow(bytes.len() as u64).map_err(limit(bytes.len() as u64))?;
     let header=still::describe(&bytes).map_err(|e|Failure::new(&job.input,None,"input.decode",e,3))?;
     if args.command==Command::Inspect {
         return Ok(Completed {input:job.input.clone(),output:None,status:"inspected",value:json!({"input":job.input.to_str(),"output":null,"format":header.format.extension(),"inputBytes":bytes.len(),"outputBytes":null,"score":null,"elapsedMs":start.elapsed().as_secs_f64()*1000.0,"status":"inspected","warnings":[],"image":details(&header)})});
     }
     let inferred=job.destinations.first().map(|d|d.0).or(job.format).ok_or_else(||Failure::new(&job.input,None,"input.format","input format unavailable",3))?;
-    let (reservation,scoring_memory)=reservation(&header,bytes.len(),matches!(args.fidelity,optimizer::Fidelity::Lossless),args.auto||inferred==Format::Webp,budget.total);
-    let _reserved=budget.reserve(reservation).map_err(|total|Failure::new(&job.input,None,"input.limit",format!("image working reservation {reservation} exceeds memory budget {total}"),3))?;
+    // The fast reference is taken only when it fits without waiting; otherwise
+    // the bit-identical compact reference lets the job start sooner.
+    let obtainable=budget.free_now().saturating_add(reserved.bytes);
+    let (reservation,scoring_memory)=reservation(&header,bytes.len(),matches!(args.fidelity,optimizer::Fidelity::Lossless),args.auto||inferred==Format::Webp,obtainable);
+    reserved.grow(reservation.max(bytes.len() as u64)).map_err(limit(reservation))?;
+    drop(admission);
     let operation=if args.command==Command::Convert {Operation::Convert(inferred)} else {Operation::Optimize(if args.auto {FormatSelection::Auto} else if args.format.is_some()||args.output.is_some() {FormatSelection::Exact(inferred)} else {FormatSelection::Source})};
     let cancellation=Cancellation::from_static(&CANCELLED);
     let outcome=optimizer::process_cancellable(&bytes,Request {operation,fidelity:args.fidelity,effort:args.effort,metadata:args.metadata,max_dimension:args.max_dimension,scoring_memory},&cancellation)
@@ -320,7 +360,7 @@ fn compare(jobs:&[Job],budget:u64)->Result<Completed,Failure> {
     let reference_header=still::describe(&original).map_err(|e|Failure::new(&reference.input,None,"input.decode",e,3))?;
     let candidate_header=still::describe(&encoded).map_err(|e|Failure::new(&candidate.input,None,"input.decode",e,3))?;
     let area=|header:&still::Description|u64::from(header.width).saturating_mul(u64::from(header.height));
-    let (reservation,memory)=scored_reservation(area(&reference_header).max(area(&candidate_header)),original.len() as u64+encoded.len() as u64,budget);
+    let (reservation,memory)=scored_reservation(area(&reference_header).max(area(&candidate_header)),reference_header.alpha||candidate_header.alpha,original.len() as u64+encoded.len() as u64,budget);
     if reservation>budget {return Err(Failure::new(&candidate.input,None,"input.limit","comparison exceeds memory budget",3));}
     let dimensions=|header:&still::Description|if header.orientation>=5 {(header.height,header.width)} else {(header.width,header.height)};
     if dimensions(&reference_header)!=dimensions(&candidate_header) {return Err(Failure::new(&candidate.input,None,"input.score","score dimensions differ",3));}
@@ -336,9 +376,11 @@ mod tests {
     #[test]
     fn scored_admission_falls_back_to_the_compact_reference_before_refusing() {
         let mega=1_000_000;
-        assert_eq!(scored_reservation(mega,0,FAST_SCORED_BYTES_PER_PIXEL*mega),(FAST_SCORED_BYTES_PER_PIXEL*mega,ReferenceMemory::Fast));
-        assert_eq!(scored_reservation(mega,0,FAST_SCORED_BYTES_PER_PIXEL*mega-1),(COMPACT_SCORED_BYTES_PER_PIXEL*mega,ReferenceMemory::Compact));
+        assert_eq!(scored_reservation(mega,false,0,FAST_SCORED_BYTES_PER_PIXEL*mega),(FAST_SCORED_BYTES_PER_PIXEL*mega,ReferenceMemory::Fast));
+        assert_eq!(scored_reservation(mega,false,0,FAST_SCORED_BYTES_PER_PIXEL*mega-1),(COMPACT_SCORED_BYTES_PER_PIXEL*mega,ReferenceMemory::Compact));
         assert!(COMPACT_SCORED_BYTES_PER_PIXEL<FAST_SCORED_BYTES_PER_PIXEL);
+        assert_eq!(scored_reservation(mega,true,0,FAST_SCORED_BYTES_PER_PIXEL*mega),(COMPACT_ALPHA_SCORED_BYTES_PER_PIXEL*mega,ReferenceMemory::Compact));
+        assert_eq!(scored_reservation(mega,true,0,FAST_ALPHA_SCORED_BYTES_PER_PIXEL*mega).1,ReferenceMemory::Fast);
     }
     #[test]
     fn memory_budget_admits_within_total_and_waits_for_release() {
@@ -349,6 +391,22 @@ mod tests {
         std::thread::scope(|scope| {
             scope.spawn(|| {let _second=budget.reserve(60).unwrap();sent.send(()).unwrap();});
             assert!(received.recv_timeout(Duration::from_millis(200)).is_err());
+            drop(held);
+            received.recv_timeout(Duration::from_secs(3)).unwrap();
+        });
+        assert_eq!(*budget.free.lock().unwrap(),100);
+    }
+    #[test]
+    fn growing_a_reservation_waits_for_release_and_returns_everything() {
+        let budget=MemoryBudget::new(100);
+        let held=budget.reserve(70).unwrap();
+        let mut input=budget.reserve(20).unwrap();
+        assert_eq!(input.grow(101).err(),Some(100));
+        let (sent,received)=std::sync::mpsc::sync_channel(1);
+        std::thread::scope(|scope| {
+            scope.spawn(move || {input.grow(60).unwrap();assert_eq!(input.bytes,60);sent.send(()).unwrap();});
+            assert!(received.recv_timeout(Duration::from_millis(200)).is_err());
+            assert_eq!(*budget.free.lock().unwrap(),10);
             drop(held);
             received.recv_timeout(Duration::from_secs(3)).unwrap();
         });
@@ -415,7 +473,12 @@ pub(crate) fn run(args:Arguments)->u8 {
     let result=(|| {
         let jobs=match plan(&args) {Ok(jobs)=>jobs,Err(error)=>{eprintln!("error: {error}");return 2;}};
         let cpu=std::thread::available_parallelism().map(usize::from).unwrap_or(1);
-        let memory=img::limits::SystemBudget::probe(1).per_image_bytes();
+        let probed=img::limits::SystemBudget::probe(1).per_image_bytes();
+        let memory=match std::env::var("IMG_MEMORY_BUDGET").ok().map(|v|v.parse::<u64>()) {
+            None=>probed,
+            Some(Ok(cap)) if cap>0=>probed.min(cap),
+            Some(_)=>{eprintln!("error: IMG_MEMORY_BUDGET must be a positive byte count");return 2;},
+        };
         let workers=args.jobs.min(cpu).min(jobs.len()).max(1);
         let budget=MemoryBudget::new(memory);
         if args.verbose {eprintln!("workers={workers} requested={} memoryBudgetBytes={memory} decodedQueue=0",args.jobs);}

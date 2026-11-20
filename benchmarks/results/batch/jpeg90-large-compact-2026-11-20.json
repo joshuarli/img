@@ -1,0 +1,3225 @@
+{
+ "platform": "macOS-27.2.1-arm64-arm-64bit-Mach-O",
+ "mode": "jpeg90",
+ "files": [
+  {
+   "path": "large/photo-04.jpg",
+   "sha256": "5577cbfb02113cc7437a6cd858ab35cb9ba23ef361df843d296b89f4fcb18a95"
+  },
+  {
+   "path": "large/photo-10.jpg",
+   "sha256": "236093efaeb485806755654f01c0dae5f026ad9d24219f9f1e955cf86b94ec6b"
+  },
+  {
+   "path": "large/photo-15.jpg",
+   "sha256": "396049bc243f013273c1ae8e6c6fb33f4169b866ae43b620754acef3237507f0"
+  },
+  {
+   "path": "large/photo-19.jpg",
+   "sha256": "b26373917a4f3a56da051297401542cabefd2ddc95db0cfa29ed84c0003b802a"
+  },
+  {
+   "path": "large/photo-27.jpg",
+   "sha256": "386bb132da774150ae020cafce96810766203bbf24b57928b8c4ee34380268f5"
+  },
+  {
+   "path": "large/photo-28.jpg",
+   "sha256": "db7e11af28b2c52fd5da483df31c57e8adf89f2dfed2184f8e9b6a2f90c3af9c"
+  },
+  {
+   "path": "large/texture-original-00.jpg",
+   "sha256": "c897807830ec51a40c47614a78b7cdf487b41f19d3137be1e172eaac41f8e43a"
+  },
+  {
+   "path": "large/texture-original-01.jpg",
+   "sha256": "90351849fc97e1fa39c21437edabd430df9a14fca9d31a77022cae58d66ebd12"
+  },
+  {
+   "path": "large/texture-original-02.jpg",
+   "sha256": "6bc638d072958adfe4762ff06780ddafc6944d6fe8e973a5e057085f3f2c1194"
+  },
+  {
+   "path": "large/texture-original-03.jpg",
+   "sha256": "8f7db66d2393e8d6f59a6a2c4fa75586e068352ad53a26eda020cae7df361296"
+  },
+  {
+   "path": "large/texture-original-05.jpg",
+   "sha256": "8a0d1f743257fd0818f2399410299ab78074c011d54b58e055cf2cb82d5e8836"
+  },
+  {
+   "path": "large/texture-original-06.jpg",
+   "sha256": "c83c0af3408fd1fdcce174263099625cc7015bc67c5e07c8725305c4c544a7c6"
+  },
+  {
+   "path": "large/texture-original-07.jpg",
+   "sha256": "9703eb6f6a3ef80108fd991b3d5acf1c40a548998d12736d805523febb4d29cb"
+  },
+  {
+   "path": "large/texture-original-08.jpg",
+   "sha256": "e678903293a90d2f693f73ad0ab7029cedc973388577fb285abeb9f69896e222"
+  },
+  {
+   "path": "large/texture-original-09.jpg",
+   "sha256": "7bbcfab196dca8a22c02499f2e699dd55014d276a5fd619c0ce3cab9f02c75fa"
+  },
+  {
+   "path": "large/ui-text-original-02.jpg",
+   "sha256": "a6af690d2872321764d99698fbbff7fb19b064380573e1e253babef8ae512135"
+  }
+ ],
+ "tools": [
+  {
+   "label": "new",
+   "binary": ".work/bench/bin/img-compact-policy",
+   "sha256": "f12d45f8b3f0758589de39abf72c0dcd7e800300f148c83532cd6bb6da8c5501"
+  },
+  {
+   "label": "base",
+   "binary": ".work/bench/bin/img-before-compact-policy",
+   "sha256": "b9ed5b7e0a256f01135602eee4dfc788b38da06204375f4d000336e122f49d94"
+  }
+ ],
+ "verifier": {
+  "path": ".work/bench/loops/target-img/release/verify",
+  "sha256": "38ab4623474527310cb36e4402e26626eb8988684a0dceebac69fc3027908da6"
+ },
+ "rounds": 3,
+ "discarded_rounds": 0,
+ "verification": [
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/photo-04.jpg",
+   "source": ".work/tmp/batchmem/large/photo-04.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/photo-04.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/photo-10.jpg",
+   "source": ".work/tmp/batchmem/large/photo-10.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/photo-10.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.1111010529715,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/photo-15.jpg",
+   "source": ".work/tmp/batchmem/large/photo-15.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/photo-15.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/photo-19.jpg",
+   "source": ".work/tmp/batchmem/large/photo-19.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/photo-19.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.11367659589973,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/photo-27.jpg",
+   "source": ".work/tmp/batchmem/large/photo-27.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/photo-27.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.01294156271781,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/photo-28.jpg",
+   "source": ".work/tmp/batchmem/large/photo-28.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/photo-28.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/texture-original-00.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-00.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-00.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.0658547955453,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/texture-original-01.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-01.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-01.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.06881087872357,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/texture-original-02.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-02.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-02.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.11487108143827,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/texture-original-03.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-03.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-03.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.02390342555105,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/texture-original-05.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-05.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-05.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.12635247964016,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/texture-original-06.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-06.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-06.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.09312587064687,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/texture-original-07.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-07.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-07.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.03127442984231,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/texture-original-08.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-08.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-08.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.12916170925693,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/texture-original-09.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-09.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-09.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.17310022871018,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 1,
+   "input": "large/ui-text-original-02.jpg",
+   "source": ".work/tmp/batchmem/large/ui-text-original-02.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j1/ui-text-original-02.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.05355652675635,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/photo-04.jpg",
+   "source": ".work/tmp/batchmem/large/photo-04.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/photo-04.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/photo-10.jpg",
+   "source": ".work/tmp/batchmem/large/photo-10.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/photo-10.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.1111010529715,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/photo-15.jpg",
+   "source": ".work/tmp/batchmem/large/photo-15.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/photo-15.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/photo-19.jpg",
+   "source": ".work/tmp/batchmem/large/photo-19.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/photo-19.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.11367659589973,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/photo-27.jpg",
+   "source": ".work/tmp/batchmem/large/photo-27.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/photo-27.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.01294156271781,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/photo-28.jpg",
+   "source": ".work/tmp/batchmem/large/photo-28.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/photo-28.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/texture-original-00.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-00.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-00.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.0658547955453,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/texture-original-01.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-01.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-01.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.06881087872357,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/texture-original-02.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-02.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-02.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.11487108143827,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/texture-original-03.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-03.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-03.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.02390342555105,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/texture-original-05.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-05.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-05.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.12635247964016,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/texture-original-06.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-06.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-06.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.09312587064687,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/texture-original-07.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-07.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-07.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.03127442984231,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/texture-original-08.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-08.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-08.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.12916170925693,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/texture-original-09.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-09.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-09.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.17310022871018,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 1,
+   "input": "large/ui-text-original-02.jpg",
+   "source": ".work/tmp/batchmem/large/ui-text-original-02.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j1/ui-text-original-02.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.05355652675635,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/photo-04.jpg",
+   "source": ".work/tmp/batchmem/large/photo-04.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/photo-04.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/photo-10.jpg",
+   "source": ".work/tmp/batchmem/large/photo-10.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/photo-10.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.1111010529715,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/photo-15.jpg",
+   "source": ".work/tmp/batchmem/large/photo-15.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/photo-15.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/photo-19.jpg",
+   "source": ".work/tmp/batchmem/large/photo-19.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/photo-19.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.11367659589973,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/photo-27.jpg",
+   "source": ".work/tmp/batchmem/large/photo-27.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/photo-27.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.01294156271781,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/photo-28.jpg",
+   "source": ".work/tmp/batchmem/large/photo-28.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/photo-28.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/texture-original-00.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-00.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-00.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.0658547955453,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/texture-original-01.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-01.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-01.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.06881087872357,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/texture-original-02.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-02.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-02.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.11487108143827,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/texture-original-03.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-03.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-03.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.02390342555105,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/texture-original-05.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-05.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-05.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.12635247964016,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/texture-original-06.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-06.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-06.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.09312587064687,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/texture-original-07.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-07.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-07.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.03127442984231,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/texture-original-08.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-08.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-08.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.12916170925693,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/texture-original-09.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-09.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-09.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.17310022871018,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 2,
+   "input": "large/ui-text-original-02.jpg",
+   "source": ".work/tmp/batchmem/large/ui-text-original-02.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j2/ui-text-original-02.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.05355652675635,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/photo-04.jpg",
+   "source": ".work/tmp/batchmem/large/photo-04.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/photo-04.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/photo-10.jpg",
+   "source": ".work/tmp/batchmem/large/photo-10.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/photo-10.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.1111010529715,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/photo-15.jpg",
+   "source": ".work/tmp/batchmem/large/photo-15.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/photo-15.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/photo-19.jpg",
+   "source": ".work/tmp/batchmem/large/photo-19.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/photo-19.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.11367659589973,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/photo-27.jpg",
+   "source": ".work/tmp/batchmem/large/photo-27.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/photo-27.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.01294156271781,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/photo-28.jpg",
+   "source": ".work/tmp/batchmem/large/photo-28.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/photo-28.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/texture-original-00.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-00.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-00.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.0658547955453,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/texture-original-01.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-01.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-01.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.06881087872357,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/texture-original-02.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-02.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-02.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.11487108143827,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/texture-original-03.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-03.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-03.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.02390342555105,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/texture-original-05.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-05.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-05.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.12635247964016,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/texture-original-06.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-06.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-06.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.09312587064687,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/texture-original-07.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-07.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-07.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.03127442984231,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/texture-original-08.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-08.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-08.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.12916170925693,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/texture-original-09.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-09.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-09.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.17310022871018,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 2,
+   "input": "large/ui-text-original-02.jpg",
+   "source": ".work/tmp/batchmem/large/ui-text-original-02.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j2/ui-text-original-02.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.05355652675635,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/photo-04.jpg",
+   "source": ".work/tmp/batchmem/large/photo-04.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/photo-04.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/photo-10.jpg",
+   "source": ".work/tmp/batchmem/large/photo-10.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/photo-10.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.1111010529715,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/photo-15.jpg",
+   "source": ".work/tmp/batchmem/large/photo-15.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/photo-15.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/photo-19.jpg",
+   "source": ".work/tmp/batchmem/large/photo-19.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/photo-19.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.11367659589973,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/photo-27.jpg",
+   "source": ".work/tmp/batchmem/large/photo-27.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/photo-27.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.01294156271781,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/photo-28.jpg",
+   "source": ".work/tmp/batchmem/large/photo-28.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/photo-28.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/texture-original-00.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-00.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-00.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.0658547955453,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/texture-original-01.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-01.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-01.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.06881087872357,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/texture-original-02.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-02.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-02.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.11487108143827,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/texture-original-03.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-03.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-03.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.02390342555105,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/texture-original-05.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-05.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-05.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.12635247964016,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/texture-original-06.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-06.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-06.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.09312587064687,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/texture-original-07.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-07.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-07.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.03127442984231,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/texture-original-08.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-08.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-08.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.12916170925693,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/texture-original-09.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-09.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-09.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.17310022871018,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "new",
+   "jobs": 4,
+   "input": "large/ui-text-original-02.jpg",
+   "source": ".work/tmp/batchmem/large/ui-text-original-02.jpg",
+   "output": ".work/tmp/batchmem/batch-out/new/j4/ui-text-original-02.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.05355652675635,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/photo-04.jpg",
+   "source": ".work/tmp/batchmem/large/photo-04.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/photo-04.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/photo-10.jpg",
+   "source": ".work/tmp/batchmem/large/photo-10.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/photo-10.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.1111010529715,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/photo-15.jpg",
+   "source": ".work/tmp/batchmem/large/photo-15.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/photo-15.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/photo-19.jpg",
+   "source": ".work/tmp/batchmem/large/photo-19.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/photo-19.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.11367659589973,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/photo-27.jpg",
+   "source": ".work/tmp/batchmem/large/photo-27.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/photo-27.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.01294156271781,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/photo-28.jpg",
+   "source": ".work/tmp/batchmem/large/photo-28.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/photo-28.optimized.jpg",
+   "requirement": "90",
+   "exact": true,
+   "score": 100.0,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/texture-original-00.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-00.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-00.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.0658547955453,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/texture-original-01.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-01.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-01.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.06881087872357,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/texture-original-02.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-02.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-02.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.11487108143827,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/texture-original-03.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-03.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-03.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.02390342555105,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/texture-original-05.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-05.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-05.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.12635247964016,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/texture-original-06.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-06.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-06.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.09312587064687,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/texture-original-07.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-07.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-07.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.03127442984231,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/texture-original-08.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-08.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-08.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.12916170925693,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/texture-original-09.jpg",
+   "source": ".work/tmp/batchmem/large/texture-original-09.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-09.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.17310022871018,
+   "accepted": true,
+   "error": null
+  },
+  {
+   "tool": "base",
+   "jobs": 4,
+   "input": "large/ui-text-original-02.jpg",
+   "source": ".work/tmp/batchmem/large/ui-text-original-02.jpg",
+   "output": ".work/tmp/batchmem/batch-out/base/j4/ui-text-original-02.optimized.jpg",
+   "requirement": "90",
+   "exact": false,
+   "score": 90.05355652675635,
+   "accepted": true,
+   "error": null
+  }
+ ],
+ "samples": [
+  {
+   "round": 0,
+   "tool": "base",
+   "jobs": 1,
+   "wall": 115.42174520803383,
+   "cpu": 112.031743,
+   "peak_rss_bytes": 1298563072,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 0,
+   "tool": "new",
+   "jobs": 1,
+   "wall": 224.27676633402007,
+   "cpu": 140.99034,
+   "peak_rss_bytes": 1257963520,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 0,
+   "tool": "new",
+   "jobs": 2,
+   "wall": 155.4406505000079,
+   "cpu": 179.77964,
+   "peak_rss_bytes": 1709637632,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 0,
+   "tool": "base",
+   "jobs": 2,
+   "wall": 105.68287399999099,
+   "cpu": 116.400896,
+   "peak_rss_bytes": 1730052096,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 0,
+   "tool": "new",
+   "jobs": 4,
+   "wall": 68.08661354199285,
+   "cpu": 128.43956599999999,
+   "peak_rss_bytes": 1685667840,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 0,
+   "tool": "base",
+   "jobs": 4,
+   "wall": 94.19494716700865,
+   "cpu": 108.31615699999999,
+   "peak_rss_bytes": 1881833472,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 1,
+   "tool": "new",
+   "jobs": 1,
+   "wall": 90.24969662498916,
+   "cpu": 90.051184,
+   "peak_rss_bytes": 1357512704,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 1,
+   "tool": "base",
+   "jobs": 1,
+   "wall": 99.36999029101571,
+   "cpu": 96.41647999999999,
+   "peak_rss_bytes": 1365049344,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 1,
+   "tool": "base",
+   "jobs": 2,
+   "wall": 82.84020708303433,
+   "cpu": 94.40943200000001,
+   "peak_rss_bytes": 1865056256,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 1,
+   "tool": "new",
+   "jobs": 2,
+   "wall": 55.406761583988555,
+   "cpu": 104.38621599999999,
+   "peak_rss_bytes": 1737359360,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 1,
+   "tool": "base",
+   "jobs": 4,
+   "wall": 79.58425700000953,
+   "cpu": 90.869418,
+   "peak_rss_bytes": 1865105408,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 1,
+   "tool": "new",
+   "jobs": 4,
+   "wall": 53.20629991701571,
+   "cpu": 107.201165,
+   "peak_rss_bytes": 1611890688,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 2,
+   "tool": "base",
+   "jobs": 1,
+   "wall": 89.59797020803671,
+   "cpu": 89.421835,
+   "peak_rss_bytes": 1357529088,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j1/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 2,
+   "tool": "new",
+   "jobs": 1,
+   "wall": 89.70264899998438,
+   "cpu": 89.52761799999999,
+   "peak_rss_bytes": 1357578240,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j1/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 2,
+   "tool": "new",
+   "jobs": 2,
+   "wall": 52.58824524999363,
+   "cpu": 99.368634,
+   "peak_rss_bytes": 1864564736,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j2/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 2,
+   "tool": "base",
+   "jobs": 2,
+   "wall": 79.6103112080018,
+   "cpu": 90.632227,
+   "peak_rss_bytes": 1861550080,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j2/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 2,
+   "tool": "new",
+   "jobs": 4,
+   "wall": 52.71442620799644,
+   "cpu": 106.03139900000001,
+   "peak_rss_bytes": 1611481088,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/new/j4/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  },
+  {
+   "round": 2,
+   "tool": "base",
+   "jobs": 4,
+   "wall": 79.78749720804626,
+   "cpu": 91.035223,
+   "peak_rss_bytes": 1873788928,
+   "attempted": 16,
+   "results": [
+    {
+     "input": "large/photo-04.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-04.optimized.jpg",
+     "bytes": 2069268
+    },
+    {
+     "input": "large/photo-10.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-10.optimized.jpg",
+     "bytes": 4706652
+    },
+    {
+     "input": "large/photo-15.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-15.optimized.jpg",
+     "bytes": 1353409
+    },
+    {
+     "input": "large/photo-19.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-19.optimized.jpg",
+     "bytes": 3014892
+    },
+    {
+     "input": "large/photo-27.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-27.optimized.jpg",
+     "bytes": 1778400
+    },
+    {
+     "input": "large/photo-28.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/photo-28.optimized.jpg",
+     "bytes": 7143212
+    },
+    {
+     "input": "large/texture-original-00.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-00.optimized.jpg",
+     "bytes": 2284999
+    },
+    {
+     "input": "large/texture-original-01.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-01.optimized.jpg",
+     "bytes": 3376055
+    },
+    {
+     "input": "large/texture-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-02.optimized.jpg",
+     "bytes": 2441811
+    },
+    {
+     "input": "large/texture-original-03.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-03.optimized.jpg",
+     "bytes": 6015013
+    },
+    {
+     "input": "large/texture-original-05.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-05.optimized.jpg",
+     "bytes": 1710576
+    },
+    {
+     "input": "large/texture-original-06.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-06.optimized.jpg",
+     "bytes": 5169308
+    },
+    {
+     "input": "large/texture-original-07.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-07.optimized.jpg",
+     "bytes": 5896604
+    },
+    {
+     "input": "large/texture-original-08.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-08.optimized.jpg",
+     "bytes": 5845517
+    },
+    {
+     "input": "large/texture-original-09.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/texture-original-09.optimized.jpg",
+     "bytes": 5043110
+    },
+    {
+     "input": "large/ui-text-original-02.jpg",
+     "output": ".work/tmp/batchmem/batch-out/base/j4/ui-text-original-02.optimized.jpg",
+     "bytes": 3610717
+    }
+   ],
+   "failures": [],
+   "succeeded": [
+    "large/photo-04.jpg",
+    "large/photo-10.jpg",
+    "large/photo-15.jpg",
+    "large/photo-19.jpg",
+    "large/photo-27.jpg",
+    "large/photo-28.jpg",
+    "large/texture-original-00.jpg",
+    "large/texture-original-01.jpg",
+    "large/texture-original-02.jpg",
+    "large/texture-original-03.jpg",
+    "large/texture-original-05.jpg",
+    "large/texture-original-06.jpg",
+    "large/texture-original-07.jpg",
+    "large/texture-original-08.jpg",
+    "large/texture-original-09.jpg",
+    "large/ui-text-original-02.jpg"
+   ]
+  }
+ ],
+ "note": "new = img-compact-policy (fast reference only when it fits without waiting), base = img-before-compact-policy; both built from 44be949 plus the input-accounting and alpha-reservation changes, differing only in the policy. Default host budget (2.66 GB on an 8 GB M1). Round 1 overlapped a concurrent build despite the gate; rounds 2-3 agree. Outputs byte-identical (equal total bytes, verifier-accepted)."
+}

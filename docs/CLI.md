@@ -79,6 +79,8 @@ A post-publication durability failure has kind
 Jobs default to one, capped by requested jobs, CPU parallelism, available memory
 and work count. [Still-image limits](CODEC-BOUNDARY.md) describe admission and its
 known gaps. Unknown memory uses the retained conservative fallback.
+`IMG_MEMORY_BUDGET=BYTES` lowers the shared working-memory budget below the probed
+value (it never raises it), for fixed-memory batches and their measurement.
 No decoded images are queued. One candidate runs per image.
 Codec adapters receive cooperative cancellation where their APIs support it.
 The AV1 plane decoder and PNG layout-preserving writer have no cooperative stop API;
