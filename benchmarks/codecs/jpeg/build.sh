@@ -1,11 +1,14 @@
 #!/bin/sh
 set -eu
-scratch=${JPEG_SCRATCH:-/Users/josh/d/img/.work/tmp/jpeg-candidates}
-repo=/Users/josh/d/img/.work/wt/jpeg-candidates
+repo=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
+scratch=${JPEG_SCRATCH:-$repo/.work/tmp/jpeg-candidates}
 mkdir -p "$scratch"
-git clone --depth 1 --branch 3.1.1 https://github.com/libjpeg-turbo/libjpeg-turbo.git "$scratch/libjpeg-turbo"
-git clone --depth 1 --branch v4.1.5 https://github.com/mozilla/mozjpeg.git "$scratch/mozjpeg"
-git clone --depth 1 --branch v0.11.1 --recurse-submodules --shallow-submodules https://github.com/libjxl/libjxl.git "$scratch/libjxl"
+[ -d "$scratch/libjpeg-turbo/.git" ] || git clone --depth 1 --branch 3.1.1 https://github.com/libjpeg-turbo/libjpeg-turbo.git "$scratch/libjpeg-turbo"
+[ -d "$scratch/mozjpeg/.git" ] || git clone --depth 1 --branch v4.1.5 https://github.com/mozilla/mozjpeg.git "$scratch/mozjpeg"
+[ -d "$scratch/libjxl/.git" ] || git clone --depth 1 --branch v0.11.1 --recurse-submodules --shallow-submodules https://github.com/libjxl/libjxl.git "$scratch/libjxl"
+[ "$(git -C "$scratch/libjpeg-turbo" rev-parse HEAD)" = 7723f50f3f66b9da74376e6d8badb6162464212c ]
+[ "$(git -C "$scratch/mozjpeg" rev-parse HEAD)" = 6c9f0897afa1c2738d7222a0a9ab49e8b536a267 ]
+[ "$(git -C "$scratch/libjxl" rev-parse HEAD)" = 794a5dcf0d54f9f0b20d288a12e87afb91d20dfc ]
 cmake -S "$scratch/libjpeg-turbo" -B "$scratch/turbo-build" -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_SHARED=OFF
 cmake --build "$scratch/turbo-build" -j4
 cmake --install "$scratch/turbo-build" --prefix "$scratch/turbo-install"
@@ -13,6 +16,7 @@ cmake -S "$scratch/libjxl" -B "$scratch/jxl-build" -G Ninja -DCMAKE_POLICY_VERSI
 cmake --build "$scratch/jxl-build" --target cjpegli djpegli -j4
 cmake -S "$scratch/mozjpeg" -B "$scratch/moz-local" -G Ninja -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DENABLE_SHARED=OFF -DPNG_PNG_INCLUDE_DIR="$scratch/libjxl/third_party/libpng" -DZLIB_INCLUDE_DIR="$scratch/libjxl/third_party/zlib" -DCMAKE_LIBRARY_PATH="$scratch/jxl-build/third_party/libpng;$scratch/jxl-build/third_party/zlib" -DCMAKE_C_FLAGS="-I$scratch/jxl-build/third_party/libpng -I$scratch/jxl-build/third_party/zlib"
 cmake --build "$scratch/moz-local" -j4
+[ "${DECODE_ONLY:-0}" = 1 ] && exit 0
 mkdir -p "$scratch/decode"
 cat > "$scratch/decode/Cargo.toml" <<EOF
 [package]
@@ -27,7 +31,7 @@ zune-jpeg = "=0.5.15"
 zenjpeg = "=0.8.4"
 enough = "=0.4.5"
 EOF
-cargo build --offline --release -j4 --manifest-path "$scratch/decode/Cargo.toml" --target-dir "$scratch/decode-target"
+cargo build --release -j4 --manifest-path "$scratch/decode/Cargo.toml" --target-dir "$scratch/decode-target"
 mkdir -p "$scratch/encode"
 cat > "$scratch/encode/Cargo.toml" <<EOF
 [package]
@@ -43,7 +47,7 @@ zenjpeg = "=0.8.4"
 enough = "=0.4.5"
 libc = "=0.2.183"
 EOF
-cargo build --offline --release -j4 --manifest-path "$scratch/encode/Cargo.toml" --target-dir "$scratch/decode-target"
+cargo build --release -j4 --manifest-path "$scratch/encode/Cargo.toml" --target-dir "$scratch/decode-target"
 c++ -std=c++17 -O3 -DUSE_JPEGLI -I"$scratch/libjxl" -I"$scratch/turbo-install/include" "$repo/benchmarks/codecs/jpeg/encode.cc" "$scratch/jxl-build/lib/libjpegli-static.a" "$scratch/jxl-build/third_party/highway/libhwy.a" -o "$scratch/encode-jpegli"
 c++ -std=c++17 -O3 -I"$scratch/mozjpeg" -I"$scratch/moz-local" "$repo/benchmarks/codecs/jpeg/encode.cc" "$scratch/moz-local/libjpeg.a" -o "$scratch/encode-moz"
 root=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
@@ -76,7 +80,7 @@ libdeflate-sys = { path = "$root/vendor/libdeflate-sys" }
 rav1d = { path = "$root/vendor/rav1d" }
 EOF2
 cp "$root/Cargo.lock" "$scratch/integrated/Cargo.lock"
-cargo build --offline --profile dist -j4 --manifest-path "$scratch/integrated/Cargo.toml" --target-dir "$scratch/integrated-target"
+cargo build --profile dist -j4 --manifest-path "$scratch/integrated/Cargo.toml" --target-dir "$scratch/integrated-target"
 cp "$scratch/integrated-target/dist/encode-integrated" "$scratch/encode-integrated"
 mkdir -p "$scratch/encode-loop"
 cat > "$scratch/encode-loop/Cargo.toml" <<EOF3
@@ -100,5 +104,5 @@ libdeflater = { path = "$root/vendor/libdeflater" }
 libdeflate-sys = { path = "$root/vendor/libdeflate-sys" }
 rav1d = { path = "$root/vendor/rav1d" }
 EOF3
-cargo build --offline --release -j4 --manifest-path "$scratch/encode-loop/Cargo.toml" --target-dir "$scratch/encode-loop-target"
+cargo build --release -j4 --manifest-path "$scratch/encode-loop/Cargo.toml" --target-dir "$scratch/encode-loop-target"
 JPEG_SCRATCH="$scratch" "$root/benchmarks/codecs/jpeg/decode-build.sh"

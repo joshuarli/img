@@ -3,9 +3,9 @@ import json, os, subprocess, sys
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[3]
-scratch = Path('/Users/josh/d/img/.work/tmp/jpeg-candidates')
-img = Path('/Users/josh/d/img/.work/refs/img-master-2258e42')
-zen = Path('/Users/josh/d/img/.work/refs/zen-5424df8')
+scratch = Path(os.environ.get('JPEG_SCRATCH', root / '.work/tmp/jpeg-candidates'))
+img = Path(os.environ.get('IMG_BIN', root / '.work/refs/img-master-2258e42'))
+zen = Path(os.environ.get('ZEN_BIN', root / '.work/refs/zen-5424df8'))
 jpegli = scratch / 'jxl-build/tools/cjpegli'
 moz = scratch / 'moz-local/cjpeg-static'
 turbo = scratch / 'turbo-build/djpeg-static'

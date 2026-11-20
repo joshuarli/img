@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 root=$(CDPATH= cd -- "$(dirname "$0")/../../.." && pwd)
-scratch=${AVIF_SCRATCH:-/Users/josh/d/img/.work/tmp/avif-candidates}
+scratch=${AVIF_SCRATCH:-$root/.work/tmp/avif-candidates}
 mkdir -p "$scratch/qual-img" "$scratch/qual-dav1d" "$scratch/qual-zen"
 cat > "$scratch/qual-img/Cargo.toml" <<TOML
 [package]
@@ -63,16 +63,16 @@ strip = false
 TOML
 cat > "$scratch/qual-dav1d/build.rs" <<RUST
 fn main() {
-    cc::Build::new().include("$scratch/src/libavif-v1.4.2/include").include("/opt/homebrew/Cellar/dav1d/1.5.4/include").file("$root/benchmarks/codecs/avif/decode-dav1d.c").compile("qual");
+    cc::Build::new().include("$scratch/src/libavif-v1.4.2/include").include("$scratch/install/dav1d/include").file("$root/benchmarks/codecs/avif/decode-dav1d.c").compile("qual");
     println!("cargo:rustc-link-search=native=$scratch/build/libavif");
     println!("cargo:rustc-link-search=native=$scratch/install/aom/lib");
-    println!("cargo:rustc-link-search=native=/opt/homebrew/Cellar/dav1d/1.5.4/lib");
+    println!("cargo:rustc-link-search=native=$scratch/install/dav1d/lib");
     println!("cargo:rustc-link-lib=static=avif");
     println!("cargo:rustc-link-lib=static=aom");
-    println!("cargo:rustc-link-lib=dylib=dav1d");
+    println!("cargo:rustc-link-lib=static=dav1d");
 }
 RUST
 cp "$root/Cargo.lock" "$scratch/qual-img/Cargo.lock"
-CARGO_BUILD_JOBS=4 cargo build --offline --release --manifest-path "$scratch/qual-img/Cargo.toml" --target-dir "$scratch/img-target"
-CARGO_BUILD_JOBS=4 cargo build --offline --release --manifest-path "$scratch/qual-dav1d/Cargo.toml" --target-dir "$scratch/qual-dav1d-target"
-CARGO_BUILD_JOBS=4 cargo build --offline --release --manifest-path "$scratch/qual-zen/Cargo.toml" --target-dir "$scratch/qual-zen-target"
+CARGO_BUILD_JOBS=4 cargo build --release --manifest-path "$scratch/qual-img/Cargo.toml" --target-dir "$scratch/img-target"
+CARGO_BUILD_JOBS=4 cargo build --release --manifest-path "$scratch/qual-dav1d/Cargo.toml" --target-dir "$scratch/qual-dav1d-target"
+CARGO_BUILD_JOBS=4 cargo build --release --manifest-path "$scratch/qual-zen/Cargo.toml" --target-dir "$scratch/qual-zen-target"

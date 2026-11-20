@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 import hashlib, json, pathlib, platform, random, re, subprocess, sys, time
 
-fixtures, output, rounds, img, dav, zen, *baseline = sys.argv[1:]
+args = sys.argv[1:]
+allow_short = bool(args and args[0] == "--allow-short")
+if allow_short: args = args[1:]
+fixtures, output, rounds, img, dav, zen, *baseline = args
 rounds = int(rounds)
-if rounds < 9: raise ValueError('at least nine rounds required')
+if rounds < 1: raise ValueError('at least one round required')
+if rounds < 9 and not allow_short: raise ValueError('at least nine rounds required')
 fixtures = pathlib.Path(fixtures)
 manifest = json.loads((fixtures / 'manifest.json').read_text())
 engines = [('rav1d', img, 'raw', 'obu'), ('dav1d', dav, 'raw', 'obu'), ('img', img, 'img', 'avif'), ('dav1d-rgb', dav, 'rgb', 'avif'), ('zen', zen, 'zen', 'avif')]
@@ -35,6 +39,6 @@ for f in manifest:
         r = subprocess.run(['/usr/bin/time', '-l', binary, mode, '0', str(fixtures / (f['name'] + '.' + ext))], check=True, text=True, capture_output=True)
         memory.append(dict(file=f['name'], decoder=label, peak_rss_bytes=int(re.search(r'(\d+)\s+maximum resident set size', r.stderr).group(1))))
 record = dict(platform=platform.platform(), rounds=rounds, discarded_rounds=discarded, min_ms=150, threads=1,
-              dav1d_library_sha256=sha(pathlib.Path('/opt/homebrew/Cellar/dav1d/1.5.4/lib/libdav1d.7.dylib')), decoders=[dict(label=l, binary=b, binary_sha256=sha(pathlib.Path(b)), mode=m) for l,b,m,_ in engines], fixtures=manifest, samples=samples, memory=memory)
+              decoders=[dict(label=l, binary=b, binary_sha256=sha(pathlib.Path(b)), mode=m) for l,b,m,_ in engines], fixtures=manifest, samples=samples, memory=memory)
 pathlib.Path(output).write_text(json.dumps(record, indent=1)+'\n')
 print('wrote', output, 'completed', completed, 'discarded', discarded, flush=True)

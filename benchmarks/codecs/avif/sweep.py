@@ -3,10 +3,10 @@ import json, os, subprocess, sys
 from pathlib import Path
 
 root = Path(__file__).resolve().parents[3]
-scratch = Path(os.environ.get('AVIF_SCRATCH', '/Users/josh/d/img/.work/tmp/avif-candidates'))
-img = Path('/Users/josh/d/img/.work/refs/img-master-2258e42')
+scratch = Path(os.environ.get('AVIF_SCRATCH', root / '.work/tmp/avif-candidates'))
+img = Path(os.environ.get('IMG_BIN', root / '.work/refs/img-master-2258e42'))
 integrated_img = Path(os.environ.get('IMG_INTEGRATED_BIN', root / 'target/dist/img'))
-zen = Path('/Users/josh/d/img/.work/refs/zen-5424df8')
+zen = Path(os.environ.get('ZEN_BIN', root / '.work/refs/zen-5424df8'))
 avifcodec = scratch / 'avifcodec'
 avifcodec_svt = scratch / 'avifcodec-svt'
 encode_bin = scratch / 'encode-target/release/avif-candidate-encode'

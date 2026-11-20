@@ -1,5 +1,5 @@
-import pathlib, struct, zlib
-out=pathlib.Path('.work/tmp/png-exact/fixtures'); out.mkdir(exist_ok=True)
+import pathlib, struct, sys, zlib
+out=pathlib.Path(sys.argv[1]); out.mkdir(parents=True, exist_ok=True)
 def chunk(kind,data): return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data))
 def make(name,depth,color,raw,extra=b'',width=8,height=1,interlace=0):
     (out/name).write_bytes(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',width,height,depth,color,0,0,interlace))+extra+chunk(b'IDAT',zlib.compress(raw))+chunk(b'IEND',b''))

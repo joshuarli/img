@@ -1,8 +1,11 @@
 #!/bin/sh
 set -eu
 root=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
-scratch="$root/.work/tmp/png-qualify"
-mkdir -p "$scratch" "$root/.work/tmp"
+scratch=${PNG_SCRATCH:-$root/.work/tmp/png-qualify}
+mkdir -p "$scratch"
+[ "$(pkg-config --modversion libpng)" = 1.6.59 ]
+png_include=$(pkg-config --variable=includedir libpng)
+png_lib=$(pkg-config --variable=libdir libpng)
 curl -fsSL https://github.com/randy408/libspng/archive/refs/tags/v0.7.4.tar.gz -o "$scratch/libspng.tar.gz"
 printf '%s  %s\n' 47ec02be6c0a6323044600a9221b049f63e1953faf816903e7383d4dc4234487 "$scratch/libspng.tar.gz" | shasum -a 256 -c -
 curl -fsSL https://github.com/richgel999/miniz/archive/refs/tags/2.2.0.tar.gz -o "$scratch/miniz.tar.gz"
@@ -35,8 +38,8 @@ END
 cat > "$scratch/build.rs" <<END
 fn main() {
  let root = "$root"; let scratch = "$scratch";
- cc::Build::new().opt_level(3).include(format!("{scratch}/miniz-2.2.0")).include(format!("{scratch}/libspng-0.7.4/spng")).include("/opt/homebrew/include/libpng16").define("SPNG_USE_MINIZ",None).file(format!("{scratch}/miniz-2.2.0/miniz.c")).file(format!("{scratch}/miniz-2.2.0/miniz_tinfl.c")).file(format!("{scratch}/miniz-2.2.0/miniz_tdef.c")).file(format!("{scratch}/libspng-0.7.4/spng/spng.c")).file(format!("{root}/benchmarks/codecs/png/decode-native.c")).compile("pngnative");
- println!("cargo:rustc-link-search=native=/opt/homebrew/lib"); println!("cargo:rustc-link-lib=png16");
+ cc::Build::new().opt_level(3).include(format!("{scratch}/miniz-2.2.0")).include(format!("{scratch}/libspng-0.7.4/spng")).include("$png_include").define("SPNG_USE_MINIZ",None).file(format!("{scratch}/miniz-2.2.0/miniz.c")).file(format!("{scratch}/miniz-2.2.0/miniz_tinfl.c")).file(format!("{scratch}/miniz-2.2.0/miniz_tdef.c")).file(format!("{scratch}/libspng-0.7.4/spng/spng.c")).file(format!("{root}/benchmarks/codecs/png/decode-native.c")).compile("pngnative");
+ println!("cargo:rustc-link-search=native=$png_lib"); println!("cargo:rustc-link-lib=png16");
 }
 END
-CARGO_BUILD_JOBS=4 TMPDIR="$root/.work/tmp" cargo build --offline --release --manifest-path "$scratch/Cargo.toml"
+CARGO_BUILD_JOBS=4 TMPDIR="$scratch" cargo build --release --manifest-path "$scratch/Cargo.toml"
