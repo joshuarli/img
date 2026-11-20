@@ -391,7 +391,7 @@ def main(argv=None):
     if problems and not a.dry_run:
         print('preflight failed; nothing ran')
         return 2
-    print(f'preflight {"failed (dry run continues)" if problems else "ok"} for: {", ".join(f"{w["name"]}({level})" for w, level in chosen)}')
+    print(f'preflight {"failed (dry run continues)" if problems else "ok"} for: {", ".join("{}({})".format(w["name"], level) for w, level in chosen)}')
     if a.command == 'check':
         return 0
     return run(ctx, chosen, excluded, a.tier, a.dry_run)

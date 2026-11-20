@@ -8,6 +8,8 @@ cargo check --locked --no-default-features --features build-binary
 cargo clippy --locked --all-features --all-targets
 if [ "$(id -u)" -eq 0 ]; then
     cargo fetch --locked
+    # The workspace belongs to the CI user; git refuses it as the verifier, and tests.test_bench needs git.
+    git config --global --add safe.directory "$PWD"
     adduser -D verifier
     chmod o+rx /root
     chown -R verifier /root/.cargo "${CARGO_TARGET_DIR:-target}" "$TMPDIR"

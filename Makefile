@@ -1,4 +1,4 @@
-.PHONY: test baseline-check decoder-reference-check ci release verify-release bench bench-check bench-list
+.PHONY: test lint baseline-check decoder-reference-check ci release verify-release bench bench-check bench-list
 
 TARGET ?= $(shell rustc -vV | awk '/^host:/ {print $$2}')
 CARGO_TARGET_DIR ?= target
@@ -9,6 +9,14 @@ export TMPDIR := $(CURDIR)/.work/tmp
 test:
 	@mkdir -p .work/tmp
 	cargo test --locked --all-features
+	@if tar --version 2>/dev/null | grep -q 'GNU tar'; then python3 tests/test_package_release.py; else echo 'skipping tests/test_package_release.py: it needs GNU tar (release.yml runs it)'; fi
+	python3 -m unittest -q tests.test_bench
+
+lint:
+	@mkdir -p .work/tmp
+	cargo check --locked --no-default-features
+	cargo check --locked --no-default-features --features build-binary
+	cargo clippy --locked --all-features --all-targets
 
 ci:
 	./scripts/ci-check
