@@ -178,11 +178,13 @@ fn png_encode(image: &StillImage, effort: Effort, samples: Vec<u8>, indexed: Opt
     Ok(bytes)
 }
 
+pub(super) fn palette_colors(quality: super::Quality) -> usize { (2.0 + quality.value() * 254.0 / 100.0).round().clamp(2.0, 256.0) as usize }
+
 fn palette_path(image: &StillImage, quality: super::Quality, effort: Effort) -> Result<Vec<u8>, Error> {
     if image.bit_depth() != 8 || image.is_grayscale() { return Err(Error::new(ErrorKind::Unsupported, "palette quality requires eight-bit RGB or RGBA samples")); }
     let channels = image.pixels.descriptor().channels();
     let samples = image.samples();
-    let colors = (2.0 + quality.value() * 254.0 / 100.0).round().clamp(2.0, 256.0) as usize;
+    let colors = palette_colors(quality);
     let (width, height) = image.dimensions();
     if channels == 4 && samples.chunks_exact(4).any(|p| p[3] != 255) {
         let qimage = quantizr::Image::new(&samples, width as usize, height as usize)

@@ -57,7 +57,8 @@ pub struct Request {
 impl Default for Request {
     fn default() -> Self { Self { operation: Operation::Optimize(FormatSelection::Source), fidelity: Fidelity::Score(ScoreTarget::default()), effort: Effort::Balanced, metadata: MetadataPolicy::Keep, max_dimension: None, scoring_memory: ReferenceMemory::Fast } }
 }
-/// One actual encode attempt, including unsuccessful or disqualified attempts.
+/// One evaluated candidate setting, including unsuccessful or disqualified attempts.
+/// A setting whose quantized encoder control repeats an earlier one reuses that result with zero encode time.
 #[derive(Clone, Debug)]
 pub struct Evaluation {
     /// Attempted output format.
@@ -348,6 +349,11 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
             if deferred_at < deferred.len() { deferred_at+=1; let s=deferred[deferred_at-1]; break (s.0,s.1,true,None); }
             break 'eval;
         };
+        let quantized = |e: &Evaluation| e.sampling.is_none() && e.format == format && e.quality.zip(quality).is_some_and(|(a,b)| StillImage::quantized_quality(format,Quality::new(a).unwrap()).is_some_and(|n| Some(n) == StillImage::quantized_quality(format,Quality::new(b).unwrap())));
+        if !from_deferred && sampling.is_none() && let Some(previous) = evaluations.iter().find(|e| quantized(e)) {
+            evaluations.push(Evaluation { quality, encode_ms: 0.0, probe_ms: None, ..previous.clone() });
+            continue;
+        }
         let start=Instant::now();
         let incumbent = best.as_ref().map(|b| b.bytes.len());
         let deferred_lossless = from_deferred && format == Format::Webp && quality.is_none();

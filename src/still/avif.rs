@@ -99,6 +99,8 @@ pub(super) fn bitstream_hdr(mut data:&[u8])->Result<bool,Error> {
     Ok(false)
 }
 
+pub(super) fn native_quality(quality: super::Quality) -> u8 { quality.value().round().clamp(1.0, 100.0) as u8 }
+
 pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
     let EncodingMode::Quality(quality) = mode else { return Err(Error::new(ErrorKind::Unsupported, "strict lossless AVIF encoding is unsupported")); };
     if stop.is_cancelled() { return Err(Error::new(ErrorKind::Invalid, "operation cancelled")); }
@@ -111,7 +113,7 @@ pub(super) fn encode(image: &StillImage, mode: EncodingMode, effort: Effort, sto
     if image.metadata.xmp.is_some() { return Err(Error::new(ErrorKind::Unsupported, "AVIF encoding cannot embed XMP with the selected encoder")); }
     let (width, height) = image.dimensions();
     let speed = match effort { Effort::Fast => 8, Effort::Balanced | Effort::Best => 6 };
-    let encoded = libavif_sys::encode(width, height, &image.sample_bytes(), speed, quality.value().round().clamp(1.0, 100.0) as u8, image.metadata.exif.as_deref())
+    let encoded = libavif_sys::encode(width, height, &image.sample_bytes(), speed, native_quality(quality), image.metadata.exif.as_deref())
         .map_err(|e| Error::new(ErrorKind::Encode, e))?;
     super::limits().check_output_size(encoded.len() as u64).map_err(|e| Error::caused(ErrorKind::Limit, e))?;
     Ok(encoded)
