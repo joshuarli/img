@@ -188,7 +188,7 @@ fn avif_exif_round_trips_and_unrepresentable_metadata_is_refused() {
 
 #[test]
 fn libavif_invalid_metadata_returns_error() {
-    let result = libavif_sys::encode(8, 8, &common::pixels(8, 8), 8, 80, Some(b"not exif"));
+    let result = libavif_sys::encode(8, 8, &common::pixels(8, 8), 8, 80, 1, Some(b"not exif"));
     assert!(result.is_err());
 }
 
@@ -200,4 +200,14 @@ fn fractional_quality_reaches_quantizers_between_integer_qualities() {
     assert_ne!(middle,low); assert_ne!(middle,high);
     assert!(low.len()<=middle.len() && middle.len()<=high.len());
     assert_eq!(encode(90.1),low);
+}
+
+#[test]
+fn libaom_row_threads_encode_identically_for_every_count_above_one() {
+    let (width, height) = (640, 448);
+    let pixels = common::pixels(width, height);
+    let encode = |threads| libavif_sys::encode(width, height, &pixels, 8, 60, threads, None).unwrap();
+    let two = encode(2);
+    assert_eq!(encode(3), two);
+    assert_eq!(encode(4), two);
 }
