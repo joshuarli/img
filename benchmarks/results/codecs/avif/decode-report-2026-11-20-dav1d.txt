@@ -1,0 +1,16 @@
+rav1d / dav1d: class n geomean [95% CI] p95 worst(file) | rss geomean worst
+  img444    17 1.010 [1.006, 1.014] 1.034 1.034(img444-19-retina) | 1.292 1.804
+  aom420    14 1.004 [1.002, 1.006] 1.015 1.015(aom420-22-utrecht-meetup) | 1.456 1.866
+  large      3 1.016 [1.013, 1.019] 1.019 1.019(large-photo-01-q65) | 1.075 1.080
+img / dav1d-rgb: class n geomean [95% CI] p95 worst(file) | rss geomean worst
+  img444    17 0.992 [0.990, 0.994] 0.998 0.998(img444-00-astronaut) | 1.292 1.822
+  aom420    14 0.995 [0.993, 0.997] 1.000 1.000(aom420-07-chelsea) | 1.244 1.970
+  large      3 0.992 [0.991, 0.994] 0.994 0.994(large-photo-01-q85) | 1.090 1.100
+img / zen: class n geomean [95% CI] p95 worst(file) | rss geomean worst
+  img444    17 0.154 [0.141, 0.168] 0.216 0.216(img444-14-hubble_deep_field) | 0.864 1.013
+  aom420    14 0.186 [0.166, 0.207] 0.261 0.261(aom420-14-hubble_deep_field) | 0.860 1.020
+  large      3 0.136 [0.118, 0.163] 0.163 0.163(large-photo-01-q85) | 0.839 0.841
+img / img-baseline: class n geomean [95% CI] p95 worst(file) | rss geomean worst
+  img444    17 0.906 [0.900, 0.912] 0.932 0.932(img444-18-portrait-woman-met) | 0.959 0.968
+  aom420    14 0.904 [0.896, 0.913] 0.933 0.933(aom420-18-portrait-woman-met) | 0.958 0.964
+  large      3 0.907 [0.896, 0.920] 0.920 0.920(large-photo-01-q85) | 0.967 0.968

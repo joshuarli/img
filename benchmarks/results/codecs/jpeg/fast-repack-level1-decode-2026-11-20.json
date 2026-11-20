@@ -1,0 +1,2594 @@
+[
+ {
+  "round": 0,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.63253
+ },
+ {
+  "round": 0,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.77251
+ },
+ {
+  "round": 0,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 1.17977
+ },
+ {
+  "round": 0,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.91544
+ },
+ {
+  "round": 0,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 1.15916
+ },
+ {
+  "round": 0,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 1.6261
+ },
+ {
+  "round": 0,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 14.30076
+ },
+ {
+  "round": 0,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 13.73856
+ },
+ {
+  "round": 0,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 27.69349
+ },
+ {
+  "round": 0,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.3846
+ },
+ {
+  "round": 0,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 89.97794
+ },
+ {
+  "round": 0,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 67.75483
+ },
+ {
+  "round": 0,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 16.17572
+ },
+ {
+  "round": 0,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 19.35931
+ },
+ {
+  "round": 0,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 36.04443
+ },
+ {
+  "round": 0,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 29.31174
+ },
+ {
+  "round": 0,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 48.12646
+ },
+ {
+  "round": 0,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 48.09251
+ },
+ {
+  "round": 0,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 52.25106
+ },
+ {
+  "round": 0,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 44.12054
+ },
+ {
+  "round": 0,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.59453
+ },
+ {
+  "round": 0,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.59447
+ },
+ {
+  "round": 0,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.55198
+ },
+ {
+  "round": 0,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.60802
+ },
+ {
+  "round": 0,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 5.27372
+ },
+ {
+  "round": 0,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 5.95413
+ },
+ {
+  "round": 0,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 5.74589
+ },
+ {
+  "round": 0,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 5.749
+ },
+ {
+  "round": 0,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 5.74871
+ },
+ {
+  "round": 0,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 5.75118
+ },
+ {
+  "round": 0,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.27083
+ },
+ {
+  "round": 0,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.27195
+ },
+ {
+  "round": 0,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.34501
+ },
+ {
+  "round": 0,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 0.34534
+ },
+ {
+  "round": 0,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 0.42017
+ },
+ {
+  "round": 0,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 0.42008
+ },
+ {
+  "round": 0,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 54.34157
+ },
+ {
+  "round": 0,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 65.09067
+ },
+ {
+  "round": 0,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 87.91656
+ },
+ {
+  "round": 0,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.63983
+ },
+ {
+  "round": 0,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.65562
+ },
+ {
+  "round": 0,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.60548
+ },
+ {
+  "round": 0,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 7.3848
+ },
+ {
+  "round": 0,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 6.01115
+ },
+ {
+  "round": 0,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 7.06414
+ },
+ {
+  "round": 0,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 8.88335
+ },
+ {
+  "round": 0,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 3.38707
+ },
+ {
+  "round": 0,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 3.38071
+ },
+ {
+  "round": 1,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.77151
+ },
+ {
+  "round": 1,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.63122
+ },
+ {
+  "round": 1,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.91434
+ },
+ {
+  "round": 1,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 1.1785
+ },
+ {
+  "round": 1,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 1.62128
+ },
+ {
+  "round": 1,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 1.15541
+ },
+ {
+  "round": 1,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 13.74247
+ },
+ {
+  "round": 1,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 14.30996
+ },
+ {
+  "round": 1,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.31029
+ },
+ {
+  "round": 1,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 27.74478
+ },
+ {
+  "round": 1,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 67.67257
+ },
+ {
+  "round": 1,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 90.20258
+ },
+ {
+  "round": 1,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 19.36035
+ },
+ {
+  "round": 1,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 16.13557
+ },
+ {
+  "round": 1,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 29.28935
+ },
+ {
+  "round": 1,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 36.01472
+ },
+ {
+  "round": 1,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 48.06281
+ },
+ {
+  "round": 1,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 48.14369
+ },
+ {
+  "round": 1,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 44.16226
+ },
+ {
+  "round": 1,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 52.22549
+ },
+ {
+  "round": 1,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.68227
+ },
+ {
+  "round": 1,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.61507
+ },
+ {
+  "round": 1,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.57988
+ },
+ {
+  "round": 1,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.55077
+ },
+ {
+  "round": 1,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 5.95029
+ },
+ {
+  "round": 1,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 5.27138
+ },
+ {
+  "round": 1,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 5.75338
+ },
+ {
+  "round": 1,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 5.74287
+ },
+ {
+  "round": 1,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 5.74103
+ },
+ {
+  "round": 1,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 5.73824
+ },
+ {
+  "round": 1,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.27095
+ },
+ {
+  "round": 1,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.27144
+ },
+ {
+  "round": 1,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 0.34563
+ },
+ {
+  "round": 1,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.34469
+ },
+ {
+  "round": 1,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 0.42033
+ },
+ {
+  "round": 1,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 0.41952
+ },
+ {
+  "round": 1,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 65.00662
+ },
+ {
+  "round": 1,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 54.25196
+ },
+ {
+  "round": 1,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 33.17418
+ },
+ {
+  "round": 1,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 87.93487
+ },
+ {
+  "round": 1,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.63666
+ },
+ {
+  "round": 1,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.64412
+ },
+ {
+  "round": 1,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 6.02615
+ },
+ {
+  "round": 1,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 7.37035
+ },
+ {
+  "round": 1,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 8.87733
+ },
+ {
+  "round": 1,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 7.02929
+ },
+ {
+  "round": 1,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 3.38576
+ },
+ {
+  "round": 1,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 3.38334
+ },
+ {
+  "round": 2,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.63274
+ },
+ {
+  "round": 2,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.76888
+ },
+ {
+  "round": 2,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 1.1813
+ },
+ {
+  "round": 2,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.91476
+ },
+ {
+  "round": 2,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 1.15894
+ },
+ {
+  "round": 2,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 1.62509
+ },
+ {
+  "round": 2,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 14.32065
+ },
+ {
+  "round": 2,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 13.74279
+ },
+ {
+  "round": 2,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 27.65605
+ },
+ {
+  "round": 2,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.4064
+ },
+ {
+  "round": 2,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 89.92633
+ },
+ {
+  "round": 2,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 67.7671
+ },
+ {
+  "round": 2,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 16.50301
+ },
+ {
+  "round": 2,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 19.31913
+ },
+ {
+  "round": 2,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 36.03294
+ },
+ {
+  "round": 2,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 29.67044
+ },
+ {
+  "round": 2,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 48.10409
+ },
+ {
+  "round": 2,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 48.11896
+ },
+ {
+  "round": 2,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 52.24975
+ },
+ {
+  "round": 2,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 44.1013
+ },
+ {
+  "round": 2,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.54516
+ },
+ {
+  "round": 2,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.51652
+ },
+ {
+  "round": 2,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.58288
+ },
+ {
+  "round": 2,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.55682
+ },
+ {
+  "round": 2,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 5.26757
+ },
+ {
+  "round": 2,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 5.96263
+ },
+ {
+  "round": 2,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 5.74426
+ },
+ {
+  "round": 2,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 5.74225
+ },
+ {
+  "round": 2,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 5.74213
+ },
+ {
+  "round": 2,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 5.74162
+ },
+ {
+  "round": 2,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.27116
+ },
+ {
+  "round": 2,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.2709
+ },
+ {
+  "round": 2,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.34478
+ },
+ {
+  "round": 2,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 0.34499
+ },
+ {
+  "round": 2,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 0.41977
+ },
+ {
+  "round": 2,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 0.41999
+ },
+ {
+  "round": 2,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 54.21969
+ },
+ {
+  "round": 2,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 65.14368
+ },
+ {
+  "round": 2,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 87.85008
+ },
+ {
+  "round": 2,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.64654
+ },
+ {
+  "round": 2,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.66429
+ },
+ {
+  "round": 2,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.5551
+ },
+ {
+  "round": 2,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 7.38756
+ },
+ {
+  "round": 2,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 6.03681
+ },
+ {
+  "round": 2,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 7.04277
+ },
+ {
+  "round": 2,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 8.8951
+ },
+ {
+  "round": 2,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 3.38051
+ },
+ {
+  "round": 2,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 3.38686
+ },
+ {
+  "round": 3,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.77223
+ },
+ {
+  "round": 3,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.6322
+ },
+ {
+  "round": 3,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.91379
+ },
+ {
+  "round": 3,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 1.18105
+ },
+ {
+  "round": 3,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 1.62571
+ },
+ {
+  "round": 3,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 1.16065
+ },
+ {
+  "round": 3,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 13.73486
+ },
+ {
+  "round": 3,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 14.29807
+ },
+ {
+  "round": 3,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.3297
+ },
+ {
+  "round": 3,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 27.74403
+ },
+ {
+  "round": 3,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 67.84389
+ },
+ {
+  "round": 3,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 89.95452
+ },
+ {
+  "round": 3,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 19.42497
+ },
+ {
+  "round": 3,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 16.13772
+ },
+ {
+  "round": 3,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 29.30993
+ },
+ {
+  "round": 3,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 36.10448
+ },
+ {
+  "round": 3,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 48.08642
+ },
+ {
+  "round": 3,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 48.11593
+ },
+ {
+  "round": 3,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 43.94453
+ },
+ {
+  "round": 3,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 52.17235
+ },
+ {
+  "round": 3,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.53579
+ },
+ {
+  "round": 3,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.57037
+ },
+ {
+  "round": 3,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.59942
+ },
+ {
+  "round": 3,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.60892
+ },
+ {
+  "round": 3,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 5.95799
+ },
+ {
+  "round": 3,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 5.27002
+ },
+ {
+  "round": 3,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 5.74553
+ },
+ {
+  "round": 3,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 5.74907
+ },
+ {
+  "round": 3,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 5.74426
+ },
+ {
+  "round": 3,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 5.74998
+ },
+ {
+  "round": 3,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.27209
+ },
+ {
+  "round": 3,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.27153
+ },
+ {
+  "round": 3,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 0.34475
+ },
+ {
+  "round": 3,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.34499
+ },
+ {
+  "round": 3,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 0.41974
+ },
+ {
+  "round": 3,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 0.41959
+ },
+ {
+  "round": 3,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 65.23496
+ },
+ {
+  "round": 3,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 54.16406
+ },
+ {
+  "round": 3,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.75258
+ },
+ {
+  "round": 3,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 87.83219
+ },
+ {
+  "round": 3,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.70733
+ },
+ {
+  "round": 3,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.63625
+ },
+ {
+  "round": 3,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 6.018
+ },
+ {
+  "round": 3,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 7.37391
+ },
+ {
+  "round": 3,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 8.88243
+ },
+ {
+  "round": 3,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 7.04841
+ },
+ {
+  "round": 3,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 3.38509
+ },
+ {
+  "round": 3,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 3.38248
+ },
+ {
+  "round": 4,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.63551
+ },
+ {
+  "round": 4,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.77051
+ },
+ {
+  "round": 4,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 1.18077
+ },
+ {
+  "round": 4,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.91517
+ },
+ {
+  "round": 4,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 1.16167
+ },
+ {
+  "round": 4,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 1.62262
+ },
+ {
+  "round": 4,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 14.26816
+ },
+ {
+  "round": 4,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 13.71516
+ },
+ {
+  "round": 4,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 27.67019
+ },
+ {
+  "round": 4,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.44533
+ },
+ {
+  "round": 4,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 90.10858
+ },
+ {
+  "round": 4,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 67.74914
+ },
+ {
+  "round": 4,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 16.19618
+ },
+ {
+  "round": 4,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 19.35809
+ },
+ {
+  "round": 4,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 36.09438
+ },
+ {
+  "round": 4,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 29.34635
+ },
+ {
+  "round": 4,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 48.19203
+ },
+ {
+  "round": 4,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 48.15442
+ },
+ {
+  "round": 4,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 52.29454
+ },
+ {
+  "round": 4,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 44.07079
+ },
+ {
+  "round": 4,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.52914
+ },
+ {
+  "round": 4,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.49798
+ },
+ {
+  "round": 4,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.5521
+ },
+ {
+  "round": 4,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.63339
+ },
+ {
+  "round": 4,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 5.2696
+ },
+ {
+  "round": 4,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 5.94152
+ },
+ {
+  "round": 4,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 5.74386
+ },
+ {
+  "round": 4,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 5.75088
+ },
+ {
+  "round": 4,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 5.75658
+ },
+ {
+  "round": 4,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 5.74251
+ },
+ {
+  "round": 4,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.27132
+ },
+ {
+  "round": 4,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.27147
+ },
+ {
+  "round": 4,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.34443
+ },
+ {
+  "round": 4,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 0.34514
+ },
+ {
+  "round": 4,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 0.42078
+ },
+ {
+  "round": 4,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 0.42006
+ },
+ {
+  "round": 4,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 54.34118
+ },
+ {
+  "round": 4,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 65.01803
+ },
+ {
+  "round": 4,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 87.95967
+ },
+ {
+  "round": 4,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.60168
+ },
+ {
+  "round": 4,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.68781
+ },
+ {
+  "round": 4,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.62639
+ },
+ {
+  "round": 4,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 7.37749
+ },
+ {
+  "round": 4,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 6.00478
+ },
+ {
+  "round": 4,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 7.04691
+ },
+ {
+  "round": 4,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 8.87372
+ },
+ {
+  "round": 4,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 3.3841
+ },
+ {
+  "round": 4,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 3.3905
+ },
+ {
+  "round": 5,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.77043
+ },
+ {
+  "round": 5,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.63189
+ },
+ {
+  "round": 5,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.91428
+ },
+ {
+  "round": 5,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 1.18348
+ },
+ {
+  "round": 5,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 1.6245
+ },
+ {
+  "round": 5,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 1.15989
+ },
+ {
+  "round": 5,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 13.74556
+ },
+ {
+  "round": 5,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 14.27954
+ },
+ {
+  "round": 5,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.3457
+ },
+ {
+  "round": 5,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 27.77601
+ },
+ {
+  "round": 5,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 67.69831
+ },
+ {
+  "round": 5,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 89.98444
+ },
+ {
+  "round": 5,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 19.39216
+ },
+ {
+  "round": 5,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 16.07581
+ },
+ {
+  "round": 5,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 29.26367
+ },
+ {
+  "round": 5,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 36.06918
+ },
+ {
+  "round": 5,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 48.14304
+ },
+ {
+  "round": 5,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 48.14301
+ },
+ {
+  "round": 5,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 43.94472
+ },
+ {
+  "round": 5,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 52.07371
+ },
+ {
+  "round": 5,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.51768
+ },
+ {
+  "round": 5,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.5487
+ },
+ {
+  "round": 5,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.51842
+ },
+ {
+  "round": 5,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.55052
+ },
+ {
+  "round": 5,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 5.96175
+ },
+ {
+  "round": 5,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 5.2539
+ },
+ {
+  "round": 5,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 5.74417
+ },
+ {
+  "round": 5,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 5.77242
+ },
+ {
+  "round": 5,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 5.78573
+ },
+ {
+  "round": 5,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 5.74858
+ },
+ {
+  "round": 5,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.27079
+ },
+ {
+  "round": 5,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.27168
+ },
+ {
+  "round": 5,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 0.34534
+ },
+ {
+  "round": 5,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.34557
+ },
+ {
+  "round": 5,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 0.42037
+ },
+ {
+  "round": 5,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 0.42079
+ },
+ {
+  "round": 5,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 65.14482
+ },
+ {
+  "round": 5,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 54.24769
+ },
+ {
+  "round": 5,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.64851
+ },
+ {
+  "round": 5,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 87.91654
+ },
+ {
+  "round": 5,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.72802
+ },
+ {
+  "round": 5,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.62317
+ },
+ {
+  "round": 5,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 6.01757
+ },
+ {
+  "round": 5,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 7.39467
+ },
+ {
+  "round": 5,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 8.88847
+ },
+ {
+  "round": 5,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 7.06638
+ },
+ {
+  "round": 5,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 3.38651
+ },
+ {
+  "round": 5,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 3.38416
+ },
+ {
+  "round": 6,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.63163
+ },
+ {
+  "round": 6,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.7698
+ },
+ {
+  "round": 6,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 1.18279
+ },
+ {
+  "round": 6,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.91543
+ },
+ {
+  "round": 6,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 1.15918
+ },
+ {
+  "round": 6,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 1.62432
+ },
+ {
+  "round": 6,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 14.28496
+ },
+ {
+  "round": 6,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 13.70991
+ },
+ {
+  "round": 6,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 27.65662
+ },
+ {
+  "round": 6,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.40408
+ },
+ {
+  "round": 6,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 90.04054
+ },
+ {
+  "round": 6,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 67.77918
+ },
+ {
+  "round": 6,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 16.19452
+ },
+ {
+  "round": 6,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 19.36222
+ },
+ {
+  "round": 6,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 36.03208
+ },
+ {
+  "round": 6,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 29.30243
+ },
+ {
+  "round": 6,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 48.19416
+ },
+ {
+  "round": 6,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 48.2418
+ },
+ {
+  "round": 6,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 52.11736
+ },
+ {
+  "round": 6,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 43.95796
+ },
+ {
+  "round": 6,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.53909
+ },
+ {
+  "round": 6,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.53347
+ },
+ {
+  "round": 6,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.55128
+ },
+ {
+  "round": 6,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.55266
+ },
+ {
+  "round": 6,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 5.25757
+ },
+ {
+  "round": 6,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 5.95202
+ },
+ {
+  "round": 6,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 5.74546
+ },
+ {
+  "round": 6,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 5.74111
+ },
+ {
+  "round": 6,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 5.74513
+ },
+ {
+  "round": 6,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 5.74132
+ },
+ {
+  "round": 6,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.2703
+ },
+ {
+  "round": 6,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.27203
+ },
+ {
+  "round": 6,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.34465
+ },
+ {
+  "round": 6,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 0.345
+ },
+ {
+  "round": 6,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 0.42157
+ },
+ {
+  "round": 6,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 0.41983
+ },
+ {
+  "round": 6,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 54.18858
+ },
+ {
+  "round": 6,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 64.97901
+ },
+ {
+  "round": 6,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 88.00842
+ },
+ {
+  "round": 6,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.6422
+ },
+ {
+  "round": 6,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.60167
+ },
+ {
+  "round": 6,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.62173
+ },
+ {
+  "round": 6,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 7.38753
+ },
+ {
+  "round": 6,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 6.00975
+ },
+ {
+  "round": 6,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 7.04447
+ },
+ {
+  "round": 6,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 8.86127
+ },
+ {
+  "round": 6,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 3.38563
+ },
+ {
+  "round": 6,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 3.38549
+ },
+ {
+  "round": 7,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.76978
+ },
+ {
+  "round": 7,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.63092
+ },
+ {
+  "round": 7,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.91738
+ },
+ {
+  "round": 7,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 1.17881
+ },
+ {
+  "round": 7,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 1.62469
+ },
+ {
+  "round": 7,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 1.15781
+ },
+ {
+  "round": 7,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 13.75652
+ },
+ {
+  "round": 7,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 14.28332
+ },
+ {
+  "round": 7,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.33752
+ },
+ {
+  "round": 7,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 27.70222
+ },
+ {
+  "round": 7,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 67.64372
+ },
+ {
+  "round": 7,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 90.01062
+ },
+ {
+  "round": 7,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 19.38404
+ },
+ {
+  "round": 7,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 16.10397
+ },
+ {
+  "round": 7,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 29.25681
+ },
+ {
+  "round": 7,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 35.99374
+ },
+ {
+  "round": 7,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 48.18187
+ },
+ {
+  "round": 7,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 48.06246
+ },
+ {
+  "round": 7,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 44.07796
+ },
+ {
+  "round": 7,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 52.04382
+ },
+ {
+  "round": 7,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.60368
+ },
+ {
+  "round": 7,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.57941
+ },
+ {
+  "round": 7,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.5657
+ },
+ {
+  "round": 7,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.52352
+ },
+ {
+  "round": 7,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 5.94828
+ },
+ {
+  "round": 7,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 5.27045
+ },
+ {
+  "round": 7,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 5.74263
+ },
+ {
+  "round": 7,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 5.75843
+ },
+ {
+  "round": 7,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 5.74508
+ },
+ {
+  "round": 7,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 5.75579
+ },
+ {
+  "round": 7,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.2707
+ },
+ {
+  "round": 7,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.27104
+ },
+ {
+  "round": 7,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 0.34554
+ },
+ {
+  "round": 7,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.34462
+ },
+ {
+  "round": 7,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 0.41995
+ },
+ {
+  "round": 7,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 0.4198
+ },
+ {
+  "round": 7,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 65.01179
+ },
+ {
+  "round": 7,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 54.22371
+ },
+ {
+  "round": 7,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.6407
+ },
+ {
+  "round": 7,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 87.98615
+ },
+ {
+  "round": 7,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.73866
+ },
+ {
+  "round": 7,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.61893
+ },
+ {
+  "round": 7,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 5.99595
+ },
+ {
+  "round": 7,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 7.37735
+ },
+ {
+  "round": 7,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 8.89415
+ },
+ {
+  "round": 7,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 7.04566
+ },
+ {
+  "round": 7,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 3.38109
+ },
+ {
+  "round": 7,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 3.3924
+ },
+ {
+  "round": 8,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.63125
+ },
+ {
+  "round": 8,
+  "file": "grayscale-16.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.77293
+ },
+ {
+  "round": 8,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 1.17836
+ },
+ {
+  "round": 8,
+  "file": "grayscale-16.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.91686
+ },
+ {
+  "round": 8,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 1.15803
+ },
+ {
+  "round": 8,
+  "file": "grayscale-16.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 1.62544
+ },
+ {
+  "round": 8,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 14.28518
+ },
+ {
+  "round": 8,
+  "file": "grayscale-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 13.74944
+ },
+ {
+  "round": 8,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 27.71938
+ },
+ {
+  "round": 8,
+  "file": "grayscale-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.42814
+ },
+ {
+  "round": 8,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 89.97419
+ },
+ {
+  "round": 8,
+  "file": "grayscale-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 67.8079
+ },
+ {
+  "round": 8,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 16.12252
+ },
+ {
+  "round": 8,
+  "file": "photo-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 19.3658
+ },
+ {
+  "round": 8,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 36.00284
+ },
+ {
+  "round": 8,
+  "file": "photo-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 29.28087
+ },
+ {
+  "round": 8,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 48.12915
+ },
+ {
+  "round": 8,
+  "file": "photo-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 48.08893
+ },
+ {
+  "round": 8,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 52.19826
+ },
+ {
+  "round": 8,
+  "file": "photo-04.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 44.02122
+ },
+ {
+  "round": 8,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.62397
+ },
+ {
+  "round": 8,
+  "file": "photo-04.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 31.68391
+ },
+ {
+  "round": 8,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.55216
+ },
+ {
+  "round": 8,
+  "file": "photo-04.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.54703
+ },
+ {
+  "round": 8,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 5.27332
+ },
+ {
+  "round": 8,
+  "file": "photo-16.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 5.95286
+ },
+ {
+  "round": 8,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 5.74763
+ },
+ {
+  "round": 8,
+  "file": "photo-16.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 5.74998
+ },
+ {
+  "round": 8,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 5.73573
+ },
+ {
+  "round": 8,
+  "file": "photo-16.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 5.73883
+ },
+ {
+  "round": 8,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "base",
+  "mean_ms": 0.2711
+ },
+ {
+  "round": 8,
+  "file": "texture-15.png.80.jpeg",
+  "tool": "new",
+  "mean_ms": 0.27089
+ },
+ {
+  "round": 8,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "new",
+  "mean_ms": 0.34466
+ },
+ {
+  "round": 8,
+  "file": "texture-15.png.90.jpeg",
+  "tool": "base",
+  "mean_ms": 0.34548
+ },
+ {
+  "round": 8,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "base",
+  "mean_ms": 0.42041
+ },
+ {
+  "round": 8,
+  "file": "texture-15.png.95.jpeg",
+  "tool": "new",
+  "mean_ms": 0.42077
+ },
+ {
+  "round": 8,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 54.25033
+ },
+ {
+  "round": 8,
+  "file": "texture-original-00.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 65.10547
+ },
+ {
+  "round": 8,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 88.14269
+ },
+ {
+  "round": 8,
+  "file": "texture-original-00.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 31.68298
+ },
+ {
+  "round": 8,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 31.67951
+ },
+ {
+  "round": 8,
+  "file": "texture-original-00.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 31.67968
+ },
+ {
+  "round": 8,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "base",
+  "mean_ms": 7.36137
+ },
+ {
+  "round": 8,
+  "file": "ui-text-original-01.jpg.80.jpeg",
+  "tool": "new",
+  "mean_ms": 6.0183
+ },
+ {
+  "round": 8,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "new",
+  "mean_ms": 7.06423
+ },
+ {
+  "round": 8,
+  "file": "ui-text-original-01.jpg.90.jpeg",
+  "tool": "base",
+  "mean_ms": 8.87188
+ },
+ {
+  "round": 8,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "base",
+  "mean_ms": 3.38321
+ },
+ {
+  "round": 8,
+  "file": "ui-text-original-01.jpg.95.jpeg",
+  "tool": "new",
+  "mean_ms": 3.38364
+ }
+]

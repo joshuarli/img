@@ -1,25 +1,105 @@
 {
-  "refreshed": "2026-11-19",
-  "platform": {"os": "macOS 27.2.1", "cpu": "Apple M1 (4P+4E), 8 GB", "cc": "Apple clang 21.0.0 (clang-2100.4.1.1)", "rustc": "1.102.0-nightly (5b7b37aef 2026-11-08)", "cmake": "4.4.5"},
+  "refreshed": "2026-11-20",
+  "platform": {
+    "os": "macOS 27.2.1",
+    "cpu": "Apple M1 (4P+4E), 8 GB",
+    "cc": "Apple clang 21.0.0 (clang-2100.4.1.1)",
+    "rustc": "1.102.0-nightly (5b7b37aef 2026-11-08)",
+    "cmake": "4.4.5"
+  },
   "baselines": {
-    "img": {"commit": "f0ceea6aae093ba50d747dca51737458257a2caf", "note": "frozen starting point B for this campaign; release profile"},
-    "zen-historical": {"commit": "rimage 5424df8", "crates": "zenjpeg 0.8.4, zenpng 0.1.4, zenavif 0.1.6", "sha256": "38a2d911f6bae232ac4b25e6fb283a22e349b35d1e827f0b4245f3d02307a9be", "license": "AGPL, benchmark only"}
+    "img": {
+      "commit": "f0ceea6aae093ba50d747dca51737458257a2caf",
+      "note": "frozen starting point B for this campaign; release profile"
+    },
+    "zen-historical": {
+      "commit": "rimage 5424df8",
+      "crates": "zenjpeg 0.8.4, zenpng 0.1.4, zenavif 0.1.6",
+      "sha256": "38a2d911f6bae232ac4b25e6fb283a22e349b35d1e827f0b4245f3d02307a9be",
+      "license": "AGPL, benchmark only"
+    }
   },
   "current": {
-    "zenjpeg": {"version": "0.8.4", "source": "crates.io (latest release; equals the historical pin)", "dispatch": "runtime (archmage), single thread", "use": "in-process decode harness"},
-    "zenpng": {"version": "0.1.4", "source": "crates.io latest release (equals historical pin)"},
-    "zenavif": {"version": "0.1.6 crates.io; GitHub tag v0.1.7 unpublished", "source": "crates.io"},
-    "libjpeg-turbo": {"version": "3.2.1", "tarball_sha256": "c27ad72a68da151177929aa969ae773a2da5ac2af9ce946079314fdac8cece7f", "build": "CMake Release, static, SIMD (NEON), no arithmetic coding", "use": "production decoder (patched) and stock reference"},
-    "zune-jpeg": {"version": "0.5.15", "variants": ["upstream crate", "img vendored nonzero-mask patch at f0ceea6"]},
-    "jpegli": {"version": "libjxl v0.11.1 794a5dcf (vendored, patched); standalone google/jpegli has no release tag", "note": "standalone google/jpegli pin pending"},
-    "mozjpeg": {"version": "v4.1.5 (benchmarks/codecs/jpeg/build.sh)", "latest_release": "v4.1.1 GitHub release; v4.1.5 tag"},
-    "oxipng": {"version": "10.2.1", "libdeflate": "1.26"},
-    "png": {"version": "0.18.1", "fdeflate": "0.3.7"},
-    "libspng": {"version": "v0.7.4", "note": "not yet built"},
-    "libpng": {"version": "1.7.0beta89 tag latest; 1.6.x stable", "note": "not yet built"},
-    "libavif": {"version": "1.4.2"},
-    "libaom": {"version": "3.13.1"},
-    "rav1d": {"version": "1.1.0", "note": "vendored with assembly"},
-    "dav1d": {"note": "version used by avif-candidates; fair harness pending"}
-  }
+    "zenjpeg": {
+      "version": "0.8.4",
+      "source": "crates.io (latest release; equals the historical pin)",
+      "dispatch": "runtime (archmage), single thread",
+      "use": "in-process decode harness"
+    },
+    "zenpng": {
+      "version": "0.1.4",
+      "source": "crates.io latest release (equals historical pin)"
+    },
+    "zenavif": {
+      "version": "0.1.6 crates.io; GitHub tag v0.1.7 unpublished",
+      "source": "crates.io"
+    },
+    "libjpeg-turbo": {
+      "version": "3.2.1",
+      "tarball_sha256": "c27ad72a68da151177929aa969ae773a2da5ac2af9ce946079314fdac8cece7f",
+      "build": "CMake Release, static, SIMD (NEON), no arithmetic coding",
+      "use": "production decoder (patched) and stock reference"
+    },
+    "zune-jpeg": {
+      "version": "0.5.15",
+      "variants": [
+        "upstream crate",
+        "img vendored nonzero-mask patch at f0ceea6"
+      ]
+    },
+    "jpegli": {
+      "version": "libjxl v0.11.1 794a5dcf (vendored in img, patched; latest libjxl release)",
+      "standalone": {
+        "repository": "https://github.com/google/jpegli",
+        "commit": "c7d342c25d3587ac0110c915989ad94f414b6c8d",
+        "commit_date": "2026-11-18",
+        "kind": "pinned current-main snapshot (no release tag exists)",
+        "build": "CMake Release, static, -DJPEGLI_ENABLE_BENCHMARK/DOXYGEN/MANPAGES/JNI/SJPEG/OPENEXR=OFF, bundled libpng; target cjpegli",
+        "submodules": {
+          "highway": "271a9a0ed9de1232d9117f1572c3fe28f8542ec1",
+          "libpng": "872555f4ba910252783af1507f9e7fe1653be252",
+          "zlib": "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf",
+          "skcms": "96d9171c94b937a1b5f0293de7309ac16311b722",
+          "lcms": "5176347635785e53ee5cee92328f76fda766ecc6",
+          "libjpeg-turbo": "8ecba3647edb6dd940463fedf38ca33a8e2a73d1"
+        }
+      }
+    },
+    "mozjpeg": {
+      "version": "v4.1.5 (benchmarks/codecs/jpeg/build.sh)",
+      "latest_release": "v4.1.1 GitHub release; v4.1.5 tag"
+    },
+    "oxipng": {
+      "version": "10.2.1",
+      "libdeflate": "1.26"
+    },
+    "png": {
+      "version": "0.18.1",
+      "fdeflate": "0.3.7"
+    },
+    "libspng": {
+      "version": "v0.7.4",
+      "note": "not yet built"
+    },
+    "libpng": {
+      "version": "1.7.0beta89 tag latest; 1.6.x stable",
+      "note": "not yet built"
+    },
+    "libavif": {
+      "version": "1.4.2"
+    },
+    "libaom": {
+      "version": "3.13.1"
+    },
+    "rav1d": {
+      "version": "1.1.0",
+      "note": "former production decoder (vendored with assembly until e7f01ac); now a historical baseline built from e7f01ac by benchmarks/codecs/avif/decode-build-rav1d-baseline.sh"
+    },
+    "dav1d": {
+      "version": "1.5.4 (191bdda98ec3c68137754dc97da1db34043d7cd4)",
+      "use": "production AV1 decoder since 2026-11-20 (vendored, cc build, assembly); upstream meson build is the decode reference R",
+      "latest_release": "1.5.5 tag; frozen at 1.5.4 for this milestone because 1.5.4 is the identity-qualified build"
+    }
+  },
+  "freeze": "Competitors are frozen at these pins through each milestone; refreshes happen between milestones and are recorded here."
 }
