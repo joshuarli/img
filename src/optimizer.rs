@@ -57,8 +57,7 @@ pub struct Request {
 impl Default for Request {
     fn default() -> Self { Self { operation: Operation::Optimize(FormatSelection::Source), fidelity: Fidelity::Score(ScoreTarget::default()), effort: Effort::Balanced, metadata: MetadataPolicy::Keep, max_dimension: None, scoring_memory: ReferenceMemory::Fast } }
 }
-/// One evaluated candidate setting, including unsuccessful or disqualified attempts.
-/// A setting whose quantized encoder control repeats an earlier one reuses that result with zero encode time.
+/// One actual encode attempt, including unsuccessful or disqualified attempts.
 #[derive(Clone, Debug)]
 pub struct Evaluation {
     /// Attempted output format.
@@ -144,9 +143,10 @@ fn refine_step(formats: &[Format], evaluations: &[Evaluation], settings: &mut Ve
         let pass = |q: f32| evaluations.iter().any(|e| e.format == f && e.quality == Some(q) && e.failure.is_none());
         let center = evaluations.iter().filter(|e|e.format==f && e.failure.is_none()).min_by_key(|e|e.bytes.unwrap_or(usize::MAX)).and_then(|e|e.quality).unwrap_or(75.0);
         let quantized = |q: f32| StillImage::quantized_quality(f, Quality::new(q).unwrap());
-        let resolvable = |lo: f32, hi: f32| if f == Format::Avif { quantized(lo).zip(quantized(hi)).is_some_and(|(a,b)| a.abs_diff(b) > 1) } else { hi-lo >= 0.5 };
+        let converges = matches!(f, Format::Avif | Format::Png);
+        let resolvable = |lo: f32, hi: f32| if converges { quantized(lo).zip(quantized(hi)).is_some_and(|(a,b)| a.abs_diff(b) > 1) } else { hi-lo >= 0.5 };
         let mut straddle: Vec<(f32,f32)> = qualities.windows(2).filter(|p|resolvable(p[0],p[1]) && pass(p[0]) != pass(p[1])).map(|p|(p[0],p[1])).collect();
-        if straddle.is_empty() && f == Format::Avif { continue; }
+        if straddle.is_empty() && converges { continue; }
         if straddle.is_empty() {
             let mut gaps: Vec<_> = qualities.windows(2).filter(|p|p[1]-p[0]>=0.5).map(|p|((p[0]+p[1])*0.5,((p[0]+p[1])*0.5-center).abs())).collect();
             gaps.sort_by(|a,b|a.1.total_cmp(&b.1).then(a.0.total_cmp(&b.0)));
@@ -352,11 +352,6 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
             if deferred_at < deferred.len() { deferred_at+=1; let s=deferred[deferred_at-1]; break (s.0,s.1,true,None); }
             break 'eval;
         };
-        let quantized = |e: &Evaluation| e.sampling.is_none() && e.format == format && e.quality.zip(quality).is_some_and(|(a,b)| StillImage::quantized_quality(format,Quality::new(a).unwrap()).is_some_and(|n| Some(n) == StillImage::quantized_quality(format,Quality::new(b).unwrap())));
-        if !from_deferred && sampling.is_none() && let Some(previous) = evaluations.iter().find(|e| quantized(e)) {
-            evaluations.push(Evaluation { quality, encode_ms: 0.0, probe_ms: None, ..previous.clone() });
-            continue;
-        }
         let start=Instant::now();
         let incumbent = best.as_ref().map(|b| b.bytes.len());
         let deferred_lossless = from_deferred && format == Format::Webp && quality.is_none();
