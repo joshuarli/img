@@ -156,8 +156,16 @@ which measurement shows is below their actual peak (open, WebP lane). Results:
    distorted-side blurs: the scored workflow rose to 1.27× peak RSS (2.55× on a
    1.2 MP JPEG) and up to 2.3× CPU (`8412759`, change tier). Parallelism has to
    live inside the streamed path with bounded per-thread scratch.
-3. **JPEG decode vs stock libjpeg-turbo** (0.80× R): Huffman/AC-first and the
-   per-MCU dispatch on large progressive images.
+3. **JPEG decode vs stock libjpeg-turbo** (0.80× R): blocked at the decoder
+   frontier. The production decoder is libjpeg-turbo with the refinement patch;
+   a profile of img's own progressive output still puts 39% of samples in AC
+   refinement, 11% in AC-first and 9% in DC-first. Further identical-output
+   changes (single-block buffer dispatch, skipping all-zero correction
+   batches, scalar masks for narrow bands) measured 0.974× of master over 52
+   progressive fixtures in five gated rounds (2026-11-20), and were dropped.
+   Encoding img's output with jpegli progressive level 1 instead of 2 decodes
+   25–30% faster but costs 2.0% bytes on average (up to 9.4%), so it is not
+   taken. Reaching 0.80× needs a different decoder design, not tuning.
 4. **AVIF decode vs dav1d**: dav1d (BSD-2-Clause, C + assembly) is 9–10% faster
    than rav1d with lower RSS. A `cc`-built dav1d 1.5.5 (branch
    `perf/dav1d-decode`, parked) decodes identically to rav1d without assembly,
