@@ -7,6 +7,7 @@ This branch contains an operation-first CLI with breaking changes from 0.14.0.
 In `~/usr`, run `sh sync tools img` with `gh` authenticated for this private
 repository. Prereleases provide checksummed macOS ARM64 and static Linux
 ARM64/x86-64 binaries. See [installation and release verification](docs/RELEASE.md).
+To build from source and run the checks, see [setting up a development host](docs/DEVELOPMENT.md).
 
 Optimize a file at the default minimum SSIMULACRA2 score of 95:
 
