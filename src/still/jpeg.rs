@@ -17,6 +17,12 @@ pub(super) struct Structure {
 
 enum Position { Headers, Entropy, BetweenScans }
 
+/// Most scans a JPEG may contain. libjpeg-turbo decodes every scan over the whole frame with no bound of its own,
+/// so a 40-byte scan repeated in a 4096x4096 file costs about a millisecond of uninterruptible work each.
+/// libjpeg's default progressive script has 10 scans (6 for gray) and the sampled corpus tops out at 13, so
+/// 256 leaves a wide margin for custom scripts while bounding a 16 MP scan bomb to a fraction of a second.
+const MAX_SCANS: usize = 256;
+
 fn invalid() -> Error { Error::new(ErrorKind::Invalid,"invalid or truncated JPEG marker stream") }
 
 pub(super) fn structure(bytes: &[u8]) -> Result<Structure, Error> {
@@ -24,6 +30,7 @@ pub(super) fn structure(bytes: &[u8]) -> Result<Structure, Error> {
     let mut result=Structure {auxiliary:false,hdr:false,late_metadata:false,icc:false,exif:false,xmp:false,orientation:None,end:0,precision:0,components:0,width:0,height:0};
     let mut position=Position::Headers;
     let mut at=2;
+    let mut scans=0usize;
     loop {
         if matches!(position,Position::Entropy) {
             at+=bytes.get(at..).ok_or_else(invalid)?.iter().position(|&byte|byte==255).ok_or_else(invalid)?;
@@ -71,7 +78,11 @@ pub(super) fn structure(bytes: &[u8]) -> Result<Structure, Error> {
             }
         }
         at=end;
-        if marker==0xDA {position=Position::Entropy;}
+        if marker==0xDA {
+            scans+=1;
+            if scans>MAX_SCANS {return Err(Error::new(ErrorKind::Limit,format!("JPEG has more than {MAX_SCANS} scans")));}
+            position=Position::Entropy;
+        }
     }
 }
 
@@ -103,7 +114,10 @@ pub(super) fn decode(bytes: &[u8], stop: &crate::cancellation::Cancellation, str
         return Err(super::Error::new(super::ErrorKind::Limit, "decoded metadata exceeds 8 MiB"));
     }
     let max_memory = super::limits().max_memory_bytes.unwrap_or(super::IMAGE_MEMORY_BYTES) as usize;
-    let samples = libjpeg_turbo_sys::decode(bytes, structure.width, structure.height, gray, max_memory).map_err(|e| super::Error::new(super::ErrorKind::Invalid, e))?;
+    let samples = libjpeg_turbo_sys::decode(bytes, structure.width, structure.height, gray, max_memory, &|| stop.is_cancelled()).map_err(|failure| match failure {
+        libjpeg_turbo_sys::Failure::Invalid(message) => super::Error::new(super::ErrorKind::Invalid, message),
+        libjpeg_turbo_sys::Failure::Cancelled => super::Error::new(super::ErrorKind::Invalid, "operation cancelled"),
+    })?;
     let mut image = StillImage::from_samples(structure.width, structure.height, layout, samples)?;
     image.format = Format::Jpeg;
     image.info.format = zencodec::ImageFormat::Jpeg;

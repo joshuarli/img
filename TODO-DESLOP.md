@@ -65,15 +65,6 @@ Step 2, Diagnose, done: reviewed decode of untrusted input (dimension and alloca
 - **Fix with:** deslop
 - **Effort:** M
 
-### DSLP-10 · P2 · Progressive JPEG scan count is unbounded: 40 bytes of input cost 1 ms of uninterruptible decode
-
-- **Area:** decode · jpeg
-- **Where:** src/still/jpeg.rs structure and decode; codecs/libjpeg-turbo-sys/shim.c img_turbo_decode; docs/CLI.md cancellation
-- **Problem:** structure() walks every marker but never counts scans, and libjpeg-turbo decodes each one over the whole image. Reproduced on a debug build of a180d19 with a hand-built 4096x4096 grayscale progressive JPEG (one DC scan, then N repeated 40-byte AC scans that each code 16 end-of-band runs, all legal, no warning): N=1 (32,948 bytes) converts in 1.20 s; N=200 (40,908 bytes) 1.37 s; N=20,000 (832,908 bytes) 16.9 s, so about 0.8 ms of CPU per 40-byte scan at constant 100 MB RSS. Extrapolated to the 128 MiB input cap this is roughly 3.3 million scans, on the order of 45 minutes of one core per image (extrapolation, not measured). Cancellation does not help: SIGTERM sent 3 s into the N=20,000 decode exited after 15 s (exit 143), because jpeg::decode checks the stop flag only before libjpeg runs, although docs/CLI.md says signals cancel and join workers and lists only the AV1 and PNG writer as uninterruptible. A sample of 13 corpus and generated JPEGs has at most 13 scans.
-- **Recommendation:** Count SOS markers in structure() and refuse a stream with more scans than a bound set from the corpus and from jpegli and libjpeg progressive scripts (start near 64 and measure), returning Unsupported or Limit before any decode. Optionally add a progress_mgr callback in shim.c that polls the cancellation flag per scan and per row batch, and document JPEG decode in the CLI cancellation paragraph either way. Add a test that builds the scan bomb from the recipe in this ticket (progressive gray JPEG, repeated AC first scans of end-of-band runs) and asserts a fast refusal, and keep tests/jpeg_codec.rs and the benchmark corpus decoding unchanged.
-- **Fix with:** security
-- **Effort:** S
-
 ### DSLP-12 · P2 · Linux x86_64 musl CI cannot link dav1d-sys assembly
 
 - **Area:** build · CI
