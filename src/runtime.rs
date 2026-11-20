@@ -235,9 +235,11 @@ fn read(job:&Job,in_place:bool)->Result<(Vec<u8>,Option<InputSource>),Failure> {
 fn details(header:&still::Description)->Value {json!({"width":header.width,"height":header.height,"bitDepth":header.bit_depth,"alpha":header.alpha,"grayscale":header.grayscale,"icc":header.icc,"cicp":header.cicp,"orientation":header.orientation,"animation":header.animation,"grid":header.grid,"rotationCcwDegrees":header.rotation_ccw_degrees,"mirrorAxis":header.mirror_axis,"pixelAspectRatio":header.pixel_aspect_ratio,"hdrMetadata":header.hdr_metadata,"exif":header.exif,"xmp":header.xmp})}
 /// Working memory admitted for one image. Lossless work is bounded by the
 /// decoded samples (measured peaks: 36-71 bytes per pixel for RGB8 and Gray8
-/// PNG); scored and quality work keeps the 256 bytes per pixel that covers
-/// SSIMULACRA2's float pyramids (measured 187-220 for JPEG, PNG palette and
-/// AVIF). WebP and automatic format selection keep the original reservation.
+/// PNG); scored and quality work reserves 160 bytes per pixel, 1.25 times the
+/// measured peaks for planar SSIMULACRA2 scoring (99-129 for JPEG, PNG palette
+/// and AVIF at 3-8 MP). WebP and automatic format selection keep the original
+/// reservation.
+const SCORED_BYTES_PER_PIXEL:u64=160;
 fn reservation(header:&still::Description,input:usize,lossless:bool,legacy:bool)->u64 {
     let pixels=u64::from(header.width).saturating_mul(u64::from(header.height));
     let input=input as u64;
@@ -247,7 +249,7 @@ fn reservation(header:&still::Description,input:usize,lossless:bool,legacy:bool)
         let channels=u64::from(if header.grayscale==Some(true) {1u8} else {3})+u64::from(header.alpha);
         let sample=if header.bit_depth.unwrap_or(8)>8 {2} else {1};
         pixels.saturating_mul(48).saturating_add(pixels.saturating_mul(channels*sample*24)).saturating_add(headroom)
-    } else {pixels.saturating_mul(256).saturating_add(headroom)}
+    } else {pixels.saturating_mul(SCORED_BYTES_PER_PIXEL).saturating_add(headroom)}
 }
 /// Bytes of working memory shared by concurrently processed images.
 struct MemoryBudget {total:u64,free:Mutex<u64>,released:Condvar}
@@ -310,7 +312,7 @@ fn compare(jobs:&[Job],budget:u64)->Result<Completed,Failure> {
     let reference_header=still::describe(&original).map_err(|e|Failure::new(&reference.input,None,"input.decode",e,3))?;
     let candidate_header=still::describe(&encoded).map_err(|e|Failure::new(&candidate.input,None,"input.decode",e,3))?;
     let area=|header:&still::Description|u64::from(header.width).saturating_mul(u64::from(header.height));
-    let reservation=area(&reference_header).saturating_add(area(&candidate_header)).saturating_mul(256).saturating_add(original.len() as u64).saturating_add(encoded.len() as u64);
+    let reservation=area(&reference_header).saturating_add(area(&candidate_header)).saturating_mul(SCORED_BYTES_PER_PIXEL).saturating_add(original.len() as u64).saturating_add(encoded.len() as u64);
     if reservation>budget {return Err(Failure::new(&candidate.input,None,"input.limit","comparison exceeds memory budget",3));}
     let dimensions=|header:&still::Description|if header.orientation>=5 {(header.height,header.width)} else {(header.width,header.height)};
     if dimensions(&reference_header)!=dimensions(&candidate_header) {return Err(Failure::new(&candidate.input,None,"input.score","score dimensions differ",3));}
