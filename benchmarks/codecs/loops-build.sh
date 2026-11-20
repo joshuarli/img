@@ -17,6 +17,9 @@ path = "$root/benchmarks/codecs/score/score-loop.rs"
 [[bin]]
 name = "png-encode-loop"
 path = "$root/benchmarks/codecs/png/encode-loop.rs"
+[[bin]]
+name = "memory-phases"
+path = "$root/benchmarks/codecs/memory/phases.rs"
 [dependencies]
 img = { path = "$src" }
 [patch.crates-io]

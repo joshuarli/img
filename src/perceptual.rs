@@ -1,6 +1,6 @@
 //! SSIMULACRA2 scoring of actual encoded candidates against a cached reference.
 
-use crate::still::{Error, ErrorKind, PreparedImage, StillImage};
+use crate::still::{Error, ErrorKind, PreparedPlanes, StillImage};
 use fast_ssim2::Ssimulacra2Reference;
 
 /// Finite requested score in the inclusive range zero through one hundred.
@@ -22,28 +22,31 @@ impl Default for ScoreTarget {
 }
 
 enum MetricReferences {
-    Tiny,
+    Tiny([Vec<f32>; 3]),
     Opaque(Ssimulacra2Reference),
     Alpha { black: Ssimulacra2Reference, white: Ssimulacra2Reference },
 }
 
 /// A prepared reference and its owned metric pyramids, reused for each candidate.
 pub struct PerceptualReference {
-    pixels: PreparedImage,
+    width: u32,
+    height: u32,
+    alpha: Option<Vec<u8>>,
     metric: MetricReferences,
     stop: crate::cancellation::Cancellation,
 }
 
-fn pixels<'a>(rgb: &'a [[f32; 3]], width: u32, height: u32) -> Result<zenpixels::PixelSlice<'a>, Error> {
-    zenpixels::PixelSlice::new(bytemuck::cast_slice(rgb), width, height, width as usize * 12, zenpixels::PixelDescriptor::RGBF32_LINEAR)
-        .map_err(|e| Error::caused(ErrorKind::Score, e))
+fn composited(planes: &[Vec<f32>; 3], alpha: &[u8], background: f32) -> [Vec<f32>; 3] {
+    std::array::from_fn(|c| planes[c].iter().zip(alpha).map(|(&value, &a)| over(value, a, background)).collect())
 }
 
-fn composite(image: &PreparedImage, background: f32) -> Vec<[f32; 3]> {
-    image.rgb.iter().zip(&image.alpha).map(|(rgb, &a)| {
-        let alpha = a as f32 / 255.0;
-        rgb.map(|value| value * alpha + background * (1.0 - alpha))
-    }).collect()
+fn composite_in_place(planes: &mut [Vec<f32>; 3], alpha: &[u8], background: f32) {
+    for plane in planes { for (value, &a) in plane.iter_mut().zip(alpha) { *value = over(*value, a, background); } }
+}
+
+fn over(value: f32, a: u8, background: f32) -> f32 {
+    let alpha = a as f32 / 255.0;
+    value * alpha + background * (1.0 - alpha)
 }
 
 impl PerceptualReference {
@@ -52,22 +55,16 @@ impl PerceptualReference {
 
     pub(crate) fn new_cancellable(image: &StillImage, stop: &crate::cancellation::Cancellation) -> Result<Self, Error> {
         let mut config=fast_ssim2::Ssimulacra2Config::default();config.stop=Some(stop);
-        let image = image.prepare()?;
-        let (width, height) = image.dimensions();
-        let metric = if width < 8 || height < 8 { MetricReferences::Tiny }
-        else if image.alpha.iter().all(|&a| a == 255) {
-            MetricReferences::Opaque(Ssimulacra2Reference::new_with_config(&pixels(&image.rgb, width, height)?,&config)
-                .map_err(|e| Error::caused(ErrorKind::Score, e))?)
-        } else {
-            let black = composite(&image, 0.0);
-            let black = Ssimulacra2Reference::new_with_config(&pixels(&black, width, height)?,&config)
-                .map_err(|e| Error::caused(ErrorKind::Score, e))?;
-            let white = composite(&image, 1.0);
-            let white = Ssimulacra2Reference::new_with_config(&pixels(&white, width, height)?,&config)
-                .map_err(|e| Error::caused(ErrorKind::Score, e))?;
-            MetricReferences::Alpha { black, white }
-        };
-        Ok(Self { pixels: image, metric, stop:stop.clone() })
+        let PreparedPlanes { width, height, mut planes, alpha } = image.prepare_planar()?;
+        let (w, h) = (width as usize, height as usize);
+        let reference = |planes| Ssimulacra2Reference::from_linear_planes(planes, w, h, &config).map_err(|e| Error::caused(ErrorKind::Score, e));
+        let metric = if width < 8 || height < 8 { MetricReferences::Tiny(planes) }
+        else if let Some(alpha) = &alpha {
+            let black = reference(composited(&planes, alpha, 0.0))?;
+            composite_in_place(&mut planes, alpha, 1.0);
+            MetricReferences::Alpha { black, white: reference(planes)? }
+        } else { MetricReferences::Opaque(reference(planes)?) };
+        Ok(Self { width, height, alpha, metric, stop:stop.clone() })
     }
 
     /// Decode and score actual candidate bytes. Alpha must match exactly.
@@ -75,27 +72,23 @@ impl PerceptualReference {
         self.score_decoded(&StillImage::decode_cancellable(bytes,&self.stop)?)
     }
 
+    /// Score a decoded candidate. Identical prepared pixels score exactly 100.
     pub(crate) fn score_decoded(&self, decoded: &StillImage) -> Result<f64, Error> {
-        self.score_prepared(&decoded.prepare()?)
-    }
-
-    fn score_prepared(&self, candidate: &PreparedImage) -> Result<f64, Error> {
-        if self.pixels.dimensions() != candidate.dimensions() { return Err(Error::new(ErrorKind::Score, "score dimensions differ")); }
-        if self.pixels.alpha != candidate.alpha { return Err(Error::new(ErrorKind::Score, "decoded alpha differs from reference")); }
-        if self.pixels.rgb == candidate.rgb { return Ok(100.0); }
-        let (width, height) = self.pixels.dimensions();
+        let PreparedPlanes { width, height, mut planes, alpha } = decoded.prepare_planar()?;
+        if (self.width, self.height) != (width, height) { return Err(Error::new(ErrorKind::Score, "score dimensions differ")); }
+        if self.alpha != alpha { return Err(Error::new(ErrorKind::Score, "decoded alpha differs from reference")); }
+        let (w, h) = (width as usize, height as usize);
         let mut config=fast_ssim2::Ssimulacra2Config::default();config.stop=Some(&self.stop);
+        let compare = |reference: &Ssimulacra2Reference, planes| reference.compare_linear_planes(planes, w, h, &config).map_err(|e| Error::caused(ErrorKind::Score, e));
         let score = match &self.metric {
-            MetricReferences::Tiny => return Err(Error::new(ErrorKind::Unsupported, "nonidentical images below the metric's eight-pixel floor cannot be scored")),
-            MetricReferences::Opaque(reference) => reference.compare_with_config(&pixels(&candidate.rgb, width, height)?,&config)
-                .map_err(|e| Error::caused(ErrorKind::Score, e))?,
+            MetricReferences::Tiny(reference) => if *reference == planes { return Ok(100.0) }
+                else { return Err(Error::new(ErrorKind::Unsupported, "nonidentical images below the metric's eight-pixel floor cannot be scored")) },
+            MetricReferences::Opaque(reference) => compare(reference, planes)?,
             MetricReferences::Alpha { black, white } => {
-                let black_pixels = composite(candidate, 0.0);
-                let black = black.compare_with_config(&pixels(&black_pixels, width, height)?,&config).map_err(|e| Error::caused(ErrorKind::Score, e))?;
-                drop(black_pixels);
-                let white_pixels = composite(candidate, 1.0);
-                let white = white.compare_with_config(&pixels(&white_pixels, width, height)?,&config).map_err(|e| Error::caused(ErrorKind::Score, e))?;
-                black.min(white)
+                let alpha = alpha.as_deref().unwrap_or_default();
+                let black = compare(black, composited(&planes, alpha, 0.0))?;
+                composite_in_place(&mut planes, alpha, 1.0);
+                black.min(compare(white, planes)?)
             },
         };
         if !score.is_finite() { return Err(Error::new(ErrorKind::Score, "metric returned a nonfinite score")); }

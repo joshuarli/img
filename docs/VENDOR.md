@@ -143,6 +143,11 @@ is compiled.
   holding three blur planes per scale instead of nine. The `rayon` path, unused
   by img, is unchanged and still compiles. Per-candidate scoring time fell to
   0.67–0.82× on Apple M1.
+- Local patch, `src/precompute.rs`: `Ssimulacra2Reference::from_linear_planes`
+  and `compare_linear_planes` take owned, opaque, linear BT.709 planes and pass
+  them straight to the existing scale walk. The slice API copies interleaved
+  input into planes and then clones them again; the planar entry points skip
+  both copies and are bit-identical to the slice path on the same samples.
 - Regeneration: unpack the published crate, reapply the patch with
   `git diff` from the vendoring commit, and confirm bit-identical scores with
   `benchmarks/codecs/score/build.sh` (`IMG_BASE` at an unpatched checkout) plus
