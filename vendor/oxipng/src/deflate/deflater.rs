@@ -4,8 +4,8 @@ use crate::{PngError, PngResult};
 
 /// At levels 5 and above, inputs of at least two chunks are compressed as
 /// fixed-size chunks, in parallel where available, each primed with the
-/// preceding 32 KiB window and joined by sync flushes. The chunk size, not the
-/// thread count, determines the output.
+/// preceding 32 KiB window and joined by sync flushes. The chunk size and input
+/// length, not the thread count, determine the output.
 const CHUNK: usize = 1 << 20;
 const WINDOW: usize = 1 << 15;
 
@@ -26,11 +26,19 @@ pub fn deflate(data: &[u8], level: u8, max_size: Option<usize>) -> PngResult<Vec
 }
 
 fn deflate_chunked(data: &[u8], level: u8, max_size: Option<usize>) -> PngResult<Vec<u8>> {
-    let count = data.len().div_ceil(CHUNK);
+    // libdeflate_deflate_compress_chunk rejects inputs of at most
+    // 55 - 4 * level bytes, so such a final remainder joins the preceding chunk.
+    let tail = data.len() % CHUNK;
+    let count = if tail != 0 && tail <= 55usize.saturating_sub(4 * usize::from(level)) {
+        data.len() / CHUNK
+    } else {
+        data.len().div_ceil(CHUNK)
+    };
     let compress = |index: usize| -> PngResult<Vec<u8>> {
         let start = index * CHUNK;
         let prefix = start.min(WINDOW);
-        let chunk = &data[start - prefix..data.len().min(start + CHUNK)];
+        let end = if index + 1 == count { data.len() } else { start + CHUNK };
+        let chunk = &data[start - prefix..end];
         let mut compressor = Compressor::new(CompressionLvl::new(level.into()).unwrap());
         let capacity = compressor.deflate_compress_bound(chunk.len() - prefix) + 6;
         let mut dest = vec![0; capacity];

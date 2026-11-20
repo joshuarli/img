@@ -54,8 +54,10 @@ is compiled.
   filtered image data of at least 2 MiB is compressed as 1 MiB chunks in
   parallel (rayon, serially without `parallel`), each primed with the
   preceding 32 KiB through `deflate_compress_chunk`, joined by sync flushes
-  into one zlib stream with the whole-input Adler-32. Output depends on the
-  chunk size, not on the thread count. On 98 development PNGs (gated, paired,
+  into one zlib stream with the whole-input Adler-32. A final remainder of at
+  most `55 - 4 * level` bytes, which `deflate_compress_chunk` rejects, joins the
+  preceding chunk. Output depends on the chunk size and input length, not on
+  the thread count. On 98 development PNGs (gated, paired,
   3 rounds) total encode time falls to 0.65x (fast), 0.49x (balanced) and
   0.49x (best) of the single-stream encoder, with total bytes +0.007%, -0.010%
   and +0.014%; the largest group change is best photo +0.06% (filter

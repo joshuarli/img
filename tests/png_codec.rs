@@ -221,3 +221,68 @@ fn multi_megabyte_lossless_png_is_exact_at_every_effort() {
         assert_eq!(image.encode(Format::Png, EncodingMode::Lossless, effort).unwrap(), bytes, "{effort:?} output is not reproducible");
     }
 }
+
+const DEFLATE_CHUNK: usize = 1 << 20;
+
+fn noise(len: usize, seed: u32) -> Vec<u8> {
+    let mut state = seed | 1;
+    (0..len).map(|i| {
+        state ^= state << 13; state ^= state >> 17; state ^= state << 5;
+        if (i >> 12) % 3 == 0 { (i % 97) as u8 } else { (state >> 24) as u8 }
+    }).collect()
+}
+
+#[test]
+fn chunked_deflate_accepts_short_final_tails_at_every_chunked_level() {
+    for level in 5u8..=12 {
+        let passthrough = 55 - 4 * level as usize;
+        for chunks in [2, 3] {
+            for tail in [0, 1, 6, passthrough, passthrough + 1, 64] {
+                let data = noise(chunks * DEFLATE_CHUNK + tail, 0x9e37_79b9 ^ tail as u32);
+                let compressed = oxipng::internal_tests::deflate(&data, level, None)
+                    .unwrap_or_else(|e| panic!("level {level}, {chunks} chunks + {tail}: {e}"));
+                let inflated = fdeflate::decompress_to_vec(&compressed)
+                    .unwrap_or_else(|e| panic!("level {level}, {chunks} chunks + {tail}: {e:?}"));
+                assert!(inflated == data, "level {level}, {chunks} chunks + {tail} did not round-trip");
+            }
+        }
+    }
+}
+
+#[test]
+fn nonreducible_png_with_a_short_final_deflate_chunk_is_exact_at_every_effort() {
+    // Filtered size (1 + width * bytes per pixel) * height lands just past a chunk boundary.
+    for (layout, width, height, tail) in [
+        (SampleLayout::Rgb8, 2144, 326, 6),
+        (SampleLayout::Gray8, 16256, 129, 1),
+        (SampleLayout::Rgba8, 109, 4799, 11),
+        (SampleLayout::Rgba8, 732, 716, 12),
+        (SampleLayout::Rgb16, 469, 745, 23),
+        (SampleLayout::Rgb8, 10280, 68, 36),
+    ] {
+        let channels = match layout { SampleLayout::Gray8 => 1, SampleLayout::Rgba8 => 4, _ => 3 };
+        let sample_bytes = if layout == SampleLayout::Rgb16 { 2 } else { 1 };
+        let filtered = (1 + width * channels * sample_bytes) * height;
+        assert_eq!(filtered % DEFLATE_CHUNK, tail, "{layout:?} {width}x{height}");
+        let mut state = 0x2545_f491u32 ^ tail as u32;
+        let samples: Vec<u8> = (0..width * height * channels * sample_bytes).map(|_| {
+            state ^= state << 13; state ^= state >> 17; state ^= state << 5;
+            (state >> 24) as u8
+        }).collect();
+        let image = StillImage::from_samples(width as u32, height as u32, layout, samples).unwrap();
+        for effort in [Effort::Fast, Effort::Balanced, Effort::Best] {
+            let bytes = image.encode(Format::Png, EncodingMode::Lossless, effort)
+                .unwrap_or_else(|e| panic!("{layout:?} {width}x{height} {effort:?}: {e}"));
+            let mut decoder = png::Decoder::new(Cursor::new(&bytes));
+            decoder.set_transformations(png::Transformations::IDENTITY);
+            let mut reader = decoder.read_info().unwrap();
+            let mut output = vec![0; reader.output_buffer_size().unwrap()];
+            let info = reader.next_frame(&mut output).unwrap();
+            assert_eq!(info.line_size * info.height as usize, width * channels * sample_bytes * height, "{layout:?} {effort:?} was reduced");
+            let expected: Vec<u8> = if sample_bytes == 2 {
+                image.samples().chunks_exact(2).flat_map(|s| u16::from_ne_bytes([s[0], s[1]]).to_be_bytes()).collect()
+            } else { image.samples().to_vec() };
+            assert!(output[..info.buffer_size()] == expected, "{layout:?} {width}x{height} {effort:?} is not exact");
+        }
+    }
+}
