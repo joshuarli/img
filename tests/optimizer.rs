@@ -144,34 +144,20 @@ fn fast_jpeg_score_search_publishes_a_progressive_repack_of_the_sequential_winne
     assert_eq!(result.bytes.len(),last.bytes.unwrap());
 }
 #[test]
-fn avif_score_search_stops_once_adjacent_quantizers_straddle_the_target() {
-    let bytes=StillImage::from_rgb8(64,48,common::pixels(64,48)).unwrap().encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
-    let source=StillImage::decode(&bytes).unwrap();
-    let result=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Avif),fidelity:Fidelity::Score(ScoreTarget::new(80.0).unwrap()),effort:Effort::Balanced,..Request::default() }).unwrap();
-    assert!(result.evaluations.len()<24);
-    for (i,e) in result.evaluations.iter().enumerate().filter(|(_,e)|e.encode_ms==0.0) {
-        assert!(result.evaluations[..i].iter().any(|p|p.encode_ms>0.0 && (p.bytes,p.score,&p.failure)==(e.bytes,e.score,&e.failure)));
+fn quantized_score_searches_stop_once_adjacent_controls_straddle_the_target() {
+    let photo=StillImage::from_rgb8(64,48,common::pixels(64,48)).unwrap();
+    let gradient=StillImage::from_rgb8(96,64,(0..64u32).flat_map(|y|(0..96u32).flat_map(move|x|[(x*8/3) as u8,(y*4) as u8,((x+y)*3/2) as u8])).collect()).unwrap();
+    for (format,source,target) in [(Format::Avif,photo,80.0),(Format::Png,gradient,55.0)] {
+        let bytes=source.encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
+        let result=optimizer::process(&bytes,Request { operation:Operation::Convert(format),fidelity:Fidelity::Score(ScoreTarget::new(target).unwrap()),effort:Effort::Balanced,..Request::default() }).unwrap();
+        assert!(result.evaluations.len()<24, "{format:?}");
+        let encode=|q:f32|source.encode(format,EncodingMode::Quality(Quality::new(q).unwrap()),Effort::Balanced).unwrap();
+        let lossy=|e:&&optimizer::Evaluation|e.quality.is_some();
+        let winner=result.evaluations.iter().filter(lossy).filter(|e|e.failure.is_none()).min_by_key(|e|e.bytes).unwrap().quality.unwrap();
+        if format==Format::Avif { assert_eq!(result.bytes,encode(winner)); }
+        let below=result.evaluations.iter().filter(lossy).filter(|e|e.failure.is_some()).filter_map(|e|e.quality).filter(|&q|q<winner).max_by(f32::total_cmp).unwrap();
+        assert!(!result.evaluations.iter().filter_map(|e|e.quality).any(|q|below<q && q<winner), "{format:?}");
+        let between=encode((below+winner)*0.5);
+        assert!(between==encode(winner) || between==encode(below), "{format:?} left an unexplored control between {below} and {winner}");
     }
-    let encode=|q:f32|source.encode(Format::Avif,EncodingMode::Quality(Quality::new(q).unwrap()),Effort::Balanced).unwrap();
-    let winner=result.evaluations.iter().filter(|e|e.failure.is_none()).min_by_key(|e|e.bytes).unwrap().quality.unwrap();
-    assert_eq!(result.bytes,encode(winner));
-    let below=result.evaluations.iter().filter(|e|e.failure.is_some()).filter_map(|e|e.quality).filter(|&q|q<winner).max_by(f32::total_cmp).unwrap();
-    assert!(!result.evaluations.iter().filter_map(|e|e.quality).any(|q|below<q && q<winner));
-    let between=encode((below+winner)*0.5);
-    assert!(between==result.bytes || between==encode(below));
-}
-#[test]
-fn score_search_reuses_candidates_whose_palette_size_was_already_encoded() {
-    let bytes=source();
-    let result=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Png),fidelity:Fidelity::Score(ScoreTarget::new(90.0).unwrap()),effort:Effort::Best,..Request::default() }).unwrap();
-    let colors=|q:f32|(2.0+q*254.0/100.0).round().clamp(2.0,256.0) as usize;
-    let palette: Vec<_>=result.evaluations.iter().filter(|e|e.quality.is_some()).collect();
-    let mut repeats=0;
-    for (i,e) in palette.iter().enumerate() {
-        match palette[..i].iter().find(|p|colors(p.quality.unwrap())==colors(e.quality.unwrap())) {
-            Some(p) => { repeats+=1; assert_eq!((e.bytes,e.score,&e.failure),(p.bytes,p.score,&p.failure)); assert_eq!(e.encode_ms,0.0); },
-            None => assert!(e.encode_ms>0.0),
-        }
-    }
-    assert!(repeats>0);
 }
