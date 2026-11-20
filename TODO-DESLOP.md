@@ -1,5 +1,5 @@
 Prefix: DSLP
-Next: 12
+Next: 13
 
 Deslop campaign backlog ([plan](https://github.com/laputa-systems/stuff/blob/main/docs/campaigns/deslop.md), tier C). One agent works this file with the `deslop` skill: take the lowest-numbered open ticket whose area does not start with `Needs owner ·`. After DSLP-5, work the open P1 and P2 findings, then fill in `## Report` below.
 
@@ -82,6 +82,15 @@ Step 2, Diagnose, done: reviewed decode of untrusted input (dimension and alloca
 - **Recommendation:** Count SOS markers in structure() and refuse a stream with more scans than a bound set from the corpus and from jpegli and libjpeg progressive scripts (start near 64 and measure), returning Unsupported or Limit before any decode. Optionally add a progress_mgr callback in shim.c that polls the cancellation flag per scan and per row batch, and document JPEG decode in the CLI cancellation paragraph either way. Add a test that builds the scan bomb from the recipe in this ticket (progressive gray JPEG, repeated AC first scans of end-of-band runs) and asserts a fast refusal, and keep tests/jpeg_codec.rs and the benchmark corpus decoding unchanged.
 - **Fix with:** security
 - **Effort:** S
+
+### DSLP-12 · P2 · Linux x86_64 musl CI cannot link dav1d-sys assembly
+
+- **Area:** build · CI
+- **Where:** .github/workflows/ci.yml Check and test (Linux x86_64-unknown-linux-musl); dav1d-sys build
+- **Problem:** The Linux x86_64 musl job fails on master and on every PR: linking the scratch-sweep example (and other targets) reports thousands of undefined dav1d assembly symbols (dav1d_*_avx2, *_ssse3, *_avx512icl, e.g. dav1d_blend_16bpc_ssse3) from libdav1d_sys rlib, so the x86_64 test suite never runs in CI. The aarch64 musl and macOS jobs pass. Run 44776303954 (PR #9) and the latest master run show the same failure.
+- **Recommendation:** Find why the dav1d-sys build on x86_64 musl compiles C that references the x86 assembly without assembling it (missing nasm in the CI image, or an asm feature mismatch), fix the build or image, and confirm the job runs the tests.
+- **Fix with:** root-cause
+- **Effort:** M
 
 ### DSLP-11 · P3 · JPEG pixel and dimension limits are checked after the decode has allocated
 
