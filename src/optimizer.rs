@@ -143,7 +143,10 @@ fn refine_step(formats: &[Format], evaluations: &[Evaluation], settings: &mut Ve
         qualities.sort_by(f32::total_cmp); qualities.dedup();
         let pass = |q: f32| evaluations.iter().any(|e| e.format == f && e.quality == Some(q) && e.failure.is_none());
         let center = evaluations.iter().filter(|e|e.format==f && e.failure.is_none()).min_by_key(|e|e.bytes.unwrap_or(usize::MAX)).and_then(|e|e.quality).unwrap_or(75.0);
-        let mut straddle: Vec<(f32,f32)> = qualities.windows(2).filter(|p|p[1]-p[0]>=0.5 && pass(p[0]) != pass(p[1])).map(|p|(p[0],p[1])).collect();
+        let quantized = |q: f32| StillImage::quantized_quality(f, Quality::new(q).unwrap());
+        let resolvable = |lo: f32, hi: f32| if f == Format::Avif { quantized(lo).zip(quantized(hi)).is_some_and(|(a,b)| a.abs_diff(b) > 1) } else { hi-lo >= 0.5 };
+        let mut straddle: Vec<(f32,f32)> = qualities.windows(2).filter(|p|resolvable(p[0],p[1]) && pass(p[0]) != pass(p[1])).map(|p|(p[0],p[1])).collect();
+        if straddle.is_empty() && f == Format::Avif { continue; }
         if straddle.is_empty() {
             let mut gaps: Vec<_> = qualities.windows(2).filter(|p|p[1]-p[0]>=0.5).map(|p|((p[0]+p[1])*0.5,((p[0]+p[1])*0.5-center).abs())).collect();
             gaps.sort_by(|a,b|a.1.total_cmp(&b.1).then(a.0.total_cmp(&b.0)));

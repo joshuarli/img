@@ -144,20 +144,34 @@ fn fast_jpeg_score_search_publishes_a_progressive_repack_of_the_sequential_winne
     assert_eq!(result.bytes.len(),last.bytes.unwrap());
 }
 #[test]
-fn score_search_reuses_candidates_whose_rounded_avif_quality_was_already_encoded() {
+fn avif_score_search_stops_once_adjacent_quantizers_straddle_the_target() {
     let bytes=StillImage::from_rgb8(64,48,common::pixels(64,48)).unwrap().encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
+    let source=StillImage::decode(&bytes).unwrap();
     let result=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Avif),fidelity:Fidelity::Score(ScoreTarget::new(80.0).unwrap()),effort:Effort::Balanced,..Request::default() }).unwrap();
-    assert_eq!(result.evaluations.len(),24);
-    let native=|q:f32|q.round().clamp(1.0,100.0) as u8;
+    assert!(result.evaluations.len()<24);
+    for (i,e) in result.evaluations.iter().enumerate().filter(|(_,e)|e.encode_ms==0.0) {
+        assert!(result.evaluations[..i].iter().any(|p|p.encode_ms>0.0 && (p.bytes,p.score,&p.failure)==(e.bytes,e.score,&e.failure)));
+    }
+    let encode=|q:f32|source.encode(Format::Avif,EncodingMode::Quality(Quality::new(q).unwrap()),Effort::Balanced).unwrap();
+    let winner=result.evaluations.iter().filter(|e|e.failure.is_none()).min_by_key(|e|e.bytes).unwrap().quality.unwrap();
+    assert_eq!(result.bytes,encode(winner));
+    let below=result.evaluations.iter().filter(|e|e.failure.is_some()).filter_map(|e|e.quality).filter(|&q|q<winner).max_by(f32::total_cmp).unwrap();
+    assert!(!result.evaluations.iter().filter_map(|e|e.quality).any(|q|below<q && q<winner));
+    let between=encode((below+winner)*0.5);
+    assert!(between==result.bytes || between==encode(below));
+}
+#[test]
+fn score_search_reuses_candidates_whose_palette_size_was_already_encoded() {
+    let bytes=source();
+    let result=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Png),fidelity:Fidelity::Score(ScoreTarget::new(90.0).unwrap()),effort:Effort::Best,..Request::default() }).unwrap();
+    let colors=|q:f32|(2.0+q*254.0/100.0).round().clamp(2.0,256.0) as usize;
+    let palette: Vec<_>=result.evaluations.iter().filter(|e|e.quality.is_some()).collect();
     let mut repeats=0;
-    for (i,e) in result.evaluations.iter().enumerate() {
-        match result.evaluations[..i].iter().find(|p|native(p.quality.unwrap())==native(e.quality.unwrap())) {
+    for (i,e) in palette.iter().enumerate() {
+        match palette[..i].iter().find(|p|colors(p.quality.unwrap())==colors(e.quality.unwrap())) {
             Some(p) => { repeats+=1; assert_eq!((e.bytes,e.score,&e.failure),(p.bytes,p.score,&p.failure)); assert_eq!(e.encode_ms,0.0); },
             None => assert!(e.encode_ms>0.0),
         }
     }
     assert!(repeats>0);
-    let winner=result.evaluations.iter().filter(|e|e.failure.is_none()).min_by_key(|e|e.bytes).unwrap();
-    let direct=StillImage::decode(&bytes).unwrap().encode(Format::Avif,EncodingMode::Quality(Quality::new(winner.quality.unwrap()).unwrap()),Effort::Balanced).unwrap();
-    assert_eq!(result.bytes,direct);
 }

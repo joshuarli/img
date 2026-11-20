@@ -215,6 +215,7 @@ struct av1_extracfg {
   int kf_max_pyr_height;
   int sb_qp_sweep;
   aom_screen_detection_mode screen_detection_mode;
+  unsigned int img_cq_qindex;
 };
 
 #if !CONFIG_REALTIME_ONLY
@@ -772,6 +773,7 @@ static aom_codec_err_t validate_config(aom_codec_alg_priv_t *ctx,
   RANGE_CHECK_HI(extra_cfg, arnr_max_frames, 15);
   RANGE_CHECK_HI(extra_cfg, arnr_strength, 6);
   RANGE_CHECK_HI(extra_cfg, cq_level, 63);
+  RANGE_CHECK_HI(extra_cfg, img_cq_qindex, 255);
   RANGE_CHECK(cfg, g_bit_depth, AOM_BITS_8, AOM_BITS_12);
   RANGE_CHECK(cfg, g_input_bit_depth, 8, 12);
   RANGE_CHECK(extra_cfg, content, AOM_CONTENT_DEFAULT, AOM_CONTENT_INVALID - 1);
@@ -1197,7 +1199,9 @@ static void set_encoder_config(AV1EncoderConfig *oxcf,
       extra_cfg->lossless ? 0 : av1_quantizer_to_qindex(cfg->rc_min_quantizer);
   rc_cfg->worst_allowed_q =
       extra_cfg->lossless ? 0 : av1_quantizer_to_qindex(cfg->rc_max_quantizer);
-  rc_cfg->cq_level = av1_quantizer_to_qindex(extra_cfg->cq_level);
+  rc_cfg->cq_level = extra_cfg->img_cq_qindex
+                         ? (int)extra_cfg->img_cq_qindex
+                         : av1_quantizer_to_qindex(extra_cfg->cq_level);
   rc_cfg->under_shoot_pct = cfg->rc_undershoot_pct;
   rc_cfg->over_shoot_pct = cfg->rc_overshoot_pct;
   rc_cfg->maximum_buffer_size_ms = cfg->rc_buf_sz;
@@ -1756,6 +1760,13 @@ static aom_codec_err_t ctrl_set_enable_adaptive_sharpness(
   struct av1_extracfg extra_cfg = ctx->extra_cfg;
   extra_cfg.enable_adaptive_sharpness =
       CAST(AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS, args);
+  return update_extra_cfg(ctx, &extra_cfg);
+}
+
+static aom_codec_err_t ctrl_set_img_cq_qindex(aom_codec_alg_priv_t *ctx,
+                                              va_list args) {
+  struct av1_extracfg extra_cfg = ctx->extra_cfg;
+  extra_cfg.img_cq_qindex = CAST(AV1E_SET_IMG_CQ_QINDEX, args);
   return update_extra_cfg(ctx, &extra_cfg);
 }
 
@@ -4865,6 +4876,7 @@ static aom_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { AV1E_SET_SCREEN_CONTENT_DETECTION_MODE,
     ctrl_set_screen_content_detection_mode },
   { AV1E_SET_ENABLE_ADAPTIVE_SHARPNESS, ctrl_set_enable_adaptive_sharpness },
+  { AV1E_SET_IMG_CQ_QINDEX, ctrl_set_img_cq_qindex },
 
   // Getters
   { AOME_GET_LAST_QUANTIZER, ctrl_get_quantizer },
