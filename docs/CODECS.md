@@ -230,10 +230,16 @@ hypothesis. Failed experiments are not repeated without new evidence.
    parse for matchfinder work repeated across the filter trials.
 2. **Streamed scoring parallelism.** fast-ssim2's `rayon` feature cut per-score time to
    0.84× but materialized full planes: workflow peak RSS 1.27× (2.55× on a 1.2 MP JPEG)
-   and CPU up to 2.3× (`8412759`). Next: split each scale into horizontal bands with
-   per-band streamed blur state and halo rows, keep per-row partial sums and add them
-   in the existing order so scores stay bit-identical, and bound scratch to
-   bands × band height. Accept only on the complete workflow (wall, CPU, peak RSS).
+   and CPU up to 2.3× (`8412759`). **Adopted (2026-11-20):** the three XYB channels'
+   streamed blurs and sums are independent, so above 1 MP they run on the shared rayon
+   pool with unchanged recurrences and summation order (bit-identical; identity test in
+   `tests/score_planar.rs`). Per-score 0.83× at 1.2 MP to 0.58× at 7.3 MP, RSS within 1%.
+   Scored workflow, 18 dev cases, 5 gated rounds against `77eb60a`
+   ([run](../benchmarks/results/codecs/score/parallel-channels-workflow-2026-11-20.json)):
+   wall 0.910× [0.857, 0.965], CPU 1.010×, RSS 1.001×, outputs identical; JPEG 0.82×,
+   AVIF 0.96×. The IIR vertical blur rules out row bands with halos. Next: split each
+   channel into column stripes in row blocks of bounded height, summing each block
+   serially in the existing order, to go past three-way parallelism.
 3. **JPEG decode vs stock libjpeg-turbo** (stretch 0.80× R). Adoption is met: the
    production decoder is libjpeg-turbo 3.2.1 with a refinement patch, at 0.90× R on
    jpegli progressive and 1.00× on baseline. Tried: single-block buffer dispatch,
