@@ -77,5 +77,21 @@ class Guards(unittest.TestCase):
         self.assertEqual(before, after)
 
 
+
+sys.path.insert(0, str(ROOT / 'benchmarks/codecs'))
+import verdict
+
+
+class Budgets(unittest.TestCase):
+    def test_ci_relative_to_budget_decides_status(self):
+        self.assertEqual(verdict.judge('wall', [(str(i), 0.9 + i * 0.001) for i in range(10)])['status'], 'within')
+        self.assertEqual(verdict.judge('wall', [(str(i), 1.2 + i * 0.001) for i in range(10)])['status'], 'regression')
+        self.assertEqual(verdict.judge('wall', [('a', 0.8), ('b', 1.3), ('c', 0.95), ('d', 1.25)])['status'], 'inconclusive')
+
+    def test_single_cases_over_the_per_case_limit_are_listed(self):
+        v = verdict.judge('bytes', [('fine', 1.0), ('bad', 1.2)])
+        self.assertEqual(v['cases_over'], [('bad', 1.2)])
+
+
 if __name__ == '__main__':
     unittest.main()

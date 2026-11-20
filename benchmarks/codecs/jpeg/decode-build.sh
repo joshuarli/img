@@ -1,8 +1,8 @@
 #!/bin/sh
 # Builds the in-process JPEG decode harness; IMG_BASE=<checkout> also builds an img-only baseline.
 set -eu
-scratch=${JPEG_SCRATCH:-/Users/josh/d/img/.work/tmp/jpeg-candidates}
 root=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
+scratch=${JPEG_SCRATCH:-$root/.work/tmp/jpeg-candidates}
 decode_loop() {
   name=$1 img=$2 features=$3
   mkdir -p "$scratch/$name"
@@ -51,7 +51,7 @@ fn main() {
 }
 EOF5
   cp "$img/Cargo.lock" "$scratch/$name/Cargo.lock"
-  cargo build --offline --release -j4 --manifest-path "$scratch/$name/Cargo.toml" --target-dir "$scratch/$name-target" --features "$features"
+  cargo build --release -j4 --manifest-path "$scratch/$name/Cargo.toml" --target-dir "$scratch/$name-target" --features "$features"
 }
 decode_loop decode-loop "$root" direct
 if [ -n "${IMG_BASE:-}" ]; then decode_loop decode-loop-base "$IMG_BASE" ""; fi

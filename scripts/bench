@@ -5,6 +5,7 @@ scripts/bench list
 scripts/bench check [SELECTORS]
 scripts/bench build [--base REV]
 scripts/bench run [SELECTORS] [--dry-run] [--confirm-full]
+scripts/bench profile [--binary new|base] [--base REV] -- IMG ARGS...
 
 SELECTORS: --tier edit|change|scenario|full (ceiling, default change), --only NAME,...,
 --area AREA,..., --skip NAME,..., --base REV (default origin/master)."""
@@ -27,9 +28,9 @@ SET_PICKS['scenario'] = SET_PICKS['smoke'] + [
     ('photo', 'jpeg', 'large', {}), ('photo', 'jpeg', 'xlarge', {}), ('grayscale', 'jpeg', 'large', {}),
     ('texture', 'jpeg', 'xlarge', {}), ('ui-text', 'jpeg', 'medium', {}), ('synthetic', 'png', 'icon', {'alpha': True}),
     ('synthetic', 'png', 'medium', {'bit_depth': 16})]
-JPEG_SCRATCH = pathlib.Path(os.environ.get('JPEG_SCRATCH', SHARED / '.work/tmp/jpeg-candidates'))
-AVIF_SCRATCH = pathlib.Path(os.environ.get('AVIF_SCRATCH', SHARED / '.work/tmp/avif-candidates'))
-PNG_QUALIFY = SHARED / '.work/tmp/png-qualify'
+DECODE = WORK / 'decode'
+JPEG_SCRATCH, AVIF_SCRATCH, PNG_QUALIFY = DECODE / 'jpeg', DECODE / 'avif', DECODE / 'png'
+LOOPS = WORK / 'loops'
 
 
 def corpus_set(name):
@@ -72,26 +73,28 @@ def batch_command(ctx, level, out):
 BATCH_LEVELS = {'change': ('dev', 1, ['lossless'], [4]), 'scenario': ('dev', 3, ['lossless', 'jpeg90'], [1, 4])}
 
 
+def loops(ctx):
+    return ({'IMG_BASE': str(base_tree(ctx)), 'LOOPS_SCRATCH': str(LOOPS)}, ['sh', str(ROOT / 'benchmarks/codecs/loops-build.sh')])
+
+
 def score_exact(ctx, level, out):
-    tree, bench = base_tree(ctx), WORK / 'score-loops'
     sources = {s['file']: s for s in json.loads(MANIFEST.read_text())['sources']}
-    files = ' '.join(f'{f}:{"webp" if sources[f]["alpha"] else "jpeg"}' for f in corpus_set('smoke'))
-    script = f'''set -eu
-IMG_BASE="{tree}" SCORE_SCRATCH="{bench}" sh "{ROOT}/benchmarks/codecs/score/build.sh" >/dev/null
-for spec in {files}; do
-  f=${{spec%:*}} format=${{spec#*:}}
-  "{base_bin(ctx)}" convert "{CORPUS}/$f" -o "{out}/$f.$format" --format $format --quality 80 --quiet
-  a=$("{bench}/target-base/release/score-loop-base" 300 "{CORPUS}/$f" "{out}/$f.$format")
-  b=$("{bench}/target-img/release/score-loop-img" 300 "{CORPUS}/$f" "{out}/$f.$format")
-  printf '%s\\n%s\\n' "base $a" "new $b" >> "{out}/scores.tsv"
-  [ "$(printf %s "$a" | cut -f2)" = "$(printf %s "$b" | cut -f2)" ] || {{ echo "score differs: $f"; exit 1; }}
-  echo "$f same score; per-score ms base $(printf %s "$a" | cut -f3) new $(printf %s "$b" | cut -f3)"
-done'''
-    return [({}, ['sh', '-c', script])]
+    specs = [f'{f}:{"webp" if sources[f]["alpha"] else "jpeg"}' for f in corpus_set('smoke')]
+    return [loops(ctx), ({}, py('benchmarks/codecs/score/score-exact.py', out, base_bin(ctx), LOOPS / 'target-img/release/score-loop',
+                                 LOOPS / 'target-base/release/score-loop', CORPUS, *specs))]
+
+
+def png_encode(ctx, level, out):
+    files, rounds = {'change': ('smoke', 1), 'scenario': ('scenario', 5)}[level]
+    pngs = [CORPUS / f for f in corpus_set(files) if f.endswith('.png')]
+    return [loops(ctx), ({}, py('benchmarks/codecs/png/encode-paired.py', out / 'run.json', rounds, f'new={LOOPS}/target-img/release/png-encode-loop',
+                                 f'base={LOOPS}/target-base/release/png-encode-loop', '--', *pngs)),
+            ({}, py('benchmarks/codecs/png/encode-report.py', out / 'run.json', 'new', 'base'))]
 
 
 def decode_jpeg(ctx, level, out):
-    return [({}, py('benchmarks/codecs/jpeg/decode-qualify.py', JPEG_SCRATCH / 'decode-fixtures', out / 'run.json', 9,
+    return [({'JPEG_SCRATCH': str(JPEG_SCRATCH), 'IMG_BASE': str(base_tree(ctx))}, ['sh', str(ROOT / 'benchmarks/codecs/jpeg/decode-build.sh')]),
+            ({}, py('benchmarks/codecs/jpeg/decode-qualify.py', JPEG_SCRATCH / 'fixtures', out / 'run.json', 9,
                     f'new={JPEG_SCRATCH}/decode-loop-target/release/jpeg-decode-loop:img',
                     f'base={JPEG_SCRATCH}/decode-loop-base-target/release/jpeg-decode-loop:img')),
             ({}, py('benchmarks/codecs/jpeg/decode-report.py', out / 'run.json'))]
@@ -99,7 +102,8 @@ def decode_jpeg(ctx, level, out):
 
 def decode_avif(ctx, level, out):
     q = AVIF_SCRATCH
-    return [({}, py('benchmarks/codecs/avif/decode-qualify.py', q / 'decode-fixtures', out / 'run.json', 9, q / 'img-target/release/avif-qual-img',
+    return [({'AVIF_SCRATCH': str(q)}, ['sh', str(ROOT / 'benchmarks/codecs/avif/decode-build.sh')]),
+            ({}, py('benchmarks/codecs/avif/decode-qualify.py', q / 'fixtures', out / 'run.json', 9, q / 'img-target/release/avif-qual-img',
                     q / 'qual-dav1d-target/release/avif-qual-dav1d', q / 'qual-zen-target/release/avif-qual-zen')),
             ({}, py('benchmarks/codecs/avif/decode-report.py', out / 'run.json'))]
 
@@ -120,6 +124,9 @@ def harness(ctx, level, out):
 WORKLOADS = [
     dict(name='harness', area='meta', purpose='benchmark scripts compile; selection and preflight rules hold',
          levels={'edit': None}, costs={'edit': '1 s observed'}, needs=[], command=harness),
+    dict(name='png-encode', area='png', purpose='in-process lossless PNG encode time and bytes at every effort, exactness checked',
+         levels={'change': None, 'scenario': None}, costs={'change': 'est. 30 s warm', 'scenario': 'est. 15 min'},
+         needs=['base-tree', 'corpus', 'gate'], command=png_encode),
     dict(name='score-exact', area='score', purpose='SSIMULACRA2 scores stay bit-identical to base; per-score time',
          levels={'change': None}, costs={'change': '5 s observed warm, 2.5 min with a cold score-loop build'}, needs=['base', 'base-tree', 'corpus'], command=score_exact),
     workflow('workflow-scored', 'workflow', 'complete optimize --score: wall, CPU, peak RSS, bytes, output identity vs base',
@@ -131,7 +138,7 @@ WORKLOADS = [
     dict(name='batch', area='batch', purpose='multi-image throughput and peak RSS under -j', levels=BATCH_LEVELS, costs={'change': '1 s observed', 'scenario': 'est. 30 min'},
          needs=['new', 'base', 'corpus', 'gate'], command=batch_command),
     dict(name='jpeg-decode', area='decode', purpose='in-process JPEG decode time and RSS vs base on qualification fixtures',
-         levels={'scenario': None}, costs={'scenario': 'est. 30 min (9 gated rounds)'}, needs=['gate', 'jpeg-decode'], command=decode_jpeg),
+         levels={'scenario': None}, costs={'scenario': 'est. 30 min (9 gated rounds)'}, needs=['gate', 'base-tree', 'jpeg-decode'], command=decode_jpeg),
     dict(name='avif-decode', area='decode', purpose='AVIF decode vs dav1d and Zen (library qualification)',
          levels={'full': None}, costs={'full': 'est. 60 min (9 gated rounds)'}, needs=['gate', 'avif-decode'], command=decode_avif),
     dict(name='png-decode', area='decode', purpose='png crate vs libspng, libpng and Zen (library qualification)',
@@ -201,23 +208,22 @@ def check(ctx, chosen):
         if bad:
             fail('corpus', f'{len(bad)} qualification corpus files missing or changed in {CORPUS} (first: {bad[0]})',
                  f'python3 -I scripts/qualification-corpus {CORPUS}')
-    for need, paths, fix in (
-        ('jpeg-decode', [JPEG_SCRATCH / 'decode-fixtures/manifest.json', JPEG_SCRATCH / 'decode-loop-target/release/jpeg-decode-loop',
-                         JPEG_SCRATCH / 'decode-loop-base-target/release/jpeg-decode-loop'],
-         'see docs/BENCHMARKS.md "Decode qualification" (benchmarks/codecs/jpeg/decode-build.sh with IMG_BASE, decode-fixtures.py)'),
-        ('avif-decode', [AVIF_SCRATCH / 'decode-fixtures/manifest.json', AVIF_SCRATCH / 'img-target/release/avif-qual-img'],
-         'see docs/codecs/avif-candidates.md (benchmarks/codecs/avif/build.sh, decode-build.sh, decode-prepare.py)'),
-        ('png-decode', [PNG_QUALIFY / 'fixtures/manifest.json', PNG_QUALIFY / 'target/release/png-decode-loop'],
-         'sh benchmarks/codecs/png/decode-build.sh && python3 benchmarks/codecs/png/decode-fixtures.py')):
+    prepare = lambda fmt: (f'benchmarks/codecs/decode-prepare {fmt} {DECODE} --corpus {CORPUS} --img {NEW_BIN}'
+                           + (f' --base-checkout {base_tree(ctx)}' if fmt == 'jpeg' else ''))
+    for need, paths in (
+        ('jpeg-decode', [JPEG_SCRATCH / 'fixtures/manifest.json', JPEG_SCRATCH / 'turbo-build/cjpeg-static']),
+        ('avif-decode', [AVIF_SCRATCH / 'fixtures/manifest.json', AVIF_SCRATCH / 'avifcodec']),
+        ('png-decode', [PNG_QUALIFY / 'fixtures/manifest.json', PNG_QUALIFY / 'target/release/png-decode-loop'])):
         missing = [p for p in paths if not p.exists()]
         if need in needs and missing:
-            fail(need, f'{missing[0]} missing', fix)
-    if 'jpeg-decode' in needs:
-        warnings.append('jpeg-decode harness binaries are not checked for freshness; rebuild them after changing decode code')
+            fail(need, f'{missing[0]} missing', prepare(need.split('-')[0]))
+    if 'png-decode' in needs:
+        warnings.append('png-decode qualifies libraries, not img; its harness is not rebuilt per run')
     free = shutil.disk_usage(ROOT).free
     if free < 5 << 30:
         problems.append(f'only {free >> 30} GiB free; workloads write outputs under .work/bench')
-    leftover = subprocess.run(['pgrep', '-fl', r'(workflow|batch|decode-qualify)\.py|/img (optimize|convert) '], capture_output=True, text=True).stdout.strip()
+    leftover = subprocess.run(['pgrep', '-fl', r'^(\S*/)?python3?(\.[0-9]+)? \S*(workflow|batch|decode-qualify|encode-paired)\.py |^\S*/img(-[0-9a-f]{40})? (optimize|convert) '],
+                              capture_output=True, text=True).stdout.strip()
     if leftover:
         problems.append(f'benchmark processes already running:\n    {leftover}\n    fix: wait for or stop them')
     host = subprocess.run(['perf-gate-ready'], capture_output=True, text=True) if shutil.which('perf-gate-ready') else None
@@ -277,25 +283,67 @@ def run(ctx, chosen, excluded, tier, dry):
                 status = subprocess.run(list(map(str, cmd)), cwd=ROOT, env={**os.environ, **env}, stdout=log, stderr=subprocess.STDOUT).returncode
                 if status:
                     break
-        validity = []
+        validity, verdicts = [], []
         for result in sorted(out.glob('*.json')):
             doc = json.loads(result.read_text())
-            if isinstance(doc, dict) and 'discarded_rounds' in doc:
+            if result.name.endswith('.verdict.json'):
+                verdicts += doc
+            elif isinstance(doc, dict) and 'discarded_rounds' in doc:
                 validity.append(f'{result.name}: {doc.get("rounds")} rounds kept, {doc["discarded_rounds"]} discarded for host load'
                                 + ('' if doc.get('gated', True) else ', ungated'))
-        record = dict(name=w['name'], level=level, exit=status, seconds=round(time.monotonic() - start, 1), validity=validity, log=str(out / 'log.txt'))
+        statuses = {v['status'] for v in verdicts}
+        budget = 'no budget' if not verdicts else 'regression' if 'regression' in statuses else 'inconclusive' if 'inconclusive' in statuses else 'within budget'
+        outcome = 'ok' if status == 0 else 'regression' if status == 3 else 'FAIL'
+        record = dict(name=w['name'], level=level, exit=status, outcome=outcome, budget=budget, verdicts=verdicts,
+                      seconds=round(time.monotonic() - start, 1), validity=validity, log=str(out / 'log.txt'))
         summary['workloads'].append(record)
         failed |= status != 0
-        print(f'{"FAIL" if status else "ok  "} {w["name"]:18} {level:9} {record["seconds"]:8.1f}s  {"; ".join(validity) or "no timing rounds"}')
-    summary['verdict'] = 'no budgets are defined: completion is not a performance verdict; read each log for ratios'
+        print(f'{outcome:10} {w["name"]:18} {level:9} {record["seconds"]:8.1f}s  {budget:13}  {"; ".join(validity) or "no timing rounds"}')
+        for v in verdicts:
+            if v['status'] != 'within':
+                print(f'    {v["metric"]}: {v["status"]} geomean {v["geomean"]} CI {v["ci"]} budget {v["budget"]}')
+    summary['verdict'] = ('budgets in benchmarks/budgets.json; "within budget" needs every metric CI at or below its budget, '
+                          'single-round tiers are often inconclusive; workloads without a budget only prove completion')
     (out_root / 'summary.json').write_text(json.dumps(summary, indent=1))
     print(f'{summary["verdict"]}\nsummary {out_root / "summary.json"}')
     return 1 if failed else 0
 
 
+def profile(ctx, which, args):
+    tree = ROOT if which == 'new' else base_tree(ctx)
+    binary = tree / 'target/release/img'
+    if not binary.exists() or (which == 'new' and binary.stat().st_mtime < newest_source_mtime()):
+        raise SystemExit(f'{binary} missing or stale; profiles need symbols: cargo build --release --features build-binary (in {tree})')
+    out = WORK / 'profiles' / datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    out.mkdir(parents=True)
+    command, started = [str(binary), *args], time.monotonic()
+    if sys.platform == 'darwin':
+        child = subprocess.Popen(command, cwd=out)
+        sampler = subprocess.Popen(['sample', str(child.pid), '600', '1', '-mayDie', '-f', str(out / 'sample.txt')],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        status = child.wait(); sampler.wait()
+        text = (out / 'sample.txt').read_text(errors='replace') if (out / 'sample.txt').exists() else ''
+        top = text[text.find('Sort by top of stack'):].split('\n\n')[0]
+    elif shutil.which('perf'):
+        status = subprocess.run(['perf', 'record', '-g', '-o', str(out / 'perf.data'), '--', *command], cwd=out).returncode
+        top = subprocess.run(['perf', 'report', '-i', str(out / 'perf.data'), '--no-children', '--stdio', '--percent-limit', '1'],
+                             capture_output=True, text=True).stdout
+    else:
+        raise SystemExit('profiling needs macOS sample or Linux perf')
+    (out / 'top.txt').write_text(top)
+    if top.count('\n') < 2:
+        top = (f'no samples captured: the run lasted {time.monotonic() - started:.2f} s. Profile a larger input, or the '
+               'in-process loops (.work/bench/loops/target-*/release/score-loop, png-encode-loop) which repeat the work.')
+    print(top[:4000])
+    print(f'exit {status}; profile in {out}')
+    return status
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(prog='scripts/bench', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('command', choices=['list', 'check', 'build', 'run'])
+    parser.add_argument('command', choices=['list', 'check', 'build', 'run', 'profile'])
+    parser.add_argument('--binary', choices=['new', 'base'], default='new')
+    parser.add_argument('img_args', nargs='*')
     parser.add_argument('--tier', choices=TIERS, default='change')
     split = lambda s: [x for x in s.split(',') if x]
     parser.add_argument('--only', type=split, default=[])
@@ -313,6 +361,10 @@ def main(argv=None):
     if a.command == 'build':
         build(ctx)
         return 0
+    if a.command == 'profile':
+        if not a.img_args:
+            raise SystemExit('profile needs img arguments after --')
+        return profile(ctx, a.binary, a.img_args)
     if a.tier == 'full' and a.command == 'run' and not a.dry_run and not a.confirm_full:
         raise SystemExit('--tier full is manual-only: pass --confirm-full when the full suite was explicitly requested')
     chosen, excluded = select(a.tier, a.only, a.area, a.skip)

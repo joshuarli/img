@@ -1,19 +1,22 @@
 #!/bin/sh
 set -eu
-root=$(CDPATH= cd -- "$(dirname "$0")/../../.." && pwd)
+root=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)
 base=${IMG_BASE:-$root}
-scratch=${SCORE_SCRATCH:-$root/.work/tmp/score-bench}
+scratch=${LOOPS_SCRATCH:-$root/.work/tmp/loops}
 for variant in img:$root base:$base; do
   name=${variant%%:*}; src=${variant#*:}
   mkdir -p "$scratch/$name"
   cat > "$scratch/$name/Cargo.toml" <<TOML
 [package]
-name = "score-loop-$name"
+name = "loops-$name"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 [[bin]]
-name = "score-loop-$name"
+name = "score-loop"
 path = "$root/benchmarks/codecs/score/score-loop.rs"
+[[bin]]
+name = "png-encode-loop"
+path = "$root/benchmarks/codecs/png/encode-loop.rs"
 [dependencies]
 img = { path = "$src" }
 [patch.crates-io]

@@ -1,0 +1,5 @@
+{
+  "comment": "Regression budgets for scripts/bench comparisons (new / base). A metric regresses when the bootstrap 95% CI lower bound of the geomean ratio exceeds its budget, is within budget when the upper bound is at or below it, and is otherwise inconclusive. Any single case above per_case is listed.",
+  "geomean": {"wall": 1.05, "cpu": 1.05, "peak_rss_bytes": 1.05, "bytes": 1.002, "encode_ms": 1.05, "score_ms": 1.05, "seconds_per_image": 1.05},
+  "per_case": 1.10
+}
