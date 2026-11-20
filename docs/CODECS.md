@@ -146,10 +146,15 @@ which measurement shows is below their actual peak (open, WebP lane). Results:
 
 ## Next experiments
 
-1. **PNG CPU and small-image best latency**: fast and balanced now skip the
-   unfiltered trial for non-palette images (CPU 0.72–0.92× of the previous
-   build, identical bytes); best's four eval trials still cost up to 2.6× Zen's
-   CPU on small images, and best on small images is up to 1.9× Zen wall.
+1. **PNG CPU vs Zen**: not reachable inside the frozen size envelope. Against
+   a rebuilt `5424df8` (3 gated rounds, 6 images of 1–7 MP, 2026-11-20) img is
+   0.74×/0.36×/0.46× Zen wall at fast/balanced/best with 0.98×/0.997×/0.953× its
+   bytes and about half its peak RSS, but 1.30×/0.94×/1.89× its CPU.
+   Single-threaded the CPU ratio is the same on goose (1.33×/1.30×/4.0×), so it
+   is encoder work, not parallel overhead: best spends it in libdeflate's
+   level-11 near-optimal parse that produces the 5–7% byte lead, and fast and
+   balanced in its lazy matcher. Lower libdeflate levels cut CPU to
+   0.72–0.87× but grow bytes 1.0–3.0% (up to 14.5%), outside the envelope.
 2. **Scoring wall time**: SSIMULACRA2 dominates scored JPEG. fast-ssim2's
    `rayon` feature keeps scores bit-identical and cuts per-score time to 0.84×,
    but its parallel paths materialize full planes and bypass the streamed
