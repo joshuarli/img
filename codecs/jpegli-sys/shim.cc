@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <cstdlib>
 #include <cstring>
 #include <climits>
@@ -48,7 +49,7 @@ extern "C" Encoder* img_jpegli_create(unsigned width, unsigned height, int gray,
     float distance = quality >= 100 ? 0.01f : quality >= 30 ? 0.1f + (100 - quality) * 0.09f : 53.0f / 3000.0f * quality * quality - 23.0f / 20.0f * quality + 25.0f;
     jpegli_set_distance(&e->jpeg, distance, TRUE);
     jpegli_enable_adaptive_quantization(&e->jpeg, distance < 0.3f);
-    jpegli_set_progressive_level(&e->jpeg, progressive ? 2 : 0); e->jpeg.optimize_coding = TRUE;
+    { const char* fast = getenv("IMG_FAST_SCANS"); const char* level = getenv("IMG_PROGRESSIVE_LEVEL"); jpegli_set_progressive_level(&e->jpeg, progressive ? (level ? atoi(level) : 2) : fast ? atoi(fast) : 0); } e->jpeg.optimize_coding = TRUE;
     jpegli_start_compress(&e->jpeg, TRUE);
     return e;
   } catch (...) {

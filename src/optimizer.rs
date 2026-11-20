@@ -315,6 +315,9 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
     let mut jpeg_next = 0;
     let mut progressive_repack: Option<(f32,JpegSampling)> = None;
     let mut repacked = false;
+    // A progressive repack keeps the sequential candidate's quantized coefficients,
+    // so its score is reused once its decoded samples are shown to be identical.
+    let mut repack_reference: Option<(Vec<u8>,f64)> = None;
     match request.fidelity {
         Fidelity::Lossless => for &f in &formats { settings.push((f,None)); },
         Fidelity::Quality(q) => for &f in &formats { settings.push((f,Some(q.value()))); },
@@ -350,7 +353,10 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
             if scored_evals < scored_budget && match (jpeg_only, request.fidelity) {
                 (true, Fidelity::Score(target)) => jpeg_refine_step(target.value(), request.effort, jpeg_samplings, &evaluations, &mut jpeg_settings) || (request.effort == Effort::Fast && !repacked && {
                     repacked = true;
-                    progressive_repack = evaluations.iter().filter(|e| e.format == Format::Jpeg && e.failure.is_none()).min_by_key(|e| e.bytes).and_then(|e| Some((e.quality?, e.sampling?)));
+                    let source = evaluations.iter().filter(|e| e.format == Format::Jpeg && e.failure.is_none()).min_by_key(|e| e.bytes);
+                    progressive_repack = source.and_then(|e| Some((e.quality?, e.sampling?)));
+                    repack_reference = source.zip(best.as_ref()).filter(|(e,b)| b.format == Format::Jpeg && e.bytes == Some(b.bytes.len()))
+                        .and_then(|(e,b)| Some((b.bytes.clone(), e.score?)));
                     progressive_repack.is_some()
                 }),
                 _ => refine_step(&formats,&evaluations,&mut settings),
@@ -418,7 +424,8 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
                     } else if matches!(request.fidelity,Fidelity::Quality(_)) {
                         Ok(None)
                     } else {
-                        let score=if samples_equal(&image,&candidate) {100.0} else {metric.as_ref().unwrap().score_decoded(&candidate)?};
+                        let reused=if repack_attempt { repack_reference.take().map(|(reference,score)| StillImage::decode_cancellable(&reference,cancelled).map(|r| samples_equal(&r,&candidate).then_some(score))).transpose()?.flatten() } else { None };
+                        let score=match reused { Some(score)=>score, None=>if samples_equal(&image,&candidate) {100.0} else {metric.as_ref().unwrap().score_decoded(&candidate)?} };
                         evaluation.score=Some(score);
                         if let Fidelity::Score(target)=request.fidelity && score < target.value() { return Err(Error::new(ErrorKind::Score,"candidate is below requested score")); }
                         Ok(Some(score))

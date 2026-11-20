@@ -118,7 +118,17 @@ pub(super) fn restore_metadata(bytes: &[u8], metadata: &[Vec<u8>]) -> Result<Vec
 
 fn oxipng_options(image: &StillImage, effort: Effort) -> oxipng::Options {
     let mut options = match effort {
-        Effort::Fast => oxipng::Options::from_preset(0),
+        Effort::Fast => {
+            let mut o = oxipng::Options::from_preset(0);
+            match std::env::var("IMG_PNG_FAST").as_deref() {
+                Ok("minsum") => { o.filters = oxipng::indexset! {oxipng::FilterStrategy::MinSum}; },
+                Ok("l4") => { o.deflater = oxipng::Deflater::Libdeflater { compression: 4 }; },
+                Ok("l3") => { o.deflater = oxipng::Deflater::Libdeflater { compression: 3 }; },
+                Ok("minsum-l4") => { o.filters = oxipng::indexset! {oxipng::FilterStrategy::MinSum}; o.deflater = oxipng::Deflater::Libdeflater { compression: 4 }; },
+                _ => {},
+            }
+            o
+        },
         Effort::Balanced => oxipng::Options { deflater: oxipng::Deflater::Libdeflater { compression: 8 }, ..oxipng::Options::from_preset(0) },
         Effort::Best => oxipng::Options::from_preset(2),
     };
