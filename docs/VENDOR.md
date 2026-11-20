@@ -141,6 +141,12 @@ is compiled.
   and the sums accumulate in pixel order, so scores are bit-identical;
   `tests/score_planar.rs` checks this against the uncached
   `compute_ssimulacra2` for odd sizes, gray and alpha.
+- Local patch, `src/pipeline/precompute.rs`: distorted-side streamed channels
+  run independently on the shared rayon pool at one megapixel and above; each
+  channel retains its original recursive blur and serial sum order. Smaller
+  scales and single-thread pools use the serial path. At most three channels'
+  row buffers coexist, independent of image height; no full blur planes are
+  introduced. The same cancellation checks occur at scale boundaries.
 - Local patch, `Ssimulacra2Reference::from_linear_planes_compact`: the
   reference keeps only each scale's XYB planes, and comparisons stream μ1 and
   σ1² beside the distorted blurs (five row streams per channel instead of
