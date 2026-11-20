@@ -69,22 +69,63 @@ pub fn validate_record(value:&Value)->Result<(),String> {
     else if !value["elapsedMs"].is_null() {return fail();}
     Ok(())
 }
-pub fn verify_saved(directory:&Path)->usize {
-    let mut count=0;if !directory.exists() {return 0;}
+/// Outcome of replaying saved benchmark records under the current decoder and scorer.
+#[derive(Debug,Default)]
+pub struct Verification {pub documents:usize,pub replayed:usize,pub historical_unreplayed:usize,pub missing_artifacts:usize,pub failures:Vec<String>}
+/// Replays every saved record. `results/historical.json` names documents captured
+/// before a decoder change (their JPEG-source records are checked for identity and
+/// size only; their replay path is recorded there) and documents whose outputs were
+/// never committed or were later overwritten. Any other mismatch is a failure.
+pub fn verify_saved(directory:&Path)->Verification {
+    let mut out=Verification::default();if !directory.exists() {return out;}
+    let registry:Value=serde_json::from_slice(&fs::read(directory.join("historical.json")).unwrap()).unwrap();
+    let listed=|key:&str|->Vec<String> {registry[key]["documents"].as_array().unwrap().iter().map(|d|d.as_str().unwrap().to_owned()).collect()};
+    let (historical,missing)=(listed("preDecoderChange"),[listed("missingArtifacts"),listed("overwrittenArtifacts")].concat());
     let mut records=Vec::new();
-    for file in fs::read_dir(directory).unwrap() {let file=file.unwrap().path();if file.extension().is_some_and(|e|e=="json") {let document:Value=serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();let expected=summarize(document["records"].as_array().unwrap());assert_eq!(document["summary"].as_object().unwrap().len(),expected.as_object().unwrap().len());for (key,value) in expected.as_object().unwrap() {assert_eq!(&document["summary"][key],value,"summary {key}");}records.extend(document["records"].as_array().unwrap().iter().cloned());count+=1;}}
-    let next=std::sync::atomic::AtomicUsize::new(0);
+    let mut files:Vec<_>=fs::read_dir(directory).unwrap().map(|f|f.unwrap().path()).filter(|f|f.extension().is_some_and(|e|e=="json")&&f.file_name()!=Some("historical.json".as_ref())).collect();files.sort();
+    for file in files {
+        let name=file.file_name().unwrap().to_str().unwrap().to_owned();
+        let document:Value=serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();let expected=summarize(document["records"].as_array().unwrap());
+        if document["summary"].as_object().unwrap().len()!=expected.as_object().unwrap().len() {out.failures.push(format!("{name}: summary keys differ"));}
+        for (key,value) in expected.as_object().unwrap() {if &document["summary"][key]!=value {out.failures.push(format!("{name}: summary {key}"));}}
+        for record in document["records"].as_array().unwrap() {records.push((name.clone(),historical.contains(&name),missing.contains(&name),record.clone()));}
+        out.documents+=1;
+    }
+    let next=std::sync::atomic::AtomicUsize::new(0);let results=std::sync::Mutex::new(Vec::new());
     let workers=std::thread::available_parallelism().map(|n|n.get()).unwrap_or(1).min(records.len().max(1));
-    std::thread::scope(|scope| {for _ in 0..workers {scope.spawn(|| loop {let index=next.fetch_add(1,std::sync::atomic::Ordering::Relaxed);let Some(record)=records.get(index) else {break;};verify_record(record);});}});
-    count
+    std::thread::scope(|scope| {for _ in 0..workers {scope.spawn(|| loop {
+        let index=next.fetch_add(1,std::sync::atomic::Ordering::Relaxed);let Some((name,historical,missing,record))=records.get(index) else {break;};
+        let outcome=std::panic::catch_unwind(||verify_record(record,*historical,*missing)).unwrap_or_else(|e|Err(e.downcast_ref::<String>().cloned().or_else(||e.downcast_ref::<&str>().map(|s|s.to_string())).unwrap_or_default()));
+        results.lock().unwrap().push((name.clone(),record["fixture"].clone(),record["tool"].clone(),outcome));
+    });}});
+    for (name,fixture,tool,outcome) in results.into_inner().unwrap() {match outcome {
+        Ok(Replay::Replayed)=>out.replayed+=1,Ok(Replay::Historical)=>out.historical_unreplayed+=1,Ok(Replay::MissingArtifact)=>out.missing_artifacts+=1,
+        Err(e)=>out.failures.push(format!("{name} {fixture} {tool}: {e}")),
+    }}
+    out.failures.sort();out
 }
-fn verify_record(record:&Value) {
-    validate_record(record).unwrap();
-    if record["completed"]==true {let input=root().join(record["sourcePath"].as_str().unwrap());let output=root().join(record["outputPath"].as_str().unwrap());let source_bytes=fs::read(&input).unwrap();assert_eq!(source_bytes.len() as u64,record["inputBytes"].as_u64().unwrap());let a=StillImage::decode(&source_bytes).unwrap();let bytes=fs::read(&output).unwrap();let b=StillImage::decode(&bytes).unwrap();assert_eq!(a.dimensions(),b.dimensions());assert_eq!(a.dimensions(),(record["width"].as_u64().unwrap() as u32,record["height"].as_u64().unwrap() as u32));assert_eq!(bytes.len() as u64,record["outputBytes"].as_u64().unwrap());if record["lossless"]==true {
-        if record["tool"]=="cwebp-lossless" && input.extension().is_some_and(|e|e=="jpg"||e=="jpeg") {
-            assert!(libwebp_domain_exact(&input,&output).unwrap(),"{} {}: libwebp-domain samples differ",record["fixture"],record["tool"]);
-        } else {assert!(img::optimizer::samples_equal(&a,&b));}
-    }else {let actual=img::perceptual::PerceptualReference::new(&a).unwrap().score_encoded(&bytes).unwrap();assert!(actual>=record["target"].as_f64().unwrap());assert!((actual-record["score"].as_f64().unwrap()).abs()<0.0001,"{} {}: actual={actual} saved={}",record["fixture"],record["tool"],record["score"]);}}
+enum Replay {Replayed,Historical,MissingArtifact}
+fn verify_record(record:&Value,historical:bool,missing:bool)->Result<Replay,String> {
+    validate_record(record)?;
+    if record["completed"]!=true {return Ok(Replay::Replayed);}
+    let input=root().join(record["sourcePath"].as_str().unwrap());let output=root().join(record["outputPath"].as_str().unwrap());
+    let source_bytes=fs::read(&input).map_err(|e|format!("source {}: {e}",input.display()))?;
+    if source_bytes.len() as u64!=record["inputBytes"].as_u64().unwrap() {return Err("source size differs".into());}
+    if !output.exists() && missing {return Ok(Replay::MissingArtifact);}
+    let bytes=fs::read(&output).map_err(|e|format!("output {}: {e}",output.display()))?;
+    if bytes.len() as u64!=record["outputBytes"].as_u64().unwrap() {return if missing {Ok(Replay::MissingArtifact)} else {Err("output size differs".into())};}
+    let jpeg_source=input.extension().is_some_and(|e|e=="jpg"||e=="jpeg");
+    if historical && jpeg_source {return Ok(Replay::Historical);}
+    let a=StillImage::decode(&source_bytes).map_err(|e|e.to_string())?;let b=StillImage::decode(&bytes).map_err(|e|e.to_string())?;
+    if a.dimensions()!=b.dimensions() || a.dimensions()!=(record["width"].as_u64().unwrap() as u32,record["height"].as_u64().unwrap() as u32) {return Err("dimensions differ".into());}
+    if record["lossless"]==true {
+        let exact=if record["tool"]=="cwebp-lossless" && jpeg_source {libwebp_domain_exact(&input,&output)?} else {img::optimizer::samples_equal(&a,&b)};
+        if !exact {return Err("samples differ".into());}
+    } else {
+        let actual=img::perceptual::PerceptualReference::new(&a).map_err(|e|e.to_string())?.score_encoded(&bytes).map_err(|e|e.to_string())?;
+        if actual<record["target"].as_f64().unwrap() || (actual-record["score"].as_f64().unwrap()).abs()>=0.0001 {return Err(format!("actual={actual} saved={}",record["score"]));}
+    }
+    Ok(Replay::Replayed)
 }
 fn pnm_rgb(bytes:&[u8])->Result<(u32,u32,Vec<u8>),String> {
     fn token(bytes:&[u8],pos:&mut usize)->Result<String,String> {

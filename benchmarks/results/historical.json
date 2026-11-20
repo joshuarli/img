@@ -1,0 +1,59 @@
+{
+ "comment": "Saved benchmark documents that the current verifier cannot fully replay, and why. Records not covered here must replay exactly.",
+ "preDecoderChange": {
+  "decoderChange": "7b2ba88 moved JPEG decoding from zune-jpeg to libjpeg-turbo, changing decoded JPEG source samples",
+  "verifier": "zune-jpeg JPEG decode at each record's own revision",
+  "status": "historical, unreplayed: JPEG-source records are checked for source and output identity and size only; all other records still replay",
+  "replay": "git worktree add .work/wt/verify-historical 7b2ba88^ && cd .work/wt/verify-historical && cargo test --locked --all-features --test benchmark_verify (not yet exercised)",
+  "documents": [
+   "timed-2026-11-14.json",
+   "timed-2026-11-15.json",
+   "timed-fast-defer.json",
+   "timed-fast-path.json",
+   "timed-fast-subimg.json",
+   "timed-lambda-2026-11-15.json",
+   "timed-neon-2026-11-15.json",
+   "timed-newhost-2026-11-15.json",
+   "timed-post-skip.json",
+   "timed-repaired-2026-11-15.json",
+   "timed-validation-l1meta.json",
+   "timed.json",
+   "untimed-2026-11-14.json",
+   "untimed-2026-11-15.json",
+   "untimed-cursor-2026-11-15.json",
+   "untimed-dev-l1meta.json",
+   "untimed-full-2026-11-15.json",
+   "untimed-full-lambda-2026-11-15.json",
+   "untimed-histogram-2026-11-15.json",
+   "untimed-ladder-2026-11-15.json",
+   "untimed-lambda-2026-11-15.json",
+   "untimed-memo-2026-11-15.json",
+   "untimed-nzctx-2026-11-15.json",
+   "untimed-proba-2026-11-15.json",
+   "untimed-probe-skip.json",
+   "untimed-repaired-2026-11-15.json",
+   "untimed-small-2026-11-15.json",
+   "untimed-support-2026-11-15.json",
+   "untimed-taper-2026-11-15.json",
+   "untimed-validation-2026-11-15.json",
+   "untimed-validation-l1meta.json",
+   "untimed-weighted-2026-11-15.json",
+   "untimed-withdrawn-2026-11-15.json",
+   "untimed.json"
+  ]
+ },
+ "missingArtifacts": {
+  "reason": "668bb86 (WebP lane) saved these captures without committing their 81 output files; their records are kept as measured but cannot be replayed",
+  "documents": [
+   "timed-validation-l1meta.json",
+   "untimed-dev-l1meta.json",
+   "untimed-validation-l1meta.json"
+  ]
+ },
+ "overwrittenArtifacts": {
+  "reason": "these captures wrote outputs to the same results/timed-<fixture>-<tool>-<target>-<run> paths as timed.json, which later replaced them; the saved sizes and scores describe files that no longer exist",
+  "documents": [
+   "timed-post-skip.json"
+  ]
+ }
+}

@@ -17,7 +17,8 @@ fn licensed_corpus_and_actual_quality_sample_constraints() {
         let score=img::perceptual::compare(bytes,&result.bytes).unwrap();assert!(score>=target);assert_eq!(result.evaluations.len(),10);
     }
     let saved=support::verify_saved(&support::root().join("results"));
-    if support::root().join("results/untimed.json").exists() {assert!(saved>0);}
+    eprintln!("saved records: {} documents, {} replayed, {} historical unreplayed, {} missing artifacts",saved.documents,saved.replayed,saved.historical_unreplayed,saved.missing_artifacts);
+    assert!(saved.failures.is_empty(),"{} saved records fail to replay:\n{}",saved.failures.len(),saved.failures.join("\n"));
 }
 #[test]
 fn saved_schema_and_gate_arithmetic_reject_fake_work_and_regressions() {
