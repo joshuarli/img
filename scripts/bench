@@ -4,11 +4,14 @@
 scripts/bench list
 scripts/bench check [SELECTORS]
 scripts/bench build [--base REV]
-scripts/bench run [SELECTORS] [--dry-run] [--confirm-full]
+scripts/bench run [SELECTORS] [--split dev|holdout] [--dry-run] [--confirm-full]
 scripts/bench profile [--binary new|base] [--base REV] -- IMG ARGS...
 
 SELECTORS: --tier edit|change|scenario|full (ceiling, default change), --only NAME,...,
---area AREA,..., --skip NAME,..., --base REV (default origin/master)."""
+--area AREA,..., --skip NAME,..., --base REV (default origin/master).
+BENCH_VERIFIER pins the output verifier (default: verify built from this checkout, applied to every tool alike).
+--split holdout runs the corpus workloads on the held-out originals instead of the development split. Holdout is for
+qualifying a frozen candidate, never for tuning."""
 import argparse, datetime, hashlib, json, os, pathlib, shutil, subprocess, sys, time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -31,11 +34,16 @@ SET_PICKS['scenario'] = SET_PICKS['smoke'] + [
 DECODE = WORK / 'decode'
 JPEG_SCRATCH, AVIF_SCRATCH, PNG_QUALIFY = DECODE / 'jpeg', DECODE / 'avif', DECODE / 'png'
 LOOPS = WORK / 'loops'
+VERIFIER = pathlib.Path(os.environ.get('BENCH_VERIFIER', LOOPS / 'target-img/release/verify'))
 
 
-def corpus_set(name):
-    sources = [s for s in json.loads(MANIFEST.read_text())['sources'] if s['split'] == 'dev' and s['file'] not in UNSUPPORTED]
-    if name == 'dev':
+SPLIT = 'dev'
+
+
+def corpus_set(name, split=None):
+    split = split or SPLIT
+    sources = [s for s in json.loads(MANIFEST.read_text())['sources'] if s['split'] == split and s['file'] not in UNSUPPORTED]
+    if name == 'dev' or split == 'holdout':
         return [s['file'] for s in sources]
     picked = []
     for cls, fmt, size, extra in SET_PICKS[name]:
@@ -53,20 +61,20 @@ def py(script, *args): return ['python3', str(ROOT / script), *map(str, args)]
 def workflow(name, area, purpose, formats, scores, levels, costs):
     def command(ctx, level, out):
         files, rounds, effort = levels[level]
-        env = {'WORKFLOW_FORMATS': formats, 'WORKFLOW_SCORES': scores}
+        env = {'WORKFLOW_FORMATS': formats, 'WORKFLOW_SCORES': scores, 'WORKFLOW_VERIFIER': str(VERIFIER)}
         run = py('benchmarks/codecs/workflow.py', out / 'run.json', rounds, effort, f'new={NEW_BIN}', f'base={base_bin(ctx)}', '--',
                  *[CORPUS / f for f in corpus_set(files)])
-        return [(env, run), ({}, py('benchmarks/codecs/workflow-report.py', out / 'run.json', 'new', 'base'))]
-    return dict(name=name, area=area, purpose=purpose, levels=levels, costs=costs, needs=['new', 'base', 'corpus', 'gate'], command=command)
+        return [loops(ctx), (env, run), ({}, py('benchmarks/codecs/workflow-report.py', out / 'run.json', 'new', 'base'))]
+    return dict(name=name, area=area, purpose=purpose, levels=levels, costs=costs, needs=['new', 'base', 'base-tree', 'corpus', 'gate'], command=command)
 
 
 def batch_command(ctx, level, out):
     files, rounds, modes, jobs = BATCH_LEVELS[level]
     sets = WORK / 'sets' / files
     link = 'import os,shutil,sys\nd=sys.argv[1]; shutil.rmtree(d, ignore_errors=True); os.makedirs(d)\nfor f in sys.argv[2:]: os.link(f, os.path.join(d, os.path.basename(f)))'
-    steps = [({}, ['python3', '-c', link, sets, *[CORPUS / f for f in corpus_set(files) if f.endswith('.png')]])]
+    steps = [loops(ctx), ({}, ['python3', '-c', link, sets, *[CORPUS / f for f in corpus_set(files) if f.endswith('.png')]])]
     for mode in modes:
-        steps.append(({}, py('benchmarks/codecs/batch.py', out / f'{mode}.json', rounds, sets, mode, f'new={NEW_BIN}', f'base={base_bin(ctx)}', '--', *jobs)))
+        steps.append(({'BATCH_VERIFIER': str(VERIFIER)}, py('benchmarks/codecs/batch.py', out / f'{mode}.json', rounds, sets, mode, f'new={NEW_BIN}', f'base={base_bin(ctx)}', '--', *jobs)))
     return steps
 
 
@@ -97,7 +105,7 @@ def decode_jpeg(ctx, level, out):
             ({}, py('benchmarks/codecs/jpeg/decode-qualify.py', JPEG_SCRATCH / 'fixtures', out / 'run.json', 9,
                     f'new={JPEG_SCRATCH}/decode-loop-target/release/jpeg-decode-loop:img',
                     f'base={JPEG_SCRATCH}/decode-loop-base-target/release/jpeg-decode-loop:img')),
-            ({}, py('benchmarks/codecs/jpeg/decode-report.py', out / 'run.json'))]
+            ({}, py('benchmarks/codecs/jpeg/decode-report.py', out / 'run.json', 'new', 'base'))]
 
 
 def decode_avif(ctx, level, out):
@@ -136,7 +144,7 @@ WORKLOADS = [
              'png', 'lossless', {'change': ('smoke', 1, 'balanced'), 'scenario': ('scenario', 5, 'best')},
              {'change': '1 s observed', 'scenario': 'est. 20 min'}),
     dict(name='batch', area='batch', purpose='multi-image throughput and peak RSS under -j', levels=BATCH_LEVELS, costs={'change': '4 s observed (3 rounds)', 'scenario': 'est. 30 min'},
-         needs=['new', 'base', 'corpus', 'gate'], command=batch_command),
+         needs=['new', 'base', 'base-tree', 'corpus', 'gate'], command=batch_command),
     dict(name='jpeg-decode', area='decode', purpose='in-process JPEG decode time and RSS vs base on qualification fixtures',
          levels={'scenario': None}, costs={'scenario': 'est. 30 min (9 gated rounds)'}, needs=['gate', 'base-tree', 'jpeg-decode'], command=decode_jpeg),
     dict(name='avif-decode', area='decode', purpose='AVIF decode vs dav1d and Zen (library qualification)',
@@ -260,7 +268,7 @@ def sha256(path): return hashlib.sha256(pathlib.Path(path).read_bytes()).hexdige
 
 def run(ctx, chosen, excluded, tier, dry):
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
-    out_root = WORK / 'runs' / f'{stamp}-{tier}'
+    out_root = WORK / 'runs' / (f'{stamp}-{tier}' + ('-holdout' if SPLIT == 'holdout' else ''))
     plan = [(w, level, out_root / w['name'], w['command'](ctx, level, out_root / w['name'])) for w, level in chosen]
     for name, reason in excluded:
         print(f'excluded {name}: {reason}')
@@ -270,7 +278,7 @@ def run(ctx, chosen, excluded, tier, dry):
             for env, cmd in steps:
                 print(' '.join([*(f'{k}={v}' for k, v in env.items()), *map(str, cmd)]))
         return 0
-    summary = dict(started=stamp, tier=tier, commit=git('rev-parse', 'HEAD'), dirty=bool(git('status', '--porcelain', '--', *SOURCES)),
+    summary = dict(started=stamp, tier=tier, split=SPLIT, commit=git('rev-parse', 'HEAD'), dirty=bool(git('status', '--porcelain', '--', *SOURCES)),
                    base=ctx.base, base_sha=ctx.base_sha, new_binary_sha256=sha256(NEW_BIN), base_binary_sha256=sha256(base_bin(ctx)),
                    corpus_manifest_sha256=sha256(MANIFEST), excluded=[dict(name=n, reason=r) for n, r in excluded], workloads=[])
     failed = False
@@ -292,7 +300,9 @@ def run(ctx, chosen, excluded, tier, dry):
                 validity.append(f'{result.name}: {doc.get("rounds")} rounds kept, {doc["discarded_rounds"]} discarded for host load'
                                 + ('' if doc.get('gated', True) else ', ungated'))
         statuses = {v['status'] for v in verdicts}
-        budget = 'no budget' if not verdicts else 'regression' if 'regression' in statuses else 'inconclusive' if 'inconclusive' in statuses else 'within budget'
+        undisposed = sum(len(v.get('undisposed', [])) for v in verdicts)
+        budget = ('no budget' if not verdicts else 'regression' if 'regression' in statuses else f'{undisposed} undisposed' if undisposed
+                  else 'inconclusive' if 'inconclusive' in statuses else 'within budget')
         outcome = 'ok' if status == 0 else 'regression' if status == 3 else 'FAIL'
         record = dict(name=w['name'], level=level, exit=status, outcome=outcome, budget=budget, verdicts=verdicts,
                       seconds=round(time.monotonic() - start, 1), validity=validity, log=str(out / 'log.txt'))
@@ -300,8 +310,9 @@ def run(ctx, chosen, excluded, tier, dry):
         failed |= status != 0
         print(f'{outcome:10} {w["name"]:18} {level:9} {record["seconds"]:8.1f}s  {budget:13}  {"; ".join(validity) or "no timing rounds"}')
         for v in verdicts:
-            if v['status'] != 'within':
-                print(f'    {v["metric"]}: {v["status"]} geomean {v["geomean"]} CI {v["ci"]} budget {v["budget"]}')
+            if v['status'] != 'within' or v.get('undisposed'):
+                print(f'    {v["metric"]}: {v["status"]} geomean {v["geomean"]} CI {v["ci"]} budget {v["budget"]}'
+                      + (f'; undisposed over {len(v["undisposed"])}: {", ".join(v["undisposed"][:5])}' if v.get('undisposed') else ''))
     summary['verdict'] = ('budgets in benchmarks/budgets.json; "within budget" needs every metric CI at or below its budget, '
                           'single-round tiers are often inconclusive; workloads without a budget only prove completion')
     (out_root / 'summary.json').write_text(json.dumps(summary, indent=1))
@@ -350,6 +361,7 @@ def main(argv=None):
     parser.add_argument('--area', type=split, default=[])
     parser.add_argument('--skip', type=split, default=[])
     parser.add_argument('--base', default=os.environ.get('BENCH_BASE', 'origin/master'))
+    parser.add_argument('--split', choices=['dev', 'holdout'], default='dev')
     parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--confirm-full', action='store_true')
     a = parser.parse_args(argv)
@@ -357,6 +369,8 @@ def main(argv=None):
         for w in WORKLOADS:
             print(f'{w["name"]:18} area={w["area"]:9} tiers={"; ".join(f"{t} {c}" for t, c in w["costs"].items())}\n    {w["purpose"]}')
         return 0
+    global SPLIT
+    SPLIT = a.split
     ctx = Context(a.base)
     if a.command == 'build':
         build(ctx)

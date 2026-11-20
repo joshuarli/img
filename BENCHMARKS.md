@@ -36,11 +36,30 @@ the commands and writes nothing.
 wall, CPU, peak RSS, encode and scoring time, 0.2% for output bytes, and a 10% limit
 per individual case. A metric *regresses* when the bootstrap 95% CI lower bound of its
 geomean ratio exceeds the budget, is *within budget* when the upper bound is at or
-below it, and is otherwise *inconclusive*; cases over the per-case limit are listed.
-One-round change tiers are often inconclusive; rerun the workload at `--tier scenario`
+below it, and is otherwise *inconclusive*. Every case over the per-case limit needs a
+written disposition in the JSON file named by `BENCH_DISPOSITIONS` (metric → case label
+→ reason); an undisposed case fails the verdict like a regression.
+One-round change tiers are often inconclusive, and a one-round result stays a smoke
+result whatever its across-image interval; rerun the workload at `--tier scenario`
 before acting on a suspected regression. Correctness gates are separate and always
 fail the workload: score bits must match the base, the new build must complete every
 case the base completes, and lossless encodes must round-trip exactly.
+
+**Verification and equivalent work.** Workflow and batch runs keep one output per
+case and tool. After the timed rounds, one verifier binary
+(`benchmarks/codecs/verify.rs`, built by `loops-build.sh` from this checkout, or the
+binary named by `BENCH_VERIFIER`) decodes every retained output for every tool and checks it
+against its source: exact samples for lossless, a measured SSIMULACRA2 score at or above
+the target otherwise. A case succeeds only when it exited 0 and was accepted. Batch
+reports attempted throughput, successful throughput and coverage separately, and
+compares timing only when every tool, job count and round succeeded on the same input
+identities. A requested encoder quality is a diagnostic setting, not evidence of equal
+achieved quality.
+
+**Holdout.** `--split holdout` runs the corpus workloads on the 50 held-out originals
+(all of them, not the dev picks). Use it only to qualify a frozen candidate, never
+while tuning; the run directory carries a `-holdout` suffix and `summary.json` records
+the split.
 
 Each run writes `.work/bench/runs/<UTC>-<tier>/` with a per-workload `log.txt`, result
 JSON, `*.verdict.json` and `summary.json` (commit, dirty state, binary and corpus

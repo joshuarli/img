@@ -18,6 +18,9 @@ path = "$root/benchmarks/codecs/score/score-loop.rs"
 name = "png-encode-loop"
 path = "$root/benchmarks/codecs/png/encode-loop.rs"
 [[bin]]
+name = "verify"
+path = "$root/benchmarks/codecs/verify.rs"
+[[bin]]
 name = "memory-jpegli"
 path = "$root/benchmarks/codecs/memory/jpegli.rs"
 [[bin]]

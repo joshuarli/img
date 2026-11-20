@@ -44,6 +44,13 @@ class Selection(unittest.TestCase):
         self.assertTrue(set(smoke) <= set(bench.corpus_set('scenario')) <= set(bench.corpus_set('dev')))
         self.assertFalse(bench.UNSUPPORTED & set(bench.corpus_set('dev')))
 
+    def test_holdout_is_selected_only_explicitly_and_never_overlaps_dev(self):
+        dev = set(bench.corpus_set('dev'))
+        holdout = set(bench.corpus_set('scenario', split='holdout'))
+        self.assertTrue(holdout)
+        self.assertFalse(dev & holdout)
+        self.assertTrue(set(bench.corpus_set('scenario')) <= dev)
+
 
 class Guards(unittest.TestCase):
     def run_bench(self, *args, env=None):
@@ -74,7 +81,21 @@ class Guards(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertIn('benchmarks/codecs/workflow.py', p.stdout)
         self.assertIn('WORKFLOW_SCORES=90', p.stdout)
+        self.assertIn('WORKFLOW_VERIFIER=', p.stdout)
         self.assertEqual(before, after)
+
+    def test_decode_report_names_candidate_and_reference(self):
+        p = self.run_bench('run', '--tier', 'scenario', '--only', 'jpeg-decode', '--base', 'HEAD', '--dry-run')
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertRegex(p.stdout, r'jpeg/decode-report.py \S+run.json new base')
+
+    def test_holdout_dry_run_uses_only_holdout_inputs(self):
+        p = self.run_bench('run', '--tier', 'scenario', '--only', 'workflow-lossless', '--base', 'HEAD', '--split', 'holdout', '--dry-run')
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        dev = set(bench.corpus_set('dev'))
+        named = {pathlib.Path(w).name for w in p.stdout.split() if w.endswith(('.png', '.jpg'))}
+        self.assertTrue(named)
+        self.assertFalse(named & dev)
 
 
 
@@ -89,8 +110,17 @@ class Budgets(unittest.TestCase):
         self.assertEqual(verdict.judge('wall', [('a', 0.8), ('b', 1.3), ('c', 0.95), ('d', 1.25)])['status'], 'inconclusive')
 
     def test_single_cases_over_the_per_case_limit_are_listed(self):
-        v = verdict.judge('bytes', [('fine', 1.0), ('bad', 1.2)])
+        v = verdict.judge('bytes', [('fine', 1.0), ('bad', 1.2)], disposed={})
         self.assertEqual(v['cases_over'], [('bad', 1.2)])
+
+    def test_cases_over_the_limit_need_a_disposition(self):
+        cases = [('fine', 1.0), ('bad', 1.2)]
+        with tempfile.TemporaryDirectory() as d:
+            path = pathlib.Path(d) / 'v.json'
+            self.assertTrue(verdict.write(path, [verdict.judge('bytes', cases, disposed={})]))
+            disposed = verdict.judge('bytes', cases, disposed={'bytes': {'bad': 'named size-for-speed tradeoff'}})
+            self.assertEqual(disposed['undisposed'], [])
+            self.assertEqual(disposed['dispositions'], {'bad': 'named size-for-speed tradeoff'})
 
 
 if __name__ == '__main__':
