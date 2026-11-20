@@ -97,35 +97,13 @@ is compiled.
   it as `Compressor::deflate_compress_chunk`, and libdeflate-sys's `build.rs`
   declares `rerun-if-changed` for the C tree so edits rebuild it.
 
-## rav1d 1.1.0
+## dav1d 1.5.4
 
-- Role: AV1 decode for AVIF (`src/still/av1.rs`), with upstream assembly.
-- Upstream: <https://github.com/memorysafety/rav1d>, crates.io `rav1d 1.1.0`,
-  checksum `1932f060d5e7bd49dc9f8b272c1dc5e9ce0ffe141c28be900265d3989b36c9ed`.
-- License: BSD-2-Clause (`vendor/rav1d/COPYING`).
-- Local patches: none to Rust or C sources. The published package excludes
-  `*.h`, so it omits `src/arm/asm-offsets.h`, which `src/arm/asm.S` includes.
-  The snapshot adds that file byte-identical to upstream tag v1.1.0 (commit
-  `782dab2135ea64a057c097088a13eb8ed3cc3320`, blob
-  `538de71b32f73894f0855b23ea625a89108929b6`, sha256
-  `b658d1084ebb60e504050fd85800c7d3b5658eb4a76d24ed9c59bb49af96d94f`).
-- Features: `bitdepth_8`, `bitdepth_16`, `asm`, `asm_arm64_dotprod`,
-  `asm_arm64_i8mm`, `asm_arm64_sve2`. The assembler build needs
-  `bitdepth_16`: `src/ipred.rs` references `dav1d_ipred_pixel_set_16bpc_neon`
-  from a runtime-dispatched match even when only eight-bit output is enabled,
-  and upstream supplies that symbol in `ipred16.S`. Enabling upstream's 16-bit
-  build is preferred to patching the crate. img still refuses high-precision
-  AVIF in its own shim, so eight-bit decoding is unchanged. SVE2 is
-  runtime-detected and provides 16-bit paths only; it builds with Apple clang
-  and Alpine clang.
-- Build: ARM64 compiles `src/arm/64/*.S` with `cc -march=armv8.6-a(+sve2)`.
-  x86-64 assembles `src/x86/*.asm` with NASM through nasm-rs (minimum 2.14.0;
-  NASM 3.01 works) and archives the objects with `cc`. LTO and `panic=abort`
-  come from the img profile.
-- Regeneration: reinstall the published crate, copy it verbatim, and re-add
-  `src/arm/asm-offsets.h` from the same upstream tag. Confirm with `diff -r`
-  against the registry source, then rerun `make native-build-check` and the
-  AVIF tests.
+- Role: AV1 plane decode for AVIF (`src/still/av1.rs`).
+- Upstream: <https://code.videolan.org/videolan/dav1d>, tag 1.5.4, commit `191bdda98ec3c68137754dc97da1db34043d7cd4`.
+- License: BSD-2-Clause (`vendor/dav1d/COPYING`).
+- Local changes: none to upstream source; the upstream CI configuration is omitted. `codecs/dav1d-sys` supplies the cc build and a C shim using upstream headers. The ARM64 source list excludes `lf_mask.S`, which was introduced after 1.5.4.
+- Build: 8- and 16-bit templates and ARM64 assembly enabled; `HAVE_ALIGNED_ALLOC=1` matches upstream Meson on this host. The shim requests one thread, one frame of delay, and film grain. The decoder retains the picture until color conversion is complete. Qualification and checkasm results are in [dav1d integration](codecs/dav1d-integration.md).
 
 ## fast-ssim2 0.9.1
 

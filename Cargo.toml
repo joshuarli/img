@@ -35,9 +35,7 @@ libjpeg-turbo-sys = { path = "codecs/libjpeg-turbo-sys" }
 # vendored webpkit snapshot staged for the parity campaign (MIT OR Apache-2.0).
 webpkit = { path = "codecs/webpkit", version = "0.1.0", features = ["rayon"] }
 image-webp = "=0.2.4"
-# Upstream memorysafety.org Rust port of dav1d, BSD-2-Clause, vendored with its
-# ARM and x86 assembly. The assembler build requires bitdepth_16.
-rav1d = { version = "=1.1.0", default-features = false, features = ["bitdepth_8", "bitdepth_16", "asm", "asm_arm64_dotprod", "asm_arm64_i8mm", "asm_arm64_sve2"] }
+dav1d-sys = { path = "codecs/dav1d-sys" }
 libavif-sys = { path = "codecs/libavif-sys" }
 yuv = { version = "=0.8.20", default-features = false }
 moxcms = { version = "=0.8.1", features = ["extended_range"] }
@@ -108,5 +106,4 @@ required-features = ["build-binary"]
 oxipng = { path = "vendor/oxipng" }
 libdeflater = { path = "vendor/libdeflater" }
 libdeflate-sys = { path = "vendor/libdeflate-sys" }
-rav1d = { path = "vendor/rav1d" }
 fast-ssim2 = { path = "vendor/fast-ssim2" }
