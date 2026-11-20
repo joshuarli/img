@@ -32,6 +32,8 @@ def main():
                     key = (item['source'], encoder, effort, target)
                     if key in done:
                         continue
+                    while subprocess.run(['perf-gate-ready'], capture_output=True).returncode:
+                        time.sleep(20)
                     record = {'input': item['source'], 'group': item['group'], 'encoder': encoder, 'effort': effort, 'target': target, 'wall_ms': [], 'cpu_ms': []}
                     for _ in range(repeats):
                         dest = work / f'{encoder}.jpg'
@@ -43,6 +45,8 @@ def main():
                             break
                         record['wall_ms'].append(wall)
                         record['cpu_ms'].append(cpu)
+                    if subprocess.run(['perf-gate-ready', '-1'], capture_output=True).returncode:
+                        record['gate'] = 'host load after the timed repeats; rerun to replace'
                     if record['exit'] == 0:
                         record['bytes'] = dest.stat().st_size
                         c = subprocess.run([str(binaries.get('img', next(iter(binaries.values())))), 'compare', str(source), str(dest), '--json'], capture_output=True)

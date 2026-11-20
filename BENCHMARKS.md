@@ -48,6 +48,16 @@ hashes, exit status, budget verdicts, duration, kept and discarded rounds, exclu
 Exit status is nonzero for any failure or regression. `.work/` is disposable: copy
 evidence that matters into `benchmarks/results/` and summarize it in `docs/CODECS.md`.
 
+**Decode qualification inputs.** `benchmarks/codecs/decode-prepare {jpeg,png,avif,all} DEST
+--corpus DIR --img BINARY [--base-checkout DIR]` fetches or copies the pinned reference
+decoders (checksummed archives; libaom by verified commit), builds the in-process
+harnesses and generates fixtures from the dev split, all under `DEST`; it is idempotent
+and `--dry-run` prints the steps. `scripts/bench check` prints the exact command for the
+default `DEST` (`.work/bench/decode`). The PNG library harness needs libpng 1.6.59 via
+`pkg-config`; the dav1d build needs upstream Meson (set `MESON=` if the default `meson`
+cannot configure it). The jpeg-decode and avif-decode workloads rebuild their img
+harnesses on every run, so they always measure the current sources.
+
 **Attributing a change.** `scripts/bench profile [--binary new|base] -- ARGS` runs one
 symbolized release build (`cargo build --release --features build-binary`) under
 macOS `sample` or Linux `perf` and writes the top-of-stack table to

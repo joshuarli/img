@@ -24,9 +24,11 @@ def run(s,path,r):
     return dict(tool=s['label'],input=path.replace(root+'/',''),round=r,ok=ok,bytes=os.path.getsize(dst) if ok else None,
         wall=wall,user=ru.ru_utime,sys=ru.ru_stime,rss=ru.ru_maxrss,err=None if ok else err[-300:],
         sha=hashlib.sha256(open(dst,'rb').read()).hexdigest() if ok else None)
-rec=[]
-for r in range(rounds):
+rec=[]; discarded=0; r=0
+while r<rounds:
+    if subprocess.run(['perf-gate-ready'],capture_output=True).returncode: discarded+=1; time.sleep(20); continue
     order=specs if r%2==0 else specs[::-1]
-    for path in inputs:
-        for s in order: rec.append(run(s,path,r))
-json.dump(dict(specs=specs,binaries={s['binary']:hashlib.sha256(open(refs+'/'+s['binary'],'rb').read()).hexdigest() for s in specs},records=rec),open(out,'w'),indent=1)
+    batch=[run(s,path,r) for path in inputs for s in order]
+    if subprocess.run(['perf-gate-ready','-1'],capture_output=True).returncode: discarded+=1; continue
+    rec+=batch; r+=1
+json.dump(dict(rounds=rounds,discarded_rounds=discarded,specs=specs,binaries={s['binary']:hashlib.sha256(open(refs+'/'+s['binary'],'rb').read()).hexdigest() for s in specs},records=rec),open(out,'w'),indent=1)

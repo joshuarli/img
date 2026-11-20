@@ -28,9 +28,8 @@ SET_PICKS['scenario'] = SET_PICKS['smoke'] + [
     ('photo', 'jpeg', 'large', {}), ('photo', 'jpeg', 'xlarge', {}), ('grayscale', 'jpeg', 'large', {}),
     ('texture', 'jpeg', 'xlarge', {}), ('ui-text', 'jpeg', 'medium', {}), ('synthetic', 'png', 'icon', {'alpha': True}),
     ('synthetic', 'png', 'medium', {'bit_depth': 16})]
-JPEG_SCRATCH = pathlib.Path(os.environ.get('JPEG_SCRATCH', SHARED / '.work/tmp/jpeg-candidates'))
-AVIF_SCRATCH = pathlib.Path(os.environ.get('AVIF_SCRATCH', SHARED / '.work/tmp/avif-candidates'))
-PNG_QUALIFY = SHARED / '.work/tmp/png-qualify'
+DECODE = WORK / 'decode'
+JPEG_SCRATCH, AVIF_SCRATCH, PNG_QUALIFY = DECODE / 'jpeg', DECODE / 'avif', DECODE / 'png'
 LOOPS = WORK / 'loops'
 
 
@@ -94,7 +93,8 @@ def png_encode(ctx, level, out):
 
 
 def decode_jpeg(ctx, level, out):
-    return [({}, py('benchmarks/codecs/jpeg/decode-qualify.py', JPEG_SCRATCH / 'decode-fixtures', out / 'run.json', 9,
+    return [({'JPEG_SCRATCH': str(JPEG_SCRATCH), 'IMG_BASE': str(base_tree(ctx))}, ['sh', str(ROOT / 'benchmarks/codecs/jpeg/decode-build.sh')]),
+            ({}, py('benchmarks/codecs/jpeg/decode-qualify.py', JPEG_SCRATCH / 'fixtures', out / 'run.json', 9,
                     f'new={JPEG_SCRATCH}/decode-loop-target/release/jpeg-decode-loop:img',
                     f'base={JPEG_SCRATCH}/decode-loop-base-target/release/jpeg-decode-loop:img')),
             ({}, py('benchmarks/codecs/jpeg/decode-report.py', out / 'run.json'))]
@@ -102,7 +102,8 @@ def decode_jpeg(ctx, level, out):
 
 def decode_avif(ctx, level, out):
     q = AVIF_SCRATCH
-    return [({}, py('benchmarks/codecs/avif/decode-qualify.py', q / 'decode-fixtures', out / 'run.json', 9, q / 'img-target/release/avif-qual-img',
+    return [({'AVIF_SCRATCH': str(q)}, ['sh', str(ROOT / 'benchmarks/codecs/avif/decode-build.sh')]),
+            ({}, py('benchmarks/codecs/avif/decode-qualify.py', q / 'fixtures', out / 'run.json', 9, q / 'img-target/release/avif-qual-img',
                     q / 'qual-dav1d-target/release/avif-qual-dav1d', q / 'qual-zen-target/release/avif-qual-zen')),
             ({}, py('benchmarks/codecs/avif/decode-report.py', out / 'run.json'))]
 
@@ -137,7 +138,7 @@ WORKLOADS = [
     dict(name='batch', area='batch', purpose='multi-image throughput and peak RSS under -j', levels=BATCH_LEVELS, costs={'change': '1 s observed', 'scenario': 'est. 30 min'},
          needs=['new', 'base', 'corpus', 'gate'], command=batch_command),
     dict(name='jpeg-decode', area='decode', purpose='in-process JPEG decode time and RSS vs base on qualification fixtures',
-         levels={'scenario': None}, costs={'scenario': 'est. 30 min (9 gated rounds)'}, needs=['gate', 'jpeg-decode'], command=decode_jpeg),
+         levels={'scenario': None}, costs={'scenario': 'est. 30 min (9 gated rounds)'}, needs=['gate', 'base-tree', 'jpeg-decode'], command=decode_jpeg),
     dict(name='avif-decode', area='decode', purpose='AVIF decode vs dav1d and Zen (library qualification)',
          levels={'full': None}, costs={'full': 'est. 60 min (9 gated rounds)'}, needs=['gate', 'avif-decode'], command=decode_avif),
     dict(name='png-decode', area='decode', purpose='png crate vs libspng, libpng and Zen (library qualification)',
@@ -207,19 +208,17 @@ def check(ctx, chosen):
         if bad:
             fail('corpus', f'{len(bad)} qualification corpus files missing or changed in {CORPUS} (first: {bad[0]})',
                  f'python3 -I scripts/qualification-corpus {CORPUS}')
-    for need, paths, fix in (
-        ('jpeg-decode', [JPEG_SCRATCH / 'decode-fixtures/manifest.json', JPEG_SCRATCH / 'decode-loop-target/release/jpeg-decode-loop',
-                         JPEG_SCRATCH / 'decode-loop-base-target/release/jpeg-decode-loop'],
-         'see docs/BENCHMARKS.md "Decode qualification" (benchmarks/codecs/jpeg/decode-build.sh with IMG_BASE, decode-fixtures.py)'),
-        ('avif-decode', [AVIF_SCRATCH / 'decode-fixtures/manifest.json', AVIF_SCRATCH / 'img-target/release/avif-qual-img'],
-         'see docs/codecs/avif-candidates.md (benchmarks/codecs/avif/build.sh, decode-build.sh, decode-prepare.py)'),
-        ('png-decode', [PNG_QUALIFY / 'fixtures/manifest.json', PNG_QUALIFY / 'target/release/png-decode-loop'],
-         'sh benchmarks/codecs/png/decode-build.sh && python3 benchmarks/codecs/png/decode-fixtures.py')):
+    prepare = lambda fmt: (f'benchmarks/codecs/decode-prepare {fmt} {DECODE} --corpus {CORPUS} --img {NEW_BIN}'
+                           + (f' --base-checkout {base_tree(ctx)}' if fmt == 'jpeg' else ''))
+    for need, paths in (
+        ('jpeg-decode', [JPEG_SCRATCH / 'fixtures/manifest.json', JPEG_SCRATCH / 'turbo-build/cjpeg-static']),
+        ('avif-decode', [AVIF_SCRATCH / 'fixtures/manifest.json', AVIF_SCRATCH / 'avifcodec']),
+        ('png-decode', [PNG_QUALIFY / 'fixtures/manifest.json', PNG_QUALIFY / 'target/release/png-decode-loop'])):
         missing = [p for p in paths if not p.exists()]
         if need in needs and missing:
-            fail(need, f'{missing[0]} missing', fix)
-    if 'jpeg-decode' in needs:
-        warnings.append('jpeg-decode harness binaries are not checked for freshness; rebuild them after changing decode code')
+            fail(need, f'{missing[0]} missing', prepare(need.split('-')[0]))
+    if 'png-decode' in needs:
+        warnings.append('png-decode qualifies libraries, not img; its harness is not rebuilt per run')
     free = shutil.disk_usage(ROOT).free
     if free < 5 << 30:
         problems.append(f'only {free >> 30} GiB free; workloads write outputs under .work/bench')
