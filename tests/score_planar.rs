@@ -1,4 +1,4 @@
-use img::{perceptual::PerceptualReference, still::{Effort, EncodingMode, Format, SampleLayout, StillImage}};
+use img::{perceptual::{PerceptualReference, ReferenceMemory}, still::{Effort, EncodingMode, Format, SampleLayout, StillImage}};
 use zenpixels::{PixelDescriptor, PixelSlice};
 
 fn noise(len: usize, seed: u32) -> Vec<u8> {
@@ -29,9 +29,11 @@ fn planar_streamed_scores_match_the_uncached_metric_bit_for_bit() {
             let source = StillImage::from_samples(w as u32, h as u32, layout, samples).unwrap();
             let candidate = StillImage::from_samples(w as u32, h as u32, layout, changed).unwrap();
             let bytes = candidate.encode(Format::Png, EncodingMode::Lossless, Effort::Fast).unwrap();
-            let measured = PerceptualReference::new(&source).unwrap().score_encoded(&bytes).unwrap();
             let expected = oracle(&source, &StillImage::decode(&bytes).unwrap());
-            assert_eq!(measured.to_bits(), expected.to_bits(), "{w}x{h} {layout:?}: {measured} vs {expected}");
+            for memory in [ReferenceMemory::Fast, ReferenceMemory::Compact] {
+                let measured = PerceptualReference::with_memory(&source, memory).unwrap().score_encoded(&bytes).unwrap();
+                assert_eq!(measured.to_bits(), expected.to_bits(), "{w}x{h} {layout:?} {memory:?}: {measured} vs {expected}");
+            }
         }
     }
 }

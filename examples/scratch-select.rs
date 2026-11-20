@@ -24,6 +24,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 effort: Effort::Fast,
                 metadata: MetadataPolicy::Keep,
                 max_dimension: None,
+                ..Request::default()
             };
             records.push(dump(name, &format!("convert-webp-t{target}"), &bytes, request));
         }
@@ -37,6 +38,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 effort: Effort::Fast,
                 metadata: MetadataPolicy::Keep,
                 max_dimension: None,
+                ..Request::default()
             };
             records.push(dump(name, &format!("auto-t{target}"), &bytes, request));
             let request = Request {
@@ -45,6 +47,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 effort: Effort::Balanced,
                 metadata: MetadataPolicy::Keep,
                 max_dimension: None,
+                ..Request::default()
             };
             records.push(dump(name, &format!("convert-webp-balanced-t{target}"), &bytes, request));
         }

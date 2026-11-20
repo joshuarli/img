@@ -1504,28 +1504,32 @@ pub(crate) fn maps_streamed_channel(
     rg: &RecursiveGaussian,
     xyb1: &[f32],
     xyb2: &[f32],
-    mu1: &[f32],
-    sigma1_sq: &[f32],
+    reference: Option<(&[f32], &[f32])>,
     width: usize,
     height: usize,
 ) -> ([f64; 2], [f64; 4]) {
     assert!(width >= 8 && height >= 8);
-    let mut rows = [
+    let mut rows = vec![
         HorizontalRows::new(xyb2, Some(xyb2), width, height),
         HorizontalRows::new(xyb1, Some(xyb2), width, height),
         HorizontalRows::new(xyb2, None, width, height),
     ];
+    if reference.is_none() {
+        rows.push(HorizontalRows::new(xyb1, None, width, height));
+        rows.push(HorizontalRows::new(xyb1, Some(xyb1), width, height));
+    }
+    let streams = rows.len();
     let cols8 = width / 8 * 8;
     let groups: Vec<usize> = (0..cols8).step_by(8).chain((cols8 < width).then(|| width - 8)).collect();
-    let mut states: [Vec<f32>; 3] = core::array::from_fn(|_| vec![0.0; groups.len() * 48]);
-    let mut out: [Vec<f32>; 3] = core::array::from_fn(|_| vec![0.0; width]);
+    let mut states: Vec<Vec<f32>> = (0..streams).map(|_| vec![0.0; groups.len() * 48]).collect();
+    let mut out: Vec<Vec<f32>> = (0..streams).map(|_| vec![0.0; width]).collect();
     let (mut sum0, mut sum1, mut esums) = (0f64, 0f64, [0f64; 4]);
     let r = rg.radius as i64;
     let h = height as i64;
     for n in (-r + 1)..h {
         let (top, bottom) = (n - r - 1, n + r - 1);
         let oldest = top.max(0) as usize;
-        for q in 0..3 {
+        for q in 0..streams {
             if top >= 0 { rows[q].ensure(rg, top as usize, oldest); }
             if bottom < h { rows[q].ensure(rg, bottom as usize, oldest); }
             let t = (top >= 0).then(|| rows[q].row(top as usize));
@@ -1537,12 +1541,16 @@ pub(crate) fn maps_streamed_channel(
         if n >= 0 {
             let at = n as usize * width;
             let span = at..at + width;
-            let [sigma2_sq, sigma12, mu2] = &out;
+            let (mu1, sigma1_sq) = match reference {
+                Some((mu1, sigma1_sq)) => (&mu1[span.clone()], &sigma1_sq[span.clone()]),
+                None => (&out[3][..], &out[4][..]),
+            };
+            let (sigma2_sq, sigma12, mu2) = (&out[0][..], &out[1][..], &out[2][..]);
             incant!(
                 maps_fused_inner(
-                    &mu1[span.clone()],
+                    mu1,
                     mu2,
-                    &sigma1_sq[span.clone()],
+                    sigma1_sq,
                     sigma2_sq,
                     sigma12,
                     &xyb1[span.clone()],
