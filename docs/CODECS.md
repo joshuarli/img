@@ -171,8 +171,17 @@ which measurement shows is below their actual peak (open, WebP lane). Results:
    Encoding img's output with jpegli progressive level 1 instead of 2 decodes
    25–30% faster but costs 2.0% bytes on average (up to 9.4%), so it is not
    taken. Reaching 0.80× needs a different decoder design, not tuning.
-4. **AVIF decode vs dav1d**: dav1d (BSD-2-Clause, C + assembly) is 9–10% faster
-   than rav1d with lower RSS. A `cc`-built dav1d 1.5.5 (branch
+3a. **PNG decode vs png 0.18.1** (0.80× R): blocked at the decoder frontier.
+   A profile of img's own PNG output puts 71% of decode in fdeflate's inflate
+   loop and 12% in Paeth unfiltering. Removing literal-write bounds checks, a
+   different Paeth predictor, a larger literal table and deferred speculative
+   lookups each measured no gain (2026-11-20). Replacing the inflater with the
+   already-vendored libdeflate decompresses IDAT at 0.82–0.95× fdeflate's time
+   on large images and 1.2–1.4× on small ones, which projects to about 0.92×
+   overall and would give up streaming; not taken.
+4. **AVIF decode vs dav1d**: R is dav1d itself, so 0.80× R cannot come from
+   adopting it; even a fixed dav1d build would reach about 1.0×. dav1d
+   (BSD-2-Clause, C + assembly) is 9–10% faster than rav1d with lower RSS. A `cc`-built dav1d 1.5.5 (branch
    `perf/dav1d-decode`, parked) decodes identically to rav1d without assembly,
    but its assembly build differs by up to 7 levels on 26 of 31 fixtures; the
    cause is not yet found.
