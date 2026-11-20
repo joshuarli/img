@@ -2,8 +2,16 @@
 
 img compares actual decoded candidate bytes with an orientation-correct,
 eight-bit SDR reference. Color preparation uses floating-point linear sRGB.
-Validated ICC sources, including wide-gamut Display P3 phone photos, convert to
-extended-range linear sRGB without clamping, as libjxl's `ssimulacra2` does.
+Validated ICC sources, including wide-gamut Display P3 phone photos, convert
+directly to extended-range linear sRGB (a linear-TRC sRGB destination profile)
+without clamping, as libjxl's `ssimulacra2` does. Converting to encoded sRGB
+and linearizing afterwards both cost two transfer-function evaluations per
+sample and mis-mapped negative values: the CMS extends sRGB's linear segment
+below zero, so mirroring the power curve made Adobe RGB green read -1.02
+instead of -0.078 in linear red. On four ICC-tagged photographs scored as PNG
+pairs, the direct path moved img 0.006–0.058 from jpeg-xl 0.13.0
+`ssimulacra2`, against 0.015–0.075 before, and made `img compare` 2.5–3.9x
+faster.
 On three P3 photos at JPEG qualities 60 and 85, img stayed within 0.003–0.052
 of jpeg-xl 0.13.0 `ssimulacra2` on the same files, against 0.007–0.068 on
 sRGB photos where both tools differ only in JPEG decoding. Clamping instead

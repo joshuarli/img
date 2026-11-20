@@ -43,26 +43,26 @@ fn all_exif_orientations_are_applied_once_and_stripping_respects_exactness() {
 }
 
 #[test]
-fn floating_point_profile_preparation_matches_independent_lcms() {
-    let profile = moxcms::ColorProfile::new_display_p3().encode().unwrap();
-    let samples = [60, 70, 80, 90, 100, 110, 130, 120, 110, 160, 155, 150];
-    let image = png_image(2, 2, &samples, png::ColorType::Rgb, Some(profile.clone()), None);
-    let prepared = image.prepare().unwrap();
-    let source = lcms2::Profile::new_icc(&profile).unwrap();
-    let target = lcms2::Profile::new_srgb();
-    let transform: lcms2::Transform<[f32; 3], [f32; 3]> = lcms2::Transform::new_flags(&source, lcms2::PixelFormat::RGB_FLT,
-        &target, lcms2::PixelFormat::RGB_FLT, lcms2::Intent::Perceptual, lcms2::Flags::NO_CACHE).unwrap();
-    let input: Vec<_> = samples.chunks_exact(3).map(|p| [p[0] as f32 / 255.0, p[1] as f32 / 255.0, p[2] as f32 / 255.0]).collect();
-    let mut expected = vec![[0.0; 3]; input.len()]; transform.transform_pixels(&input, &mut expected);
-    for (actual, expected) in prepared.linear_rgb().iter().zip(expected) {
-        for (&a, e) in actual.iter().zip(expected) { assert!((a - linear(e)).abs() < 0.001, "{a} vs {}", linear(e)); }
+fn floating_point_profile_preparation_matches_independent_lcms_in_linear_light() {
+    let srgb = lcms2::CIExyYTRIPLE {
+        Red: lcms2::CIExyY { x: 0.64, y: 0.33, Y: 1.0 }, Green: lcms2::CIExyY { x: 0.30, y: 0.60, Y: 1.0 }, Blue: lcms2::CIExyY { x: 0.15, y: 0.06, Y: 1.0 },
+    };
+    let linear_curve = lcms2::ToneCurve::new(1.0);
+    let target = lcms2::Profile::new_rgb(&lcms2::CIExyY { x: 0.3127, y: 0.3290, Y: 1.0 }, &srgb, &[&linear_curve, &linear_curve, &linear_curve]).unwrap();
+    let samples = [60, 70, 80, 90, 100, 110, 130, 120, 110, 160, 155, 150, 255, 0, 0, 51, 147, 3, 0, 255, 0, 20, 30, 250];
+    for profile in [moxcms::ColorProfile::new_display_p3().encode().unwrap(), moxcms::ColorProfile::new_adobe_rgb().encode().unwrap()] {
+        let image = png_image(samples.len() as u32 / 3, 1, &samples, png::ColorType::Rgb, Some(profile.clone()), None);
+        let source = lcms2::Profile::new_icc(&profile).unwrap();
+        let transform: lcms2::Transform<[f32; 3], [f32; 3]> = lcms2::Transform::new_flags(&source, lcms2::PixelFormat::RGB_FLT,
+            &target, lcms2::PixelFormat::RGB_FLT, lcms2::Intent::RelativeColorimetric, lcms2::Flags::NO_CACHE).unwrap();
+        let input: Vec<_> = samples.chunks_exact(3).map(|p| [p[0] as f32 / 255.0, p[1] as f32 / 255.0, p[2] as f32 / 255.0]).collect();
+        let mut expected = vec![[0.0; 3]; input.len()]; transform.transform_pixels(&input, &mut expected);
+        let prepared = image.prepare().unwrap();
+        assert!(prepared.linear_rgb().iter().flatten().any(|&v| v < -0.01), "out-of-sRGB colors must keep their extended range, not be clipped");
+        for (actual, expected) in prepared.linear_rgb().iter().zip(expected) {
+            for (&a, e) in actual.iter().zip(expected) { assert!((a - e).abs() < 0.001 * e.abs().max(1.0), "{a} vs {e}"); }
+        }
     }
-    let outside = png_image(1, 1, &[255, 0, 0], png::ColorType::Rgb, Some(profile), None);
-    let mut expected = [[0.0f32; 3]]; transform.transform_pixels(&[[1.0, 0.0, 0.0]], &mut expected);
-    let extended = |v: f32| v.signum() * linear(v.abs());
-    let actual = outside.prepare().unwrap().linear_rgb()[0];
-    assert!(actual.iter().any(|v| !(0.0..=1.0).contains(v)), "out-of-sRGB colors must keep their extended range, not be clipped: {actual:?}");
-    for (a, e) in actual.iter().zip(expected[0]) { assert!((a - extended(e)).abs() < 0.001, "{a} vs {}", extended(e)); }
     let pair = png_image(2, 1, &[255, 0, 0, 255, 0, 0], png::ColorType::Rgb, Some(moxcms::ColorProfile::new_display_p3().encode().unwrap()), None);
     assert!(pair.resize_to_fit(NonZeroU32::new(1).unwrap()).err().unwrap().to_string().contains("gamut"), "8-bit sRGB output must refuse rather than clip");
 }

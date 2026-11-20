@@ -49,6 +49,14 @@ pub(crate) fn checked_sdr(value: f32) -> Result<f32, Error> {
     Ok(value.clamp(0.0, 1.0))
 }
 
+fn linear_srgb() -> ColorProfile {
+    let mut profile = ColorProfile::new_srgb();
+    let linear = moxcms::ToneReprCurve::Lut(Vec::new());
+    profile.red_trc = Some(linear.clone()); profile.green_trc = Some(linear.clone()); profile.blue_trc = Some(linear);
+    profile.cicp = None;
+    profile
+}
+
 pub(crate) fn srgb_to_linear(value: f32) -> f32 {
     if value <= 0.04045 { value / 12.92 } else { libm::powf((value + 0.055) / 1.055,2.4) }
 }
@@ -128,10 +136,9 @@ impl StillImage {
                 } else { Layout::Rgb };
                 let input = if layout == Layout::Gray { rgb.chunks_exact(3).map(|p| p[0]).collect() } else { rgb };
                 rgb = vec![0.0; samples.len() / channels * 3];
-                let transform = profile.create_transform_f32(layout, &ColorProfile::new_srgb(), Layout::Rgb, transform_options())
+                let transform = profile.create_transform_f32(layout, &linear_srgb(), Layout::Rgb, transform_options())
                     .map_err(|e| Error::caused(ErrorKind::Unsupported, e))?;
                 transform.transform(&input, &mut rgb).map_err(|e| Error::caused(ErrorKind::Unsupported, e))?;
-                for value in &mut rgb { if !value.is_finite() { return Err(Error::new(ErrorKind::Unsupported, "nonfinite prepared color sample")); } *value = value.signum() * srgb_to_linear(value.abs()); }
             },
             ColorInterpretation::Gamma(gamma) => for value in &mut rgb { *value = libm::powf(*value,gamma); },
             ColorInterpretation::Srgb => {},
