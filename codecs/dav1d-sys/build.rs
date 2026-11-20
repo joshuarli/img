@@ -2,6 +2,8 @@ use std::{env, fs, path::{Path, PathBuf}, process::Command};
 
 fn build(root: &Path, out: &Path) -> cc::Build {
     let mut b = cc::Build::new();
+    // Upstream meson defines _GNU_SOURCE on Linux for posix_memalign and pthread affinity.
+    if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("linux") { b.define("_GNU_SOURCE", None); }
     b.include(root).include(root.join("include")).include(out).warnings(false).flag_if_supported("-std=c11");
     b
 }
@@ -26,7 +28,7 @@ fn main() {
         ("HAVE_C11_GENERIC", true), ("ENDIANNESS_BIG", false), ("ARCH_AARCH64", arm), ("ARCH_ARM", false),
         ("ARCH_X86", !arm), ("ARCH_X86_64", !arm), ("ARCH_X86_32", false), ("ARCH_PPC64LE", false),
         ("ARCH_RISCV", false), ("ARCH_RV32", false), ("ARCH_RV64", false), ("ARCH_LOONGARCH", false),
-        ("ARCH_LOONGARCH32", false), ("ARCH_LOONGARCH64", false), ("HAVE_AS_FUNC", arm && linux),
+        ("ARCH_LOONGARCH32", false), ("ARCH_LOONGARCH64", false), ("HAVE_AS_FUNC", false),
         ("HAVE_AS_ARCH_DIRECTIVE", arm), ("HAVE_AS_ARCHEXT_DOTPROD_DIRECTIVE", arm),
         ("HAVE_AS_ARCHEXT_I8MM_DIRECTIVE", arm), ("HAVE_AS_ARCHEXT_SVE_DIRECTIVE", arm),
         ("HAVE_AS_ARCHEXT_SVE2_DIRECTIVE", arm), ("HAVE_DOTPROD", arm), ("HAVE_I8MM", arm), ("HAVE_SVE", arm), ("HAVE_SVE2", arm),
