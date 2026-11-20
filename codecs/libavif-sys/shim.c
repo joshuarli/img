@@ -18,7 +18,7 @@ int img_avif_qindex(float quality) {
     return (int)lroundf(qindex);
 }
 
-int img_avif_encode(uint32_t width, uint32_t height, const uint8_t *pixels, int speed, int qindex,
+int img_avif_encode(uint32_t width, uint32_t height, const uint8_t *pixels, int speed, int qindex, int threads,
                     const uint8_t *exif, size_t exif_size, avifRWData *output) {
     avifImage *image = avifImageCreate(width, height, 8, AVIF_PIXEL_FORMAT_YUV444);
     if (!image) return AVIF_RESULT_OUT_OF_MEMORY;
@@ -38,7 +38,7 @@ int img_avif_encode(uint32_t width, uint32_t height, const uint8_t *pixels, int 
     encoder->codecChoice = AVIF_CODEC_CHOICE_AOM;
     encoder->speed = speed;
     encoder->quality = qindex == 0 ? AVIF_QUALITY_LOSSLESS : 50;
-    encoder->maxThreads = 1;
+    encoder->maxThreads = threads;
     avifResult result = exif ? avifImageSetMetadataExif(image, exif, exif_size) : AVIF_RESULT_OK;
     if (result == AVIF_RESULT_OK && qindex != 0) {
         char value[4];
