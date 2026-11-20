@@ -93,16 +93,21 @@ pub struct Outcome {
     pub warnings: Vec<String>,
 }
 
-fn expanded(image: &StillImage) -> Vec<[u16; 4]> {
-    let samples = image.samples();
+fn expanded<'a>(image: &StillImage, samples: &'a [u8]) -> impl Iterator<Item = [u16; 4]> + 'a {
     let channels = image.pixels.descriptor().channels();
-    let values: Vec<u16> = if image.bit_depth() == 8 { samples.iter().map(|&v| v as u16).collect() }
-        else { samples.chunks_exact(2).map(|p| u16::from_ne_bytes([p[0],p[1]])).collect() };
-    let opaque = if image.bit_depth() == 8 { 255 } else { 65535 };
-    values.chunks_exact(channels).map(|p| {
-        let rgb = if image.is_grayscale() { [p[0]; 3] } else { [p[0],p[1],p[2]] };
-        [rgb[0],rgb[1],rgb[2],if image.has_alpha() { p[channels-1] } else { opaque }]
-    }).collect()
+    let wide = image.bit_depth() != 8;
+    let (gray, alpha) = (image.is_grayscale(), image.has_alpha());
+    samples.chunks_exact(channels * if wide { 2 } else { 1 }).map(move |p| {
+        let value = |i: usize| if wide { u16::from_ne_bytes([p[2*i],p[2*i+1]]) } else { u16::from(p[i]) };
+        let rgb = if gray { [value(0); 3] } else { [value(0),value(1),value(2)] };
+        [rgb[0],rgb[1],rgb[2],if alpha { value(channels-1) } else if wide { 65535 } else { 255 }]
+    })
+}
+fn opaque(image: &StillImage) -> bool {
+    if !image.has_alpha() { return true; }
+    let samples = image.sample_bytes();
+    let width = if image.bit_depth() == 8 { 1 } else { 2 };
+    samples.chunks_exact(image.pixels.descriptor().channels() * width).all(|p| p[p.len()-width..].iter().all(|&b| b == 0xFF))
 }
 fn required_png_color(image:&StillImage)->Vec<&[u8]> {
     let mut facts:Vec<_>=image.png_metadata.iter().filter(|chunk|match &chunk[4..8] {
@@ -119,12 +124,13 @@ pub fn samples_equal(first: &StillImage, second: &StillImage) -> bool {
         && first.metadata.orientation == second.metadata.orientation
         && first.metadata.icc_profile == second.metadata.icc_profile
         && required_png_color(first)==required_png_color(second)
-        && if first.pixels.descriptor() == second.pixels.descriptor() { first.samples() == second.samples() } else { expanded(first) == expanded(second) }
+        && { let (a, b) = (first.sample_bytes(), second.sample_bytes());
+            if first.pixels.descriptor() == second.pixels.descriptor() { a == b } else { expanded(first, &a).eq(expanded(second, &b)) } }
 }
 fn compatible(image: &StillImage, format: Format, fidelity: Fidelity) -> bool {
     if image.bit_depth() > 8 { return format == Format::Png && matches!(fidelity, Fidelity::Lossless); }
     match format {
-        Format::Jpeg => !matches!(fidelity, Fidelity::Lossless) && expanded(image).iter().all(|p| p[3] == 255),
+        Format::Jpeg => !matches!(fidelity, Fidelity::Lossless) && opaque(image),
         Format::Png => !(matches!(fidelity,Fidelity::Quality(_)) && image.is_grayscale()),
         Format::Webp => true,
         Format::Avif => !image.has_alpha() && !image.is_grayscale() && !matches!(fidelity, Fidelity::Lossless),

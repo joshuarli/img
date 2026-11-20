@@ -168,3 +168,16 @@ fn direct_quality_does_not_score_candidates() {
     assert_eq!(result.score,None);
     assert!(result.evaluations.iter().all(|e|e.score.is_none() && e.failure.is_none()));
 }
+#[test]
+fn sample_equality_expands_layouts_and_alpha_without_changing_meaning() {
+    let gray=StillImage::from_samples(3,1,SampleLayout::Gray8,vec![10,20,30]).unwrap();
+    let rgb=StillImage::from_rgb8(3,1,vec![10,10,10,20,20,20,30,30,30]).unwrap();
+    let rgba=StillImage::from_samples(3,1,SampleLayout::Rgba8,vec![10,10,10,255,20,20,20,255,30,30,30,255]).unwrap();
+    let translucent=StillImage::from_samples(3,1,SampleLayout::Rgba8,vec![10,10,10,255,20,20,20,254,30,30,30,255]).unwrap();
+    assert!(optimizer::samples_equal(&gray,&rgb) && optimizer::samples_equal(&rgb,&rgba) && optimizer::samples_equal(&gray,&rgba));
+    assert!(!optimizer::samples_equal(&rgba,&translucent));
+    assert!(!optimizer::samples_equal(&rgb,&StillImage::from_rgb8(3,1,vec![10,10,10,20,20,21,30,30,30]).unwrap()));
+    let jpeg=|image:&StillImage|optimizer::process(&image.encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap(),Request { operation:Operation::Convert(Format::Jpeg),fidelity:Fidelity::Quality(Quality::new(90.0).unwrap()),..Request::default() });
+    assert!(jpeg(&rgba).is_ok());
+    assert!(jpeg(&translucent).is_err());
+}
