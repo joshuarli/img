@@ -91,4 +91,3 @@ Step 2, Diagnose, done: reviewed decode of untrusted input (dimension and alloca
 - **Recommendation:** Call check_dimensions(structure.width, structure.height) in jpeg::decode before libjpeg_turbo_sys::decode, and keep describe() as is if inspecting oversized headers is intended (state it in docs/CLI.md). Extend tests/jpeg_codec.rs with a header-only oversized JPEG that must fail with ErrorKind::Limit without a large allocation.
 - **Fix with:** security
 - **Effort:** S
-
