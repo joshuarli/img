@@ -222,10 +222,12 @@ hypothesis. Failed experiments are not repeated without new evidence.
    the same single-threaded. Profile: best spends the CPU in libdeflate's level-11
    near-optimal parse (the source of the 5–7% byte lead), fast and balanced in its
    lazy matcher. Lower levels and single filters for Fast (above) cut CPU 9–20% at
-   size costs outside the policy. Next: extend `deflate_compress_chunk` to the greedy
-   levels (1–4), which would restore chunk parallelism to level 4 (CPU 0.87–0.91×,
-   +1.3% bytes); then reuse the evaluation trial's deflate output when the main
-   level equals the evaluation level, to drop the duplicate final compression.
+   size costs outside the policy. Chunking the greedy levels would restore level 4's
+   parallel wall but not its CPU (0.87–0.91×), short of the 20% policy gain, so it
+   is not pursued. The evaluation trial's deflate output is already kept when the
+   main level equals the evaluation level (Fast at 5; `Evaluator` `final_round`);
+   Balanced at 8 evaluates at 5 and must recompress. Next: profile Best's level-11
+   parse for matchfinder work repeated across the filter trials.
 2. **Streamed scoring parallelism.** fast-ssim2's `rayon` feature cut per-score time to
    0.84× but materialized full planes: workflow peak RSS 1.27× (2.55× on a 1.2 MP JPEG)
    and CPU up to 2.3× (`8412759`). Next: split each scale into horizontal bands with
