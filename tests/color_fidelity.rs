@@ -58,7 +58,13 @@ fn floating_point_profile_preparation_matches_independent_lcms() {
         for (&a, e) in actual.iter().zip(expected) { assert!((a - linear(e)).abs() < 0.001, "{a} vs {}", linear(e)); }
     }
     let outside = png_image(1, 1, &[255, 0, 0], png::ColorType::Rgb, Some(profile), None);
-    assert!(outside.prepare().is_err(), "out-of-sRGB colors must not be silently clipped");
+    let mut expected = [[0.0f32; 3]]; transform.transform_pixels(&[[1.0, 0.0, 0.0]], &mut expected);
+    let extended = |v: f32| v.signum() * linear(v.abs());
+    let actual = outside.prepare().unwrap().linear_rgb()[0];
+    assert!(actual.iter().any(|v| !(0.0..=1.0).contains(v)), "out-of-sRGB colors must keep their extended range, not be clipped: {actual:?}");
+    for (a, e) in actual.iter().zip(expected[0]) { assert!((a - extended(e)).abs() < 0.001, "{a} vs {}", extended(e)); }
+    let pair = png_image(2, 1, &[255, 0, 0, 255, 0, 0], png::ColorType::Rgb, Some(moxcms::ColorProfile::new_display_p3().encode().unwrap()), None);
+    assert!(pair.resize_to_fit(NonZeroU32::new(1).unwrap()).err().unwrap().to_string().contains("gamut"), "8-bit sRGB output must refuse rather than clip");
 }
 
 #[test]
@@ -125,7 +131,7 @@ fn gray_profiles_and_explicit_png_signaling_have_defined_behavior() {
 }
 
 #[test]
-fn quantized_nominal_srgb_profile_is_refused_when_independent_cms_leaves_gamut() {
+fn quantized_nominal_srgb_profile_keeps_extended_range_where_independent_cms_leaves_gamut() {
     let bytes=include_bytes!("../benchmarks/corpus/astronaut.png");
     let reader=png::Decoder::new(std::io::Cursor::new(bytes)).read_info().unwrap();
     let profile=reader.info().icc_profile.as_deref().unwrap();
@@ -135,7 +141,10 @@ fn quantized_nominal_srgb_profile_is_refused_when_independent_cms_leaves_gamut()
     let mut output=vec![[0.0;3];input.len()];transform.transform_pixels(&input,&mut output);
     let minimum=output.iter().flatten().copied().fold(f32::INFINITY,f32::min);let maximum=output.iter().flatten().copied().fold(f32::NEG_INFINITY,f32::max);
     assert!(minimum < -0.00001 || maximum > 1.00001);
-    assert!(image.prepare().err().unwrap().to_string().contains("gamut"));
+    let prepared=image.prepare().unwrap();let linear=prepared.linear_rgb().iter().flatten();
+    assert!(linear.clone().any(|&v| v < -0.000001) || linear.clone().any(|&v| v > 1.000001), "scoring preparation must keep the out-of-gamut excursion");
+    let small=NonZeroU32::new(image.dimensions().0.max(image.dimensions().1)-1).unwrap();
+    assert!(image.resize_to_fit(small).err().unwrap().to_string().contains("gamut"), "8-bit sRGB output must refuse rather than clip");
 }
 
 #[test]
@@ -162,4 +171,17 @@ fn png_cicp_authority_is_preserved_when_an_icc_profile_is_also_present() {
     assert!((ordinary.linear_rgb()[0][0]-reference.linear_rgb()[0][0]).abs()>0.001);
     assert_eq!(tagged.prepare().unwrap().linear_rgb(),reference.linear_rgb(),"PNG CICP supersedes ICC for preparation");
     assert!(img::optimizer::process(&bytes,img::optimizer::Request {operation:img::optimizer::Operation::Convert(Format::Webp),fidelity:img::optimizer::Fidelity::Lossless,..Default::default()}).is_err(),"conversion must not drop authoritative CICP and activate a different ICC interpretation");
+}
+
+#[test]
+fn scored_optimization_accepts_wide_gamut_phone_colors() {
+    let profile = moxcms::ColorProfile::new_display_p3().encode().unwrap();
+    let samples: Vec<u8> = (0..64 * 48).flat_map(|i| [255 - (i % 64) as u8, (i / 64 * 3) as u8, (i % 7 * 9) as u8]).collect();
+    let mut info = png::Info::default(); info.width = 64; info.height = 48;
+    info.color_type = png::ColorType::Rgb; info.bit_depth = png::BitDepth::Eight; info.icc_profile = Some(Cow::Owned(profile));
+    let mut bytes = Vec::new();
+    png::Encoder::with_info(&mut bytes, info).unwrap().write_header().unwrap().write_image_data(&samples).unwrap();
+    let request = img::optimizer::Request { operation: img::optimizer::Operation::Convert(Format::Jpeg), fidelity: img::optimizer::Fidelity::Score(img::perceptual::ScoreTarget::new(90.0).unwrap()), ..Default::default() };
+    let outcome = img::optimizer::process(&bytes, request).unwrap();
+    assert!(outcome.score.is_some_and(|s| s.is_finite() && s >= 90.0), "{:?}", outcome.score);
 }

@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include "include/aom_mem_intrnl.h"
 #include "aom/aom_integer.h"
 
@@ -52,9 +53,27 @@ static void *GetActualMallocAddress(void *const mem) {
   return (void *)(*malloc_addr_location);
 }
 
+// img patch: blocks of at least 1 MiB are mapped directly so freeing returns
+// their pages instead of leaving them dirty in the allocator's large-block
+// cache. The page before the block holds its mapping address (tagged with the
+// low bit) and length.
+#define IMG_MAPPED_THRESHOLD ((size_t)1 << 20)
+#define IMG_PAGE ((size_t)4096)
+
 void *aom_memalign(size_t align, size_t size) {
   void *x = NULL;
   if (!check_size_argument_overflow(1, size, align)) return NULL;
+  if (size >= IMG_MAPPED_THRESHOLD && align <= IMG_PAGE &&
+      size <= SIZE_MAX - IMG_PAGE) {
+    const size_t length = size + IMG_PAGE;
+    void *const region = mmap(NULL, length, PROT_READ | PROT_WRITE,
+                              MAP_PRIVATE | MAP_ANON, -1, 0);
+    if (region == MAP_FAILED) return NULL;
+    x = (unsigned char *)region + IMG_PAGE;
+    ((size_t *)x)[-2] = length;
+    SetActualMallocAddress(x, (unsigned char *)region + 1);
+    return x;
+  }
   const size_t aligned_size = size + GetAllocationPaddingSize(align);
   void *const addr = malloc(aligned_size);
   if (addr) {
@@ -77,6 +96,10 @@ void *aom_calloc(size_t num, size_t size) {
 void aom_free(void *memblk) {
   if (memblk) {
     void *addr = GetActualMallocAddress(memblk);
+    if ((size_t)addr & 1) {
+      munmap((unsigned char *)addr - 1, ((size_t *)memblk)[-2]);
+      return;
+    }
     free(addr);
   }
 }
