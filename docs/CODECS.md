@@ -166,6 +166,18 @@ which measurement shows is below their actual peak (open, WebP lane). Results:
 5. **Workflow and batch**: re-run the scored workflow against B and current
    references; batch at 1/2/4/8 workers under fixed memory caps.
 
+## Verification debt
+
+`cargo test --all-features --test benchmark_verify` fails for two reasons that
+predate the 2026-11-20 work. Three WebP-lane captures
+(`benchmarks/results/*-l1meta.json`, `668bb86`) reference 81 output files that
+were never committed. With those set aside, saved scores and lossless sample
+checks fail on JPEG sources (for example `retina.jpg`, no ICC profile: img 80.464
+against a saved 80.482) because JPEG decoding moved to libjpeg-turbo in
+`7b2ba88` and the decoded source samples changed. The saved records describe
+what their captures measured and were left unchanged; re-baselining them is a
+separate decision.
+
 ## Deferred (low priority)
 
 AVIF alpha, grayscale, 10/12-bit, grids, animation and HDR; AVIF 4:2:0 as an
