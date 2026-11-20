@@ -148,6 +148,15 @@ is compiled.
   them straight to the existing scale walk. The slice API copies interleaved
   input into planes and then clones them again; the planar entry points skip
   both copies and are bit-identical to the slice path on the same samples.
+- Local patch, `src/pipeline/{simd,precompute}.rs`: without `rayon`, the
+  distorted side computes each channel's three blurs row by row (horizontal
+  rows in eight-row blocks kept only while the vertical recursion needs them,
+  vertical recursion advanced one row at a time across all columns) and feeds
+  each finished row to the SSIM and edge sums, instead of holding three blurred
+  planes and a scratch plane. Every blurred value follows the same recursion
+  and the sums accumulate in pixel order, so scores are bit-identical;
+  `tests/score_planar.rs` checks this against the uncached
+  `compute_ssimulacra2` for odd sizes, gray and alpha.
 - Regeneration: unpack the published crate, reapply the patch with
   `git diff` from the vendoring commit, and confirm bit-identical scores with
   `benchmarks/codecs/score/build.sh` (`IMG_BASE` at an unpatched checkout) plus

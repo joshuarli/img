@@ -1406,3 +1406,163 @@ mod stop_tests {
         assert!(out.iter().all(|&v| v == -7.0));
     }
 }
+
+/// One output row of `FastGaussianVertical` across every column group: the
+/// per-column recursion of [`fast_gaussian_vertical_x8_inner`], advanced one
+/// row at a time with each group's two-step history kept in `state`.
+#[magetypes(v3, neon, wasm128, scalar)]
+fn vertical_row_inner(
+    token: Token,
+    rg: &RecursiveGaussian,
+    top: Option<&[f32]>,
+    bottom: Option<&[f32]>,
+    groups: &[usize],
+    state: &mut [f32],
+    out: Option<&mut [f32]>,
+) {
+    type f32x8 = GenericF32x8<Token>;
+    let zero = f32x8::zero_t(token);
+    let splat = |v: f32| f32x8::splat_t(token, v);
+    let (n2, d1) = (rg.n2.map(splat), rg.d1.map(|d| splat(-d)));
+    let mut out = out;
+    for (g, &x0) in groups.iter().enumerate() {
+        let load = |row: &[f32]| f32x8::from_slice_t(token, &row[x0..x0 + 8]);
+        let sum = match top {
+            None => bottom.map_or(zero, load),
+            Some(t) => load(t) + bottom.map_or(zero, load),
+        };
+        let st = &mut state[g * 48..g * 48 + 48];
+        let mut y = [zero; 3];
+        for i in 0..3 {
+            let prev1 = f32x8::from_slice_t(token, &st[i * 16..i * 16 + 8]);
+            let prev2 = f32x8::from_slice_t(token, &st[i * 16 + 8..i * 16 + 16]);
+            y[i] = n2[i].mul_add_portable(sum, d1[i].mul_add_portable(prev1, -prev2));
+            prev1.store((&mut st[i * 16 + 8..i * 16 + 16]).try_into().unwrap());
+            y[i].store((&mut st[i * 16..i * 16 + 8]).try_into().unwrap());
+        }
+        if let Some(out) = out.as_deref_mut() {
+            (y[0] + (y[1] + y[2])).store((&mut out[x0..x0 + 8]).try_into().unwrap());
+        }
+    }
+}
+
+/// Horizontal blur rows of `plane` (times `plane_b`), computed in the same
+/// eight-row blocks as [`fast_gaussian_simd_stop`] and kept only while the
+/// vertical recursion still needs them.
+struct HorizontalRows<'a> {
+    plane: &'a [f32],
+    plane_b: Option<&'a [f32]>,
+    width: usize,
+    height: usize,
+    blocks: Vec<(usize, Vec<f32>)>,
+    columns: Vec<f32>,
+    results: Vec<f32>,
+}
+
+impl<'a> HorizontalRows<'a> {
+    fn new(plane: &'a [f32], plane_b: Option<&'a [f32]>, width: usize, height: usize) -> Self {
+        Self { plane, plane_b, width, height, blocks: Vec::new(), columns: vec![0.0; 8 * width], results: vec![0.0; 8 * width] }
+    }
+
+    fn block_start(&self, row: usize) -> usize {
+        let rows8 = self.height / 8 * 8;
+        if row < rows8 { row / 8 * 8 } else { self.height - 8 }
+    }
+
+    fn ensure(&mut self, rg: &RecursiveGaussian, row: usize, oldest_needed: usize) {
+        let start = self.block_start(row);
+        if self.blocks.iter().any(|(s, _)| *s == start) {
+            return;
+        }
+        let reuse = self.blocks.iter().position(|(s, _)| s + 8 <= oldest_needed);
+        let mut block = match reuse {
+            Some(i) => self.blocks.swap_remove(i).1,
+            None => vec![0.0; 8 * self.width],
+        };
+        let (plane, plane_b, width) = (self.plane, self.plane_b, self.width);
+        let (columns, results) = (&mut self.columns, &mut self.results);
+        incant!(
+            fast_gaussian_1d_rows_inner(rg, plane, plane_b, width, start, &mut block, columns, results),
+            [v3, neon, wasm128, scalar]
+        );
+        self.blocks.push((start, block));
+    }
+
+    fn row(&self, row: usize) -> &[f32] {
+        let start = self.block_start(row);
+        let (_, block) = self.blocks.iter().find(|(s, _)| *s == start).unwrap();
+        &block[(row - start) * self.width..(row - start + 1) * self.width]
+    }
+}
+
+/// [`maps_fused_channel_simd_stop`] for one channel of the distorted side,
+/// with `σ2 = blur(xyb2²)`, `σ12 = blur(xyb1·xyb2)` and `μ2 = blur(xyb2)`
+/// produced one row at a time instead of as full planes. Requires
+/// `width, height >= 8`. Bit-identical: every blurred value follows the same
+/// per-row and per-column recursions, and the sums accumulate in pixel order.
+pub(crate) fn maps_streamed_channel(
+    rg: &RecursiveGaussian,
+    xyb1: &[f32],
+    xyb2: &[f32],
+    mu1: &[f32],
+    sigma1_sq: &[f32],
+    width: usize,
+    height: usize,
+) -> ([f64; 2], [f64; 4]) {
+    assert!(width >= 8 && height >= 8);
+    let mut rows = [
+        HorizontalRows::new(xyb2, Some(xyb2), width, height),
+        HorizontalRows::new(xyb1, Some(xyb2), width, height),
+        HorizontalRows::new(xyb2, None, width, height),
+    ];
+    let cols8 = width / 8 * 8;
+    let groups: Vec<usize> = (0..cols8).step_by(8).chain((cols8 < width).then(|| width - 8)).collect();
+    let mut states: [Vec<f32>; 3] = core::array::from_fn(|_| vec![0.0; groups.len() * 48]);
+    let mut out: [Vec<f32>; 3] = core::array::from_fn(|_| vec![0.0; width]);
+    let (mut sum0, mut sum1, mut esums) = (0f64, 0f64, [0f64; 4]);
+    let r = rg.radius as i64;
+    let h = height as i64;
+    for n in (-r + 1)..h {
+        let (top, bottom) = (n - r - 1, n + r - 1);
+        let oldest = top.max(0) as usize;
+        for q in 0..3 {
+            if top >= 0 { rows[q].ensure(rg, top as usize, oldest); }
+            if bottom < h { rows[q].ensure(rg, bottom as usize, oldest); }
+            let t = (top >= 0).then(|| rows[q].row(top as usize));
+            let b = (bottom < h).then(|| rows[q].row(bottom as usize));
+            let o = (n >= 0).then_some(&mut out[q][..]);
+            let (groups, state) = (&groups[..], &mut states[q][..]);
+            incant!(vertical_row_inner(rg, t, b, groups, state, o), [v3, neon, wasm128, scalar]);
+        }
+        if n >= 0 {
+            let at = n as usize * width;
+            let span = at..at + width;
+            let [sigma2_sq, sigma12, mu2] = &out;
+            incant!(
+                maps_fused_inner(
+                    &mu1[span.clone()],
+                    mu2,
+                    &sigma1_sq[span.clone()],
+                    sigma2_sq,
+                    sigma12,
+                    &xyb1[span.clone()],
+                    &xyb2[span],
+                    &mut sum0,
+                    &mut sum1,
+                    &mut esums
+                ),
+                [v3, neon, wasm128, scalar]
+            );
+        }
+    }
+    let one_per_pixels = 1.0 / (height * width) as f64;
+    (
+        [one_per_pixels * sum0, (one_per_pixels * sum1).sqrt().sqrt()],
+        [
+            one_per_pixels * esums[0],
+            (one_per_pixels * esums[1]).sqrt().sqrt(),
+            one_per_pixels * esums[2],
+            (one_per_pixels * esums[3]).sqrt().sqrt(),
+        ],
+    )
+}
