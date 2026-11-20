@@ -143,3 +143,21 @@ fn fast_jpeg_score_search_publishes_a_progressive_repack_of_the_sequential_winne
     assert!(result.bytes.windows(2).any(|pair|pair==[0xff,0xc2]));
     assert_eq!(result.bytes.len(),last.bytes.unwrap());
 }
+#[test]
+fn score_search_reuses_candidates_whose_rounded_avif_quality_was_already_encoded() {
+    let bytes=StillImage::from_rgb8(64,48,common::pixels(64,48)).unwrap().encode(Format::Png,EncodingMode::Lossless,Effort::Fast).unwrap();
+    let result=optimizer::process(&bytes,Request { operation:Operation::Convert(Format::Avif),fidelity:Fidelity::Score(ScoreTarget::new(80.0).unwrap()),effort:Effort::Balanced,..Request::default() }).unwrap();
+    assert_eq!(result.evaluations.len(),24);
+    let native=|q:f32|q.round().clamp(1.0,100.0) as u8;
+    let mut repeats=0;
+    for (i,e) in result.evaluations.iter().enumerate() {
+        match result.evaluations[..i].iter().find(|p|native(p.quality.unwrap())==native(e.quality.unwrap())) {
+            Some(p) => { repeats+=1; assert_eq!((e.bytes,e.score,&e.failure),(p.bytes,p.score,&p.failure)); assert_eq!(e.encode_ms,0.0); },
+            None => assert!(e.encode_ms>0.0),
+        }
+    }
+    assert!(repeats>0);
+    let winner=result.evaluations.iter().filter(|e|e.failure.is_none()).min_by_key(|e|e.bytes).unwrap();
+    let direct=StillImage::decode(&bytes).unwrap().encode(Format::Avif,EncodingMode::Quality(Quality::new(winner.quality.unwrap()).unwrap()),Effort::Balanced).unwrap();
+    assert_eq!(result.bytes,direct);
+}
