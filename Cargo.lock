@@ -288,6 +288,7 @@ dependencies = [
  "linear-srgb",
  "magetypes",
  "num-traits",
+ "rayon",
  "thiserror",
  "zenpixels",
 ]
@@ -443,6 +444,7 @@ dependencies = [
  "png",
  "quantette",
  "quantizr",
+ "rayon",
  "rgb",
  "rustybench",
  "serde_json",

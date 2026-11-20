@@ -37,3 +37,31 @@ fn planar_streamed_scores_match_the_uncached_metric_bit_for_bit() {
         }
     }
 }
+
+#[test]
+fn parallel_streamed_scores_match_serial_bits() {
+    let serial = rayon::ThreadPoolBuilder::new().num_threads(1).build().unwrap();
+    let parallel = rayon::ThreadPoolBuilder::new().num_threads(3).build().unwrap();
+    for (w, h, layout) in [
+        (257, 129, SampleLayout::Rgb8),
+        (513, 257, SampleLayout::Rgba8),
+        (1025, 1025, SampleLayout::Rgb8),
+        (1025, 1025, SampleLayout::Rgba8),
+        (1201, 901, SampleLayout::Rgb8),
+        (2001, 2000, SampleLayout::Rgb8),
+    ] {
+        let channels = if layout == SampleLayout::Rgba8 { 4 } else { 3 };
+        let samples = noise(w * h * channels, (w * 31 + h) as u32);
+        let mut changed = noise(w * h * channels, (w * 7 + h * 3) as u32);
+        if channels == 4 { for (c, s) in changed.chunks_exact_mut(4).zip(samples.chunks_exact(4)) { c[3] = s[3]; } }
+        let source = StillImage::from_samples(w as u32, h as u32, layout, samples).unwrap();
+        let candidate = StillImage::from_samples(w as u32, h as u32, layout, changed).unwrap();
+        let bytes = candidate.encode(Format::Png, EncodingMode::Lossless, Effort::Fast).unwrap();
+        for memory in [ReferenceMemory::Fast, ReferenceMemory::Compact] {
+            let reference = PerceptualReference::with_memory(&source, memory).unwrap();
+            let a = serial.install(|| reference.score_encoded(&bytes).unwrap());
+            let b = parallel.install(|| reference.score_encoded(&bytes).unwrap());
+            assert_eq!(a.to_bits(), b.to_bits(), "{w}x{h} {layout:?} {memory:?}: {a} vs {b}");
+        }
+    }
+}
