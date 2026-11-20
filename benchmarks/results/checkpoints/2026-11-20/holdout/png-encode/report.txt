@@ -1,0 +1,17 @@
+fast
+  synthetic  n= 10 time geomean 0.500 [0.467,0.537] total 0.498 worst 0.62 | bytes 1.00000 worst 1.0000 (synthetic-02.png)
+  texture    n=  3 time geomean 0.576 [0.567,0.580] total 0.576 worst 0.58 | bytes 1.00110 worst 1.0018 (texture-original-18.png)
+  ui         n=  5 time geomean 1.000 [0.919,1.044] total 1.039 worst 1.05 | bytes 1.00000 worst 1.0000 (ui-text-17.png)
+  ALL        n= 18 time geomean 0.621 [0.541,0.718] total 0.576 worst 1.05 | bytes 1.00110 worst 1.0018 (texture-original-18.png)
+balanced
+  synthetic  n= 10 time geomean 0.656 [0.627,0.691] total 0.650 worst 0.77 | bytes 1.00000 worst 1.0000 (synthetic-02.png)
+  texture    n=  3 time geomean 0.801 [0.761,0.830] total 0.805 worst 0.83 | bytes 1.00021 worst 1.0005 (texture-original-18.png)
+  ui         n=  5 time geomean 0.997 [0.915,1.042] total 1.036 worst 1.04 | bytes 1.00000 worst 1.0000 (ui-text-17.png)
+  ALL        n= 18 time geomean 0.762 [0.699,0.835] total 0.800 worst 1.04 | bytes 1.00020 worst 1.0005 (texture-original-18.png)
+best
+  synthetic  n= 10 time geomean 1.005 [1.004,1.007] total 1.005 worst 1.01 | bytes 1.00000 worst 1.0000 (synthetic-02.png)
+  texture    n=  3 time geomean 1.020 [1.008,1.026] total 1.019 worst 1.03 | bytes 1.00149 worst 1.0029 (texture-original-18.png)
+  ui         n=  5 time geomean 1.009 [1.003,1.013] total 1.012 worst 1.02 | bytes 1.00000 worst 1.0000 (ui-text-17.png)
+  ALL        n= 18 time geomean 1.009 [1.006,1.012] total 1.018 worst 1.03 | bytes 1.00148 worst 1.0029 (texture-original-18.png)
+VERDICT encode_ms       within       geomean 0.781 [0.723, 0.846] budget 1.05
+VERDICT bytes           within       geomean 1.000 [1.000, 1.000] budget 1.002

@@ -21,7 +21,8 @@ fixtures below. Qualification: [benchmarks/corpus/qualification](../benchmarks/c
 150 independent originals (100 development, 50 held out) across photo,
 grayscale, texture, UI/text and synthetic, materialized by
 `python3 -I scripts/qualification-corpus DEST`. `scripts/bench run --split holdout`
-selects the held-out half explicitly; no held-out run has been made yet.
+selects the held-out half explicitly; the first held-out run qualified the
+2026-11-20 checkpoint ([bundle](../benchmarks/results/checkpoints/2026-11-20/README.md)).
 
 **Milestones.** Each row has two milestones. *Adoption*: integrate the strongest
 available implementation with low overhead (within about 5% of the same upstream
@@ -32,8 +33,8 @@ win ships even while its stretch target is open.
 **Evidence levels** used below: *implemented*; *directional* (ungated, one round, or
 few cases); *qualified on dev* (gated, repeated paired rounds on development data:
 at least 5 for workflows, 9 for decoders); *qualified on holdout*; *qualified per
-native platform*. Everything below is macOS ARM64 unless stated; nothing is yet
-qualified on holdout or on native Linux.
+native platform*. Everything below is macOS ARM64 unless stated; nothing is
+qualified on native Linux.
 
 ## Scoreboard
 
@@ -50,7 +51,7 @@ runs establish compatibility only).
 | JPEG decode | ≤ 0.80× R, RSS ≤ R | **Measured.** vs Zen 0.31–0.88× by class; vs R (stock libjpeg-turbo 3.2.1 or patched zune) 0.90× on jpegli progressive, 0.95× on other progressive, 1.00× on baseline — adoption met, stretch open (Next experiments 3) |
 | PNG decode | ≤ 0.80× R | **Measured** ([png-decode.md](codecs/png-decode.md), 137 exact fixtures, 9 gated rounds). png 0.18.1 is the fastest exact permissive decoder, so it is R: libpng 1.6.59 1.41×, libspng 0.7.4 2.04×, zune-png disqualified (16-bit tRNS alpha). img's decoder vs Zen 0.56× time [0.52, 0.59], worst file 0.94×, at 0.83× RSS. Adoption met; stretch needs decoder work beyond png itself (Next experiments 4) |
 | AVIF decode | Adoption: ≤ 1.05× upstream dav1d; stretch ≤ 0.80× | **Adoption qualified on dev** (31 fixtures, 9 gated rounds, 0 discarded, 2026-11-20, [report](../benchmarks/results/codecs/avif/decode-report-2026-11-20-dav1d.txt)). img now decodes with vendored dav1d 1.5.4 ([integration](codecs/dav1d-integration.md)); RGB is byte-identical to the former rav1d path and raw planes to upstream meson dav1d on 31/31. AVIF→RGB img / (libavif + dav1d + yuv) 0.992–0.995× time; RSS 1.09–1.10× on large images, 1.24–1.29× on small ones (img's larger binary). img vs its own rav1d build (`e7f01ac`): 0.904–0.907× time, 0.96× RSS. img/Zen 0.14–0.19×. Stretch open |
-| Scored workflow | ≤ 0.75× B, ≤ 0.80× R | **B milestone met on the change tier** (`scripts/bench run --only workflow-scored --base f0ceea6`, 1 gated round, 5 dev files, score 90, balanced, `cb8be1a`): wall 0.57× [0.43, 0.73], CPU 0.54×, peak RSS 0.76×, bytes 0.999×; by format AVIF 0.48×, PNG 0.48×, JPEG 0.83× wall. Full-resolution AVIF against `01c2300`: 7.4 MP at score 90 in 17.3 s instead of 97.9 s with 8% fewer bytes ([AVIF.md](AVIF.md)). ICC-tagged JPEG scoring is 2.5–3.9× faster after converting straight to linear sRGB. R (Zen, rebuilt `5424df8`, 1 gated round, 7 inputs × JPEG/PNG/AVIF × 80/90/95, balanced, 2026-11-20): **met** on the 21 cases Zen completes — wall 0.13× [0.07, 0.23], CPU 0.13×, peak RSS 0.71×, bytes 0.77×; Zen fails every AVIF case and 12 JPEG cases. Scenario tier not run |
+| Scored workflow | ≤ 0.75× B, ≤ 0.80× R | **B milestone met on the change tier** (`scripts/bench run --only workflow-scored --base f0ceea6`, 1 gated round, 5 dev files, score 90, balanced, `cb8be1a`): wall 0.57× [0.43, 0.73], CPU 0.54×, peak RSS 0.76×, bytes 0.999×; by format AVIF 0.48×, PNG 0.48×, JPEG 0.83× wall. Full-resolution AVIF against `01c2300`: 7.4 MP at score 90 in 17.3 s instead of 97.9 s with 8% fewer bytes ([AVIF.md](AVIF.md)). ICC-tagged JPEG scoring is 2.5–3.9× faster after converting straight to linear sRGB. R (Zen, rebuilt `5424df8`, 1 gated round, 7 inputs × JPEG/PNG/AVIF × 80/90/95, balanced, 2026-11-20): **met** on the 21 cases Zen completes — wall 0.13× [0.07, 0.23], CPU 0.13×, peak RSS 0.71×, bytes 0.77×; Zen fails every AVIF case and 12 JPEG cases. **B milestone qualified on dev and holdout** (checkpoint `0e4d339`, scenario tier, 5 gated rounds, [bundle](../benchmarks/results/checkpoints/2026-11-20/README.md)): dev 16 shared cases wall 0.495× [0.376, 0.636], CPU 0.54×, RSS 0.62×, bytes 0.987×; holdout 55 shared cases wall 0.482× [0.419, 0.554], CPU 0.51×, RSS 0.60×, bytes 1.002× [0.997, 1.008] (inconclusive against the 1.002 byte budget; AVIF 1.012×, worst `synthetic-17.png` +10.6%, open). The candidate completes 68/150 holdout cases against B's 55 and fails none that B completes |
 | Large-image auxiliary memory | ≥ 25% below B | **Met: scored JPEG, PNG and AVIF** (directional, single runs). Peak footprint at score 90 (macOS `time -l`), B → now: JPEG 8 MP 201 → 73 B/px (0.36×), PNG 8 MP 199 → 77 (0.39×), AVIF 3 MP 197 → 86 (0.44×) with identical bytes. Levers: planar owned SSIMULACRA2 input, row-streamed distorted blurs, and returning freed large blocks to the OS (`src/allocator.rs`, jpegli, libjpeg-turbo and libaom patches; libmalloc's large-block cache held 29 B/px). Admission reservations by layout are under [Batch admission](#batch-admission-2026-11-20). Lossless PNG 36–71 B/px; WebP and auto unchanged (500–720 B/px, WebP lane) |
 | Batch throughput | ≥ 1.5× R and 2× Zen at equal cores and memory | **Measured** (48 dev PNGs, gated, 3 rounds). Lossless best: 19.6 img/s at `-j 4` vs B 6.1 and Zen 5.7 (3.2×/3.4×) at 1.04×/1.14× their peak RSS; at `-j 2` 15.5 img/s within B's RSS. JPEG score 90: 5.5 img/s vs B 3.3 (1.67×) at 1.10× RSS; Zen completes 14/48 at 0.9 img/s. Against rebuilt Zen (lossless best, 55 dev images, 1 gated round, 2026-11-20): Zen does not scale with `-j` (30.2–30.8 img/s, 22 MiB, 49/55 completed at every job count) while img reaches 37.1/67.7/102.7/129.6 img/s at `-j 1/2/4/8` with 24/31/42/59 MiB. At equal memory (img `-j 1`, 24 vs 22 MiB) img is 1.20× Zen; 2× needs `-j 2` at 1.4× its RSS — open: per-worker memory (about 7–11 MiB per extra worker). Memory-bound scored work: **qualified on dev** for the compact-reference scheduler (see Batch admission): 1.50–1.51× successful throughput at `-j 2`/`-j 4` in the same budget |
 
@@ -253,9 +254,15 @@ hypothesis. Failed experiments are not repeated without new evidence.
    path above the decoder (YUV→RGB conversion, plane copies) on the large 4:4:4
    fixtures, and record a dav1d 1.5.5 or later refresh as a separate, identity-checked
    step between milestones.
-6. **Batch and workflow qualification.** Freeze a candidate and run the scenario tier
-   and `--split holdout` with 5 workflow rounds; measure large/small job mixtures, the
-   alpha path and the allocator A/B under a fixed `IMG_MEMORY_BUDGET`.
+6. **AVIF byte regression on holdout.** The checkpoint's holdout AVIF bytes are
+   1.012× B [0.996, 1.030]; `synthetic-17.png` ends at 50537 bytes and score 90.48
+   where B found 45680 at 90.18. Hypothesis: the converged-frontier stop
+   (`23e171c`) ends before the lowest qualifying quantizer on flat synthetic
+   content. Next: log the visited quantizers on that file, then test one
+   confirming probe below the stop point on the development split only.
+7. **Batch qualification.** The checkpoint covered lossless batch at `-j 1`/`-j 4`
+   (dev 55/55 and holdout 18/18, 2.8× and 3.2× B at `-j 4`). Next: large/small job
+   mixtures, the alpha path and the allocator A/B under a fixed `IMG_MEMORY_BUDGET`.
 
 ## Verification lanes
 

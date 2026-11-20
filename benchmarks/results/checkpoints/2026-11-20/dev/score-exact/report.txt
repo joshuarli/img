@@ -1,0 +1,7 @@
+ .work/bench/runs/20261120T170453Z-scenario/score-exact target/dist/img .work/bench/loops/target-img/release/score-loop .work/bench/loops/target-base/release/score-loop .work/qcorpus photo-16.jpg:jpeg ui-text-07.png:jpeg synthetic-04.png:webp grayscale-16.png:jpeg texture-15.png:jpeg
+photo-16.jpg: same score 87.16006519868764713; per-score ms base 68.994 new 50.620
+ui-text-07.png: same score 88.28034980266014031; per-score ms base 6.545 new 5.012
+synthetic-04.png: same score 63.84071877557677510; per-score ms base 10.864 new 8.189
+grayscale-16.png: same score 89.31158294837084100; per-score ms base 5.150 new 3.859
+texture-15.png: same score 75.93298604575178956; per-score ms base 1.310 new 1.032
+VERDICT score_ms        within       geomean 0.758 [0.744, 0.775] budget 1.05

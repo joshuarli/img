@@ -1,0 +1,75 @@
+[
+ {
+  "metric": "wall",
+  "n": 18,
+  "geomean": 0.8295,
+  "ci": [
+   0.6919,
+   0.9853
+  ],
+  "budget": 1.05,
+  "status": "within",
+  "cases_over": [],
+  "dispositions": {},
+  "undisposed": []
+ },
+ {
+  "metric": "cpu",
+  "n": 18,
+  "geomean": 1.0329,
+  "ci": [
+   0.9855,
+   1.086
+  ],
+  "budget": 1.05,
+  "status": "inconclusive",
+  "cases_over": [
+   [
+    "texture-original-19.png/png/lossless",
+    1.3248
+   ],
+   [
+    "texture-original-18.png/png/lossless",
+    1.3139
+   ],
+   [
+    "texture-original-17.png/png/lossless",
+    1.2953
+   ]
+  ],
+  "dispositions": {
+   "texture-original-19.png/png/lossless": "Primed parallel deflate chunks (492253c): wall 0.34x, peak RSS 0.60x, bytes +0.16%; output exact.",
+   "texture-original-18.png/png/lossless": "Primed parallel deflate chunks (492253c): wall 0.38x, peak RSS 0.54x, bytes +0.29%, 1.31x CPU; output exact.",
+   "texture-original-17.png/png/lossless": "Primed parallel deflate chunks (492253c) trade CPU for latency: wall 0.33x, peak RSS 0.55x, bytes within 0.2%, decoded samples exact."
+  },
+  "undisposed": []
+ },
+ {
+  "metric": "peak_rss_bytes",
+  "n": 18,
+  "geomean": 0.8355,
+  "ci": [
+   0.7652,
+   0.9049
+  ],
+  "budget": 1.05,
+  "status": "within",
+  "cases_over": [],
+  "dispositions": {},
+  "undisposed": []
+ },
+ {
+  "metric": "bytes",
+  "n": 18,
+  "geomean": 1.0002,
+  "ci": [
+   0.9999,
+   1.0006
+  ],
+  "budget": 1.002,
+  "status": "within",
+  "cases_over": [],
+  "dispositions": {},
+  "undisposed": []
+ }
+]

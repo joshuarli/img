@@ -1,0 +1,79 @@
+[
+ {
+  "metric": "wall",
+  "n": 55,
+  "geomean": 0.482,
+  "ci": [
+   0.4188,
+   0.5539
+  ],
+  "budget": 1.05,
+  "status": "within",
+  "cases_over": [
+   [
+    "synthetic-26.png/jpeg/90",
+    1.1647
+   ]
+  ],
+  "dispositions": {
+   "synthetic-26.png/jpeg/90": "+11 ms absolute (0.079 s vs 0.068 s). New output is 2.9% smaller (59099 vs 60883 bytes) at measured score 90.17 vs 90.57, closer to the target; the extra time is the quality search reaching a tighter candidate."
+  },
+  "undisposed": []
+ },
+ {
+  "metric": "cpu",
+  "n": 55,
+  "geomean": 0.5081,
+  "ci": [
+   0.4483,
+   0.5709
+  ],
+  "budget": 1.05,
+  "status": "within",
+  "cases_over": [
+   [
+    "synthetic-26.png/jpeg/90",
+    1.1791
+   ]
+  ],
+  "dispositions": {
+   "synthetic-26.png/jpeg/90": "Same cause as wall: +11 ms CPU for a 2.9% smaller output nearer the target score."
+  },
+  "undisposed": []
+ },
+ {
+  "metric": "peak_rss_bytes",
+  "n": 55,
+  "geomean": 0.6028,
+  "ci": [
+   0.5522,
+   0.6578
+  ],
+  "budget": 1.05,
+  "status": "within",
+  "cases_over": [],
+  "dispositions": {},
+  "undisposed": []
+ },
+ {
+  "metric": "bytes",
+  "n": 55,
+  "geomean": 1.0018,
+  "ci": [
+   0.9973,
+   1.0079
+  ],
+  "budget": 1.002,
+  "status": "inconclusive",
+  "cases_over": [
+   [
+    "synthetic-17.png/avif/90",
+    1.1063
+   ]
+  ],
+  "dispositions": {
+   "synthetic-17.png/avif/90": "Converged-frontier quantizer stop (23e171c) ends the AVIF search at a higher-score candidate: 50537 vs 45680 bytes (+10.6%) at measured score 90.48 vs 90.18, wall 0.45x. Open: the stop rule leaves a smaller qualifying quantizer on this synthetic file; next hypothesis in docs/CODECS.md."
+  },
+  "undisposed": []
+ }
+]

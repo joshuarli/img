@@ -1,0 +1,10 @@
+new / base: class n geomean [95% CI] p95 worst(file) | rss geomean worst
+  img-fast        23 0.771 [0.758, 0.784] 0.819 0.827(img-fast-10-microaneurysms.jpg) | 1.022 1.039
+  img-balanced    23 0.931 [0.908, 0.949] 0.976 0.982(img-balanced-02-grass.jpg) | 0.997 1.033
+  turbo-base444   14 0.745 [0.734, 0.757] 0.781 0.781(turbo-base444-19-retina.jpg) | 1.015 1.031
+  turbo-base420   14 0.715 [0.710, 0.721] 0.738 0.738(turbo-base420-18-portrait-woman-met.jpg) | 1.004 1.022
+  turbo-prog420   14 0.934 [0.924, 0.944] 0.964 0.964(turbo-prog420-21-sous-tour-eiffel.jpg) | 0.987 1.019
+  turbo-restart   14 0.757 [0.751, 0.764] 0.784 0.784(turbo-restart-14-hubble_deep_field.jpg) | 1.003 1.019
+  moz-prog        14 0.931 [0.907, 0.954] 0.991 0.991(moz-prog-12-charolais-cattle.jpg) | 0.982 1.019
+  turbo-gray       9 0.742 [0.722, 0.767] 0.829 0.829(turbo-gray-10-microaneurysms.jpg) | 1.034 1.039
+  camera          11 0.767 [0.739, 0.803] 0.945 0.945(camera-marmolada.jpg) | 1.002 1.026

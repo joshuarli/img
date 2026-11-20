@@ -1,0 +1,17 @@
+{
+ "wall": {
+  "synthetic-26.png/jpeg/90": "+11 ms absolute (0.079 s vs 0.068 s). New output is 2.9% smaller (59099 vs 60883 bytes) at measured score 90.17 vs 90.57, closer to the target; the extra time is the quality search reaching a tighter candidate."
+ },
+ "cpu": {
+  "synthetic-26.png/jpeg/90": "Same cause as wall: +11 ms CPU for a 2.9% smaller output nearer the target score.",
+  "texture-original-17.png/png/lossless": "Primed parallel deflate chunks (492253c) trade CPU for latency: wall 0.33x, peak RSS 0.55x, bytes within 0.2%, decoded samples exact.",
+  "texture-original-18.png/png/lossless": "Primed parallel deflate chunks (492253c): wall 0.38x, peak RSS 0.54x, bytes +0.29%, 1.31x CPU; output exact.",
+  "texture-original-19.png/png/lossless": "Primed parallel deflate chunks (492253c): wall 0.34x, peak RSS 0.60x, bytes +0.16%; output exact."
+ },
+ "bytes": {
+  "synthetic-17.png/avif/90": "Converged-frontier quantizer stop (23e171c) ends the AVIF search at a higher-score candidate: 50537 vs 45680 bytes (+10.6%) at measured score 90.48 vs 90.18, wall 0.45x. Open: the stop rule leaves a smaller qualifying quantizer on this synthetic file; next hypothesis in docs/CODECS.md."
+ },
+ "peak_rss_bytes": {
+  "lossless -j 4": "Base f0ceea6 runs the -j 4 batch serially (its -j 4 wall equals its -j 1 wall); new runs four admitted images at once, so peak RSS is the sum of concurrent footprints: dev 0.36x wall at 1.8x RSS, holdout 0.31x wall at 1.2x RSS. At -j 1 new RSS is 0.94x dev and 0.64x holdout."
+ }
+}

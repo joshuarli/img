@@ -1,0 +1,10 @@
+ .work/bench/runs/20261120T153937Z-scenario/batch/lossless.json 3 .work/bench/sets/dev lossless new=target/dist/img base=.work/bench/bin/img-f0ceea6aae093ba50d747dca51737458257a2caf -- 1 4
+round 1
+round 2
+round 3
+lossless -j 1 new: attempted 37.29 img/s, successful 37.29 img/s, coverage 55/55, cpu 1.4 s, peak RSS 23 MiB, bytes 2413883
+lossless -j 1 base: attempted 36.53 img/s, successful 36.53 img/s, coverage 55/55, cpu 1.5 s, peak RSS 25 MiB, bytes 2413883
+lossless -j 4 new: attempted 102.06 img/s, successful 102.06 img/s, coverage 55/55, cpu 1.6 s, peak RSS 45 MiB, bytes 2413883
+lossless -j 4 base: attempted 36.64 img/s, successful 36.64 img/s, coverage 55/55, cpu 1.5 s, peak RSS 25 MiB, bytes 2413883
+VERDICT seconds_per_image within       geomean 0.593 [0.359, 0.980] budget 1.05
+VERDICT peak_rss_bytes  inconclusive geomean 1.311 [0.935, 1.838] budget 1.05; 1 cases over 1.1 (0 undisposed): lossless -j 4 1.8379

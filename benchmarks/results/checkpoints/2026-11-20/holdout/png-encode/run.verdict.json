@@ -1,0 +1,30 @@
+[
+ {
+  "metric": "encode_ms",
+  "n": 54,
+  "geomean": 0.7815,
+  "ci": [
+   0.7229,
+   0.846
+  ],
+  "budget": 1.05,
+  "status": "within",
+  "cases_over": [],
+  "dispositions": {},
+  "undisposed": []
+ },
+ {
+  "metric": "bytes",
+  "n": 54,
+  "geomean": 1.0001,
+  "ci": [
+   1.0,
+   1.0003
+  ],
+  "budget": 1.002,
+  "status": "within",
+  "cases_over": [],
+  "dispositions": {},
+  "undisposed": []
+ }
+]

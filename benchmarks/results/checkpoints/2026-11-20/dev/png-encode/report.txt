@@ -1,0 +1,20 @@
+fast
+  grayscale  n=  1 time geomean 0.792 [0.792,0.792] total 0.791 worst 0.79 | bytes 1.00000 worst 1.0000 (grayscale-16.png)
+  synthetic  n=  3 time geomean 0.502 [0.398,0.628] total 0.459 worst 0.63 | bytes 1.00000 worst 1.0000 (synthetic-04.png)
+  texture    n=  1 time geomean 0.570 [0.570,0.570] total 0.570 worst 0.57 | bytes 1.00000 worst 1.0000 (texture-15.png)
+  ui         n=  1 time geomean 1.043 [1.043,1.043] total 1.046 worst 1.04 | bytes 1.00000 worst 1.0000 (ui-text-07.png)
+  ALL        n=  6 time geomean 0.625 [0.494,0.803] total 0.597 worst 1.04 | bytes 1.00000 worst 1.0000 (ui-text-07.png)
+balanced
+  grayscale  n=  1 time geomean 0.829 [0.829,0.829] total 0.829 worst 0.83 | bytes 1.00000 worst 1.0000 (grayscale-16.png)
+  synthetic  n=  3 time geomean 0.652 [0.550,0.783] total 0.605 worst 0.78 | bytes 1.00000 worst 1.0000 (synthetic-04.png)
+  texture    n=  1 time geomean 0.715 [0.715,0.715] total 0.715 worst 0.71 | bytes 1.00000 worst 1.0000 (texture-15.png)
+  ui         n=  1 time geomean 1.041 [1.041,1.041] total 1.041 worst 1.04 | bytes 1.00000 worst 1.0000 (ui-text-07.png)
+  ALL        n=  6 time geomean 0.745 [0.632,0.886] total 0.695 worst 1.04 | bytes 1.00000 worst 1.0000 (ui-text-07.png)
+best
+  grayscale  n=  1 time geomean 0.988 [0.988,0.988] total 0.988 worst 0.99 | bytes 1.00000 worst 1.0000 (grayscale-16.png)
+  synthetic  n=  3 time geomean 1.005 [1.000,1.011] total 1.007 worst 1.01 | bytes 1.00000 worst 1.0000 (synthetic-04.png)
+  texture    n=  1 time geomean 0.986 [0.986,0.986] total 0.986 worst 0.99 | bytes 1.00000 worst 1.0000 (texture-15.png)
+  ui         n=  1 time geomean 1.012 [1.012,1.012] total 1.012 worst 1.01 | bytes 1.00000 worst 1.0000 (ui-text-07.png)
+  ALL        n=  6 time geomean 1.000 [0.993,1.008] total 1.004 worst 1.01 | bytes 1.00000 worst 1.0000 (ui-text-07.png)
+VERDICT encode_ms       within       geomean 0.775 [0.676, 0.880] budget 1.05
+VERDICT bytes           within       geomean 1.000 [1.000, 1.000] budget 1.002

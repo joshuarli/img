@@ -1,0 +1,37 @@
+[
+ {
+  "metric": "seconds_per_image",
+  "n": 2,
+  "geomean": 0.3646,
+  "ci": [
+   0.3143,
+   0.423
+  ],
+  "budget": 1.05,
+  "status": "within",
+  "cases_over": [],
+  "dispositions": {},
+  "undisposed": []
+ },
+ {
+  "metric": "peak_rss_bytes",
+  "n": 2,
+  "geomean": 0.8805,
+  "ci": [
+   0.6403,
+   1.211
+  ],
+  "budget": 1.05,
+  "status": "inconclusive",
+  "cases_over": [
+   [
+    "lossless -j 4",
+    1.211
+   ]
+  ],
+  "dispositions": {
+   "lossless -j 4": "Base f0ceea6 runs the -j 4 batch serially (its -j 4 wall equals its -j 1 wall); new runs four admitted images at once, so peak RSS is the sum of concurrent footprints: dev 0.36x wall at 1.8x RSS, holdout 0.31x wall at 1.2x RSS. At -j 1 new RSS is 0.94x dev and 0.64x holdout."
+  },
+  "undisposed": []
+ }
+]

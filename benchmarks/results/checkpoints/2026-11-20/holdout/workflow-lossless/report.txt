@@ -1,0 +1,78 @@
+18 cases both completed, identical outputs 15, gated True, discarded rounds 0
+  new: attempted 50, succeeded 21 (exit 0 and verified)
+  base: attempted 50, succeeded 18 (exit 0 and verified)
+  failed base grayscale-original-10.jpg png lossless verifier rejected
+  failed base grayscale-original-11.jpg png lossless exit [3]
+  failed base grayscale-original-12.jpg png lossless verifier rejected
+  failed base grayscale-original-13.jpg png lossless exit [3]
+  failed base grayscale-original-14.jpg png lossless exit [3]
+  failed base grayscale-original-15.jpg png lossless exit [3]
+  failed base grayscale-original-16.jpg png lossless verifier rejected
+  failed base grayscale-original-17.jpg png lossless exit [3]
+  failed base grayscale-original-18.jpg png lossless exit [3]
+  failed base grayscale-original-19.jpg png lossless exit [3]
+  failed base photo-02.jpg png lossless exit [3]
+  failed base photo-05.jpg png lossless exit [3]
+  failed base photo-08.jpg png lossless exit [3]
+  failed base photo-11.jpg png lossless exit [3]
+  failed base photo-14.jpg png lossless exit [3]
+  failed base photo-17.jpg png lossless exit [3]
+  failed base photo-20.jpg png lossless exit [3]
+  failed base photo-23.jpg png lossless exit [3]
+  failed base photo-26.jpg png lossless exit [3]
+  failed base photo-29.jpg png lossless exit [3]
+  failed base texture-original-10.jpg png lossless exit [3]
+  failed base texture-original-11.jpg png lossless exit [3]
+  failed base texture-original-12.jpg png lossless exit [3]
+  failed base texture-original-13.jpg png lossless exit [3]
+  failed base texture-original-14.jpg png lossless exit [3]
+  failed base texture-original-15.jpg png lossless exit [3]
+  failed base texture-original-16.jpg png lossless exit [3]
+  failed base ui-text-original-06.jpg png lossless exit [3]
+  failed base ui-text-original-07.jpg png lossless exit [3]
+  failed base ui-text-original-08.jpg png lossless exit [3]
+  failed base ui-text-original-09.jpg png lossless exit [3]
+  failed base ui-text-progressive.jpg png lossless exit [3]
+  failed new grayscale-original-11.jpg png lossless exit [3]
+  failed new grayscale-original-13.jpg png lossless exit [3]
+  failed new grayscale-original-14.jpg png lossless exit [3]
+  failed new grayscale-original-15.jpg png lossless exit [3]
+  failed new grayscale-original-17.jpg png lossless exit [3]
+  failed new grayscale-original-18.jpg png lossless exit [3]
+  failed new grayscale-original-19.jpg png lossless exit [3]
+  failed new photo-02.jpg png lossless exit [3]
+  failed new photo-05.jpg png lossless exit [3]
+  failed new photo-08.jpg png lossless exit [3]
+  failed new photo-11.jpg png lossless exit [3]
+  failed new photo-14.jpg png lossless exit [3]
+  failed new photo-17.jpg png lossless exit [3]
+  failed new photo-20.jpg png lossless exit [3]
+  failed new photo-23.jpg png lossless exit [3]
+  failed new photo-26.jpg png lossless exit [3]
+  failed new photo-29.jpg png lossless exit [3]
+  failed new texture-original-10.jpg png lossless exit [3]
+  failed new texture-original-11.jpg png lossless exit [3]
+  failed new texture-original-12.jpg png lossless exit [3]
+  failed new texture-original-13.jpg png lossless exit [3]
+  failed new texture-original-14.jpg png lossless exit [3]
+  failed new texture-original-15.jpg png lossless exit [3]
+  failed new texture-original-16.jpg png lossless exit [3]
+  failed new ui-text-original-06.jpg png lossless exit [3]
+  failed new ui-text-original-07.jpg png lossless exit [3]
+  failed new ui-text-original-08.jpg png lossless exit [3]
+  failed new ui-text-original-09.jpg png lossless exit [3]
+  failed new ui-text-progressive.jpg png lossless exit [3]
+png
+  wall            n= 18 geomean 0.829 [0.692, 0.985] p95 1.048 worst 1.048 ('synthetic-20.png', 'png', 'lossless')
+  cpu             n= 18 geomean 1.033 [0.986, 1.086] p95 1.325 worst 1.325 ('texture-original-19.png', 'png', 'lossless')
+  peak_rss_bytes  n= 18 geomean 0.836 [0.765, 0.905] p95 0.987 worst 0.987 ('ui-text-20.png', 'png', 'lossless')
+  bytes           n= 18 geomean 1.000 [1.000, 1.001] p95 1.003 worst 1.003 ('texture-original-18.png', 'png', 'lossless')
+all
+  wall            n= 18 geomean 0.829 [0.692, 0.985] p95 1.048 worst 1.048 ('synthetic-20.png', 'png', 'lossless')
+  cpu             n= 18 geomean 1.033 [0.986, 1.086] p95 1.325 worst 1.325 ('texture-original-19.png', 'png', 'lossless')
+  peak_rss_bytes  n= 18 geomean 0.836 [0.765, 0.905] p95 0.987 worst 0.987 ('ui-text-20.png', 'png', 'lossless')
+  bytes           n= 18 geomean 1.000 [1.000, 1.001] p95 1.003 worst 1.003 ('texture-original-18.png', 'png', 'lossless')
+VERDICT wall            within       geomean 0.830 [0.692, 0.985] budget 1.05
+VERDICT cpu             inconclusive geomean 1.033 [0.986, 1.086] budget 1.05; 3 cases over 1.1 (0 undisposed): texture-original-19.png/png/lossless 1.3248, texture-original-18.png/png/lossless 1.3139, texture-original-17.png/png/lossless 1.2953
+VERDICT peak_rss_bytes  within       geomean 0.836 [0.765, 0.905] budget 1.05
+VERDICT bytes           within       geomean 1.000 [1.000, 1.001] budget 1.002

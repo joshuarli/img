@@ -1,0 +1,65 @@
+16 cases both completed, identical outputs 9, gated True, discarded rounds 0
+  new: attempted 36, succeeded 18 (exit 0 and verified)
+  base: attempted 36, succeeded 16 (exit 0 and verified)
+  failed base grayscale-16.png avif 90 exit [3]
+  failed base grayscale-original-00.jpg avif 90 exit [3]
+  failed base grayscale-original-00.jpg png 90 exit [3]
+  failed base photo-00.jpg jpeg 90 verifier rejected
+  failed base photo-00.jpg png 90 exit [3]
+  failed base photo-04.jpg avif 90 exit [3]
+  failed base photo-04.jpg jpeg 90 exit [3]
+  failed base photo-04.jpg png 90 exit [3]
+  failed base photo-16.jpg avif 90 exit [3]
+  failed base photo-16.jpg png 90 exit [3]
+  failed base synthetic-00.png avif 90 exit [3]
+  failed base synthetic-00.png jpeg 90 exit [3]
+  failed base synthetic-01.png avif 90 exit [3]
+  failed base synthetic-01.png jpeg 90 exit [3]
+  failed base synthetic-01.png png 90 exit [3]
+  failed base synthetic-04.png avif 90 exit [3]
+  failed base synthetic-04.png jpeg 90 exit [3]
+  failed base texture-original-00.jpg png 90 exit [3]
+  failed base ui-text-07.png jpeg 90 exit [3]
+  failed base ui-text-original-01.jpg png 90 exit [3]
+  failed new grayscale-16.png avif 90 exit [3]
+  failed new grayscale-original-00.jpg avif 90 exit [3]
+  failed new grayscale-original-00.jpg png 90 exit [3]
+  failed new photo-00.jpg png 90 exit [3]
+  failed new photo-04.jpg avif 90 exit [3]
+  failed new photo-04.jpg png 90 exit [3]
+  failed new photo-16.jpg avif 90 exit [3]
+  failed new photo-16.jpg png 90 exit [3]
+  failed new synthetic-00.png avif 90 exit [3]
+  failed new synthetic-00.png jpeg 90 exit [3]
+  failed new synthetic-01.png avif 90 exit [3]
+  failed new synthetic-01.png jpeg 90 exit [3]
+  failed new synthetic-01.png png 90 exit [3]
+  failed new synthetic-04.png avif 90 exit [3]
+  failed new synthetic-04.png jpeg 90 exit [3]
+  failed new texture-original-00.jpg png 90 exit [3]
+  failed new ui-text-07.png jpeg 90 exit [3]
+  failed new ui-text-original-01.jpg png 90 exit [3]
+avif
+  wall            n=  5 geomean 0.282 [0.197, 0.404] p95 0.486 worst 0.486 ('ui-text-07.png', 'avif', '90')
+  cpu             n=  5 geomean 0.478 [0.444, 0.516] p95 0.541 worst 0.541 ('texture-original-00.jpg', 'avif', '90')
+  peak_rss_bytes  n=  5 geomean 0.616 [0.487, 0.794] p95 0.943 worst 0.943 ('texture-15.png', 'avif', '90')
+  bytes           n=  5 geomean 0.960 [0.899, 0.996] p95 1.000 worst 1.000 ('ui-text-07.png', 'avif', '90')
+jpeg
+  wall            n=  6 geomean 0.794 [0.733, 0.876] p95 0.971 worst 0.971 ('texture-15.png', 'jpeg', '90')
+  cpu             n=  6 geomean 0.779 [0.733, 0.839] p95 0.906 worst 0.906 ('texture-15.png', 'jpeg', '90')
+  peak_rss_bytes  n=  6 geomean 0.479 [0.378, 0.639] p95 0.868 worst 0.868 ('texture-15.png', 'jpeg', '90')
+  bytes           n=  6 geomean 0.998 [0.990, 1.005] p95 1.010 worst 1.010 ('grayscale-original-00.jpg', 'jpeg', '90')
+png
+  wall            n=  5 geomean 0.491 [0.345, 0.724] p95 0.992 worst 0.992 ('grayscale-16.png', 'png', '90')
+  cpu             n=  5 geomean 0.400 [0.283, 0.579] p95 0.797 worst 0.797 ('grayscale-16.png', 'png', '90')
+  peak_rss_bytes  n=  5 geomean 0.846 [0.765, 0.917] p95 0.954 worst 0.954 ('synthetic-00.png', 'png', '90')
+  bytes           n=  5 geomean 1.000 [1.000, 1.000] p95 1.000 worst 1.000 ('synthetic-04.png', 'png', '90')
+all
+  wall            n= 16 geomean 0.495 [0.376, 0.636] p95 0.992 worst 0.992 ('grayscale-16.png', 'png', '90')
+  cpu             n= 16 geomean 0.543 [0.448, 0.654] p95 0.906 worst 0.906 ('texture-15.png', 'jpeg', '90')
+  peak_rss_bytes  n= 16 geomean 0.619 [0.517, 0.735] p95 0.954 worst 0.954 ('synthetic-00.png', 'png', '90')
+  bytes           n= 16 geomean 0.987 [0.965, 1.000] p95 1.010 worst 1.010 ('grayscale-original-00.jpg', 'jpeg', '90')
+VERDICT wall            within       geomean 0.495 [0.376, 0.636] budget 1.05
+VERDICT cpu             within       geomean 0.543 [0.448, 0.654] budget 1.05
+VERDICT peak_rss_bytes  within       geomean 0.619 [0.517, 0.735] budget 1.05
+VERDICT bytes           within       geomean 0.987 [0.965, 1.000] budget 1.002

@@ -1,0 +1,28 @@
+6 cases both completed, identical outputs 6, gated True, discarded rounds 3
+  new: attempted 12, succeeded 7 (exit 0 and verified)
+  base: attempted 12, succeeded 6 (exit 0 and verified)
+  failed base grayscale-original-00.jpg png lossless verifier rejected
+  failed base photo-00.jpg png lossless exit [3]
+  failed base photo-04.jpg png lossless exit [3]
+  failed base photo-16.jpg png lossless exit [3]
+  failed base texture-original-00.jpg png lossless exit [3]
+  failed base ui-text-original-01.jpg png lossless exit [3]
+  failed new photo-00.jpg png lossless exit [3]
+  failed new photo-04.jpg png lossless exit [3]
+  failed new photo-16.jpg png lossless exit [3]
+  failed new texture-original-00.jpg png lossless exit [3]
+  failed new ui-text-original-01.jpg png lossless exit [3]
+png
+  wall            n=  6 geomean 1.007 [0.992, 1.022] p95 1.037 worst 1.037 ('synthetic-00.png', 'png', 'lossless')
+  cpu             n=  6 geomean 0.986 [0.976, 0.994] p95 0.997 worst 0.997 ('texture-15.png', 'png', 'lossless')
+  peak_rss_bytes  n=  6 geomean 0.917 [0.871, 0.963] p95 0.986 worst 0.986 ('texture-15.png', 'png', 'lossless')
+  bytes           n=  6 geomean 1.000 [1.000, 1.000] p95 1.000 worst 1.000 ('ui-text-07.png', 'png', 'lossless')
+all
+  wall            n=  6 geomean 1.007 [0.992, 1.022] p95 1.037 worst 1.037 ('synthetic-00.png', 'png', 'lossless')
+  cpu             n=  6 geomean 0.986 [0.976, 0.994] p95 0.997 worst 0.997 ('texture-15.png', 'png', 'lossless')
+  peak_rss_bytes  n=  6 geomean 0.917 [0.871, 0.963] p95 0.986 worst 0.986 ('texture-15.png', 'png', 'lossless')
+  bytes           n=  6 geomean 1.000 [1.000, 1.000] p95 1.000 worst 1.000 ('ui-text-07.png', 'png', 'lossless')
+VERDICT wall            within       geomean 1.007 [0.992, 1.022] budget 1.05
+VERDICT cpu             within       geomean 0.986 [0.976, 0.994] budget 1.05
+VERDICT peak_rss_bytes  within       geomean 0.916 [0.871, 0.963] budget 1.05
+VERDICT bytes           within       geomean 1.000 [1.000, 1.000] budget 1.002

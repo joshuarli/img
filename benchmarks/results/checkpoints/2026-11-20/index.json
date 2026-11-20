@@ -1,0 +1,400 @@
+{
+ "dev/png-encode": {
+  "run": "20261120T153937Z-scenario",
+  "verdicts": [
+   {
+    "metric": "encode_ms",
+    "n": 18,
+    "geomean": 0.7751,
+    "ci": [
+     0.676,
+     0.8801
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   },
+   {
+    "metric": "bytes",
+    "n": 18,
+    "geomean": 1.0,
+    "ci": [
+     1.0,
+     1.0
+    ],
+    "budget": 1.002,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   }
+  ]
+ },
+ "dev/workflow-scored": {
+  "run": "20261120T153937Z-scenario",
+  "verdicts": [
+   {
+    "metric": "wall",
+    "n": 16,
+    "geomean": 0.4946,
+    "ci": [
+     0.3756,
+     0.6365
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   },
+   {
+    "metric": "cpu",
+    "n": 16,
+    "geomean": 0.543,
+    "ci": [
+     0.448,
+     0.6539
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   },
+   {
+    "metric": "peak_rss_bytes",
+    "n": 16,
+    "geomean": 0.619,
+    "ci": [
+     0.5166,
+     0.735
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   },
+   {
+    "metric": "bytes",
+    "n": 16,
+    "geomean": 0.9866,
+    "ci": [
+     0.9646,
+     0.9998
+    ],
+    "budget": 1.002,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   }
+  ]
+ },
+ "dev/workflow-lossless": {
+  "run": "20261120T153937Z-scenario",
+  "verdicts": [
+   {
+    "metric": "wall",
+    "n": 6,
+    "geomean": 1.0069,
+    "ci": [
+     0.9922,
+     1.0222
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   },
+   {
+    "metric": "cpu",
+    "n": 6,
+    "geomean": 0.9855,
+    "ci": [
+     0.9759,
+     0.9937
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   },
+   {
+    "metric": "peak_rss_bytes",
+    "n": 6,
+    "geomean": 0.9165,
+    "ci": [
+     0.871,
+     0.9627
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   },
+   {
+    "metric": "bytes",
+    "n": 6,
+    "geomean": 1.0,
+    "ci": [
+     1.0,
+     1.0
+    ],
+    "budget": 1.002,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   }
+  ]
+ },
+ "dev/batch": {
+  "run": "20261120T153937Z-scenario",
+  "verdicts": [
+   {
+    "metric": "seconds_per_image",
+    "n": 2,
+    "geomean": 0.5931,
+    "ci": [
+     0.359,
+     0.9798
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   },
+   {
+    "metric": "peak_rss_bytes",
+    "n": 2,
+    "geomean": 1.3107,
+    "ci": [
+     0.9348,
+     1.8379
+    ],
+    "budget": 1.05,
+    "status": "inconclusive",
+    "cases_over": [
+     [
+      "lossless -j 4",
+      1.8379
+     ]
+    ],
+    "undisposed": []
+   }
+  ]
+ },
+ "dev/score-exact": {
+  "run": "20261120T170453Z-scenario",
+  "verdicts": []
+ },
+ "dev/jpeg-decode": {
+  "run": "20261120T170700Z-scenario",
+  "verdicts": []
+ },
+ "holdout/png-encode": {
+  "run": "20261120T160849Z-scenario-holdout",
+  "verdicts": [
+   {
+    "metric": "encode_ms",
+    "n": 54,
+    "geomean": 0.7815,
+    "ci": [
+     0.7229,
+     0.846
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   },
+   {
+    "metric": "bytes",
+    "n": 54,
+    "geomean": 1.0001,
+    "ci": [
+     1.0,
+     1.0003
+    ],
+    "budget": 1.002,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   }
+  ]
+ },
+ "holdout/workflow-scored": {
+  "run": "20261120T160849Z-scenario-holdout",
+  "verdicts": [
+   {
+    "metric": "wall",
+    "n": 55,
+    "geomean": 0.482,
+    "ci": [
+     0.4188,
+     0.5539
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [
+     [
+      "synthetic-26.png/jpeg/90",
+      1.1647
+     ]
+    ],
+    "undisposed": []
+   },
+   {
+    "metric": "cpu",
+    "n": 55,
+    "geomean": 0.5081,
+    "ci": [
+     0.4483,
+     0.5709
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [
+     [
+      "synthetic-26.png/jpeg/90",
+      1.1791
+     ]
+    ],
+    "undisposed": []
+   },
+   {
+    "metric": "peak_rss_bytes",
+    "n": 55,
+    "geomean": 0.6028,
+    "ci": [
+     0.5522,
+     0.6578
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   },
+   {
+    "metric": "bytes",
+    "n": 55,
+    "geomean": 1.0018,
+    "ci": [
+     0.9973,
+     1.0079
+    ],
+    "budget": 1.002,
+    "status": "inconclusive",
+    "cases_over": [
+     [
+      "synthetic-17.png/avif/90",
+      1.1063
+     ]
+    ],
+    "undisposed": []
+   }
+  ]
+ },
+ "holdout/workflow-lossless": {
+  "run": "20261120T160849Z-scenario-holdout",
+  "verdicts": [
+   {
+    "metric": "wall",
+    "n": 18,
+    "geomean": 0.8295,
+    "ci": [
+     0.6919,
+     0.9853
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   },
+   {
+    "metric": "cpu",
+    "n": 18,
+    "geomean": 1.0329,
+    "ci": [
+     0.9855,
+     1.086
+    ],
+    "budget": 1.05,
+    "status": "inconclusive",
+    "cases_over": [
+     [
+      "texture-original-19.png/png/lossless",
+      1.3248
+     ],
+     [
+      "texture-original-18.png/png/lossless",
+      1.3139
+     ],
+     [
+      "texture-original-17.png/png/lossless",
+      1.2953
+     ]
+    ],
+    "undisposed": []
+   },
+   {
+    "metric": "peak_rss_bytes",
+    "n": 18,
+    "geomean": 0.8355,
+    "ci": [
+     0.7652,
+     0.9049
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   },
+   {
+    "metric": "bytes",
+    "n": 18,
+    "geomean": 1.0002,
+    "ci": [
+     0.9999,
+     1.0006
+    ],
+    "budget": 1.002,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   }
+  ]
+ },
+ "holdout/batch": {
+  "run": "20261120T160849Z-scenario-holdout",
+  "verdicts": [
+   {
+    "metric": "seconds_per_image",
+    "n": 2,
+    "geomean": 0.3646,
+    "ci": [
+     0.3143,
+     0.423
+    ],
+    "budget": 1.05,
+    "status": "within",
+    "cases_over": [],
+    "undisposed": []
+   },
+   {
+    "metric": "peak_rss_bytes",
+    "n": 2,
+    "geomean": 0.8805,
+    "ci": [
+     0.6403,
+     1.211
+    ],
+    "budget": 1.05,
+    "status": "inconclusive",
+    "cases_over": [
+     [
+      "lossless -j 4",
+      1.211
+     ]
+    ],
+    "undisposed": []
+   }
+  ]
+ }
+}
