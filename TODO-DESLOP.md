@@ -65,15 +65,6 @@ Step 2, Diagnose, done: reviewed decode of untrusted input (dimension and alloca
 - **Fix with:** deslop
 - **Effort:** M
 
-### DSLP-9 · P2 · AVIF overlapping iloc extents amplify a 262 KB file into a 4.3 GB allocation
-
-- **Area:** decode · avif
-- **Where:** src/still/avif_container.rs item_data (extent sum bounded only by IMAGE_MEMORY_BYTES, 4 GiB) and its callers primary_metadata, primary_data, av1_config, grid_config, exif_payload, xmp; src/runtime.rs admission
-- **Problem:** Each iloc extent is checked against the file length, but extents may overlap or repeat, and up to 16,384 are allowed in total. item_data sums their lengths against the 4 GiB memory ceiling, then try_reserve_exact and copies that many bytes. Reproduced on a debug build of a180d19: a 64x64 AVIF whose iloc was rewritten to 16,384 extents of (offset 0, length 262,000) with the file padded to 262,000 bytes. `img inspect` prints `AV1 sequence header missing` after peak RSS 4,300,406,784 bytes in 0.69 s (about 16,000 times the file); `img convert -o out.png --lossless` reaches the same peak. IMG_MEMORY_BUDGET=1073741824 does not change it, because admission reserves only the 262 KB input before describe() runs and never counts item data. A 20,000-byte file with 1,000 extents peaks at 27 MB. By code reading, exif_payload copies the item again with to_vec, so an Exif item built the same way peaks near 8 GB (not reproduced). Several parallel jobs multiply the peak.
-- **Recommendation:** Reject an item whose extent lengths sum to more than the container file length (a real item cannot exceed it), or reject overlapping extents; keep the 4 GiB ceiling as a second bound. Return Invalid for the container, not Limit. Charge item data to the admission reservation or avoid the copy for single-extent items. Add a test in tests/avif_codec.rs that rewrites a valid AVIF's iloc as above and asserts an error and bounded memory (for example by running the binary with a low RLIMIT or asserting the error before any 16 MiB allocation).
-- **Fix with:** security
-- **Effort:** S
-
 ### DSLP-10 · P2 · Progressive JPEG scan count is unbounded: 40 bytes of input cost 1 ms of uninterruptible decode
 
 - **Area:** decode · jpeg
