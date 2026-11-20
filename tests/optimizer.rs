@@ -181,3 +181,17 @@ fn sample_equality_expands_layouts_and_alpha_without_changing_meaning() {
     assert!(jpeg(&rgba).is_ok());
     assert!(jpeg(&translucent).is_err());
 }
+
+#[test]
+fn fast_progressive_repack_reports_the_score_of_its_own_bytes() {
+    let source = StillImage::from_rgb8(512, 384, common::pixels(512, 384)).unwrap().encode(Format::Png, EncodingMode::Lossless, Effort::Fast).unwrap();
+    let request = Request { operation: Operation::Convert(Format::Jpeg), fidelity: Fidelity::Score(ScoreTarget::new(85.0).unwrap()), effort: Effort::Fast, ..Request::default() };
+    let outcome = optimizer::process(&source, request).unwrap();
+    let progressive = outcome.bytes.windows(2).any(|m| m == [0xff, 0xc2]);
+    assert!(progressive, "fast scored JPEG ends with a progressive repack");
+    let repack = outcome.evaluations.last().unwrap();
+    assert_eq!(repack.bytes, Some(outcome.bytes.len()));
+    let measured = img::perceptual::compare(&source, &outcome.bytes).unwrap();
+    assert_eq!(outcome.score.unwrap().to_bits(), measured.to_bits());
+    assert_eq!(repack.score.unwrap().to_bits(), measured.to_bits());
+}
