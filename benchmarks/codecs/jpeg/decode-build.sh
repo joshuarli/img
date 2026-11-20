@@ -6,8 +6,8 @@ scratch=${JPEG_SCRATCH:-$root/.work/tmp/jpeg-candidates}
 decode_loop() {
   name=$1 img=$2 features=$3
   mkdir -p "$scratch/$name"
-  turbo= direct_turbo= zune=
-  if [ -d "$img/vendor/zune-jpeg" ]; then zune="zune-jpeg = { path = \"$img/vendor/zune-jpeg\" }"; fi
+  turbo= direct_turbo=
+  patches=$(awk -v img="$img" '/^\[/ { on = ($0 == "[patch.crates-io]"); next } on && NF { sub(/path = "/, "path = \"" img "/"); print }' "$img/Cargo.toml")
   if [ -n "$features" ]; then turbo="libjpeg-turbo-sys = { path = \"$img/codecs/libjpeg-turbo-sys\", optional = true }" direct_turbo=', "dep:libjpeg-turbo-sys"'; fi
   cat > "$scratch/$name/Cargo.toml" <<EOF4
 [package]
@@ -35,11 +35,7 @@ lto = "thin"
 codegen-units = 1
 panic = "abort"
 [patch.crates-io]
-oxipng = { path = "$img/vendor/oxipng" }
-libdeflater = { path = "$img/vendor/libdeflater" }
-libdeflate-sys = { path = "$img/vendor/libdeflate-sys" }
-rav1d = { path = "$img/vendor/rav1d" }
-$zune
+$patches
 EOF4
   cat > "$scratch/$name/build.rs" <<EOF5
 fn main() {

@@ -70,7 +70,7 @@ def workflow(name, area, purpose, formats, scores, levels, costs):
 
 def batch_command(ctx, level, out):
     files, rounds, modes, jobs = BATCH_LEVELS[level]
-    sets = WORK / 'sets' / files
+    sets = WORK / 'sets' / f'{files}-{SPLIT}'
     link = 'import os,shutil,sys\nd=sys.argv[1]; shutil.rmtree(d, ignore_errors=True); os.makedirs(d)\nfor f in sys.argv[2:]: os.link(f, os.path.join(d, os.path.basename(f)))'
     steps = [loops(ctx), ({}, ['python3', '-c', link, sets, *[CORPUS / f for f in corpus_set(files) if f.endswith('.png')]])]
     for mode in modes:
@@ -87,8 +87,8 @@ def loops(ctx):
 
 def score_exact(ctx, level, out):
     sources = {s['file']: s for s in json.loads(MANIFEST.read_text())['sources']}
-    specs = [f'{f}:{"webp" if sources[f]["alpha"] else "jpeg"}' for f in corpus_set('smoke')]
-    return [loops(ctx), ({}, py('benchmarks/codecs/score/score-exact.py', out, base_bin(ctx), LOOPS / 'target-img/release/score-loop',
+    specs = [f'{f}:{"webp" if sources[f]["alpha"] else "jpeg"}' for f in corpus_set('smoke', 'dev')]
+    return [loops(ctx), ({}, py('benchmarks/codecs/score/score-exact.py', out, NEW_BIN, LOOPS / 'target-img/release/score-loop',
                                  LOOPS / 'target-base/release/score-loop', CORPUS, *specs))]
 
 

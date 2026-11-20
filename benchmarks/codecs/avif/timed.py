@@ -160,8 +160,6 @@ def main():
                         args = [avifcodec, 'decode', fixture, dest]
                     elif config == 'zen':
                         args = [decode_bin, 'zen', fixture, dest]
-                    elif config == 'rav1d-asm':
-                        args = [scratch / 'decode-asm-target/release/avif-candidate-decode', 'rav1d', obu, dest]
                     else:
                         args = [decode_bin, 'rav1d', obu, dest]
                     batch.append({'role': 'decode', 'input': item['source'], 'group': item['group'], 'config': config,

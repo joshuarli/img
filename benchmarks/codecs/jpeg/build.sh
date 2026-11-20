@@ -77,7 +77,7 @@ strip = true
 oxipng = { path = "$root/vendor/oxipng" }
 libdeflater = { path = "$root/vendor/libdeflater" }
 libdeflate-sys = { path = "$root/vendor/libdeflate-sys" }
-rav1d = { path = "$root/vendor/rav1d" }
+fast-ssim2 = { path = "$root/vendor/fast-ssim2" }
 EOF2
 cp "$root/Cargo.lock" "$scratch/integrated/Cargo.lock"
 cargo build --profile dist -j4 --manifest-path "$scratch/integrated/Cargo.toml" --target-dir "$scratch/integrated-target"
@@ -102,7 +102,7 @@ codegen-units = 1
 oxipng = { path = "$root/vendor/oxipng" }
 libdeflater = { path = "$root/vendor/libdeflater" }
 libdeflate-sys = { path = "$root/vendor/libdeflate-sys" }
-rav1d = { path = "$root/vendor/rav1d" }
+fast-ssim2 = { path = "$root/vendor/fast-ssim2" }
 EOF3
 cargo build --release -j4 --manifest-path "$scratch/encode-loop/Cargo.toml" --target-dir "$scratch/encode-loop-target"
 JPEG_SCRATCH="$scratch" "$root/benchmarks/codecs/jpeg/decode-build.sh"

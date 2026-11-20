@@ -88,23 +88,6 @@ libc = "=0.2.183"
 EOF
 cargo build --release -j4 --manifest-path "$scratch/encode/Cargo.toml" --target-dir "$scratch/encode-target"
 cargo build --release -j4 --manifest-path "$scratch/decode/Cargo.toml" --target-dir "$scratch/decode-target"
-mkdir -p "$scratch/decode-asm"
-cat > "$scratch/decode-asm/Cargo.toml" <<EOF
-[package]
-name = "avif-candidate-decode"
-version = "0.1.0"
-edition = "2021"
-[[bin]]
-name = "avif-candidate-decode"
-path = "$repo/benchmarks/codecs/avif/decode.rs"
-[dependencies]
-rav1d = { path = "$repo/vendor/rav1d", default-features = false, features = ["bitdepth_8", "bitdepth_16", "asm", "asm_arm64_dotprod", "asm_arm64_i8mm", "asm_arm64_sve2"] }
-yuv = "=0.8.20"
-zenavif = { version = "=0.1.6", default-features = false }
-libc = "=0.2.183"
-EOF
-cargo build --release -j4 --manifest-path "$scratch/decode-asm/Cargo.toml" --target-dir "$scratch/decode-asm-target"
-
 mkdir -p "$scratch/integrated"
 cat > "$scratch/integrated/Cargo.toml" <<EOF
 [package]
@@ -126,6 +109,7 @@ strip = true
 oxipng = { path = "$repo/vendor/oxipng" }
 libdeflater = { path = "$repo/vendor/libdeflater" }
 libdeflate-sys = { path = "$repo/vendor/libdeflate-sys" }
+fast-ssim2 = { path = "$repo/vendor/fast-ssim2" }
 EOF
 cp "$repo/Cargo.lock" "$scratch/integrated/Cargo.lock"
 cargo build --profile dist -j4 --manifest-path "$scratch/integrated/Cargo.toml" --target-dir "$scratch/integrated-target"
