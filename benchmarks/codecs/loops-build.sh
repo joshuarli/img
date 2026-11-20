@@ -17,8 +17,16 @@ path = "$root/benchmarks/codecs/score/score-loop.rs"
 [[bin]]
 name = "png-encode-loop"
 path = "$root/benchmarks/codecs/png/encode-loop.rs"
+[[bin]]
+name = "memory-jpegli"
+path = "$root/benchmarks/codecs/memory/jpegli.rs"
+[[bin]]
+name = "memory-phases"
+path = "$root/benchmarks/codecs/memory/phases.rs"
 [dependencies]
 img = { path = "$src" }
+libc = "0.2"
+jpegli-sys = { path = "$src/codecs/jpegli-sys" }
 [patch.crates-io]
 $(sed -n '/^\[patch.crates-io\]/,/^\[/p' "$src/Cargo.toml" | rg '^[a-z0-9_-]+ = \{ path' | sed "s#path = \"#path = \"$src/#")
 [profile.release]

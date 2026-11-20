@@ -117,7 +117,7 @@ pub fn samples_equal(first: &StillImage, second: &StillImage) -> bool {
         && first.metadata.orientation == second.metadata.orientation
         && first.metadata.icc_profile == second.metadata.icc_profile
         && required_png_color(first)==required_png_color(second)
-        && expanded(first) == expanded(second)
+        && if first.pixels.descriptor() == second.pixels.descriptor() { first.samples() == second.samples() } else { expanded(first) == expanded(second) }
 }
 fn compatible(image: &StillImage, format: Format, fidelity: Fidelity) -> bool {
     if image.bit_depth() > 8 { return format == Format::Png && matches!(fidelity, Fidelity::Lossless); }
@@ -404,7 +404,7 @@ pub fn process_cancellable(bytes: &[u8], request: Request, cancelled: &crate::ca
                         if !samples_equal(&image,&candidate) { return Err(Error::new(ErrorKind::Score,"exact decoded samples differ")); }
                         Ok(None)
                     } else {
-                        let score=metric.as_ref().unwrap().score_decoded(&candidate)?;
+                        let score=if samples_equal(&image,&candidate) {100.0} else {metric.as_ref().unwrap().score_decoded(&candidate)?};
                         evaluation.score=Some(score);
                         if let Fidelity::Score(target)=request.fidelity && score < target.value() { return Err(Error::new(ErrorKind::Score,"candidate is below requested score")); }
                         Ok(Some(score))

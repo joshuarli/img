@@ -146,6 +146,89 @@ impl Ssimulacra2Reference {
         self.compare_with_config(distorted, &Ssimulacra2Config::default())
     }
 
+    /// Precompute from owned, opaque, linear-light BT.709 RGB planes without
+    /// copying them. Bit-identical to [`Self::new_with_config`] on the same
+    /// samples as an interleaved linear `RGBF32` slice.
+    ///
+    /// # Errors
+    /// As [`Self::new_with_config`], plus
+    /// [`Ssimulacra2Error::InvalidImageSize`] when a plane length is not
+    /// `width * height`.
+    pub fn from_linear_planes(
+        planes: [Vec<f32>; 3],
+        width: usize,
+        height: usize,
+        config: &Ssimulacra2Config<'_>,
+    ) -> Result<Self, Ssimulacra2Error> {
+        config.check_stop()?;
+        if config.strip.is_some() {
+            return Err(Ssimulacra2Error::InvalidConfiguration(
+                "reference construction stores full-image scales; strips apply to comparison only",
+            ));
+        }
+        let npix = crate::source::checked_dimensions(width, height)?;
+        if planes.iter().any(|p| p.len() != npix) {
+            return Err(Ssimulacra2Error::InvalidImageSize);
+        }
+        let stop = config.stop.unwrap_or(&enough::Unstoppable);
+        let (w, h) = (width.max(8), height.max(8));
+        Ok(Self {
+            cache: ReferenceCache::new_linear_sets_with_options(
+                vec![pad_or_pass(planes, width, height, w, h)],
+                w,
+                h,
+                false,
+                crate::pipeline::Kernel::from_impl(config.impl_type),
+                stop,
+                255.0,
+            )?,
+            original_width: width,
+            original_height: height,
+            native_hdr: false,
+        })
+    }
+
+    /// Compare owned, opaque, linear-light BT.709 RGB planes without copying
+    /// them. Bit-identical to [`Self::compare_with_config`] on the same samples
+    /// as an interleaved linear `RGBF32` slice against an opaque reference.
+    ///
+    /// # Errors
+    /// As [`Self::compare_with_config`]; strips are not supported.
+    pub fn compare_linear_planes(
+        &self,
+        planes: [Vec<f32>; 3],
+        width: usize,
+        height: usize,
+        config: &Ssimulacra2Config<'_>,
+    ) -> Result<f64, Ssimulacra2Error> {
+        config.check_stop()?;
+        if config.strip.is_some() {
+            return Err(Ssimulacra2Error::InvalidConfiguration(
+                "planar comparison evaluates the whole image",
+            ));
+        }
+        if (width, height) != (self.original_width, self.original_height)
+            || planes.iter().any(|p| p.len() != width * height)
+        {
+            return Err(Ssimulacra2Error::NonMatchingImageDimensions);
+        }
+        if self.cache.has_alpha() || self.native_hdr {
+            return Err(Ssimulacra2Error::InvalidConfiguration(
+                "planar comparison needs an opaque SDR reference",
+            ));
+        }
+        let (w, h) = (self.cache.width(), self.cache.height());
+        self.cache.compare_linear_stack_stop(
+            0,
+            pad_or_pass(planes, width, height, w, h),
+            w,
+            h,
+            config.stop.unwrap_or(&enough::Unstoppable),
+            crate::pipeline::Kernel::from_impl(config.impl_type),
+            255.0,
+        )
+    }
+
     /// [`Self::compare`] with per-call options — `strip` bounds the
     /// distorted side's memory, `stop` enables cooperative cancellation
     /// (checked at scale boundaries / per strip).

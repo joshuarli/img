@@ -70,7 +70,7 @@ def batch_command(ctx, level, out):
     return steps
 
 
-BATCH_LEVELS = {'change': ('dev', 1, ['lossless'], [4]), 'scenario': ('dev', 3, ['lossless', 'jpeg90'], [1, 4])}
+BATCH_LEVELS = {'change': ('dev', 3, ['lossless'], [4]), 'scenario': ('dev', 3, ['lossless', 'jpeg90'], [1, 4])}
 
 
 def loops(ctx):
@@ -135,7 +135,7 @@ WORKLOADS = [
     workflow('workflow-lossless', 'png', 'complete PNG --lossless optimize: wall, CPU, peak RSS, bytes vs base',
              'png', 'lossless', {'change': ('smoke', 1, 'balanced'), 'scenario': ('scenario', 5, 'best')},
              {'change': '1 s observed', 'scenario': 'est. 20 min'}),
-    dict(name='batch', area='batch', purpose='multi-image throughput and peak RSS under -j', levels=BATCH_LEVELS, costs={'change': '1 s observed', 'scenario': 'est. 30 min'},
+    dict(name='batch', area='batch', purpose='multi-image throughput and peak RSS under -j', levels=BATCH_LEVELS, costs={'change': '4 s observed (3 rounds)', 'scenario': 'est. 30 min'},
          needs=['new', 'base', 'corpus', 'gate'], command=batch_command),
     dict(name='jpeg-decode', area='decode', purpose='in-process JPEG decode time and RSS vs base on qualification fixtures',
          levels={'scenario': None}, costs={'scenario': 'est. 30 min (9 gated rounds)'}, needs=['gate', 'base-tree', 'jpeg-decode'], command=decode_jpeg),

@@ -45,16 +45,30 @@ jpeg_free_small(j_common_ptr cinfo, void *object, size_t sizeofobject)
  * "Large" objects are treated the same as "small" ones.
  */
 
+/* img patch: map large objects directly so freeing returns their pages
+ * instead of leaving them dirty in the allocator's large-block cache.
+ */
+#include <sys/mman.h>
+#define IMG_MAPPED_THRESHOLD ((size_t)1 << 20)
+
 GLOBAL(void *)
 jpeg_get_large(j_common_ptr cinfo, size_t sizeofobject)
 {
+  if (sizeofobject >= IMG_MAPPED_THRESHOLD) {
+    void *p = mmap(NULL, sizeofobject, PROT_READ | PROT_WRITE,
+                   MAP_PRIVATE | MAP_ANON, -1, 0);
+    return p == MAP_FAILED ? NULL : p;
+  }
   return (void *)MALLOC(sizeofobject);
 }
 
 GLOBAL(void)
 jpeg_free_large(j_common_ptr cinfo, void *object, size_t sizeofobject)
 {
-  free(object);
+  if (sizeofobject >= IMG_MAPPED_THRESHOLD)
+    munmap(object, sizeofobject);
+  else
+    free(object);
 }
 
 

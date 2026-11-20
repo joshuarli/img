@@ -11,6 +11,7 @@ mod av1;
 pub(crate) mod webp;
 pub(crate) mod color;
 pub use color::{PreparedImage, SamplePreservation};
+pub(crate) use color::PreparedPlanes;
 
 /// Maximum compressed input, including stdin.
 pub const MAX_INPUT_BYTES: u64 = 128 * 1024 * 1024;

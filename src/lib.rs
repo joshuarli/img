@@ -52,6 +52,7 @@ mod test_utils;
 
 /// Deterministic, bounded optimization and conversion capabilities.
 pub mod optimizer;
+pub mod allocator;
 
 /// Cooperative cancellation of image work.
 pub mod cancellation;

@@ -20,6 +20,15 @@ pub struct PreparedImage {
     pub(crate) alpha: Vec<u8>,
 }
 
+/// Planar linear-light sRGB samples in display orientation, for scoring.
+pub(crate) struct PreparedPlanes {
+    pub(crate) width: u32,
+    pub(crate) height: u32,
+    pub(crate) planes: [Vec<f32>; 3],
+    /// Exact alpha, or `None` when every sample is opaque.
+    pub(crate) alpha: Option<Vec<u8>>,
+}
+
 impl PreparedImage {
     /// Display dimensions after orientation correction.
     pub fn dimensions(&self) -> (u32, u32) { (self.width, self.height) }
@@ -138,6 +147,45 @@ impl StillImage {
         Ok(PreparedImage { width, height, rgb, alpha })
     }
 
+    /// [`Self::prepare`] as owned planes, without intermediate interleaved copies.
+    pub(crate) fn prepare_planar(&self) -> Result<PreparedPlanes, Error> {
+        if self.bit_depth() != 8 || self.info.source_color.bit_depth.is_some_and(|d| d > 8) {
+            return Err(Error::new(ErrorKind::Unsupported, "scoring and resizing require eight-bit SDR samples"));
+        }
+        let color = self.color_interpretation()?;
+        if matches!(color, ColorInterpretation::Profile(_)) {
+            let prepared = self.prepare()?;
+            let planes = std::array::from_fn(|c| prepared.rgb.iter().map(|p| p[c]).collect());
+            let alpha = prepared.alpha.iter().any(|&a| a != 255).then_some(prepared.alpha);
+            return Ok(PreparedPlanes { width: prepared.width, height: prepared.height, planes, alpha });
+        }
+        let channels = self.pixels.descriptor().channels();
+        let gray = self.is_grayscale();
+        let (width, height) = self.dimensions();
+        let orientation = self.metadata.orientation as u8;
+        let (out_width, out_height) = if orientation >= 5 { (height, width) } else { (width, height) };
+        let transfer: [f32; 256] = match color {
+            ColorInterpretation::Srgb => std::array::from_fn(|value| srgb_to_linear(value as f32 / 255.0)),
+            ColorInterpretation::Gamma(gamma) => std::array::from_fn(|value| libm::powf(value as f32 / 255.0, gamma)),
+            ColorInterpretation::Profile(_) => unreachable!(),
+        };
+        if transfer.iter().any(|v| !v.is_finite()) { return Err(Error::new(ErrorKind::Unsupported, "nonfinite prepared color sample")); }
+        let count = out_width as usize * out_height as usize;
+        let mut planes: [Vec<f32>; 3] = std::array::from_fn(|_| Vec::with_capacity(count));
+        let mut alpha = self.has_alpha().then(|| Vec::with_capacity(count));
+        let source = self.pixels.as_slice();
+        for y in 0..out_height { for x in 0..out_width {
+            let (sx, sy) = source_position(orientation, width, height, x, y);
+            let at = sx as usize * channels;
+            let p = &source.row(sy)[at..at + channels];
+            let rgb = if gray { [p[0]; 3] } else { [p[0], p[1], p[2]] };
+            for c in 0..3 { planes[c].push(transfer[rgb[c] as usize]); }
+            if let Some(alpha) = &mut alpha { alpha.push(p[channels - 1]); }
+        }}
+        let alpha = alpha.filter(|a| a.iter().any(|&v| v != 255));
+        Ok(PreparedPlanes { width: out_width, height: out_height, planes, alpha })
+    }
+
     /// Strip private metadata while retaining required color interpretation.
     pub fn strip_metadata(&self, preservation: SamplePreservation) -> Result<Self, Error> {
         let orientation = self.metadata.orientation as u8;
@@ -219,16 +267,20 @@ impl StillImage {
     }
 }
 
+fn source_position(orientation: u8, width: u32, height: u32, x: u32, y: u32) -> (u32, u32) {
+    match orientation {
+        2 => (width - 1 - x, y), 3 => (width - 1 - x, height - 1 - y), 4 => (x, height - 1 - y),
+        5 => (y, x), 6 => (y, height - 1 - x), 7 => (width - 1 - y, height - 1 - x), 8 => (width - 1 - y, x),
+        _ => (x, y),
+    }
+}
+
 fn orient<T: Clone>(pixels: Vec<T>, width: u32, height: u32, channels: usize, orientation: u8) -> (Vec<T>, u32, u32) {
     if orientation == 1 { return (pixels, width, height); }
     let (out_width, out_height) = if orientation >= 5 { (height, width) } else { (width, height) };
     let mut output = Vec::with_capacity(pixels.len());
     for y in 0..out_height { for x in 0..out_width {
-        let (sx, sy) = match orientation {
-            2 => (width - 1 - x, y), 3 => (width - 1 - x, height - 1 - y), 4 => (x, height - 1 - y),
-            5 => (y, x), 6 => (y, height - 1 - x), 7 => (width - 1 - y, height - 1 - x), 8 => (width - 1 - y, x),
-            _ => (x, y),
-        };
+        let (sx, sy) = source_position(orientation, width, height, x, y);
         let at = (sy * width + sx) as usize * channels;
         output.extend_from_slice(&pixels[at..at + channels]);
     }}
