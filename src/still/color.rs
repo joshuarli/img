@@ -131,7 +131,7 @@ impl StillImage {
                 let transform = profile.create_transform_f32(layout, &ColorProfile::new_srgb(), Layout::Rgb, transform_options())
                     .map_err(|e| Error::caused(ErrorKind::Unsupported, e))?;
                 transform.transform(&input, &mut rgb).map_err(|e| Error::caused(ErrorKind::Unsupported, e))?;
-                for value in &mut rgb { *value = srgb_to_linear(checked_sdr(*value)?); }
+                for value in &mut rgb { if !value.is_finite() { return Err(Error::new(ErrorKind::Unsupported, "nonfinite prepared color sample")); } *value = value.signum() * srgb_to_linear(value.abs()); }
             },
             ColorInterpretation::Gamma(gamma) => for value in &mut rgb { *value = libm::powf(*value,gamma); },
             ColorInterpretation::Srgb => {},

@@ -2,6 +2,13 @@
 
 img compares actual decoded candidate bytes with an orientation-correct,
 eight-bit SDR reference. Color preparation uses floating-point linear sRGB.
+Validated ICC sources, including wide-gamut Display P3 phone photos, convert to
+extended-range linear sRGB without clamping, as libjxl's `ssimulacra2` does.
+On three P3 photos at JPEG qualities 60 and 85, img stayed within 0.003–0.052
+of jpeg-xl 0.13.0 `ssimulacra2` on the same files, against 0.007–0.068 on
+sRGB photos where both tools differ only in JPEG decoding. Clamping instead
+refused such photos outright, and even sRGB-tagged inputs whose profile
+transform overshot by 0.0002.
 Alpha must match exactly; transparent content is scored over black and white
 in linear light, and the lower score wins. Hidden RGB remains relevant to
 strict lossless equality, but contributes nothing at zero alpha to this metric.

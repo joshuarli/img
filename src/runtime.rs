@@ -312,7 +312,7 @@ fn compare(jobs:&[Job],budget:u64)->Result<Completed,Failure> {
     let reference_header=still::describe(&original).map_err(|e|Failure::new(&reference.input,None,"input.decode",e,3))?;
     let candidate_header=still::describe(&encoded).map_err(|e|Failure::new(&candidate.input,None,"input.decode",e,3))?;
     let area=|header:&still::Description|u64::from(header.width).saturating_mul(u64::from(header.height));
-    let reservation=area(&reference_header).saturating_add(area(&candidate_header)).saturating_mul(SCORED_BYTES_PER_PIXEL).saturating_add(original.len() as u64).saturating_add(encoded.len() as u64);
+    let reservation=area(&reference_header).max(area(&candidate_header)).saturating_mul(SCORED_BYTES_PER_PIXEL).saturating_add(original.len() as u64).saturating_add(encoded.len() as u64);
     if reservation>budget {return Err(Failure::new(&candidate.input,None,"input.limit","comparison exceeds memory budget",3));}
     let dimensions=|header:&still::Description|if header.orientation>=5 {(header.height,header.width)} else {(header.width,header.height)};
     if dimensions(&reference_header)!=dimensions(&candidate_header) {return Err(Failure::new(&candidate.input,None,"input.score","score dimensions differ",3));}
