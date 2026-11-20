@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-import hashlib, json, struct, subprocess, zlib
+import hashlib, json, os, struct, subprocess, zlib
 from pathlib import Path
 from sweep import root, scratch, paths, group, turbo
+turbo = os.environ.get("JPEG_TURBO", turbo)
 
 outdir = scratch / 'inputs'
 outdir.mkdir(exist_ok=True)
@@ -97,6 +98,6 @@ for index, source in enumerate(paths):
         kinds.append(raw[at+4:at+8]); at += 12 + length
     assert kinds == [b'IHDR', b'IDAT', b'IEND'] and at == len(raw)
     assert read_png(png)==(w,h,channels,pixels)
-    manifest.append({'source':str(source.relative_to(root)), 'input':png.name, 'group':group(source), 'width':w, 'height':h, 'channels':channels, 'jpeg_scale':scale, 'sha256':hashlib.sha256(raw).hexdigest()})
+    manifest.append({'source':str(source.relative_to(root)), 'input':png.name, 'group':group(source), 'width':w, 'height':h, 'channels':channels, 'jpeg_scale':scale, 'sha256':hashlib.sha256(raw).hexdigest(), 'pnm_sha256':hashlib.sha256(pnm.read_bytes()).hexdigest()})
     print(source.name, w, h, channels, scale, flush=True)
 (outdir/'manifest.json').write_text(json.dumps(manifest, indent=1)+'\n')

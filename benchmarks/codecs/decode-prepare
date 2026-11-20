@@ -1,0 +1,122 @@
+#!/usr/bin/env python3
+import argparse, hashlib, json, os, pathlib, shlex, subprocess, sys
+
+root = pathlib.Path(__file__).resolve().parents[2]
+parser = argparse.ArgumentParser()
+parser.add_argument('--dry-run', action='store_true')
+parser.add_argument('format', choices=['jpeg', 'png', 'avif', 'all'])
+parser.add_argument('dest', type=pathlib.Path)
+parser.add_argument('--corpus', type=pathlib.Path)
+parser.add_argument('--img', type=pathlib.Path)
+parser.add_argument('--base-checkout', type=pathlib.Path)
+a = parser.parse_args()
+dest = a.dest.resolve()
+img = a.img.resolve() if a.img else None
+base = a.base_checkout.resolve() if a.base_checkout else None
+if not a.dry_run and (not img or not img.is_file()): parser.error('--img must name an existing binary')
+formats = ['jpeg', 'png', 'avif'] if a.format == 'all' else [a.format]
+env = os.environ.copy()
+env['CARGO_BUILD_JOBS'] = '4'
+
+def run(name, cmd, variables=None, ready=False):
+    command = [str(x) for x in cmd]
+    changes = {k: str(v) for k, v in (variables or {}).items()}
+    print(('skip ' if ready and not a.dry_run else 'run ') + name + ': ' + ' '.join(f'{k}={shlex.quote(v)}' for k, v in changes.items()) + ' ' + shlex.join(command), flush=True)
+    if not a.dry_run and not ready:
+        subprocess.run(command, cwd=root, env={**env, **changes}, check=True)
+
+def valid_corpus(path):
+    try:
+        entries = json.loads((root / 'benchmarks/corpus/qualification/manifest.json').read_text())['sources']
+        return all(hashlib.sha256((path / row['file']).read_bytes()).hexdigest() == row['sha256'] for row in entries if row['split'] == 'dev')
+    except (OSError, ValueError, KeyError, TypeError): return False
+
+def valid_fixtures(path, fmt):
+    try:
+        rows = json.loads((path / 'manifest.json').read_text())
+        if not rows: return False
+        for row in rows:
+            files = [row['file']] if fmt != 'avif' else [row['name'] + ext for ext in ('.avif', '.obu')]
+            for name in files:
+                data = (path / name).read_bytes()
+                expected = row['sha256'] if fmt != 'avif' else row[name.rsplit('.', 1)[1] + '_sha256']
+                if not data or hashlib.sha256(data).hexdigest() != expected: return False
+        return True
+    except (OSError, ValueError, KeyError, TypeError): return False
+
+def valid_inputs(path):
+    try:
+        rows = json.loads((path / 'manifest.json').read_text())
+        return bool(rows) and all(hashlib.sha256((path / row['input']).read_bytes()).hexdigest() == row['sha256'] and hashlib.sha256((path / pathlib.Path(row['input']).with_suffix('.pnm')).read_bytes()).hexdigest() == row['pnm_sha256'] for row in rows)
+    except (OSError, ValueError, KeyError, TypeError): return False
+
+def binary(path): return path.is_file() and os.access(path, os.X_OK)
+
+def jpeg_native_ok(work, paths):
+    try:
+        versions = [('libjpeg-turbo', '7723f50f3f66b9da74376e6d8badb6162464212c'), ('mozjpeg', '6c9f0897afa1c2738d7222a0a9ab49e8b536a267'), ('libjxl', '794a5dcf0d54f9f0b20d288a12e87afb91d20dfc')]
+        return all(subprocess.check_output(['git', '-C', str(work / name), 'rev-parse', 'HEAD'], stderr=subprocess.DEVNULL, text=True).strip() == revision for name, revision in versions) and all(binary(p) and subprocess.run([str(p), '-version'], capture_output=True).returncode == 0 for p in paths[:3]) and paths[3].read_bytes()[:8] == b'!<arch>\n'
+    except (OSError, subprocess.CalledProcessError): return False
+
+def avif_native_ok(work):
+    try:
+        source = work / 'src'
+        hashes = {'dav1d-1.5.4.tar.gz': 'a1d5b63d2d38ec9bd03acf643caa51fa22edd1e89c5a109c4807717216bbec07', 'libavif-v1.4.2.tar.gz': '2b645287340ba5a631d268b551dc2d72bd73ac33335962dd36dcdb6d8366921d', 'libjpeg-turbo-3.1.1.tar.gz': '304165ae11e64ab752e9cfc07c37bfdc87abd0bfe4bc699e59f34036d9c84f72'}
+        return binary(work / 'avifcodec') and subprocess.check_output(['git', '-C', str(source / 'libaom-v3.13.1'), 'rev-parse', 'HEAD'], stderr=subprocess.DEVNULL, text=True).strip() == 'd772e334cc724105040382a977ebb10dfd393293' and all(hashlib.sha256((source / name).read_bytes()).hexdigest() == digest for name, digest in hashes.items()) and all((work / p).is_file() for p in ('build/libavif/libavif.a', 'install/aom/lib/libaom.a', 'install/dav1d/lib/libdav1d.a', 'build/turbo/djpeg-static'))
+    except (OSError, subprocess.CalledProcessError): return False
+
+def harness_ok(path, fixture, fmt, mode):
+    try:
+        if not binary(path): return False
+        rows = json.loads((fixture / 'manifest.json').read_text())
+        name = rows[0]['name'] + ('.obu' if mode == 'raw' else '.avif') if fmt == 'avif' else rows[0]['file']
+        result = subprocess.run([str(path), mode, '0', str(fixture / name)], capture_output=True, check=True)
+        json.loads(result.stdout)
+        return True
+    except (OSError, ValueError, KeyError, IndexError, subprocess.CalledProcessError): return False
+
+contracts = []
+for fmt in formats:
+    work = dest / fmt
+    corpus = a.corpus.resolve() if a.corpus else work / 'corpus'
+    fixture = work / 'fixtures'
+    script = root / 'benchmarks/codecs' / fmt
+    if a.corpus:
+        print('use supplied corpus: ' + shlex.quote(str(corpus)), flush=True)
+        if not a.dry_run and not valid_corpus(corpus): raise ValueError(f'invalid dev corpus: {corpus}')
+    else:
+        run('materialize corpus', [sys.executable, '-I', root / 'scripts/qualification-corpus', corpus], ready=not a.dry_run and valid_corpus(corpus))
+        if not a.dry_run and not valid_corpus(corpus): raise ValueError(f'invalid dev corpus: {corpus}')
+    if not a.dry_run:
+        work.mkdir(parents=True, exist_ok=True)
+        env['TMPDIR'] = str(work)
+    if fmt == 'png':
+        harness = work / 'target/release/png-decode-loop'
+        run('build png harness', ['sh', script / 'decode-build.sh'], {'PNG_SCRATCH': work}, not a.dry_run and harness_ok(harness, fixture, fmt, 'png'))
+        run('prepare png fixtures', [sys.executable, script / 'decode-fixtures.py', fixture, corpus, img or '<img>', harness], ready=valid_fixtures(fixture, fmt))
+        binaries = {'png': {'path': str(harness), 'decoders': ['png', 'zen', 'spng', 'libpng']}}
+    elif fmt == 'jpeg':
+        harness = work / 'decode-loop-target/release/jpeg-decode-loop'
+        native = [work / 'turbo-build/cjpeg-static', work / 'turbo-build/djpeg-static', work / 'moz-local/cjpeg-static', work / 'jxl-build/lib/libjpegli-static.a']
+        run('build jpeg native tools', ['sh', script / 'build.sh'], {'JPEG_SCRATCH': work, 'DECODE_ONLY': '1'}, not a.dry_run and jpeg_native_ok(work, native))
+        build_env = {'JPEG_SCRATCH': work}
+        if base: build_env['IMG_BASE'] = base
+        baseline = work / 'decode-loop-base-target/release/jpeg-decode-loop'
+        run('build jpeg harness', ['sh', script / 'decode-build.sh'], build_env, not a.dry_run and harness_ok(harness, fixture, fmt, 'img') and (not base or harness_ok(baseline, fixture, fmt, 'img')))
+        inputs = work / 'inputs'
+        run('prepare jpeg inputs', [sys.executable, script / 'prepare.py'], {'JPEG_SCRATCH': work}, valid_inputs(inputs))
+        run('prepare jpeg fixtures', [sys.executable, script / 'decode-fixtures.py', inputs, img or '<img>', native[0], native[2], fixture], ready=valid_fixtures(fixture, fmt))
+        binaries = {'jpeg': {'path': str(harness), 'decoders': ['img', 'zune', 'turbo', 'jpegli', 'zen']}}
+        if base: binaries['base'] = {'path': str(baseline), 'decoders': ['img']}
+    else:
+        native = work / 'avifcodec'
+        run('build avif native tools', ['sh', script / 'build.sh'], {'AVIF_SCRATCH': work, 'DECODE_ONLY': '1'}, not a.dry_run and avif_native_ok(work))
+        paths = [work / 'img-target/release/avif-qual-img', work / 'qual-dav1d-target/release/avif-qual-dav1d', work / 'qual-zen-target/release/avif-qual-zen']
+        run('build avif harnesses', ['sh', script / 'decode-build.sh'], {'AVIF_SCRATCH': work}, not a.dry_run and all(harness_ok(p, fixture, fmt, mode) for p, mode in zip(paths, ['img', 'rgb', 'zen'])))
+        inputs = work / 'inputs'
+        run('prepare avif inputs', [sys.executable, root / 'benchmarks/codecs/jpeg/prepare.py'], {'JPEG_SCRATCH': work, 'JPEG_TURBO': work / 'build/turbo/djpeg-static'}, valid_inputs(inputs))
+        run('prepare avif fixtures', [sys.executable, script / 'decode-prepare.py', work, inputs, corpus, img or '<img>', fixture], ready=valid_fixtures(fixture, fmt))
+        binaries = {name: {'path': str(path), 'decoders': modes} for name, path, modes in zip(['img', 'dav1d', 'zen'], paths, [['rav1d', 'img'], ['dav1d', 'dav1d-rgb'], ['zen']])}
+    contracts.append({'format': fmt, 'fixtures': str(fixture), 'harnesses': binaries})
+for contract in contracts:
+    print(json.dumps(contract), flush=True)

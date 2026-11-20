@@ -9,6 +9,7 @@ manifest = []
 
 def emit(cls, name, command):
     target = out / f'{cls}-{name}.jpg'
+    target.unlink(missing_ok=True)
     args = [str(c) for c in command]
     if cls.startswith('img'):
         args += ['-o', str(target)]
@@ -31,7 +32,7 @@ for source in sources:
     emit('turbo-prog420', name, [cjpeg, '-quality', '85', '-progressive', source])
     emit('turbo-restart', name, [cjpeg, '-quality', '90', '-restart', '1', source])
     emit('moz-prog', name, [moz, '-quality', '85', source])
-for camera in sorted(pathlib.Path('benchmarks/corpus/validation').glob('*.jpg')):
+for camera in sorted((pathlib.Path(__file__).resolve().parents[3] / 'benchmarks/corpus/validation').glob('*.jpg')):
     target = out / f'camera-{camera.stem}.jpg'
     shutil.copyfile(camera, target)
     manifest.append({'class': 'camera', 'file': target.name, 'sha256': hashlib.sha256(target.read_bytes()).hexdigest()})
