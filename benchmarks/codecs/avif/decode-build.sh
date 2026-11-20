@@ -13,19 +13,24 @@ name = "avif-qual-img"
 path = "$root/benchmarks/codecs/avif/decode-loop.rs"
 [dependencies]
 img = { path = "$root", features = ["build-binary"] }
-rav1d = { path = "$root/vendor/rav1d", default-features = false, features = ["bitdepth_8", "bitdepth_16", "asm", "asm_arm64_dotprod", "asm_arm64_i8mm", "asm_arm64_sve2"] }
+dav1d-sys = { path = "$root/codecs/dav1d-sys" }
 libc = "=0.2.183"
 [patch.crates-io]
 oxipng = { path = "$root/vendor/oxipng" }
 libdeflater = { path = "$root/vendor/libdeflater" }
 libdeflate-sys = { path = "$root/vendor/libdeflate-sys" }
-rav1d = { path = "$root/vendor/rav1d" }
+fast-ssim2 = { path = "$root/vendor/fast-ssim2" }
 [profile.release]
 opt-level = 3
 lto = "thin"
 panic = "abort"
 strip = false
 TOML
+if [ "${IMG_ONLY:-0}" = 1 ]; then
+    cp "$root/Cargo.lock" "$scratch/qual-img/Cargo.lock"
+    CARGO_BUILD_JOBS=4 cargo build --release --manifest-path "$scratch/qual-img/Cargo.toml" --target-dir "$scratch/img-target"
+    exit 0
+fi
 cat > "$scratch/qual-zen/Cargo.toml" <<TOML
 [package]
 name = "avif-qual-zen"

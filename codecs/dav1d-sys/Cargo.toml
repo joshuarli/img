@@ -1,0 +1,10 @@
+[package]
+name = "dav1d-sys"
+version = "0.1.0"
+edition = "2024"
+license = "BSD-2-Clause"
+publish = false
+links = "img_dav1d"
+
+[build-dependencies]
+cc = "1"

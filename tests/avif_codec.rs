@@ -1,5 +1,35 @@
 mod common;
-#[path="support/native_avif.rs"] mod native_avif;
+mod native_avif {
+    use std::{fs, process::Command};
+    fn decode_planes(bytes: &[u8], grain: bool) -> (Vec<u8>, usize, usize, usize, bool) {
+        let scratch = super::common::Scratch::new("native-avif");
+        let input = scratch.0.join("input.obu"); let output = scratch.0.join("output.yuv"); let helper = scratch.0.join("native");
+        fs::write(&input, super::avif_raw::primary_data(bytes)).unwrap();
+        let flags = Command::new("pkg-config").args(["--cflags", "--libs", "dav1d"]).output().unwrap();
+        assert!(flags.status.success(), "{}", String::from_utf8_lossy(&flags.stderr));
+        let mut cc = Command::new("cc"); cc.arg(concat!(env!("CARGO_MANIFEST_DIR"), "/benchmarks/codecs/avif/test-native.c"));
+        cc.args(std::str::from_utf8(&flags.stdout).unwrap().split_whitespace()).arg("-o").arg(&helper);
+        let build = cc.output().unwrap(); assert!(build.status.success(), "{}", String::from_utf8_lossy(&build.stderr));
+        let run = Command::new(helper).arg(input).arg(&output).arg(if grain { "1" } else { "0" }).output().unwrap();
+        assert!(run.status.success(), "{}", String::from_utf8_lossy(&run.stderr));
+        let data = fs::read(output).unwrap();
+        let number = |at| u32::from_ne_bytes(data[at..at+4].try_into().unwrap()) as usize;
+        let (w,h,layout,full) = (number(0),number(4),number(8),number(12)!=0);
+        (data[16..].to_vec(),w,h,layout,full)
+    }
+    fn rgb(bytes: &[u8], grain: bool, matrix: yuvutils_rs::YuvStandardMatrix) -> Vec<u8> {
+        let (data,w,h,layout,full) = decode_planes(bytes,grain);
+        let cw=if layout==3 {w} else {w.div_ceil(2)}; let ch=if layout==1 {h.div_ceil(2)} else {h};
+        let (y,uv)=data.split_at(w*h); let (u,v)=uv.split_at(cw*ch);
+        let image=yuvutils_rs::YuvPlanarImage {y_plane:y,y_stride:w as u32,u_plane:u,u_stride:cw as u32,v_plane:v,v_stride:cw as u32,width:w as u32,height:h as u32};
+        let range=if full {yuvutils_rs::YuvRange::Full} else {yuvutils_rs::YuvRange::Limited};
+        let mut rgb=vec![0;w*h*3];
+        match layout {1=>yuvutils_rs::yuv420_to_rgb(&image,&mut rgb,(w*3) as u32,range,matrix),2=>yuvutils_rs::yuv422_to_rgb(&image,&mut rgb,(w*3) as u32,range,matrix),3=>yuvutils_rs::yuv444_to_rgb(&image,&mut rgb,(w*3) as u32,range,matrix),_=>panic!("unsupported layout")}.unwrap();
+        rgb
+    }
+    pub fn decode(bytes: &[u8]) -> Vec<u8> { rgb(bytes,true,yuvutils_rs::YuvStandardMatrix::Bt601) }
+    pub fn grain_fixture(bytes: &[u8], grain: bool) -> Vec<u8> { rgb(bytes,grain,yuvutils_rs::YuvStandardMatrix::Bt709) }
+}
 #[path="support/avif_raw.rs"] mod avif_raw;
 
 use img::still::{Effort, EncodingMode, Format, Quality, SampleLayout, StillImage};
