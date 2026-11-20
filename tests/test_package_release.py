@@ -17,7 +17,7 @@ NOTICES = (
     'vendor/oxipng/LICENSE', 'vendor/libdeflater/LICENSE', 'vendor/libdeflate-sys/LICENSE',
     'vendor/libdeflate-sys/libdeflate/COPYING',
     'vendor/libaom/LICENSE', 'vendor/libaom/PATENTS', 'vendor/libavif/LICENSE',
-    'vendor/rav1d/COPYING',
+    'vendor/dav1d/COPYING', 'vendor/dav1d/doc/PATENTS',
     'vendor/libaom/third_party/fastfeat/LICENSE',
     'vendor/libaom/third_party/vector/LICENSE', 'vendor/libaom/third_party/x86inc/LICENSE',
     'vendor/libjxl/LICENSE', 'vendor/libjxl/PATENTS', 'vendor/highway/LICENSE',
