@@ -56,8 +56,10 @@ fn main() {
         assembly.compile("dav1d_arm");
     } else {
         b.file(root.join("src/x86/cpu.c"));
-        fs::write(out.join("config.asm"), format!("%define private_prefix dav1d\n%define FORCE_VEX_ENCODING 0\n%define ARCH_X86_64 1\n%define ARCH_X86_32 0\n%define PIC 1\n%define PREFIX {}\n", u8::from(os == "macos"))).unwrap();
-        let names = "cpuid msac pal refmvs itx_avx512 cdef_avx2 cdef_avx512 itx_avx2 cdef_sse itx_sse filmgrain_avx512 ipred_avx512 loopfilter_avx512 looprestoration_avx512 mc_avx512 filmgrain_avx2 ipred_avx2 loopfilter_avx2 looprestoration_avx2 mc_avx2 filmgrain_sse ipred_sse loopfilter_sse looprestoration_sse mc_sse cdef16_avx512 filmgrain16_avx512 ipred16_avx512 itx16_avx512 loopfilter16_avx512 looprestoration16_avx512 mc16_avx512 cdef16_avx2 filmgrain16_avx2 ipred16_avx2 loopfilter16_avx2 looprestoration16_avx2 mc16_avx2 cdef16_sse filmgrain16_sse ipred16_sse loopfilter16_sse looprestoration16_sse mc16_sse";
+        // x86inc.asm tests `%ifdef PREFIX`, so a `PREFIX 0` line would still prefix every symbol with an underscore.
+        let prefix = if os == "macos" { "%define PREFIX 1\n" } else { "" };
+        fs::write(out.join("config.asm"), format!("%define private_prefix dav1d\n%define FORCE_VEX_ENCODING 0\n%define ARCH_X86_64 1\n%define ARCH_X86_32 0\n%define PIC 1\n{prefix}")).unwrap();
+        let names = "cpuid msac pal refmvs itx_avx512 cdef_avx2 cdef_avx512 itx_avx2 cdef_sse itx_sse filmgrain_avx512 ipred_avx512 loopfilter_avx512 looprestoration_avx512 mc_avx512 filmgrain_avx2 ipred_avx2 loopfilter_avx2 looprestoration_avx2 mc_avx2 filmgrain_sse ipred_sse loopfilter_sse looprestoration_sse mc_sse cdef16_avx512 filmgrain16_avx512 ipred16_avx512 itx16_avx512 loopfilter16_avx512 looprestoration16_avx512 mc16_avx512 cdef16_avx2 filmgrain16_avx2 ipred16_avx2 itx16_avx2 loopfilter16_avx2 looprestoration16_avx2 mc16_avx2 cdef16_sse filmgrain16_sse ipred16_sse itx16_sse loopfilter16_sse looprestoration16_sse mc16_sse";
         for name in names.split_whitespace() {
             let obj = out.join(format!("{name}.o"));
             assert!(Command::new(env::var_os("NASM").unwrap_or_else(|| "nasm".into())).arg("-f").arg(if os == "macos" { "macho64" } else { "elf64" }).arg("-I").arg(format!("{}/src/", root.display())).arg("-I").arg(format!("{}/", out.display())).arg(root.join(format!("src/x86/{name}.asm"))).arg("-o").arg(&obj).status().unwrap().success());

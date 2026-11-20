@@ -65,15 +65,6 @@ Step 2, Diagnose, done: reviewed decode of untrusted input (dimension and alloca
 - **Fix with:** deslop
 - **Effort:** M
 
-### DSLP-12 · P2 · Linux x86_64 musl CI cannot link dav1d-sys assembly
-
-- **Area:** build · CI
-- **Where:** .github/workflows/ci.yml Check and test (Linux x86_64-unknown-linux-musl); dav1d-sys build
-- **Problem:** The Linux x86_64 musl job fails on master and on every PR: linking the scratch-sweep example (and other targets) reports thousands of undefined dav1d assembly symbols (dav1d_*_avx2, *_ssse3, *_avx512icl, e.g. dav1d_blend_16bpc_ssse3) from libdav1d_sys rlib, so the x86_64 test suite never runs in CI. The aarch64 musl and macOS jobs pass. Run 44776303954 (PR #9) and the latest master run show the same failure.
-- **Recommendation:** Find why the dav1d-sys build on x86_64 musl compiles C that references the x86 assembly without assembling it (missing nasm in the CI image, or an asm feature mismatch), fix the build or image, and confirm the job runs the tests.
-- **Fix with:** root-cause
-- **Effort:** M
-
 ### DSLP-11 · P3 · JPEG pixel and dimension limits are checked after the decode has allocated
 
 - **Area:** decode · jpeg
