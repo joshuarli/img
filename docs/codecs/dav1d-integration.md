@@ -73,3 +73,22 @@ TMPDIR="$PWD/.work/tmp" CARGO_BUILD_JOBS=4 cargo test --offline --test codec_bou
 ```
 
 `otool -L` on the AVIF test executable showed no `libdav1d` dylib; `nm` showed its linked `_dav1d_open` and `_img_av1_decode`. The separately compiled `test-native` helper linked `/opt/homebrew/opt/dav1d/lib/libdav1d.7.dylib`.
+
+## Linux builds (emulated, compatibility only)
+
+`codecs/dav1d-sys/build.rs` mirrors meson's Linux configuration: `_GNU_SOURCE`, no
+`.func` directives, no `PREFIX` in `config.asm` (x86inc tests `%ifdef PREFIX`, so
+defining it as 0 still prefixed every x86 symbol with `_`), and meson's full x86
+assembly list, including `itx16_avx2` and `itx16_sse`. Both containers build from the
+repository `Dockerfile` (Alpine, musl, clang, mold, nasm):
+
+```sh
+docker build -q -t img-ci:amd64 --platform linux/amd64 .
+docker run --rm --platform linux/amd64 -v "$PWD":/img -e CARGO_TARGET_DIR=/img/.work/tmp/docker-target-amd64 \
+  -e TMPDIR=/img/.work/tmp img-ci:amd64 cargo test --locked --test avif_codec
+# test result: ok. 15 passed (2026-11-20, emulated on Apple M1)
+```
+
+The same command with `linux/arm64` and `img-ci:arm64` also passes its 15 tests. Under emulation
+these runs show only that the code builds and decodes correctly. Neither runs checkasm or measures
+timing, so performance on native Linux, and its SIMD dispatch, remain unmeasured.

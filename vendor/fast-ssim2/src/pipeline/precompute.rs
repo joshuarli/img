@@ -579,16 +579,24 @@ fn dist_scales(
         #[cfg(not(feature = "rayon"))]
         if kernel == Kernel::Simd && maps.is_none() && w >= 8 && h >= 8 {
             let (mut avg_ssim, mut avg_edgediff) = ([0f64; 6], [0f64; 12]);
-            for c in 0..3 {
+            let channel = |c: usize| {
                 let stored = !rs.mu1[c].is_empty();
-                let (ssim, edge) = simd::maps_streamed_channel(
+                simd::maps_streamed_channel(
                     rg,
                     &rs.xyb1[c],
                     &xyb2[c],
                     stored.then(|| (&rs.mu1[c][..], &rs.sigma1_sq[c][..])),
                     w,
                     h,
-                );
+                )
+            };
+            let parts = if npix >= (1 << 20) && rayon::current_num_threads() > 1 {
+                let (a, (b, c)) = rayon::join(|| channel(0), || rayon::join(|| channel(1), || channel(2)));
+                [a, b, c]
+            } else {
+                [channel(0), channel(1), channel(2)]
+            };
+            for (c, (ssim, edge)) in parts.into_iter().enumerate() {
                 avg_ssim[c * 2..c * 2 + 2].copy_from_slice(&ssim);
                 avg_edgediff[c * 4..c * 4 + 4].copy_from_slice(&edge);
             }

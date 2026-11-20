@@ -81,6 +81,7 @@ codegen-units = 1
 strip = true
 
 [dev-dependencies]
+rayon = "1.12"
 serde_json = { version = "1.0", features = ["float_roundtrip"] }
 webp = { version = "0.3", default-features = false }
 yuvutils-rs = { version = "0.8", default-features = false }
