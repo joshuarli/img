@@ -211,8 +211,9 @@ documented fallback and the musl branch are both exercised. The capsule exit cod
 mapper's, and the underlying `test_exit: 0` is captured in each log. These durations are
 operational cold-capsule cost, not benchmarks.
 
-The lane commit is `7de6d6e`. Nothing was published. `git status --porcelain` is empty
-in both clones after the run.
+The lane code commit the capsules and the outcome comparison used is `7de6d6e`. The only
+later commit in this slice is this documentation, which no gate executes. Nothing was
+published. `git status --porcelain` is empty in both clones after the run.
 
 ## 6. Benefit and cost
 
