@@ -97,6 +97,7 @@ pub(super) fn decode(bytes: &[u8], stop: &crate::cancellation::Cancellation, str
     if !matches!(structure.components, 1 | 3) {
         return Err(super::Error::new(super::ErrorKind::Unsupported, "JPEG requires one or three components; CMYK/YCCK conversion is unsupported"));
     }
+    super::check_dimensions(structure.width, structure.height)?;
     let gray = structure.components == 1;
     let layout = if gray { SampleLayout::Gray8 } else { SampleLayout::Rgb8 };
     let options = DecoderOptions::default().jpeg_set_out_colorspace(if gray { ColorSpace::Luma } else { ColorSpace::RGB });

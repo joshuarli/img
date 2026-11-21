@@ -107,20 +107,21 @@ pub(super) fn decode_still(data: &[u8], stop: &crate::cancellation::Cancellation
     let chroma_stride = usize::try_from(picture.stride[1]).map_err(|_| Error::new(ErrorKind::Invalid, "negative AV1 chroma stride"))?;
     if y_stride < width_us { return Err(Error::new(ErrorKind::Invalid, "AV1 luma stride is smaller than the image width")); }
     if chroma_stride < chroma_width { return Err(Error::new(ErrorKind::Invalid, "AV1 chroma stride is smaller than the chroma width")); }
-    let plane_length = |index: usize, stride: usize, rows: usize, row_bytes: usize| -> Result<usize, Error> {
-        NonNull::new(picture.data[index] as *mut u8).ok_or_else(|| Error::new(ErrorKind::Invalid, "AV1 decoder returned a missing plane"))?;
+    let plane = |index: usize, stride: usize, rows: usize, row_bytes: usize| -> Result<(NonNull<u8>, usize), Error> {
+        let data = NonNull::new(picture.data[index] as *mut u8).ok_or_else(|| Error::new(ErrorKind::Invalid, "AV1 decoder returned a missing plane"))?;
         let size = rows.checked_sub(1).and_then(|n| n.checked_mul(stride)).and_then(|n| n.checked_add(row_bytes))
             .filter(|&n| n <= isize::MAX as usize).ok_or_else(|| Error::new(ErrorKind::Limit, "AV1 plane size overflow"))?;
-        Ok(size)
+        Ok((data, size))
     };
-    let plane_lengths = [plane_length(0, y_stride, height_us, width_us)?,
-        plane_length(1, chroma_stride, chroma_height, chroma_width)?,
-        plane_length(2, chroma_stride, chroma_height, chroma_width)?];
+    let [(y_data, y_length), (u_data, u_length), (v_data, v_length)] = [plane(0, y_stride, height_us, width_us)?,
+        plane(1, chroma_stride, chroma_height, chroma_width)?,
+        plane(2, chroma_stride, chroma_height, chroma_width)?];
     let y_stride = u32::try_from(y_stride).map_err(|_| Error::new(ErrorKind::Limit, "AV1 luma stride overflow"))?;
     let chroma_stride = u32::try_from(chroma_stride).map_err(|_| Error::new(ErrorKind::Limit, "AV1 chroma stride overflow"))?;
     let full_range = picture.full_range != 0;
     let matrix = picture.matrix as u8;
-    let data = picture.data.map(|p| NonNull::new(p as *mut u8).expect("validated AV1 plane"));
+    let data = [y_data, u_data, v_data];
+    let plane_lengths = [y_length, u_length, v_length];
     Ok(DecodedStill {
         width,
         height,

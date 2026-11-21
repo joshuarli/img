@@ -11,15 +11,6 @@ Step 2, Diagnose, done: reviewed decode of untrusted input (dimension and alloca
 
 ## Tickets
 
-### DSLP-3 · P2 · Types: strict profile and typing findings, img crate
-
-- **Area:** deslop · types
-- **Where:** src/, tests/, benches/, examples/, codecs/*-sys, scripts/ (about 13k lines; public contracts: the still, optimizer, publication, limits and error library API and the CLI JSON schema)
-- **Problem:** The strict-profile candidates in the deslop skill tools reference have not been measured on the img crate. The WebP encoder snapshot codecs/webpkit is a separate slice (DSLP-6).
-- **Recommendation:** Run the deslop Types step on the img crate only. Consumers to run against the candidate: tests/*.rs, benches/, examples/, src/still/webp.rs for any webpkit-facing type. Accept: `make lint` and `make test` clean at the adopted profile, escape hatches not increased, a witness for each fixed contract.
-- **Fix with:** deslop
-- **Effort:** M
-
 ### DSLP-4 · P2 · Tests: coverage, boundary gaps, mutation, img crate
 
 - **Area:** deslop · tests
@@ -28,15 +19,6 @@ Step 2, Diagnose, done: reviewed decode of untrusted input (dimension and alloca
 - **Recommendation:** Run the deslop Tests step on the img crate: critical contracts are src/still/ decode and limits, src/publication.rs, src/runtime.rs admission, src/exit.rs. Consumers: the CLI tests/cli.rs and the library tests. Accept: no undispositioned survivor in the critical modules, warm `make test` (56 s) up at most 20% or 30 s, the lane green where the tools are mirrored.
 - **Fix with:** deslop
 - **Effort:** L
-
-### DSLP-5 · P2 · Dead code: tools and debloat, img crate
-
-- **Area:** deslop · dead code
-- **Where:** src/, tests/, benches/, examples/ (17 scratch-*.rs examples), scripts/, codecs/*-sys
-- **Problem:** No dead-code scan has run. rustc already reports one unused function (checked_sdr) and the examples/scratch-*.rs files are experiment history.
-- **Recommendation:** Run the deslop Dead code step on the img crate. Consumers to check per removal: tests, benches, examples, docs that name the item, scripts/bench and benchmarks/. Accept: tools clean or allowlisted with reasons; walk-backs filed as Needs owner tickets; `make lint` and `make test` pass.
-- **Fix with:** deslop
-- **Effort:** M
 
 ### DSLP-6 · P2 · Types: strict profile and typing findings, codecs/webpkit
 
@@ -65,11 +47,3 @@ Step 2, Diagnose, done: reviewed decode of untrusted input (dimension and alloca
 - **Fix with:** deslop
 - **Effort:** M
 
-### DSLP-11 · P3 · JPEG pixel and dimension limits are checked after the decode has allocated
-
-- **Area:** decode · jpeg
-- **Where:** src/still/jpeg.rs decode (structure.width and height reach libjpeg_turbo_sys::decode before StillImage::from_samples calls check_dimensions); src/still.rs describe; src/runtime.rs reservation
-- **Problem:** PNG, WebP and AVIF call check_dimensions on the header before allocating; JPEG does not. A flat 8192x8192 grayscale progressive JPEG of 131,212 bytes is refused with `pixel count 67108864 exceeds limit 16777216`, but only after libjpeg-turbo allocated and zeroed its coefficient arrays and the output buffer: 210 MB peak RSS (debug build of a180d19), against 7 MB for a WebP whose VP8X canvas declares 16384x16384, which is refused at the header. The protection against larger JPEGs is only the admission reservation, which on this host (14.7 GB budget) rejects 16384x16384 but would admit it on a host with a budget above about 20 GB and then allocate several GB before the 16 MP check fires. JPEG describe() also never applies the limits, so inspect prints 65500x65500.
-- **Recommendation:** Call check_dimensions(structure.width, structure.height) in jpeg::decode before libjpeg_turbo_sys::decode, and keep describe() as is if inspecting oversized headers is intended (state it in docs/CLI.md). Extend tests/jpeg_codec.rs with a header-only oversized JPEG that must fail with ErrorKind::Limit without a large allocation.
-- **Fix with:** security
-- **Effort:** S

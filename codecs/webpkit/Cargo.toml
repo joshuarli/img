@@ -35,3 +35,11 @@ rayon = { version = "1", optional = true }
 proptest = "1"
 # Dev-only: deterministic synthetic corpus used by in-crate unit tests.
 webpkit-samples = { path = "../webpkit-samples" }
+
+[[example]]
+name = "workledger-scratch"
+required-features = ["work-count"]
+
+[[example]]
+name = "workledger-lossy-scratch"
+required-features = ["work-count"]

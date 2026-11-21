@@ -246,7 +246,6 @@ fn rle_candidate(pixels: &[u32], width: u32) -> Option<Vec<Token>> {
 /// the meta-Huffman shots, both out of one shared parse/DP/search pass.
 #[expect(
     clippy::too_many_arguments,
-    clippy::type_complexity,
     reason = "threads the emit context (dimensions, plans, working width) and the \
               breadth gates through unchanged; bundling it would only hide the \
               data flow the named wrappers rely on"
@@ -1436,17 +1435,16 @@ fn select_from_estimates(
     let mut scored: [Vec<(u64, usize)>; 3] = [Vec::new(), Vec::new(), Vec::new()];
     let mut global_best = u64::MAX;
     for (i, task) in tasks.iter().enumerate() {
-        if matches!(task, BestTask::Floor | BestTask::Palette) {
-            keep[i] = true;
-            continue;
-        }
-        let Some(est) = estimates[i] else { continue };
         let family = match task {
+            BestTask::Floor | BestTask::Palette => {
+                keep[i] = true;
+                continue;
+            }
             BestTask::Predictor(_) => 0,
             BestTask::CrossColor(_) => 1,
             BestTask::PredictorCross(..) => 2,
-            _ => unreachable!(),
         };
+        let Some(est) = estimates[i] else { continue };
         global_best = global_best.min(est);
         scored[family].push((est, i));
     }
@@ -1512,17 +1510,16 @@ fn select_provisional(tasks: &[BestTask], estimates: &[Option<u64>]) -> Vec<bool
     let mut keep = vec![false; tasks.len()];
     let mut scored: [Vec<(u64, usize)>; 3] = [Vec::new(), Vec::new(), Vec::new()];
     for (i, task) in tasks.iter().enumerate() {
-        if matches!(task, BestTask::Floor | BestTask::Palette) {
-            keep[i] = true;
-            continue;
-        }
-        let Some(est) = estimates[i] else { continue };
         let family = match task {
+            BestTask::Floor | BestTask::Palette => {
+                keep[i] = true;
+                continue;
+            }
             BestTask::Predictor(_) => 0,
             BestTask::CrossColor(_) => 1,
             BestTask::PredictorCross(..) => 2,
-            _ => unreachable!(),
         };
+        let Some(est) = estimates[i] else { continue };
         scored[family].push((est, i));
     }
     for candidates in scored.iter_mut() {
