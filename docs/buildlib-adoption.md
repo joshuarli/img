@@ -208,8 +208,8 @@ No buildlib cache was seeded; `TMPDIR` stayed at the distribution default.
 
 | Capsule | Bootstrap branch | Tests | `git status --porcelain` | Setup+test exit | Cold wall | Cold downloads |
 | --- | --- | --- | --- | --- | --- | --- |
-| `ubuntu:24.04`, arm64 native | uv 0.13.7 + uv-managed CPython 3.15.2 | 10 tests, OK | empty | 0 | 3 s | uv archive 15,896,996 B + uv-managed CPython 3.15.2 (30.3 MiB) + wheel 25,193 B |
-| `ubuntu:26.04` + `musl` 1.2.5, arm64 native | python-build CPython 3.15.1 | 10 tests, OK | empty | 0 | 3 s | python-build archive 8,425,748 B + wheel 25,193 B |
+| `ubuntu:24.04`, arm64 native | uv 0.13.7 + uv-managed CPython 3.15.2 | 10 tests, OK | empty | 0 | 6 s | uv archive 15,896,996 B + uv-managed CPython 3.15.2 (30.3 MiB) + wheel 25,193 B |
+| `ubuntu:26.04` + `musl` 1.2.5, arm64 native | python-build CPython 3.15.1 | 10 tests, OK | empty | 0 | 4 s | python-build archive 8,425,748 B + wheel 25,193 B |
 
 Both capsules report `musl: none` on 24.04 and `/lib/ld-musl-aarch64.so.1` on 26.04;
 `buildlib-run` printed `using uv` and `using python-build` respectively, so the
@@ -217,9 +217,10 @@ documented fallback and the musl branch are both exercised. The capsule exit cod
 mapper's, and the underlying `test_exit: 0` is captured in each log. These durations are
 operational cold-capsule cost, not benchmarks.
 
-The lane code commit the capsules and the outcome comparison used is `7de6d6e`. The only
-later commit in this slice is this documentation, which no gate executes. Nothing was
-published. `git status --porcelain` is empty in both clones after the run.
+The final capsules above cloned `28120f1` and each log's `commit:` matches it; the only
+later commits in this slice are documentation, which no gate executes. Earlier capsule
+runs on the code-only commit `7de6d6e` gave the same result. Nothing was published.
+`git status --porcelain` is empty in both clones after the run.
 
 ## 6. Benefit and cost
 
