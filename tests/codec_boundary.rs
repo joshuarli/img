@@ -193,6 +193,10 @@ fn destination_key_resolves_missing_ancestors_without_creating_them() {
     assert!(!scratch.0.join("missing").exists(), "resolving a key must not create directories");
     assert_eq!(destination_key(Path::new("")).unwrap_err().to_string(), "missing filename");
     assert_eq!(destination_key(Path::new("/")).unwrap_err().to_string(), "missing filename");
+    let bare = destination_key(Path::new("bare-output.png")).unwrap();
+    assert!(bare.is_absolute() && bare.ends_with("bare-output.png"), "{bare:?}");
+    fs::write(scratch.0.join("plain-file"), b"file").unwrap();
+    assert!(destination_key(&scratch.0.join("plain-file/output.png")).is_err(), "a file ancestor must not resolve");
 }
 
 #[test]
@@ -208,6 +212,8 @@ fn create_parent_makes_every_ancestor_and_tolerates_existing_ones() {
     create_parent(&scratch.0.join("mid/../out/output.png")).unwrap();
     assert!(scratch.0.join("out").is_dir(), "the parent-directory component must resolve");
     assert!(scratch.0.join("mid").is_dir());
+    fs::write(scratch.0.join("file-ancestor"), b"file").unwrap();
+    assert!(create_parent(&scratch.0.join("file-ancestor/deeper/output.png")).is_err(), "a file ancestor must fail rather than pass");
 }
 
 #[test]
