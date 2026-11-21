@@ -414,6 +414,50 @@ mod tests {
     }
 
     #[test]
+    fn a_reservation_at_the_exact_total_is_admitted_and_not_a_growth_is_free() {
+        let budget=MemoryBudget::new(100);
+        let exact=budget.reserve(100).unwrap();
+        assert_eq!(exact.bytes,100);
+        assert_eq!(budget.free_now(),0);
+        let mut small=budget.reserve(0).unwrap();
+        assert_eq!(small.bytes,0);
+        assert_eq!(*budget.free.lock().unwrap(),0,"a zero reservation takes nothing");
+        assert_eq!(small.grow(0),Ok(()),"a no-op growth does not wait");
+        assert_eq!(*budget.free.lock().unwrap(),0);
+        drop(exact);
+        assert_eq!(budget.free_now(),100);
+        small.grow(100).unwrap();
+        assert_eq!(small.bytes,100);
+        drop(small);
+        assert_eq!(budget.free_now(),100);
+    }
+
+    #[test]
+    fn reservation_charges_the_declared_input_and_the_layout_budget() {
+        let header=|width:u32,height:u32,grayscale:Option<bool>,alpha:bool,bit_depth:Option<u8>| still::Description {
+            format:Format::Png,width,height,bit_depth,alpha,grayscale,cicp:None,orientation:1,
+            icc:false,animation:false,grid:false,rotation_ccw_degrees:None,mirror_axis:None,
+            pixel_aspect_ratio:None,hdr_metadata:false,exif:false,xmp:false,
+        };
+        let pixels=1000u64;
+        let input=2_000usize;
+        let headroom=input as u64*3+(64<<20);
+
+        let rgb=reservation(&header(40,25,Some(false),false,Some(8)),input,true,false,u64::MAX);
+        assert_eq!(rgb.1,ReferenceMemory::Fast);
+        assert_eq!(rgb.0,pixels*48+pixels*(3u64*1*24)+headroom);
+
+        let deep=reservation(&header(40,25,Some(true),true,Some(16)),input,true,false,u64::MAX);
+        assert_eq!(deep.0,pixels*48+pixels*(2u64*2*24)+headroom);
+
+        let legacy=reservation(&header(40,25,Some(false),false,Some(8)),input,false,true,u64::MAX);
+        assert_eq!(legacy.0,pixels*256+input as u64+still::MAX_INPUT_BYTES*2);
+
+        let scored=reservation(&header(40,25,Some(false),false,Some(8)),input,false,false,1);
+        assert_eq!(scored,(pixels*COMPACT_SCORED_BYTES_PER_PIXEL+headroom,ReferenceMemory::Compact));
+    }
+
+    #[test]
     fn waiting_in_place_job_observes_cancellation() {
         let path=Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
         let cancelled=std::sync::Arc::new(AtomicBool::new(false));let owner=InPlaceDirectory::acquire(&path,&cancelled).unwrap();

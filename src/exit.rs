@@ -333,4 +333,20 @@ mod tests {
         assert_eq!(ExitCode::Input.to_string(), "input error (exit 3)");
         assert_eq!(ExitCode::Partial.to_string(), "partial success (exit 5)");
     }
+
+    #[test]
+    fn termination_reports_the_accumulated_exit_code() {
+        use std::process::ExitCode as ProcessExit;
+
+        for (state, expected) in [
+            (RunState::start(), ProcessExit::from(0)),
+            (RunState::start().record(ExitCode::Success), ProcessExit::from(0)),
+            (RunState::start().record(ExitCode::Input), ProcessExit::from(3)),
+            (RunState::start().record(ExitCode::Output), ProcessExit::from(4)),
+            (RunState::start().record(ExitCode::Input).record(ExitCode::Output), ProcessExit::from(5)),
+            (RunState::start().record(ExitCode::Usage), ProcessExit::from(2)),
+        ] {
+            assert_eq!(std::process::Termination::report(state), expected, "{state:?}");
+        }
+    }
 }
