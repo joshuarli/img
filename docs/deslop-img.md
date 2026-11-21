@@ -94,7 +94,7 @@ Critical decision: the JPEG header bound added for DSLP-11. Removed `super::chec
 
 | Tool | Command | Result |
 | --- | --- | --- |
-| rustc `dead_code` | `cargo check --locked` at `--no-default-features`, `--no-default-features --features build-binary`, and default features | No warnings at any of the three feature sets. The ticket's `checked_sdr` is used (`src/still/color.rs:240`); that seeded fact was stale. |
+| rustc `dead_code` | `cargo check --locked` at `--no-default-features`, `--no-default-features --features build-binary`, and default features | One warning at `--no-default-features` (the ticket's `checked_sdr`, `src/still/color.rs:46`): its callers are the `resize` block in `color.rs` and `operations/icc`, so it is dead unless `resize` or `icc` is on. Now `#[cfg(any(feature="resize", feature="icc"))]`; `cargo check --locked` is warning-free at `--no-default-features`, `build-binary`, `resize`, `icc`, `metadata` alone and `--all-features`. |
 | `cargo-machete` 0.10.1 | `cargo-machete .` | No unused dependency in `img`. One hit in `codecs/webpkit` (`libwebp-sys`, see [deslop-webpkit.md](deslop-webpkit.md)). |
 | `cargo udeps` | | Needs environment (not installed; not in the registry cache). Machete is clean, so no disputed dependency to settle. |
 | Python | AST scan of 10 files for unreferenced functions, classes and imports (no `ruff` or `vulture` installed) | Three unused imports removed (`e4a6128`): `os` in `scripts/qualification-corpus`, `contextlib` and `io` in `tests/test_bench.py`. `tests.test_bench` passes (14 tests). The `Selection`, `Guards`, `Budgets`, `PackageReleaseTest` hits are `unittest.TestCase` classes discovered by name. |
