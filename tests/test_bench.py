@@ -1,6 +1,6 @@
 import sys
 sys.dont_write_bytecode = True
-import contextlib, importlib.machinery, importlib.util, io, os, pathlib, subprocess, sys, tempfile, unittest
+import importlib.machinery, importlib.util, os, pathlib, subprocess, sys, tempfile, unittest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 loader = importlib.machinery.SourceFileLoader('bench', str(ROOT / 'scripts/bench'))
