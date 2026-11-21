@@ -71,7 +71,7 @@ use crate::lossy::tokens::{
     put_segment_id, put_uvmode, put_ymode16,
 };
 use crate::lossy::trellis::{
-    RD_DISTO_MULT, RateMemo, block_token_cost, trellis_lambda, trellis_quantize_block,
+    BlockEntry, RD_DISTO_MULT, RateMemo, block_token_cost, trellis_lambda, trellis_quantize_block,
 };
 use crate::lossy::work::work;
 
@@ -1852,7 +1852,18 @@ fn quantize_one(
     if uses_trellis {
         let lambda = trellis_lambda(pair.ac.q)
             * if plane == 2 { CHROMA_TRELLIS_LAMBDA_MULT } else { 1 };
-        trellis_quantize_block(coeffs, pair, first, 0, plane, probas, lambda, rate)
+        trellis_quantize_block(
+            coeffs,
+            pair,
+            BlockEntry {
+                first,
+                ctx0: 0,
+                plane,
+            },
+            probas,
+            lambda,
+            rate,
+        )
     } else {
         quantize_block(coeffs, pair, first)
     }
@@ -2367,10 +2378,10 @@ fn search_luma_i4x4(
         // `I4_RD_CANDIDATES`. The post-quant RD winner is almost always among the
         // lowest-SSE predictors; ties resolve to the lower mode index.
         let mut ranked = [(i64::MAX, 0u8); NUM_BMODES];
-        for m in 0..NUM_BMODES {
+        for (m, slot) in ranked.iter_mut().enumerate() {
             let mode = m as u8;
             predict_luma4(&mut planes.y, sub, stride, mode);
-            ranked[m] = (
+            *slot = (
                 sse_block(&src.y, src_off, src_stride, &planes.y, sub, stride, 4),
                 mode,
             );
@@ -2416,7 +2427,6 @@ fn search_luma_i4x4(
             transform_one(&q.recon, &mut scratch, 0, 4);
             let dist = sse_block(&src.y, src_off, src_stride, &scratch, 0, 4, 4);
             let rate = block_token_cost(q.levels, 0, q.last, 3, nz_ctx0, plan.probas, plan.rate)
-                as i64
                 + i4_bmode_cost(top_ctx, left_ctx, mode) as i64;
             let score = RD_DISTO_MULT * dist + lambda * rate;
             scored[ci] = (score, mode, coeffs);
@@ -2451,7 +2461,6 @@ fn search_luma_i4x4(
                 transform_one(&q.recon, &mut scratch, 0, 4);
                 let dist = sse_block(&src.y, src_off, src_stride, &scratch, 0, 4, 4);
                 let rate = block_token_cost(q.levels, 0, q.last, 3, nz_ctx0, plan.probas, plan.rate)
-                    as i64
                     + i4_bmode_cost(top_ctx, left_ctx, mode) as i64;
                 let score = RD_DISTO_MULT * dist + lambda * rate;
                 if score < best_score {
@@ -3092,8 +3101,7 @@ mod tests {
         let mut modes = Vec::with_capacity(mb_w * mb_h);
         for _mb_y in 0..mb_h {
             frame.parse_intra_mode_row(&mut br);
-            for mb_x in 0..mb_w {
-                let d = &frame.mb_data[mb_x];
+            for d in &frame.mb_data[..mb_w] {
                 modes.push((d.imodes[0], d.uvmode));
             }
             frame.init_scanline();
@@ -3641,8 +3649,8 @@ mod tests {
         let mut flags = Vec::with_capacity(mb_w * mb_h);
         for _ in 0..mb_h {
             frame.parse_intra_mode_row(&mut br);
-            for mb_x in 0..mb_w {
-                flags.push(frame.mb_data[mb_x].is_i4x4);
+            for d in &frame.mb_data[..mb_w] {
+                flags.push(d.is_i4x4);
             }
             frame.init_scanline();
         }
@@ -4027,8 +4035,8 @@ mod tests {
         let mut segs = Vec::with_capacity(mb_w * mb_h);
         for _mb_y in 0..mb_h {
             frame.parse_intra_mode_row(&mut br);
-            for mb_x in 0..mb_w {
-                segs.push(frame.mb_data[mb_x].segment);
+            for d in &frame.mb_data[..mb_w] {
+                segs.push(d.segment);
             }
             frame.init_scanline();
         }

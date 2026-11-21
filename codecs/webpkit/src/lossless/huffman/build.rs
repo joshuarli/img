@@ -123,8 +123,13 @@ pub(crate) fn optimize_huffman_for_rle(counts: &mut [u32], good_for_rle: &mut [u
     // nonzero runs >= 7.
     let mut symbol = counts[0];
     let mut stride = 0usize;
-    for i in 0..=length {
-        if i == length || counts[i] != symbol {
+    for (i, &count) in counts
+        .iter()
+        .chain(core::iter::once(&0u32))
+        .enumerate()
+        .take(length + 1)
+    {
+        if i == length || count != symbol {
             if (symbol == 0 && stride >= 5) || (symbol != 0 && stride >= 7) {
                 for slot in good_for_rle.iter_mut().take(i).skip(i - stride) {
                     *slot = 1;
@@ -132,7 +137,7 @@ pub(crate) fn optimize_huffman_for_rle(counts: &mut [u32], good_for_rle: &mut [u
             }
             stride = 1;
             if i != length {
-                symbol = counts[i];
+                symbol = count;
             }
         } else {
             stride += 1;

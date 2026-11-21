@@ -106,8 +106,26 @@ pub(crate) fn encode_with(
     // Alpha-used is a header advisory computed once; subtract-green leaves the
     // alpha channel untouched, so both tiers share the same value.
     let alpha_used = argb.iter().any(|&p| p >> 24 != 0xff);
-    let tier0 = encode_stream(width, height, alpha_used, argb, false, use_lz77, chain_cap, meta_huffman);
-    let tier1 = encode_stream(width, height, alpha_used, argb, true, use_lz77, chain_cap, meta_huffman);
+    let source = PixelSource {
+        width,
+        height,
+        argb,
+    };
+    let switches = StreamSwitches {
+        use_subtract_green: false,
+        use_lz77,
+        chain_cap,
+        meta_huffman,
+    };
+    let tier0 = encode_stream(source, alpha_used, switches);
+    let tier1 = encode_stream(
+        source,
+        alpha_used,
+        StreamSwitches {
+            use_subtract_green: true,
+            ..switches
+        },
+    );
     if tier1.len() < tier0.len() {
         tier1
     } else {
@@ -146,6 +164,23 @@ pub(crate) fn encode_alpha_stream(alpha: &[u8], width: u32, height: u32) -> Vec<
     full.split_off(VP8L_HEADER_BYTES)
 }
 
+/// The native ARGB pixels and dimensions of one encode pass.
+#[derive(Clone, Copy)]
+struct PixelSource<'a> {
+    width: u32,
+    height: u32,
+    argb: &'a [u32],
+}
+
+/// The tier switches that select which candidates [`encode_stream`] searches.
+#[derive(Clone, Copy)]
+struct StreamSwitches {
+    use_subtract_green: bool,
+    use_lz77: bool,
+    chain_cap: u32,
+    meta_huffman: bool,
+}
+
 /// Optimize and encode one tier. When `use_subtract_green` is set the pixels are
 /// copied and transformed in place; otherwise the caller's slice is borrowed.
 ///
@@ -154,15 +189,21 @@ pub(crate) fn encode_alpha_stream(alpha: &[u8], width: u32, height: u32) -> Vec<
 /// smallest kept. The `(literal, no-cache)` candidate is always first, so this
 /// never regresses the plain literal baseline.
 fn encode_stream(
-    width: u32,
-    height: u32,
+    source: PixelSource<'_>,
     alpha_used: bool,
-    argb: &[u32],
-    use_subtract_green: bool,
-    use_lz77: bool,
-    chain_cap: u32,
-    meta_huffman: bool,
+    switches: StreamSwitches,
 ) -> Vec<u8> {
+    let PixelSource {
+        width,
+        height,
+        argb,
+    } = source;
+    let StreamSwitches {
+        use_subtract_green,
+        use_lz77,
+        chain_cap,
+        meta_huffman,
+    } = switches;
     // Borrow for Tier 0; own a transformed copy for Tier 1. `owned` is only
     // read on the branch that initializes it, so Tier 0 allocates nothing extra.
     let owned;
@@ -806,14 +847,17 @@ struct BufferSpec {
 fn run_best_task(
     task: BestTask,
     breadth: Breadth,
-    width: u32,
-    height: u32,
+    source: PixelSource<'_>,
     alpha_used: bool,
-    argb: &[u32],
     planes: Option<&PlaneCache>,
     cc: Option<&CrossColorCache>,
     spec_mask: &[bool],
 ) -> Vec<Vec<u8>> {
+    let PixelSource {
+        width,
+        height,
+        argb,
+    } = source;
     if matches!(task, BestTask::Floor) {
         return floor_streams(breadth, width, height, alpha_used, argb);
     }
@@ -853,9 +897,18 @@ fn task_specs(
         BestTask::CrossColor(bits) => {
             cross_color_specs(width, height, argb, bits, cc, cheap_cc)
         },
-        BestTask::PredictorCross(p_bits, cc_bits) => {
-            predictor_cross_specs(width, height, argb, p_bits, cc_bits, planes, cc, cheap_cc)
-        },
+        BestTask::PredictorCross(p_bits, cc_bits) => predictor_cross_specs(
+            PixelSource {
+                width,
+                height,
+                argb,
+            },
+            p_bits,
+            cc_bits,
+            planes,
+            cc,
+            cheap_cc,
+        ),
     }
 }
 
@@ -1061,6 +1114,11 @@ impl PlaneCache {
     }
 }
 
+/// One cached cross-color forward: the transformed pixels and their coverage.
+type CrossColorForward = (Vec<u32>, Vec<u32>);
+/// Cached cross-color forwards, keyed by `(forward kind, axis bits, tile bits)`.
+type CrossColorMap = alloc::collections::BTreeMap<(u8, u32, u32), CrossColorForward>;
+
 /// Cross-color forward results shared across the entropy pre-score and the
 /// kept-task search, mirroring [`PlaneCache`]: every spec production needs
 /// `cross_color::forward` outputs, and that forward dominates transform cost
@@ -1070,13 +1128,9 @@ impl PlaneCache {
 /// callers then compute inline exactly as before.
 struct CrossColorCache {
     #[cfg(feature = "std")]
-    map: std::sync::Mutex<
-        alloc::collections::BTreeMap<(u8, u32, u32), (Vec<u32>, Vec<u32>)>,
-    >,
+    map: std::sync::Mutex<CrossColorMap>,
     #[cfg(not(feature = "std"))]
-    map: core::cell::RefCell<
-        alloc::collections::BTreeMap<(u8, u32, u32), (Vec<u32>, Vec<u32>)>,
-    >,
+    map: core::cell::RefCell<CrossColorMap>,
 }
 
 const CROSS_COLOR_CACHE_MAX_PIXELS: usize = 1 << 26;
@@ -1118,13 +1172,19 @@ impl CrossColorCache {
         let key = (kind, a, bits);
         #[cfg(feature = "std")]
         {
-            if let Some(hit) = self.map.lock().unwrap().get(&key) {
-                return (hit.0.clone(), hit.1.clone());
+            {
+                let map = self
+                    .map
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                if let Some(hit) = map.get(&key) {
+                    return (hit.0.clone(), hit.1.clone());
+                }
             }
             let out = cross_color::forward(input, width, height, bits);
             self.map
                 .lock()
-                .unwrap()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .insert(key, (out.0.clone(), out.1.clone()));
             out
         }
@@ -1215,15 +1275,18 @@ fn predictor_specs(
 /// application order — subtract-green, then predictor, then cross-color — and
 /// self-floored by real bytes like every other candidate.
 fn predictor_cross_specs(
-    width: u32,
-    height: u32,
-    argb: &[u32],
+    source: PixelSource<'_>,
     p_bits: u32,
     cc_bits: u32,
     planes: Option<&PlaneCache>,
     cc: Option<&CrossColorCache>,
     cheap_cc: bool,
 ) -> Vec<BufferSpec> {
+    let PixelSource {
+        width,
+        height,
+        argb,
+    } = source;
     // libwebp's order: subtract-green first, then predictor, then cross-color.
     let sg_hit = planes.and_then(|p| p.sg_pred(p_bits));
     let sg_owned = sg_hit.is_none().then(|| {
@@ -1548,15 +1611,17 @@ fn select_keep(
             .collect();
         let lower_keep = select_from_estimates(&lower_tasks, &lower_estimates, false);
         for (t, &k) in lower_tasks.iter().zip(&lower_keep) {
-            if k {
-                if let Some(i) = index_of(&t) {
-                    keep[i] = true;
-                }
+            if k && let Some(i) = index_of(t) {
+                keep[i] = true;
             }
         }
     }
     keep
 }
+
+/// Per-task, per-spec scores: one entry per kept task, `None` when the task was
+/// pruned, each holding one score per spec the task would search.
+type SpecScores = Vec<Option<Vec<u64>>>;
 
 /// Per-spec keep masks from the real estimates, aligned with [`task_specs`]
 /// order per task: a spec survives when its order-0 entropy is within ~5% of
@@ -1673,10 +1738,8 @@ fn provisional_keep(
                 .map(|t| index_of(t).and_then(|i| cheap.get(i).copied().flatten()))
                 .collect();
             for (t, &k) in set.iter().zip(&select_provisional(&set, &cheap_b)) {
-                if k {
-                    if let Some(i) = index_of(&t) {
-                        keep[i] = true;
-                    }
+                if k && let Some(i) = index_of(t) {
+                    keep[i] = true;
                 }
             }
         } else {
@@ -1770,10 +1833,8 @@ fn final_keep(
             }
         }
         for (t, &k) in set.iter().zip(&keep_b) {
-            if k {
-                if let Some(i) = index_of(&t) {
-                    keep[i] = true;
-                }
+            if k && let Some(i) = index_of(t) {
+                keep[i] = true;
             }
         }
     }
@@ -1831,7 +1892,7 @@ fn evaluate_best_tasks(
             estimate_specs_scored(*t, width, height, argb, planes.as_ref(), cc.as_ref(), need_cheap)
         })
         .collect();
-    let (spec_ests, spec_covs): (Vec<Option<Vec<u64>>>, Vec<Option<Vec<u64>>>) = spec_pairs
+    let (spec_ests, spec_covs): (SpecScores, SpecScores) = spec_pairs
         .into_iter()
         .map(|o| match o {
             Some((ents, covs)) => (Some(ents), need_cheap.then_some(covs)),
@@ -1849,10 +1910,12 @@ fn evaluate_best_tasks(
                     keep_smallest(run_best_task(
                         t,
                         breadth,
-                        width,
-                        height,
+                        PixelSource {
+                            width,
+                            height,
+                            argb,
+                        },
                         alpha_used,
-                        argb,
                         planes.as_ref(),
                         cc.as_ref(),
                         &mask,
@@ -1887,10 +1950,12 @@ fn evaluate_best_tasks(
             keep_smallest(run_best_task(
                 BestTask::Floor,
                 breadth,
-                width,
-                height,
+                PixelSource {
+                    width,
+                    height,
+                    argb,
+                },
                 alpha_used,
-                argb,
                 None,
                 None,
                 &[],
@@ -1939,7 +2004,7 @@ fn evaluate_best_tasks(
                     )
                 })
                 .collect();
-            let (spec_ests, spec_covs): (Vec<Option<Vec<u64>>>, Vec<Option<Vec<u64>>>) = spec_pairs
+            let (spec_ests, spec_covs): (SpecScores, SpecScores) = spec_pairs
                 .into_iter()
                 .map(|o| match o {
                     Some((ents, covs)) => (Some(ents), need_cheap.then_some(covs)),
@@ -1960,10 +2025,12 @@ fn evaluate_best_tasks(
                         keep_smallest(run_best_task(
                             t,
                             breadth,
-                            width,
-                            height,
+                            PixelSource {
+                                width,
+                                height,
+                                argb,
+                            },
                             alpha_used,
-                            argb,
                             planes.as_ref(),
                             cc.as_ref(),
                             &mask,
@@ -2590,8 +2657,8 @@ impl Prefix {
 mod tests {
     use crate::lossless::constants::MAX_CHAIN_OPTIMAL;
     use super::{
-        RefModel, TransformPlan, best_cache_bits, emit_stream, emit_stream_meta, encode,
-        encode_best, encode_best_at, encode_stream,
+        PixelSource, RefModel, StreamSwitches, TransformPlan, best_cache_bits, emit_stream,
+        emit_stream_meta, encode, encode_best, encode_best_at, encode_stream,
     };
     use crate::effort::MAX_LEVEL;
     use crate::lossless::transform::predictor;
@@ -2684,8 +2751,34 @@ mod tests {
         // single-symbol codes, leaving only green to code, so Tier 1 is smaller.
         let pixels: Vec<u32> = (0..32u32).map(|v| argb(255, v, v, v)).collect();
         let au = alpha_used(&pixels);
-        let tier0 = encode_stream(32, 1, au, &pixels, false, true, MAX_CHAIN_OPTIMAL, false);
-        let tier1 = encode_stream(32, 1, au, &pixels, true, true, MAX_CHAIN_OPTIMAL, false);
+        let tier0 = encode_stream(
+            PixelSource {
+                width: 32,
+                height: 1,
+                argb: &pixels,
+            },
+            au,
+            StreamSwitches {
+                use_subtract_green: false,
+                use_lz77: true,
+                chain_cap: MAX_CHAIN_OPTIMAL,
+                meta_huffman: false,
+            },
+        );
+        let tier1 = encode_stream(
+            PixelSource {
+                width: 32,
+                height: 1,
+                argb: &pixels,
+            },
+            au,
+            StreamSwitches {
+                use_subtract_green: true,
+                use_lz77: true,
+                chain_cap: MAX_CHAIN_OPTIMAL,
+                meta_huffman: false,
+            },
+        );
         assert!(
             tier1.len() < tier0.len(),
             "subtract-green must shrink a grayscale ramp"
@@ -2701,8 +2794,34 @@ mod tests {
         // Tier 0 wins (also exercising the tie-goes-to-Tier-0 `<=` boundary).
         let pixels: Vec<u32> = (0..32u32).map(|v| argb(255, 0x40, v, 0x80)).collect();
         let au = alpha_used(&pixels);
-        let tier0 = encode_stream(32, 1, au, &pixels, false, true, MAX_CHAIN_OPTIMAL, false);
-        let tier1 = encode_stream(32, 1, au, &pixels, true, true, MAX_CHAIN_OPTIMAL, false);
+        let tier0 = encode_stream(
+            PixelSource {
+                width: 32,
+                height: 1,
+                argb: &pixels,
+            },
+            au,
+            StreamSwitches {
+                use_subtract_green: false,
+                use_lz77: true,
+                chain_cap: MAX_CHAIN_OPTIMAL,
+                meta_huffman: false,
+            },
+        );
+        let tier1 = encode_stream(
+            PixelSource {
+                width: 32,
+                height: 1,
+                argb: &pixels,
+            },
+            au,
+            StreamSwitches {
+                use_subtract_green: true,
+                use_lz77: true,
+                chain_cap: MAX_CHAIN_OPTIMAL,
+                meta_huffman: false,
+            },
+        );
         assert!(tier0.len() <= tier1.len());
         assert_eq!(encode(32, 1, &pixels), tier0);
         assert_round_trip(32, 1, &pixels);
@@ -3167,9 +3286,9 @@ mod tests {
     #[test]
     fn serial_and_parallel_evaluation_agree() {
         use super::{
-            CrossColorCache, PlaneCache, build_best_tasks, encode_best, estimate_specs_scored,
-            estimate_task, evaluate_best_tasks, final_keep, keep_smallest, provisional_keep,
-            reduce_task_minima, run_best_task, schedule,
+            CrossColorCache, PixelSource, PlaneCache, build_best_tasks, encode_best,
+            estimate_specs_scored, estimate_task, evaluate_best_tasks, final_keep, keep_smallest,
+            provisional_keep, reduce_task_minima, run_best_task, schedule,
         };
         let breadth = schedule(crate::effort::MAX_LEVEL);
         for (w, h, pixels) in byte_stability_cases() {
@@ -3203,7 +3322,7 @@ mod tests {
                     estimate_specs_scored(*t, w, h, &pixels, planes.as_ref(), cc.as_ref(), need_cheap)
                 })
                 .collect();
-            let (spec_ests, spec_covs): (Vec<Option<Vec<u64>>>, Vec<Option<Vec<u64>>>) = spec_pairs
+            let (spec_ests, spec_covs): (SpecScores, SpecScores) = spec_pairs
                 .into_iter()
                 .map(|o| match o {
                     Some((ents, covs)) => (Some(ents), need_cheap.then_some(covs)),
@@ -3228,10 +3347,12 @@ mod tests {
                             keep_smallest(run_best_task(
                                 t,
                                 breadth,
-                                w,
-                                h,
+                                PixelSource {
+                                    width: w,
+                                    height: h,
+                                    argb: &pixels,
+                                },
                                 alpha,
-                                &pixels,
                                 planes.as_ref(),
                                 cc.as_ref(),
                                 &mask,
@@ -3489,7 +3610,7 @@ mod tests {
         // back to the source. A function-replacement mutant returning `vec![]`
         // produces no candidates — caught by the length assert; the decodes pin that
         // both streams are correct.
-        use super::{run_best_task, schedule, BestTask};
+        use super::{BestTask, PixelSource, run_best_task, schedule};
         let pixels: Vec<u32> = (0..64u32)
             .map(|i| {
                 let g = i * 2;
@@ -3499,10 +3620,12 @@ mod tests {
         let streams = run_best_task(
             BestTask::CrossColor(3),
             schedule(crate::effort::MAX_LEVEL),
-            8,
-            8,
+            PixelSource {
+                width: 8,
+                height: 8,
+                argb: &pixels,
+            },
             alpha_used(&pixels),
-            &pixels,
             None,
             None,
             &[],
@@ -3597,10 +3720,10 @@ mod tests {
 #[cfg(test)]
 mod proptests {
     use super::{
-        BestTask, CrossColorCache, PlaneCache, RefModel, TransformPlan, best_cache_bits,
-        emit_stream, emit_stream_meta, encode, encode_best, encode_best_at, encode_with,
-        floor_streams, meta_shot, parse_lz77, run_best_task, schedule, search_lz77_variant,
-        task_specs,
+        BestTask, CrossColorCache, PixelSource, PlaneCache, RefModel, StreamSwitches,
+        TransformPlan, best_cache_bits, emit_stream, emit_stream_meta, encode, encode_best,
+        encode_best_at, encode_with, floor_streams, meta_shot, parse_lz77, run_best_task, schedule,
+        search_lz77_variant, task_specs,
     };
     use crate::lossless::vp8l::backref::parse_optimal;
     use crate::effort::MAX_LEVEL;
@@ -3884,7 +4007,9 @@ mod proptests {
         let h = u32::from_le_bytes(bytes[4..8].try_into().unwrap());
         let rgba = &bytes[8..];
         let argb: Vec<u32> = rgba
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .map(|p| {
                 u32::from(p[3]) << 24
                     | u32::from(p[0]) << 16
@@ -3909,7 +4034,19 @@ mod proptests {
         let cc = CrossColorCache::new(&tasks, argb.len());
         let alpha_used = argb.iter().any(|&p| p >> 24 != 0xff);
         for task in tasks {
-            let streams = run_best_task(task, breadth, w, h, alpha_used, &argb, planes.as_ref(), cc.as_ref(), &[true]);
+            let streams = run_best_task(
+                task,
+                breadth,
+                PixelSource {
+                    width: w,
+                    height: h,
+                    argb: &argb,
+                },
+                alpha_used,
+                planes.as_ref(),
+                cc.as_ref(),
+                &[true],
+            );
             let lens: Vec<usize> = streams.iter().map(Vec::len).collect();
             println!("{task:?}: {lens:?}");
         }
@@ -3927,7 +4064,7 @@ mod proptests {
         let h = u32::from_le_bytes(bytes[4..8].try_into().unwrap());
         let rgba = &bytes[8..];
         // Alpha plane as the green lane, exactly like encode_alpha_stream.
-        let alpha: Vec<u8> = rgba.chunks_exact(4).map(|p| p[3]).collect();
+        let alpha: Vec<u8> = rgba.as_chunks::<4>().0.iter().map(|p| p[3]).collect();
         let argb: Vec<u32> = alpha.iter().map(|&a| u32::from(a) << 8).collect();
         let au = argb.iter().any(|&p| p >> 24 != 0xff);
         let current = encode_with(w, h, &argb, true, MAX_CHAIN_OPTIMAL, false).len();
@@ -3960,7 +4097,9 @@ mod proptests {
         let h = u32::from_le_bytes(bytes[4..8].try_into().unwrap());
         let rgba = &bytes[8..];
         let argb: Vec<u32> = rgba
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .map(|p| {
                 u32::from(p[3]) << 24
                     | u32::from(p[0]) << 16

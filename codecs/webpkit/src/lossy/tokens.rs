@@ -421,8 +421,8 @@ fn count_coeffs(
                     35..=66 => 2,
                     _ => 3,
                 };
-                stats[plane][band][ctx][8][usize::from((cat >> 1) & 1)] += 1;
-                stats[plane][band][ctx][9 + (cat >> 1)][usize::from(cat & 1)] += 1;
+                stats[plane][band][ctx][8][(cat >> 1) & 1] += 1;
+                stats[plane][band][ctx][9 + (cat >> 1)][cat & 1] += 1;
             }
             n += 1;
             if n == 16 {

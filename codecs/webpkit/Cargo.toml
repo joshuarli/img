@@ -43,3 +43,7 @@ required-features = ["work-count"]
 [[example]]
 name = "workledger-lossy-scratch"
 required-features = ["work-count"]
+
+[lints.clippy]
+unwrap_used = "deny"
+needless_pass_by_value = "deny"
