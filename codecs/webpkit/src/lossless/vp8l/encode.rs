@@ -246,7 +246,6 @@ fn rle_candidate(pixels: &[u32], width: u32) -> Option<Vec<Token>> {
 /// the meta-Huffman shots, both out of one shared parse/DP/search pass.
 #[expect(
     clippy::too_many_arguments,
-    clippy::type_complexity,
     reason = "threads the emit context (dimensions, plans, working width) and the \
               breadth gates through unchanged; bundling it would only hide the \
               data flow the named wrappers rely on"

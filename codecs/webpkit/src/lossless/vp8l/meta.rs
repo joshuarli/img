@@ -44,12 +44,6 @@ pub(crate) struct MetaPlan {
 /// help: a giant image whose grid overflows even at the coarsest precision, a
 /// single-block grid, `<= 1` non-empty block, or a merge that collapses to one
 /// group.
-#[expect(
-    clippy::similar_names,
-    reason = "`entropy_xsize`/`entropy_ysize` are the standard grid-dimension names \
-              (`entropy_xsize` is also the emitted `MetaPlan` field); the x/y pair is \
-              intentional and clearer than renaming one side"
-)]
 #[cfg(test)]
 pub(crate) fn plan(
     tokens: &[Token],

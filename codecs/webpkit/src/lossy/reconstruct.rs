@@ -439,10 +439,7 @@ pub(crate) fn to_image(planes: &Planes, width: usize, height: usize) -> Result<I
 mod tests {
     #![expect(
         clippy::doc_markdown,
-        clippy::inconsistent_struct_constructor,
-        reason = "these KATs construct FInfo / header literals and cite informal \
-                  RFC 6386 / libwebp identifiers in comments; field order and \
-                  bare names mirror the reference for readability"
+        reason = "these KATs cite informal RFC 6386 / libwebp identifiers in comments"
     )]
 
     use super::{Planes, compute_fstrengths, fill_top_right_lane, filter_frame, resolve_finfo};
