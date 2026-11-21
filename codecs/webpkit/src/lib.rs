@@ -47,10 +47,10 @@
 // Without the `__internals` tooling feature the internal module tree is `pub(crate)`
 // (the literal `pub(crate) mod` declarations below). Its cross-module `pub` items are then no longer
 // reachable from the crate root (`unreachable_pub`), and the items that exist only
-// for the external tooling/test crates read as unused from webpkit's own side
-// (`dead_code`). Both are the intended shape of a published build: the curated
-// facade is the whole public API, and the tooling surface is exercised only under
-// `__internals` (by the bench/oracle/conformance crates), never from within the lib.
+// for the module API read as unused from webpkit's own side (`dead_code`). Both are
+// the intended shape of a published build: the curated facade is the whole public
+// API, and the upstream module surface is exercised by the inline tests here and,
+// under `__internals`, by callers outside this repository.
 #![cfg_attr(
     not(feature = "__internals"),
     allow(
@@ -59,8 +59,9 @@
         unused_imports,
         reason = "internal modules are pub(crate) unless the `__internals` tooling \
                   feature is on; their cross-module `pub` items (and the `pub use` \
-                  re-exports of them) are then unreachable externally and unused \
-                  internally by design"
+                  re-exports of them) are then unreachable externally and unused by \
+                  the library itself, which is the upstream module API exercised by \
+                  the inline tests and, under `__internals`, from outside the crate"
     )
 )]
 
