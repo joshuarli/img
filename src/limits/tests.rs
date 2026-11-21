@@ -509,6 +509,58 @@ fn check_bytes_reports_the_byte_binding() {
     assert!(limits.check_bytes(1024).is_ok());
 }
 
+#[cfg(feature = "limits")]
+#[test]
+fn output_limits_fold_in_destination_free_space_without_moving_the_pixel_ceiling() {
+    let scratch = std::env::temp_dir().join(format!(
+        "img-limits-output-{}",
+        std::process::id()
+    ));
+    std::fs::create_dir_all(&scratch).unwrap();
+    let destination = scratch.join("out.png");
+
+    let config = |memory: u64| {
+        let budget = budget_with(memory, 1);
+        let cost = PipelineCost::for_encoder(ImageFormatId::Png);
+        let input = LimitSet::for_input(ImageFormatId::Png, BitDepth::Eight, ColorSpace::RGBA, &budget, cost);
+        let output = LimitSet::for_output(ImageFormatId::Png, BitDepth::Eight, ColorSpace::RGBA, &budget, cost, &destination);
+        (input, output)
+    };
+
+    let (input, limited) = config(u64::MAX / 4 + 1);
+    let free = free_space_at(&destination).expect("the scratch volume must report free space");
+    let recovered_free = limited.max_bytes * 2 + DISK_RESERVE_BYTES;
+    let drift = recovered_free.abs_diff(free);
+
+    assert_eq!(limited.bytes_binding, Binding::Disk);
+    assert!(drift < 64 * 1024 * 1024, "byte ceiling {} does not reflect half of {free} free bytes (drift {drift})", limited.max_bytes);
+    assert!(limited.max_bytes < input.max_bytes, "the fixture volume is not the tighter ceiling");
+    assert_eq!(limited.max_pixels, input.max_pixels);
+    assert_eq!(limited.max_width, input.max_width);
+    assert_eq!(limited.check(8_000, 8_000), input.check(8_000, 8_000));
+
+    let (input, memory_bound) = config(64 * 1024 * 1024);
+    assert_eq!(memory_bound.max_bytes, input.max_bytes);
+    assert_eq!(memory_bound.bytes_binding, Binding::Memory);
+
+    std::fs::remove_dir_all(&scratch).unwrap();
+}
+
+#[cfg(not(feature = "limits"))]
+#[test]
+fn output_limits_without_the_feature_keep_the_memory_byte_binding() {
+    let budget = budget_with(1024 * 1024 * 1024, 1);
+    let cost = PipelineCost::for_encoder(ImageFormatId::Png);
+    let path = std::env::temp_dir().join("img-limits-output-disabled.png");
+
+    let input = LimitSet::for_input(ImageFormatId::Png, BitDepth::Eight, ColorSpace::RGBA, &budget, cost);
+    let output = LimitSet::for_output(ImageFormatId::Png, BitDepth::Eight, ColorSpace::RGBA, &budget, cost, &path);
+
+    assert_eq!(output.max_bytes, input.max_bytes);
+    assert_eq!(output.bytes_binding, Binding::Memory);
+    assert_eq!(output.max_pixels, input.max_pixels);
+}
+
 #[test]
 fn byte_and_pixel_bindings_are_tracked_separately() {
     // A limit set whose pixels are format-bound but whose bytes are disk-bound
