@@ -156,3 +156,20 @@ fn cancelled_publication_has_no_visible_destination() {
     let error=img::publication::publish_cancellable(b"complete bytes",img::publication::Destination::New(&output),None,&cancellation).unwrap_err();
     assert!(!error.committed());assert!(!output.exists());assert_eq!(std::fs::read_dir(&scratch.0).unwrap().count(),0);
 }
+
+#[test]
+fn container_signatures_are_matched_whole() {
+    let sniff = |bytes: &[u8]| { let mut padded = bytes.to_vec(); padded.resize(32, 0); Format::sniff(&padded).map_err(|error| error.kind()) };
+    assert_eq!(sniff(b"RIFF\0\0\0\0WEBPVP8 "), Ok(Format::Webp));
+    for refused in [&b"RIFF\0\0\0\0WAVEfmt "[..], b"RIFX\0\0\0\0WEBPVP8 ", b"\0\0\0\0\0\0\0\0WEBPVP8 "] {
+        assert_eq!(sniff(refused), Err(ErrorKind::Unsupported), "{refused:?}");
+    }
+    assert_eq!(Format::sniff(b"RIFF").unwrap_err().kind(), ErrorKind::Unsupported);
+    assert_eq!(sniff(b"\0\0\0\x18ftypavif\0\0\0\0avifmif1"), Ok(Format::Avif));
+    assert_eq!(sniff(b"\0\0\0\x18ftypavis\0\0\0\0mif1msf1"), Ok(Format::Avif));
+    assert_eq!(sniff(b"\0\0\0\x18ftypmif1\0\0\0\0mif1avif"), Ok(Format::Avif));
+    assert_eq!(sniff(b"\0\0\0\x18ftypmif1\0\0\0\0mif1avis"), Ok(Format::Avif));
+    for refused in [&b"\0\0\0\x18ftypmif1\0\0\0\0mif1msf1"[..], b"\0\0\0\x18moovavif\0\0\0\0avifavis", b"\0\0\0\x18ftypheic\0\0\0\0mif1heic"] {
+        assert_eq!(sniff(refused), Err(ErrorKind::Unsupported), "{refused:?}");
+    }
+}
