@@ -278,12 +278,12 @@ impl StillImage {
 
     pub(crate) fn encode_jpeg_cancellable(&self, quality: Quality, sampling: JpegSampling, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> { jpeg::encode_sampled(self, quality, sampling, effort, stop) }
 
-    /// Encode with cooperative codec cancellation where supported.
     /// The encoder control a direct quality reaches for formats whose encoders quantize it; equal controls encode identically.
     pub(crate) fn quantized_quality(format: Format, quality: Quality) -> Option<usize> {
         match format { Format::Avif => Some(avif::native_quality(quality).into()), Format::Png => Some(png::palette_colors(quality)), Format::Jpeg | Format::Webp => None }
     }
 
+    /// Encode with cooperative codec cancellation where supported.
     pub fn encode_cancellable(&self, format: Format, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
         match format {
             Format::Png => png::encode(self, mode, effort,stop),
