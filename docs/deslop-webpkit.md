@@ -203,9 +203,31 @@ and `cargo +nightly udeps` are unavailable, so dependency use was checked by
 
 | Tool / configuration | Result |
 | --- | --- |
-| rustc `dead_code`, default lib | 22 items + 1 field + 8 `pub use` imports. All are internal-module API (`lossless::decode`, `decode_with`, `decode_rgba`, `decode_alpha`, `decode_reader`, `encode_to`, `animation::{decode_frames, decode_frames_with, CompositedFrames}`, `decoder::Decoder` + 6 methods, `lossy::{decode, decode_argb}`, `encoder::encode_to`, `LocatedImage.alpha`, `extract_metadata`, `locate_image`, `vp8l::encode::encode`, `vp8l::decode_incr::into_pixels`, `lossy::Decoder::frame_image`, the four `LossyConfig` accessors). Each is read by an inline test, or is reachable as `pub` under `__internals`, or both. |
+| rustc `dead_code`, default lib | 22 diagnostics + 1 field + 8 unused-import diagnostics covering 28 re-exported names. No item is dead in every configuration; dispositions below. |
 | rustc `dead_code`, `__internals` + tooling features | 2 items: `vp8l::encode::encode` and `vp8l::decode_incr::into_pixels`, both `pub(crate)` and used only from `#[cfg(test)]` code. Retained as test helpers; they are not shipped API. |
 | `cargo-machete` / `udeps` | Unavailable. `rg libwebp_sys src tests examples` finds no importer: `libwebp-sys` is an unused optional dependency behind `oracle`. `proptest`, `webpkit-samples`, `rayon` and `image` are all imported (tests, dev corpus, `forward_all`, `interop`). |
+
+Disposition per finding (default lib build):
+
+- Read by an inline test, retained: `lossless::{decode, decode_with, decode_rgba,
+  decode_alpha, encode_to}`; `lossless::animation::{decode_frames,
+  decode_frames_with}`; `container::reader::{extract_metadata, locate_image}`;
+  `LocatedImage::alpha`; `vp8l::encode::encode`;
+  `vp8l::decode_incr::into_pixels`; `lossy::{decode, decode_argb}`;
+  `lossy::encoder::encode_to`; `LossyConfig::{quality, effort}`.
+- Read nowhere, but upstream module API reachable under `__internals`, retained:
+  `lossless::decode_reader`; `lossless::animation::CompositedFrames`;
+  `lossless::decoder::Decoder` with `new`, `with_options`, `read_info`, `decode`,
+  `into_frames`, `fill`; `LossyConfig::{metadata, policy}`;
+  `lossy::Decoder::frame_image` (also carries a documented `#[expect(unused_self)]`
+  for API parity).
+- Dev-only shim: `cross_color::sweep_blue`, reached only through the
+  `feature = "bench"` forwarder; not dead.
+- Unused imports (8 diagnostics, 28 names): the `pub use` re-export lines in
+  `lossless.rs:127,129,135,138` and `lossy.rs:190,191,194,196`. They are the
+  flattened module API itself (`Effort`, `Metadata`, `PixelLayout`, the animation
+  types, `MetadataPolicy`, `encode_to`, `encode_vp8`, the stream vocabulary),
+  consumed as re-exports rather than by name inside the library.
 
 Allowlist: one entry, the crate-level
 `cfg_attr(not(feature = "__internals"), allow(unreachable_pub, dead_code, unused_imports, reason = …))`.
