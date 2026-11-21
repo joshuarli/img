@@ -49,7 +49,7 @@ Keep is the metadata default. Strip is intended to retain required color signali
 normalizes orientation once. Lossless refuses a strip that must reorder samples.
 Known color-preservation defects are recorded in [Color](COLOR.md) and [AVIF](AVIF.md).
 Inspect reads headers without decoding planes, including declared unsupported
-precision and animation/multiple-image signals, including JPEG MPF and gain-map declarations. JPEG trailing payloads and late application metadata are unsupported for pixel processing. Compare returns a measured score without a threshold.
+precision and animation/multiple-image signals, including JPEG MPF and gain-map declarations. JPEG trailing payloads and late application metadata are unsupported for pixel processing. Inspect reports a JPEG's declared dimensions even beyond the pixel and side ceilings, which decoding refuses at the frame header before allocating. Compare returns a measured score without a threshold.
 
 A single `-` input reads bounded stdin. Binary `-o -` requires one input and a
 concrete explicit format. Batch stdout, auto stdout, JSON plus binary stdout,

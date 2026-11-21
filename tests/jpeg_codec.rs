@@ -282,3 +282,26 @@ fn cancellation_interrupts_a_running_progressive_decode() {
     assert_eq!(error.to_string(), "operation cancelled");
     assert!(started.elapsed() < std::time::Duration::from_secs(1), "{:?}", started.elapsed());
 }
+
+/// Headers only: a start of image, one frame header, one scan header with no entropy data, and the end of image.
+fn header_only_jpeg(width: u16, height: u16) -> Vec<u8> {
+    let mut out = vec![0xff, 0xd8, 0xff, 0xc0, 0, 11, 8];
+    out.extend_from_slice(&height.to_be_bytes());
+    out.extend_from_slice(&width.to_be_bytes());
+    out.extend_from_slice(&[1, 1, 0x11, 0]);
+    out.extend_from_slice(&[0xff, 0xda, 0, 8, 1, 1, 0x00, 0, 63, 0x00]);
+    out.extend_from_slice(&[0xff, 0xd9]);
+    out
+}
+
+#[test]
+fn oversized_frame_headers_are_refused_as_limits_before_any_decode_allocation() {
+    for (width, height, expected) in [(8192, 8192, "pixel count"), (16_384, 16_384, "pixel count"), (65_500, 65_500, "")] {
+        let error = StillImage::decode(&header_only_jpeg(width, height)).err().expect("oversized frame");
+        assert_eq!(error.kind(), ErrorKind::Limit, "{width}x{height}: {error}");
+        assert!(error.to_string().contains(expected), "{width}x{height}: {error}");
+    }
+    assert_eq!(StillImage::decode(&header_only_jpeg(0, 8)).err().unwrap().kind(), ErrorKind::Invalid);
+    let described = img::still::describe(&header_only_jpeg(65_500, 65_500)).unwrap();
+    assert_eq!((described.width, described.height), (65_500, 65_500));
+}
