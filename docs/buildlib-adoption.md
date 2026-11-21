@@ -175,6 +175,12 @@ each packager reproduced its own first run exactly. Nothing was published. A fix
 run (1,536,960-byte archive) gave the same byte equality, so the result does not depend
 on the fixture size.
 
+img publishes no separate release manifest: `SHA256SUMS` is its only per-release metadata
+file, so the `SHA256SUMS` row above is the complete manifest comparison. No
+`buildlib.release.build_manifest` or `write_manifest` call was added; this packager
+consumes and produces archives and checksums, not the build repositories' per-target
+JSON manifests.
+
 ## 5. Environment
 
 **Host.** macOS 27.2 arm64, Python 3.15.1, uv 0.13.9, Docker 29.8.2 (native arm64).
