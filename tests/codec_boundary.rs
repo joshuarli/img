@@ -1,7 +1,17 @@
 mod common;
 
 use std::{fs, io::{self, Read}, os::unix::{ffi::OsStringExt, fs::symlink}, path::Path, sync::{Arc, Barrier}};
-use img::{publication::{publish, Destination, ReplacementSource, Source}, still::{StillImage, ErrorKind, MAX_DIMENSION, MAX_INPUT_BYTES, Format, EncodingMode, Effort}};
+use img::{publication::{create_parent, destination_key, publish, read_directory, Destination, ReplacementSource, Source}, still::{StillImage, ErrorKind, MAX_DIMENSION, MAX_INPUT_BYTES, Format, EncodingMode, Effort}};
+
+#[test]
+fn read_bounded_accepts_exactly_the_cap_and_refuses_one_more_byte() {
+    let at_cap = img::still::read_bounded(io::repeat(7).take(MAX_INPUT_BYTES)).unwrap();
+    assert_eq!(at_cap.len() as u64, MAX_INPUT_BYTES);
+    assert!(at_cap.iter().all(|&byte| byte == 7));
+    let over = img::still::read_bounded(io::repeat(7).take(MAX_INPUT_BYTES + 1)).unwrap_err();
+    assert_eq!(over.kind(), ErrorKind::Limit);
+    assert!(over.to_string().contains("128 MiB"), "{over}");
+}
 
 #[test]
 fn bounded_still_adapter_checks_actual_samples() {
@@ -172,4 +182,53 @@ fn container_signatures_are_matched_whole() {
     for refused in [&b"\0\0\0\x18ftypmif1\0\0\0\0mif1msf1"[..], b"\0\0\0\x18moovavif\0\0\0\0avifavis", b"\0\0\0\x18ftypheic\0\0\0\0mif1heic"] {
         assert_eq!(sniff(refused), Err(ErrorKind::Unsupported), "{refused:?}");
     }
+}
+
+#[test]
+fn destination_key_resolves_missing_ancestors_without_creating_them() {
+    let scratch = common::Scratch::new("destination-key");
+    let leaf = scratch.0.join("missing/deeper/output.png");
+    let key = destination_key(&leaf).unwrap();
+    assert_eq!(key, scratch.0.canonicalize().unwrap().join("missing/deeper/output.png"));
+    assert!(!scratch.0.join("missing").exists(), "resolving a key must not create directories");
+    assert_eq!(destination_key(Path::new("")).unwrap_err().to_string(), "missing filename");
+    assert_eq!(destination_key(Path::new("/")).unwrap_err().to_string(), "missing filename");
+}
+
+#[test]
+fn create_parent_makes_every_ancestor_and_tolerates_existing_ones() {
+    let scratch = common::Scratch::new("create-parent");
+    let leaf = scratch.0.join("one/two/three/output.png");
+    create_parent(&leaf).unwrap();
+    assert!(scratch.0.join("one/two/three").is_dir());
+    assert!(!leaf.exists(), "creating the parent must not create the file");
+    create_parent(&leaf).unwrap();
+    create_parent(&scratch.0.join("output.png")).unwrap();
+    fs::create_dir(scratch.0.join("mid")).unwrap();
+    create_parent(&scratch.0.join("mid/../out/output.png")).unwrap();
+    assert!(scratch.0.join("out").is_dir(), "the parent-directory component must resolve");
+    assert!(scratch.0.join("mid").is_dir());
+}
+
+#[test]
+fn read_directory_returns_sorted_native_entries_without_following_links() {
+    let scratch = common::Scratch::new("read-directory");
+    fs::write(scratch.0.join("z.txt"), b"z").unwrap();
+    fs::write(scratch.0.join("a.txt"), b"a").unwrap();
+    fs::create_dir(scratch.0.join("sub")).unwrap();
+    symlink(&scratch.0.join("a.txt"), scratch.0.join("link")).unwrap();
+    let entries = read_directory(&scratch.0).unwrap();
+    let names: Vec<&std::ffi::OsStr> = entries.iter().map(|entry| entry.name.as_os_str()).collect();
+    assert_eq!(names, [
+        std::ffi::OsStr::new("a.txt"),
+        std::ffi::OsStr::new("link"),
+        std::ffi::OsStr::new("sub"),
+        std::ffi::OsStr::new("z.txt"),
+    ]);
+    let by_name = |name: &str| entries.iter().find(|entry| entry.name == std::ffi::OsStr::new(name)).unwrap();
+    assert!(by_name("a.txt").file && !by_name("a.txt").directory && !by_name("a.txt").symlink);
+    assert!(by_name("sub").directory && !by_name("sub").file);
+    assert!(by_name("link").symlink && !by_name("link").file && !by_name("link").directory);
+    let expected_id = Source::open(&scratch.0.join("a.txt")).unwrap().file_id();
+    assert_eq!(by_name("a.txt").file_id, expected_id);
 }
