@@ -6,8 +6,8 @@ DSLP-6 (Types), DSLP-7 (Tests) and DSLP-8 (Dead code) for the imported codec at
 tree `deslop/webpkit`; Types commit `f446941`. webpkit is its own Cargo
 workspace, so its checks run from the repository root with
 `--manifest-path codecs/webpkit/Cargo.toml`, and the crate's own tests build into
-`codecs/webpkit/target` (gitignored by that manifest's workspace, cleaned before
-this pass closed).
+the crate's `codecs/webpkit/target` (untracked build output, 380 MB here,
+removed before the pass closed).
 
 The file was seeded by an earlier, unmerged attempt whose commit hashes
 (`29f1703`, `503cd94`, `a70e771`, `7e433e6`) are dangling in this branch. The
@@ -33,7 +33,7 @@ dropped at import). After `f446941` it exits 0.
 
 | Lint | Findings | Fix |
 | --- | ---: | --- |
-| `large_const_arrays` | 2 | `const` → `static` for the 4 KiB-entry log2 tables; the weighted table now takes the log2 slice as an argument, since a static cannot be read from a const initializer. |
+| `large_const_arrays` | 2 | `const` → `static` for the 4097-entry log2 tables; the weighted table now takes the log2 slice as an argument, since a static cannot be read from a const initializer. |
 | `needless_range_loop` | 9 | Iterator rewrites. The `i == length` sentinel in `optimize_huffman_for_rle` keeps its identity through `chain(once(&0u32))`; the frame tests iterate `&mb_data[..mb_w]` so the length invariant still panics. |
 | `manual_range_contains` | 1 | `(1..=WINDOW_SIZE).contains(&width)`. |
 | `too_many_arguments` | 5 | `PixelSource`, `StreamSwitches`, `BlockEntry`, `RateSlot` group the repeated parameters; no suppression added. |
@@ -186,10 +186,10 @@ there is nothing to prove, and the three command-level checks below stand in.
 
 ### Cost
 
-`cargo test --locked --manifest-path codecs/webpkit/Cargo.toml` at `f446941`:
-lib 288.2 s, doctests 7.7 s, remaining target 0.08 s; the cold baseline run took
-516.6 s wall. `cargo clippy ... --all-targets -- -D warnings` warm: 3.4 s after
-a 17.3 s compile.
+`cargo test --locked --manifest-path codecs/webpkit/Cargo.toml` on the committed
+tree: lib 290.6 s, doctests 7.2 s, remaining target 0.08 s; the first run on a
+cold `codecs/webpkit/target` took 516.6 s wall. `cargo clippy ... --all-targets
+-- -D warnings` warm: 1.2 s; the full recompile after a source edit took 17.3 s.
 
 ## DSLP-8 Dead code
 
@@ -236,6 +236,6 @@ Walk-backs (public upstream API or feature surface; **not done**):
 | --- | --- |
 | `cargo test --locked --manifest-path codecs/webpkit/Cargo.toml` | exit 0: 923 lib, 15 doctests, 5 others. |
 | `cargo clippy --locked --manifest-path codecs/webpkit/Cargo.toml --all-targets -- -D warnings` | exit 0. |
-| `make lint` (top level, `TMPDIR=.work/tmp`) | exit 0 (131.9 s); webpkit produced no warning. The warnings in the log are pre-existing `img` findings outside this scope. |
-| `make test` (top level, `TMPDIR=.work/tmp`) | exit 0 (165.0 s warm): every `cargo test --all-features` target ok (including `webp_codec`), `tests.test_bench` 14/14 OK, and `tests/test_package_release.py` skipped on macOS because it needs GNU tar (release CI runs it). |
+| `make lint` (top level, `TMPDIR=.work/tmp`) | exit 0 (131.9 s cold, 30.2 s warm); webpkit produced no warning. The warnings in the log are pre-existing `img` findings outside this scope. |
+| `make test` (top level, `TMPDIR=.work/tmp`) | exit 0 (165.0 s warm): every `cargo test --all-features` target ok (including `webp_codec`), `tests.test_bench` 14/14 OK, and `tests/test_package_release.py` skipped on macOS because it needs GNU tar (release CI runs it). One earlier attempt was killed by SIGTERM in a rustc child while compiling an `img` example on the same tree; the rerun above passed, and no source changed in between. |
 | WebP output bytes | A scratch probe (`img::still::StillImage::encode`) reproduces the eight fixture encodes in `tests/webp_codec.rs`. Seven are deterministic and hashed identically at `a9ee354` and `f446941` (RGBA lossless/lossy, RGB, gray, gray-alpha lossless/lossy, 2x2). The eighth (PNG-with-ICC metadata) has a stable 840-byte length but varying bytes because `moxcms::ColorProfile::new_srgb().encode()` is itself nondeterministic across processes (612-byte profile, three runs, three hashes), so it cannot witness encoder identity; the metadata path is covered by the lossless suite and `tests/webp_codec.rs`. |
