@@ -278,7 +278,7 @@ impl LossyConfig {
 /// pipeline will modify them: an `Rgba8` source whose fully-transparent pixels
 /// need no hidden-RGB flattening. The frame encoder consumes RGBA bytes, so
 /// the unpack → pack round trip would reproduce these bytes exactly.
-fn rgba8_direct<'a>(layout: PixelLayout, bytes: &'a [u8], tuning: LossyTuning) -> Option<&'a [u8]> {
+fn rgba8_direct(layout: PixelLayout, bytes: &[u8], tuning: LossyTuning) -> Option<&[u8]> {
     (layout == PixelLayout::Rgba8
         && (tuning.exact() || !bytes.as_chunks::<4>().0.iter().any(|px| px[3] == 0)))
     .then_some(bytes)
@@ -354,7 +354,7 @@ fn assemble(argb: &[u32], dims: Dimensions, config: &LossyConfig, metadata: &Met
     // ALPH chunk. `alph_chunk` probes without allocating and only materializes the
     // plane when a non-opaque pixel means an ALPH chunk will actually be written.
     let alph = crate::lossy::alpha::alph_chunk(argb, dims, alpha_tuning(*config.tuning()));
-    finish(&vp8, alph, dims, metadata)
+    finish(&vp8, alph.as_deref(), dims, metadata)
 }
 
 /// Assemble the container directly from an `Rgba8` buffer for which
@@ -368,17 +368,17 @@ fn assemble_rgba(
 ) -> Vec<u8> {
     let vp8 = frame_encode(rgba, dims, config);
     let alph = crate::lossy::alpha::alph_chunk_rgba(rgba, dims, alpha_tuning(*config.tuning()));
-    finish(&vp8, alph, dims, metadata)
+    finish(&vp8, alph.as_deref(), dims, metadata)
 }
 
 /// The shared container tail: a bare `VP8 ` file for an opaque frame with empty
 /// metadata, the extended `VP8X` form otherwise.
-fn finish(vp8: &[u8], alph: Option<Vec<u8>>, dims: Dimensions, metadata: &Metadata) -> Vec<u8> {
+fn finish(vp8: &[u8], alph: Option<&[u8]>, dims: Dimensions, metadata: &Metadata) -> Vec<u8> {
     // The byte-identical fast path: nothing to carry beyond the opaque image.
     if alph.is_none() && metadata.is_empty() {
         return wrap_vp8(vp8);
     }
-    wrap_vp8_extended(vp8, alph.as_deref(), dims, metadata)
+    wrap_vp8_extended(vp8, alph, dims, metadata)
 }
 
 /// Encode `image` into a raw `VP8 ` key-frame payload (no container), returning it

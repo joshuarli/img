@@ -476,14 +476,17 @@ const fn header_bits(used: u64) -> u64 {
 /// (histogram frequencies are overwhelmingly small). The runtime path for `x >
 /// LOG2_SMALL_MAX` is unchanged.
 const LOG2_SMALL_MAX: u64 = 4096;
-const LOG2_SMALL: [u64; (LOG2_SMALL_MAX + 1) as usize] = build_log2_small();
-const WEIGHTED_LOG2_SMALL: [u32; (LOG2_SMALL_MAX + 1) as usize] = build_weighted_log2_small();
+static LOG2_SMALL: [u64; (LOG2_SMALL_MAX + 1) as usize] = build_log2_small();
+static WEIGHTED_LOG2_SMALL: [u32; (LOG2_SMALL_MAX + 1) as usize] =
+    build_weighted_log2_small(&build_log2_small());
 
-const fn build_weighted_log2_small() -> [u32; (LOG2_SMALL_MAX + 1) as usize] {
+const fn build_weighted_log2_small(
+    log2: &[u64; (LOG2_SMALL_MAX + 1) as usize],
+) -> [u32; (LOG2_SMALL_MAX + 1) as usize] {
     let mut table = [0u32; (LOG2_SMALL_MAX + 1) as usize];
     let mut x = 0usize;
     while x < table.len() {
-        let weighted = x as u64 * LOG2_SMALL[x];
+        let weighted = x as u64 * log2[x];
         assert!(weighted <= u32::MAX as u64);
         table[x] = weighted as u32;
         x += 1;

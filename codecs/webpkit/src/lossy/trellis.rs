@@ -285,12 +285,12 @@ impl RateMemo {
         let nodes = NUM_TYPES * NUM_BANDS * NUM_CTX;
         let mut table = Vec::with_capacity(nodes * stride);
         let mut large = Vec::with_capacity(nodes * stride);
-        for t in 0..NUM_TYPES {
-            for b in 0..NUM_BANDS {
-                for c in 0..NUM_CTX {
+        for type_bands in bands.iter() {
+            for band_bands in type_bands.iter() {
+                for ctx_probas in band_bands.iter().copied() {
                     for m in 0..=RATE_MEMO_MAX {
-                        table.push(value_rate(m, bands[t][b][c]));
-                        large.push(large_value_rate(m, bands[t][b][c]));
+                        table.push(value_rate(m, ctx_probas));
+                        large.push(large_value_rate(m, ctx_probas));
                     }
                 }
             }
@@ -302,16 +302,26 @@ impl RateMemo {
     /// RATE_MEMO_MAX` and computed directly above it.
     #[inline]
     fn rate(&self, bands: &CoeffProbas, ty: usize, band: usize, ctx: usize, m: i32) -> i64 {
-        self.slot(&self.table, bands, ty, band, ctx, m, |p| value_rate(m, p))
+        self.slot(
+            &self.table,
+            bands,
+            RateSlot { ty, band, ctx },
+            m,
+            |p| value_rate(m, p),
+        )
     }
 
     /// `large_value_rate(m, bands[type][band][ctx])`, same table/fallback split as
     /// [`Self::rate`].
     #[inline]
     fn large_rate(&self, bands: &CoeffProbas, ty: usize, band: usize, ctx: usize, m: i32) -> i64 {
-        self.slot(&self.large, bands, ty, band, ctx, m, |p| {
-            large_value_rate(m, p)
-        })
+        self.slot(
+            &self.large,
+            bands,
+            RateSlot { ty, band, ctx },
+            m,
+            |p| large_value_rate(m, p),
+        )
     }
 
     #[inline]
@@ -319,20 +329,27 @@ impl RateMemo {
         &self,
         table: &[i64],
         bands: &CoeffProbas,
-        ty: usize,
-        band: usize,
-        ctx: usize,
+        slot: RateSlot,
         m: i32,
         direct: impl FnOnce([Prob; NUM_PROBAS]) -> i64,
     ) -> i64 {
         if m <= RATE_MEMO_MAX {
             let stride = (RATE_MEMO_MAX + 1) as usize;
-            let i = ((ty * NUM_BANDS + band) * NUM_CTX + ctx) * stride + m as usize;
+            let i = ((slot.ty * NUM_BANDS + slot.band) * NUM_CTX + slot.ctx) * stride
+                + m as usize;
             table[i]
         } else {
-            direct(bands[ty][band][ctx])
+            direct(bands[slot.ty][slot.band][slot.ctx])
         }
     }
+}
+
+/// One `[type][band][context]` cell of the coefficient probability table.
+#[derive(Clone, Copy)]
+struct RateSlot {
+    ty: usize,
+    band: usize,
+    ctx: usize,
 }
 
 /// The Viterbi tables over positions `0..16`: per `(position, outgoing context)` the
@@ -379,6 +396,15 @@ impl Viterbi {
     }
 }
 
+/// Where a block enters the coefficient token tree: its first zig-zag position,
+/// the incoming non-zero context, and the token plane that codes it.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct BlockEntry {
+    pub first: usize,
+    pub ctx0: usize,
+    pub plane: usize,
+}
+
 /// Rate-distortion optimal quantization of one 4×4 coefficient block `coeffs`
 /// (natural order), starting at zig-zag position `first`, with entry context `ctx0`
 /// (the incoming non-zero context the token tree would carry into this block), the
@@ -395,13 +421,16 @@ impl Viterbi {
 pub(crate) fn trellis_quantize_block(
     coeffs: [i16; 16],
     pair: QPair,
-    first: usize,
-    ctx0: usize,
-    plane: usize,
+    entry: BlockEntry,
     bands: &CoeffProbas,
     lambda: i64,
     memo: Option<&RateMemo>,
 ) -> Quantized {
+    let BlockEntry {
+        first,
+        ctx0,
+        plane,
+    } = entry;
     let pb = &bands[plane];
 
     // Forced-empty pre-scan: when every position's nearest level is zero, each
@@ -410,8 +439,7 @@ pub(crate) fn trellis_quantize_block(
     // `quantize_sharpened(..) != 0` is exactly the `l0 >= 1` candidate gate below,
     // so a nonzero nearest level is the only way a nonzero magnitude can appear.
     let mut any_nonzero = false;
-    for n in first..16 {
-        let j = ZIGZAG[n];
+    for &j in ZIGZAG.iter().take(16).skip(first) {
         let factor = if j == 0 { pair.dc } else { pair.ac };
         if factor.quantize_sharpened(i32::from(coeffs[j]), pair.sharpen[j]) != 0 {
             any_nonzero = true;
@@ -562,7 +590,7 @@ pub(crate) fn trellis_quantize_block(
 
 #[cfg(test)]
 mod tests {
-    use super::{block_token_cost, trellis_lambda, trellis_quantize_block};
+    use super::{BlockEntry, block_token_cost, trellis_lambda, trellis_quantize_block};
     use crate::lossy::constants::{BANDS, COEFFS_PROBA_0, NUM_PROBAS, Prob, ZIGZAG};
     use crate::lossy::prob_opt::bit_cost;
     use crate::lossy::quant::{Quantizer, quantize_block};
@@ -649,7 +677,14 @@ mod tests {
         coeffs[4] = 12;
         coeffs[8] = 200;
         let lambda = trellis_lambda(q.y1.ac.q);
-        let out = trellis_quantize_block(coeffs, q.y1, 0, 0, 0, &COEFFS_PROBA_0, lambda, None);
+        let out = trellis_quantize_block(
+            coeffs,
+            q.y1,
+            BlockEntry { first: 0, ctx0: 0, plane: 0 },
+            &COEFFS_PROBA_0,
+            lambda,
+            None,
+        );
         assert_valid(q, 0, &out);
     }
 
@@ -664,7 +699,14 @@ mod tests {
         coeffs[4] = -2;
         coeffs[5] = 4;
         let lambda = trellis_lambda(q.y1.ac.q);
-        let out = trellis_quantize_block(coeffs, q.y1, 1, 0, 0, &COEFFS_PROBA_0, lambda, None);
+        let out = trellis_quantize_block(
+            coeffs,
+            q.y1,
+            BlockEntry { first: 1, ctx0: 0, plane: 0 },
+            &COEFFS_PROBA_0,
+            lambda,
+            None,
+        );
         assert_valid(q, 1, &out);
         assert_eq!(
             out.last, 0,
@@ -685,8 +727,22 @@ mod tests {
         coeffs[8] = 8;
         let rn = quantize_block(coeffs, q.y1, 0);
         let lambda = trellis_lambda(q.y1.ac.q);
-        let a = trellis_quantize_block(coeffs, q.y1, 0, 0, 0, &COEFFS_PROBA_0, lambda, None);
-        let b = trellis_quantize_block(coeffs, q.y1, 0, 0, 0, &COEFFS_PROBA_0, lambda, None);
+        let a = trellis_quantize_block(
+            coeffs,
+            q.y1,
+            BlockEntry { first: 0, ctx0: 0, plane: 0 },
+            &COEFFS_PROBA_0,
+            lambda,
+            None,
+        );
+        let b = trellis_quantize_block(
+            coeffs,
+            q.y1,
+            BlockEntry { first: 0, ctx0: 0, plane: 0 },
+            &COEFFS_PROBA_0,
+            lambda,
+            None,
+        );
         assert_eq!(a.levels, b.levels, "trellis must be deterministic");
         assert_eq!(a.recon, b.recon);
         assert!(
@@ -829,7 +885,14 @@ mod tests {
     fn trellis(base_q: i32, coeffs: [i16; 16], first: usize, ctx0: usize) -> super::Quantized {
         let q = Quantizer::new(base_q);
         let lambda = trellis_lambda(q.y1.ac.q);
-        trellis_quantize_block(coeffs, q.y1, first, ctx0, 0, &COEFFS_PROBA_0, lambda, None)
+        trellis_quantize_block(
+            coeffs,
+            q.y1,
+            BlockEntry { first, ctx0, plane: 0 },
+            &COEFFS_PROBA_0,
+            lambda,
+            None,
+        )
     }
 
     /// The full [`trellis_quantize_block`] result — `levels`, `recon` and `last` — is
@@ -1102,7 +1165,14 @@ mod tests {
             }
             let q = Quantizer::new(base_q);
             let lambda = trellis_lambda(q.y1.ac.q);
-            let got = trellis_quantize_block(coeffs, q.y1, first, ctx0, 0, &COEFFS_PROBA_0, lambda, None);
+            let got = trellis_quantize_block(
+                coeffs,
+                q.y1,
+                BlockEntry { first, ctx0, plane: 0 },
+                &COEFFS_PROBA_0,
+                lambda,
+                None,
+            );
             let want = brute_force(coeffs, q.y1, first, ctx0, lambda);
             assert_eq!(
                 got.last, want.last,

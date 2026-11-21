@@ -106,7 +106,7 @@ pub(crate) fn parse_rle(pixels: &[u32], width: u32) -> Vec<Token> {
     let mut tokens = Vec::new();
     tokens.push(Token::Literal(pixels[0]));
     let w = width as usize;
-    let row_distance = (width >= 1 && width <= WINDOW_SIZE).then_some(width);
+    let row_distance = (1..=WINDOW_SIZE).contains(&width).then_some(width);
     let mut i = 1usize;
     while i < n {
         let max_len = (n - i).min(MAX_COPY_LENGTH as usize);
@@ -481,7 +481,7 @@ fn length_at(
 /// (`src < dst`), capped at `max_len`. Overlapping matches (`dst - src < len`)
 /// extend naturally against the known source, reproducing run-length fills.
 #[cfg_attr(
-    not(feature = "work-count"),
+    all(not(feature = "work-count"), not(target_arch = "aarch64")),
     expect(
         clippy::missing_const_for_fn,
         reason = "work-count instrumentation calls an atomic counter and cannot run in const context"

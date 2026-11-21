@@ -289,4 +289,28 @@ mod tests {
         assert!(dec.read_bool(96));
         assert_eq!(dec.read_signed(11), -1000);
     }
+
+    /// Zero and 255 are legal table probabilities — `COEFFS_PROBA_0` ends in 0 —
+    /// and leave a one-unit split, so the coder's renormalization carries the
+    /// whole weight of the decision. Both branches must round-trip from a
+    /// renormalized state so an extreme table cell cannot corrupt the token tree.
+    #[test]
+    fn probability_extremes_round_trip_both_branches() {
+        for prob in [0u8, 255] {
+            for bit in [false, true] {
+                let mut enc = BoolEncoder::new();
+                enc.put_bool(20, true);
+                enc.put_bool(230, false);
+                enc.put_bool(128, true);
+                enc.put_bool(prob, bit);
+                let bytes = enc.finish();
+
+                let mut dec = BoolDecoder::new(&bytes);
+                assert!(dec.read_bool(20), "prefix at 20");
+                assert!(!dec.read_bool(230), "prefix at 230");
+                assert!(dec.read_bool(128), "prefix at 128");
+                assert_eq!(dec.read_bool(prob), bit, "prob {prob}, bit {bit}");
+            }
+        }
+    }
 }
