@@ -53,7 +53,7 @@ Stream one image through a concrete format:
 cat input.png | img convert - --format webp --lossless -o - > output.webp
 ```
 
-Run `img --help` for flags. See [CLI contracts and JSON](docs/CLI.md),
+Run `img --help` for the complete command reference and examples. See [CLI contracts and JSON](docs/CLI.md),
 [optimization](docs/OPTIMIZATION.md), [color and metadata](docs/COLOR.md),
 [AVIF limitations](docs/AVIF.md), and [independent scoring](docs/SCORING.md).
 [Benchmark evidence](BENCHMARKS.md) distinguishes measured results from deferred gates.
