@@ -19,7 +19,7 @@ cited as such.
 | Step | Result |
 | --- | --- |
 | Types (DSLP-6) | 34 default-clippy findings cleared at `-D warnings`; `unwrap_used` and `needless_pass_by_value` adopted in `[lints.clippy]` with a test exemption; no emitted-byte change (7/7 deterministic fixture hashes identical). Escape hatches: `.unwrap()` 833 → 831, all other counts flat. |
-| Tests (DSLP-7) | Mutation not run: `cargo-mutants` is not installed in this environment (nor `cargo-llvm-cov` or `cargo-machete`), so the fallback is the read-only gap review below. No survivor is dispositioned because no mutant was generated. Four verified gaps, one of them material (the corpus' `expected.rgba` files are never read). |
+| Tests (DSLP-7) | Mutation still not run: `cargo-mutants` is absent (nor `cargo-llvm-cov` or `cargo-machete`), so no survivor exists to disposition and the step is the read-only review. Three of the four reviewed gaps are now closed by tests (corpus vs `expected.rgba`, cost vs emitted bits, probability extremes), each proven with an injected fault; the fourth needs unsafe FFI and is recorded as not testable in-crate. |
 | Dead code (DSLP-8) | One allowlist entry (the crate's existing `cfg_attr` for `dead_code`/`unreachable_pub`/`unused_imports`), re-validated and its reason corrected; zero deletions, because every default-build finding is used by an inline test, a `cfg(feature)` shim, or is upstream module API. One unused optional dependency (`libwebp-sys`, feature `oracle`) is a Needs-owner walk-back. |
 
 ## DSLP-6 Types
@@ -121,10 +121,10 @@ of 938 because 15 are feature-gated.
 | Writer | Tests | What the tests bind |
 | --- | ---: | --- |
 | `lossless/bit_io/writer.rs` | 7 | Exact bytes for one/many bits, zero-width no-op, zero padding on align, write→read over an LCG, byte-identity against an independent `BitBuf` oracle, proptest round trip. |
-| `lossless/huffman/serialize.rs` | 12 | Simple form (1- and 8-bit first symbol), full form, the 256-symbol boundary, code-16/18 RLE runs, the trimmed max-symbol form, and a reader-oracle round trip that asserts the reader consumes exactly the written bits. |
+| `lossless/huffman/serialize.rs` | 13 | Simple form (1- and 8-bit first symbol), full form, the 256-symbol boundary, code-16/18 RLE runs, the trimmed max-symbol form, a reader-oracle round trip that asserts the reader consumes exactly the written bits, and `serialized_bits` equal to `BitWriter::bit_len()` after the write. |
 | `lossless/huffman/canonical.rs` | 9 | Bit reversal (table and involution), canonical order, `emit_codes` for empty/single/two-symbol alphabets, against a reversed-canonical reference. |
 | `lossless/huffman/build.rs` | 6 | Empty/single/two-symbol alphabets, depth limits (Fibonacci weights, skewed 19-entry), decodability of several histograms. |
-| `lossy/bool_enc.rs` | 5 | Round trip through `BoolDecoder` at skewed probabilities, resume at every partition boundary, signed literals, signed zero, mixed-probability renormalization. |
+| `lossy/bool_enc.rs` | 6 | Round trip through `BoolDecoder` at skewed probabilities, resume at every partition boundary, signed literals, signed zero, mixed-probability renormalization, and the 0/255 probability extremes on both branches. |
 | `lossy/tokens.rs` | 9 | i4x4/Y2/WHT residuals, intra modes, segment ids, bmodes round trip; the count pass compared event-for-event and nz-context-binned against the emit pass. |
 | `lossy/enc_header.rs` | 6 | Frame header in both directions, max dimensions/zero partition, control header with base quantizers, segments and loop filter. |
 | `lossy/frame_header.rs` | 8 | Minimal key frame, tag subfields, scale bits, 3-byte partition size, and the five rejections. |
@@ -134,6 +134,7 @@ of 938 because 15 are feature-gated.
 | `lossy/alpha.rs` | 17 | Raw and lossless ALPH both ways, smallest-candidate choice, deterministic output, tuning identity with the exhaustive search, quantization and filter-candidate bounds. |
 | `lossless/vp8l/encode.rs` | 43 | Encode→decode round trips for every tier (including `Fast` and `Best` transform families), candidate selection and cost checks, sub-images, meta plans. |
 | `lossy/frame.rs` | 56 | Encoder output decoded and compared with the encoder's own reconstruction across the i16x16/i4x4/chroma/SNS/segment paths. |
+| `tests/conformance.rs` (integration) | 1 | Decodes all 16 `level = "must"` corpus fixtures through the public `webpkit::decode` and compares every pixel to the recorded `expected.rgba`; floor of 16, and every fixture must still be `must`. |
 
 ### Decode-verification path
 
@@ -147,49 +148,59 @@ of 938 because 15 are feature-gated.
 - Independent libwebp decode of webpkit's output happens only in `img`'s
   `tests/webp_codec.rs`, not in webpkit's own suite.
 
-### Gaps (read-only findings)
+### Gaps: three closed by tests, one not testable in-crate
 
-1. **The conformance corpus' pixel oracle is unused.** Every fixture directory
-   carries `expected.rgba` (54 blobs total: 16 `input.webp`, 16 `expected.rgba`,
-   16 `meta.toml`, 6 others), but nothing in the crate reads `expected.rgba` or
-   `meta.toml` (`rg` finds no reference). The corpus therefore verifies
-   stream-vs-one-shot self-consistency, not correctness against the recorded
-   reference. Proposed test: decode each still fixture and compare to
-   `expected.rgba` under the fixture's `meta.toml` layout, with a floor on the
-   fixture count.
-2. **`serialized_bits` is not pinned to the writer.** `best_code_lengths`
-   (`lossless/vp8l/encode.rs:2603`) prices a code as
-   `Σ count·length + serialized_bits(lengths)` and picks the cheaper build; if
-   `serialized_bits` (`lossless/huffman/serialize.rs:125`, doc says "exact bit
-   count") drifts from `write_huffman_code`, the choice silently picks the larger
-   stream. No test asserts the two are equal, and a mutant of
-   `serialized_bits` would be a size regression, not a decode failure, so the
-   round-trip proptests cannot see it. Proposed test:
-   `serialized_bits(lengths)` equals the bits `write_huffman_code` consumes
-   (the existing `round_trip` helper already knows how to measure that).
-3. **Probability zero is a legal table value with no test.** `COEFFS_PROBA_0`
-   ends `…, 3, 1, 0` (`lossy/constants.rs:481`), so `BoolEncoder::put_bool(0, …)`
-   is reachable; the probability optimizer clamps its *output* to `1..=255`
-   (`prob_opt.rs:50`) but the default table still contains 0. A zero probability
-   cannot encode the opposite bit, so the invariant is "never encode the
-   impossible branch". `bool_enc.rs`'s round-trip set covers 1 and 255 but not 0.
-   Proposed test: encode the permitted branch at `prob = 0` (and 255) and decode
-   it, and assert the encoder never asks for the impossible branch on a token
-   stream that reaches that node.
-4. **No independent lossy comparison inside webpkit.** The `oracle` feature's
-   hooks (`lossless.rs:680+`, `lossy.rs:340+`) exist for a differential crate
-   that was not imported, and `libwebp-sys` is never referenced. The only
-   independent lossy check is `img`'s `tests/webp_codec.rs`.
+The first read-only review found four gaps. Three are now covered, and each test
+was proven with an injected fault. The corpus' `meta.toml` carries no layout key
+— it holds `feature`, `level` and `note` — so the conformance test uses the
+convention those notes state: `expected.rgba` is `dwebp -pam` output with its
+header stripped, i.e. RGBA8 in file order. The test requires `level = "must"` for
+every directory and checks `expected.rgba.len() == width * height * 4` against
+the decoded image before comparing bytes, so a wrong layout or a shrunken corpus
+fails.
 
-Injected faults were not run: with no new boundary test in a read-only pass
-there is nothing to prove, and the three command-level checks below stand in.
+1. **Corpus pixel oracle** — `tests/conformance.rs`: decodes all 16 fixtures
+   through the public `webpkit::decode` and compares every byte to
+   `expected.rgba`. The animation's reference is its first composited frame,
+   which is what `decode` returns for an animation; the VP8X fixture's reference
+   is the same still pixels. Floor: `checked >= 16`. Result: 16/16 match, no
+   product defect.
+2. **`serialized_bits` vs the writer** — `serialize.rs::serialized_bits_equals_
+   the_written_bits`: for seven length vectors covering the empty, simple (1- and
+   8-bit), full, trimmed (280-symbol trailing zero) and all-length-8 forms,
+   `BitWriter::bit_len()` after `write_huffman_code` equals `serialized_bits`.
+   The test also asserts the 280-symbol case takes the trimmed branch, so the
+   trimmed cost is exercised.
+3. **Probability extremes** — `bool_enc.rs::probability_extremes_round_trip_
+   both_branches`: at `prob = 0` and `prob = 255`, both branches round-trip
+   through `BoolDecoder` after a renormalizing prefix. All four combinations
+   pass, so a one-unit split still carries the decision.
+4. **Independent lossy comparison (not testable in-crate).** A differential
+   check needs `libwebp-sys`'s FFI, and the crate is `#![deny(unsafe_code)]`
+   with the owner's single grant (the NEON match kernel); the `oracle` hooks
+   exist for a crate that was not imported. The independent check stays in
+   `img`'s `tests/webp_codec.rs` (libwebp decodes lossless, lossy-alpha, gray and
+   gray-alpha output). Moving it in-crate needs an unsafe FFI module, i.e. a
+   grant/API change; recorded as Needs owner, not done.
+
+#### Injected-fault evidence
+
+Each fault was applied to the protected code, the named test was run alone, and
+the fault was reverted (`git diff` empty afterwards); no fault was committed.
+
+| Fault | Change | Command | Observed failure |
+| --- | --- | --- | --- |
+| Decoder output | `vp8l/decode.rs::decode`: `argb[0] ^= 1` after the image stream | `cargo test --test conformance` | `all_transparent: decoded pixels differ from the libwebp reference`; first pixel blue 66 vs 67 |
+| Cost model | `serialize.rs::serialized_bits`: `1 +` → `2 +` in the full-form cost | `cargo test --lib serialized_bits_equals_the_written_bits` | `lengths [1, 2, 3, 3]` left 30, right 31 |
+| Bool split | `bool_enc.rs::put_bool`: `1 +` → `2 +` in `split` | `cargo test --lib probability_extremes_round_trip_both_branches` | `prob 0, bit false` decoded `true` |
 
 ### Cost
 
-`cargo test --locked --manifest-path codecs/webpkit/Cargo.toml` on the committed
-tree: lib 290.6 s, doctests 7.2 s, remaining target 0.08 s; the first run on a
-cold `codecs/webpkit/target` took 516.6 s wall. `cargo clippy ... --all-targets
--- -D warnings` warm: 1.2 s; the full recompile after a source edit took 17.3 s.
+`cargo test --locked --manifest-path codecs/webpkit/Cargo.toml` with
+`CARGO_TARGET_DIR` under `.work/tmp`: lib 267.1 s, conformance 0.02 s, doctests
+7.7 s, remaining target 0.11 s. A cold build of that target directory is the
+long pole; `cargo clippy --all-targets -- -D warnings` took 107 s to compile it
+and is near-instant warm.
 
 ## DSLP-8 Dead code
 
@@ -256,8 +267,9 @@ Walk-backs (public upstream API or feature surface; **not done**):
 
 | Command | Result |
 | --- | --- |
-| `cargo test --locked --manifest-path codecs/webpkit/Cargo.toml` | exit 0: 923 lib, 15 doctests, 5 others. |
-| `cargo clippy --locked --manifest-path codecs/webpkit/Cargo.toml --all-targets -- -D warnings` | exit 0. |
-| `make lint` (top level, `TMPDIR=.work/tmp`) | exit 0 (131.9 s cold, 30.2 s warm); webpkit produced no warning. The warnings in the log are pre-existing `img` findings outside this scope. |
-| `make test` (top level, `TMPDIR=.work/tmp`) | exit 0 (165.0 s warm): every `cargo test --all-features` target ok (including `webp_codec`), `tests.test_bench` 14/14 OK, and `tests/test_package_release.py` skipped on macOS because it needs GNU tar (release CI runs it). One earlier attempt was killed by SIGTERM in a rustc child while compiling an `img` example on the same tree; the rerun above passed, and no source changed in between. |
-| WebP output bytes | A scratch probe (`img::still::StillImage::encode`) reproduces the eight fixture encodes in `tests/webp_codec.rs`. Seven are deterministic and hashed identically at `a9ee354` and `f446941` (RGBA lossless/lossy, RGB, gray, gray-alpha lossless/lossy, 2x2). The eighth (PNG-with-ICC metadata) has a stable 840-byte length but varying bytes because `moxcms::ColorProfile::new_srgb().encode()` is itself nondeterministic across processes (612-byte profile, three runs, three hashes), so it cannot witness encoder identity; the metadata path is covered by the lossless suite and `tests/webp_codec.rs`. |
+| `cargo test --locked --manifest-path codecs/webpkit/Cargo.toml` (`CARGO_TARGET_DIR` under `.work/tmp`) | exit 0: 925 lib (923 + the two new unit tests), 1 conformance integration test, 15 doctests, 5 others. |
+| `cargo clippy --locked --manifest-path codecs/webpkit/Cargo.toml --all-targets -- -D warnings` | exit 0, including the new integration test. |
+| `make lint` (top level, `TMPDIR=.work/tmp`) | exit 0 (14.4 s warm); webpkit produced no warning. The warnings in the log are pre-existing `img` findings outside this scope. |
+| `make test` (top level, `TMPDIR=.work/tmp`) | exit 0: 18 `test result: ok` targets (including `webp_codec`) and `tests.test_bench` 14/14 OK; `tests/test_package_release.py` is skipped on macOS because it needs GNU tar (release CI runs it). One earlier attempt on the previous tree was killed by SIGTERM in a rustc child; the rerun passed with no source change in between. |
+| New tests and faults | `--test conformance`: 1 passed; `--lib serialized_bits_equals_the_written_bits`: 1 passed; `--lib probability_extremes_round_trip_both_branches`: 1 passed. Each fails only when its recorded fault is injected (table above), and the fault runs are not part of this tree. |
+| WebP output bytes | A scratch probe (`img::still::StillImage::encode`) reproduces the eight fixture encodes in `tests/webp_codec.rs`. Seven are deterministic and hashed identically at `a9ee354`, `f446941` and the final tests tree (RGBA lossless/lossy, RGB, gray, gray-alpha lossless/lossy, 2x2). The eighth (PNG-with-ICC metadata) has a stable 840-byte length but varying bytes because `moxcms::ColorProfile::new_srgb().encode()` is itself nondeterministic across processes (612-byte profile, three runs, three hashes), so it cannot witness encoder identity; the metadata path is covered by the lossless suite and `tests/webp_codec.rs`. |

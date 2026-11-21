@@ -351,7 +351,7 @@ fn code_repeated_values(
 
 #[cfg(test)]
 mod tests {
-    use super::write_huffman_code;
+    use super::{choose_full, serialized_bits, write_huffman_code};
     use crate::lossless::bit_io::reader::BitReader;
     use crate::lossless::bit_io::writer::BitWriter;
     use crate::lossless::huffman::canonical::emit_codes;
@@ -548,6 +548,34 @@ mod tests {
             let mut oracle = BitBuf::default();
             put_simple_code(&mut oracle, symbol);
             assert_eq!(ours, oracle.finish(), "symbol {symbol}");
+        }
+    }
+
+    /// The cost model and the writer must agree bit-for-bit. `best_code_lengths`
+    /// picks between the direct and RLE-perturbed lengths by `serialized_bits`,
+    /// so a cost that differs from what `write_huffman_code` emits would select
+    /// the larger stream without failing any decode.
+    #[test]
+    fn serialized_bits_equals_the_written_bits() {
+        let mut trailing = vec![0u32; 280];
+        trailing[..4].copy_from_slice(&[1, 2, 3, 3]);
+        assert!(
+            choose_full(&trailing).1,
+            "the 280-symbol case must cover the trimmed serialization"
+        );
+        let cases: Vec<Vec<u32>> = vec![
+            Vec::new(),
+            vec![1, 0, 0, 0],
+            vec![0, 0, 1, 0, 0, 1],
+            vec![0, 0, 0, 1, 0, 0, 0, 0, 1],
+            vec![1, 2, 3, 3],
+            trailing,
+            vec![8u32; 256],
+        ];
+        for lengths in cases {
+            let mut bw = BitWriter::new();
+            write_huffman_code(&mut bw, &lengths);
+            assert_eq!(bw.bit_len(), serialized_bits(&lengths), "lengths {lengths:?}");
         }
     }
 }
