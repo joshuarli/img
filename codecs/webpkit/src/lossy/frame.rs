@@ -2098,13 +2098,12 @@ struct I4x4Luma {
     coeffs: [i16; 256],
 }
 
-/// The signaling cost (1/256-bit units) charged to a 16×16 luma mode and to each
-/// intra-4×4 sub-block mode in the rate term of the i4x4-vs-16×16 decision — roughly
-/// two coded bits (`2 * 256`). The gap (one 16×16 mode vs sixteen sub-block modes) is
-/// what keeps smooth content on the cheaper 16×16 path.
+/// The signaling cost (1/256-bit units) charged to a 16×16 luma mode in the rate term
+/// of the i4x4-vs-16×16 decision — roughly two coded bits (`2 * 256`). Each intra-4×4
+/// sub-block mode is charged its context-coded cost by [`i4_bmode_cost`] instead; the
+/// gap (one 16×16 mode vs sixteen sub-block modes) keeps smooth content on the
+/// cheaper 16×16 path.
 const I16X16_MODE_COST: i64 = 2 * 256;
-/// Per-sub-block mode signaling cost (see [`I16X16_MODE_COST`]).
-const I4X4_SUBMODE_COST: i64 = 2 * 256;
 /// How many prediction-SSE-ranked B_PRED modes get the full per-mode RD eval in
 /// [`search_luma_i4x4`] — the rest are discarded by the cheap prefilter.
 const I4_RD_CANDIDATES: usize = 8;
