@@ -37,6 +37,36 @@ On a 4-core host the first `make test` builds everything from cold, which
 takes about 40 minutes. `CARGO_BUILD_JOBS=4` bounds memory. `make test` sets
 `TMPDIR=.work/tmp`; `.work/` is disposable scratch.
 
+## Release packaging
+
+`scripts/package-release.py` builds the published `.tar.xz` archives and
+`SHA256SUMS`. It pins `laputa-buildlib==0.2.0` in its PEP 723 header, so the
+ordinary path is:
+
+```sh
+TMPDIR=.work/tmp uv run --script scripts/package-release.py dist
+```
+
+When uv is unavailable or the distribution interpreter is older than the 3.15
+floor buildlib declares, the script re-executes itself through the vendored
+`bootstrap/buildlib-run`, which fetches the pinned wheel by SHA-256 and runs it
+on the pinned interpreter:
+
+```sh
+sh bootstrap/buildlib-run -- scripts/package-release.py dist
+BUILDLIB_CACHE=.work/tmp/buildlib-cache sh bootstrap/buildlib-run -- \
+  -m unittest tests.test_package_release
+```
+
+The bootstrap needs `curl`, CA certificates, `tar`, `xz` and `sha256sum` or
+`shasum`. On Linux with musl 1.2.5 or newer (Debian 13, Ubuntu 26.04+ or
+Alpine) it takes python-build; glibc hosts without a compatible musl loader
+take the pinned uv release and its managed CPython. Apple Silicon needs macOS
+27 or newer. Packaging still constructs the archives with GNU `tar`: recorded
+archive bytes must not change, so buildlib supplies the `SHA256SUMS` writer and
+the supported-target set only. See [buildlib adoption](buildlib-adoption.md)
+for the pins, the archive difference and the proof.
+
 ## Optional tools
 
 - **kache**: a compiler cache. `make` uses it as `RUSTC_WRAPPER` when it is
