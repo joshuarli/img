@@ -58,8 +58,8 @@ Run `img --help` for flags. See [CLI contracts and JSON](docs/CLI.md),
 [AVIF limitations](docs/AVIF.md), and [independent scoring](docs/SCORING.md).
 [Benchmark evidence](BENCHMARKS.md) distinguishes measured results from deferred gates.
 
-Supported hosts are macOS ARM64 and Linux ARM64/x86-64. For source builds and
-contributing, see [development checks](docs/CODEC-BOUNDARY.md#development-checks).
+Supported hosts are macOS ARM64 and Linux ARM64/x86-64. For source builds,
+packaging and contributing, see [setting up a development host](docs/DEVELOPMENT.md).
 Open defects are tracked in [TODO.md](TODO.md).
 
 img's source is licensed under **Apache-2.0**; the upstream MIT notice is
