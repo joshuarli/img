@@ -4,6 +4,8 @@ img is a Rust still-image CLI and library (JPEG, PNG, WebP, AVIF) that optimizes
 
 ## Verification
 
+`make clean` removes the checkout's ordinary `./target` directory. It refuses a file or symlink at that path.
+
 - Commands: `make test` (Rust tests with all features, GNU-tar package test, `tests/test_bench.py`) and `make lint` (`cargo check` at two feature sets, `cargo clippy --all-targets`). PR CI runs both on macOS ARM64 and `make ci` (the same checks) on Linux musl in the Alpine image.
 - Costs on a busy M-series host (load about 20, 4 jobs, kache): `make test` warm 56 s (`benchmark_verify` is 32 s of it), cold 39 min; `make lint` warm 53 s, cold 29 min. The package test needs GNU tar, so it runs on Linux CI hosts with it and in `release.yml`, and is skipped on macOS and in the Alpine image.
 - CLI flags, exit codes (0, 2, 3, 4, 5), JSON schema 1, streams, traversal and collisions: `tests/cli.rs`, `tests/baseline.rs`, `src/exit.rs` unit tests, `tests/deadlock.rs`, `tests/signals.rs`, `tests/timestamps.rs`; contract in `docs/CLI.md`.
