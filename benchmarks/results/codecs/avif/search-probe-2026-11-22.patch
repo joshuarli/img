@@ -1,0 +1,26 @@
+diff --git a/src/optimizer.rs b/src/optimizer.rs
+index 9f7cba0..48998db 100644
+--- a/src/optimizer.rs
++++ b/src/optimizer.rs
+@@ -152,6 +152,21 @@ fn refine_step(formats: &[Format], evaluations: &[Evaluation], settings: &mut Ve
+         let converges = matches!(f, Format::Avif | Format::Png);
+         let resolvable = |lo: f32, hi: f32| if converges { quantized(lo).zip(quantized(hi)).is_some_and(|(a,b)| a.abs_diff(b) > 1) } else { hi-lo >= 0.5 };
+         let mut straddle: Vec<(f32,f32)> = qualities.windows(2).filter(|p|resolvable(p[0],p[1]) && pass(p[0]) != pass(p[1])).map(|p|(p[0],p[1])).collect();
++        if straddle.is_empty() && f == Format::Avif {
++            // Score is not monotonic in the AVIF quantizer: an isolated dip can fail just below a passing frontier while
++            // smaller quantizers pass again. A converged frontier is confirmed by one probe just below its failing side.
++            let lowest_pass = qualities.iter().copied().find(|&q| pass(q));
++            let below: Vec<f32> = qualities.iter().copied().filter(|&q| lowest_pass.is_some_and(|p| q < p)).collect();
++            if let [.., f1] = below[..] {
++                let probe = f1 - 0.5;
++                let floor = below.len().checked_sub(2).map_or(f32::NEG_INFINITY, |i| below[i]);
++                if probe > floor && probe >= 0.0 && quantized(probe) != quantized(f1) {
++                    settings.push((f, Some(probe)));
++                    refined = true;
++                }
++            }
++            continue;
++        }
+         if straddle.is_empty() && converges { continue; }
+         if straddle.is_empty() {
+             let mut gaps: Vec<_> = qualities.windows(2).filter(|p|p[1]-p[0]>=0.5).map(|p|((p[0]+p[1])*0.5,((p[0]+p[1])*0.5-center).abs())).collect();
