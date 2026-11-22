@@ -45,16 +45,26 @@ before acting on a suspected regression. Correctness gates are separate and alwa
 fail the workload: score bits must match the base, the new build must complete every
 case the base completes, and lossless encodes must round-trip exactly.
 
-**Verification and equivalent work.** Workflow and batch runs keep one output per
-case and tool. After the timed rounds, one verifier binary
+**Verification and equivalent work.** Workflow and batch runs hash every timed output
+after its process exits (outside the timed interval) and retain each distinct output by
+hash (`benchmarks/codecs/evidence.py`). After the timed rounds, one verifier binary
 (`benchmarks/codecs/verify.rs`, built by `loops-build.sh` from this checkout, or the
-binary named by `BENCH_VERIFIER`) decodes every retained output for every tool and checks it
-against its source: exact samples for lossless, a measured SSIMULACRA2 score at or above
-the target otherwise. A case succeeds only when it exited 0 and was accepted. Batch
-reports attempted throughput, successful throughput and coverage separately, and
-compares timing only when every tool, job count and round succeeded on the same input
-identities. A requested encoder quality is a diagnostic setting, not evidence of equal
-achieved quality.
+binary named by `BENCH_VERIFIER`) checks each distinct retained output once against its
+source: exact samples for lossless, a measured SSIMULACRA2 score at or above the target
+otherwise. Every timed sample therefore carries the verdict of its own bytes. A case
+succeeds only when every timed sample exited 0 and verified. Batch reports attempted
+throughput, successful throughput and coverage separately, and compares timing only
+when every tool, job count and round succeeded on the same input identities. A
+comparison with no jointly successful case reports insufficient evidence and exits 4.
+A requested encoder quality is a diagnostic setting, not evidence of equal achieved
+quality.
+
+**Round admission.** A workflow or batch round is kept only when `perf-gate-ready`
+passes before it, `perf-gate-ready -1` passes after it, and no build process (cargo,
+rustc, C/C++ compilers, linkers, make, ninja, meson, cmake; override with
+`BENCH_DISQUALIFYING`) runs at any point during it. Every attempt's disposition is
+recorded under `dispositions` in the result JSON and summarized in the report.
+`BENCH_GATE=0` disables only the load gate.
 
 **Holdout.** `--split holdout` runs the corpus workloads on the 50 held-out originals
 (all of them, not the dev picks). Use it only to qualify a frozen candidate, never
@@ -64,7 +74,7 @@ the split.
 Each run writes `.work/bench/runs/<UTC>-<tier>/` with a per-workload `log.txt`, result
 JSON, `*.verdict.json` and `summary.json` (commit, dirty state, binary and corpus
 hashes, exit status, budget verdicts, duration, kept and discarded rounds, exclusions).
-Exit status is nonzero for any failure or regression. `.work/` is disposable: copy
+Exit status is nonzero for any failure, regression or insufficient evidence (`no-evidence` in the summary). `.work/` is disposable: copy
 evidence that matters into `benchmarks/results/` and summarize it in `docs/CODECS.md`.
 
 **Decode qualification inputs.** `benchmarks/codecs/decode-prepare {jpeg,png,avif,all} DEST

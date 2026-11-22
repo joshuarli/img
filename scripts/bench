@@ -297,13 +297,14 @@ def run(ctx, chosen, excluded, tier, dry):
             if result.name.endswith('.verdict.json'):
                 verdicts += doc
             elif isinstance(doc, dict) and 'discarded_rounds' in doc:
-                validity.append(f'{result.name}: {doc.get("rounds")} rounds kept, {doc["discarded_rounds"]} discarded for host load'
-                                + ('' if doc.get('gated', True) else ', ungated'))
+                reasons = sorted({d['disposition'] for d in doc.get('dispositions', []) if d['disposition'] != 'kept'})
+                validity.append(f'{result.name}: {doc.get("rounds")} rounds kept, {doc["discarded_rounds"]} discarded'
+                                + (f' ({"; ".join(reasons)})' if reasons else '') + ('' if doc.get('gated', True) else ', ungated'))
         statuses = {v['status'] for v in verdicts}
         undisposed = sum(len(v.get('undisposed', [])) for v in verdicts)
         budget = ('no budget' if not verdicts else 'regression' if 'regression' in statuses else f'{undisposed} undisposed' if undisposed
                   else 'inconclusive' if 'inconclusive' in statuses else 'within budget')
-        outcome = 'ok' if status == 0 else 'regression' if status == 3 else 'FAIL'
+        outcome = {0: 'ok', 3: 'regression', 4: 'no-evidence'}.get(status, 'FAIL')
         record = dict(name=w['name'], level=level, exit=status, outcome=outcome, budget=budget, verdicts=verdicts,
                       seconds=round(time.monotonic() - start, 1), validity=validity, log=str(out / 'log.txt'))
         summary['workloads'].append(record)
