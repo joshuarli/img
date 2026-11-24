@@ -214,3 +214,12 @@ mean of per-file medians, ms; gates passed before and after):
 
 Stock and patched output bytes or errors matched on 723 files, including 482
 truncations. The marmolada img output remains slower individually.
+
+## Trellis quantization
+
+An experimental MozJPEG-derived AC trellis did not meet the size gate. With the
+learned rate model and doubled distortion weight, grayscale candidate/base
+geometric means were 0.99268, 0.99010, and 0.98551 at scores 80, 90, and 95
+(nine images per score). All 1,449 candidate files decoded with libjpeg-turbo.
+The color results in `trellis-color.json` are from the earlier fixed-rate model,
+not the final experiment; color and timing for the final experiment are unmeasured.

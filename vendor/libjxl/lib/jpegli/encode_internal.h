@@ -73,6 +73,11 @@ struct jpeg_comp_master {
   uint8_t cicp_transfer_function;
   bool use_std_tables;
   bool use_adaptive_quantization;
+  bool use_trellis_quantization;
+  uint64_t trellis_counts[jpegli::kMaxComponents][16][11];
+  uint64_t trellis_blocks[jpegli::kMaxComponents];
+  float trellis_rates[jpegli::kMaxComponents][16][11];
+  uint8_t trellis_prior[jpegli::kMaxComponents][16][11];
   int progressive_level;
   size_t xsize_blocks;
   size_t ysize_blocks;

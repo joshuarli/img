@@ -141,6 +141,8 @@ void jpegli_set_input_format(j_compress_ptr cinfo, JpegliDataType data_type,
 // Enabled by default.
 void jpegli_enable_adaptive_quantization(j_compress_ptr cinfo, boolean value);
 
+void jpegli_enable_trellis_quantization(j_compress_ptr cinfo, boolean value);
+
 // Sets the default progression parameters, where level 0 is sequential, and
 // greater level value means more progression steps. Default is 2.
 void jpegli_set_progressive_level(j_compress_ptr cinfo, int level);

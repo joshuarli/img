@@ -177,14 +177,14 @@ fn jpeg_large_icc_exif_and_xmp_survive_encoding() {
 #[test]
 fn invalid_jpeg_dimensions_return_error() {
     assert!(StillImage::from_rgb8(0, 1, Vec::new()).is_err());
-    assert!(jpegli_sys::Encoder::new(0, 1, jpegli_sys::Color::Rgb, jpegli_sys::Scans::Progressive, 90.0, 1024 * 1024, 1024 * 1024).is_err());
+    assert!(jpegli_sys::Encoder::new(0, 1, jpegli_sys::Color::Rgb, jpegli_sys::Scans::Progressive, 90.0, jpegli_sys::Quantization::Standard, 1024 * 1024, 1024 * 1024).is_err());
 }
 
 #[test]
 fn jpegli_output_limit_returns_an_error() {
     let mut saw_limit = false;
     for limit in 16..128 {
-        if let Ok(mut encoder) = jpegli_sys::Encoder::new(8, 8, jpegli_sys::Color::Rgb, jpegli_sys::Scans::Progressive, 90.0, 1024 * 1024, limit)
+        if let Ok(mut encoder) = jpegli_sys::Encoder::new(8, 8, jpegli_sys::Color::Rgb, jpegli_sys::Scans::Progressive, 90.0, jpegli_sys::Quantization::Standard, 1024 * 1024, limit)
             && encoder.app1(&[42; 100]).is_err() { saw_limit = true; }
     }
     assert!(saw_limit);
@@ -218,7 +218,7 @@ fn grayscale_uses_the_perceptual_luma_quantization_of_color_output() {
 fn jpegli_rgb420_halves_chroma_and_rgb_keeps_it_full() {
     let pixels = common::pixels(32, 32);
     let luma_sampling = |color| {
-        let mut encoder = jpegli_sys::Encoder::new(32, 32, color, jpegli_sys::Scans::Progressive, 90.0, 1 << 20, 1 << 20).unwrap();
+        let mut encoder = jpegli_sys::Encoder::new(32, 32, color, jpegli_sys::Scans::Progressive, 90.0, jpegli_sys::Quantization::Standard, 1 << 20, 1 << 20).unwrap();
         encoder.rows(&pixels, 32).unwrap();
         let bytes = encoder.finish().unwrap();
         let sof = bytes.windows(2).position(|pair| pair == [0xff, 0xc2]).unwrap();
@@ -304,4 +304,25 @@ fn oversized_frame_headers_are_refused_as_limits_before_any_decode_allocation() 
     assert_eq!(StillImage::decode(&header_only_jpeg(0, 8)).err().unwrap().kind(), ErrorKind::Invalid);
     let described = img::still::describe(&header_only_jpeg(65_500, 65_500)).unwrap();
     assert_eq!((described.width, described.height), (65_500, 65_500));
+}
+
+#[test]
+fn balanced_trellis_reduces_textured_gray_size() {
+    let samples: Vec<u8> = (0..128 * 128).map(|i| {
+        let x = i % 128;
+        let y = i / 128;
+        ((x * 7 + y * 11 + (x * y % 37) * 3) % 256) as u8
+    }).collect();
+    let image = StillImage::from_samples(128, 128, SampleLayout::Gray8, samples.clone()).unwrap();
+    let fast = image.encode(Format::Jpeg, mode(90.0), Effort::Fast).unwrap();
+    let balanced = image.encode(Format::Jpeg, mode(90.0), Effort::Balanced).unwrap();
+    assert!(balanced.len() < fast.len(), "balanced={} fast={}", balanced.len(), fast.len());
+    for bytes in [fast, balanced] {
+        let options = DecoderOptions::default().jpeg_set_out_colorspace(ColorSpace::Luma);
+        let mut decoder = zune_jpeg::JpegDecoder::new_with_options(ZCursor::new(&bytes), options);
+        let decoded = decoder.decode().unwrap();
+        assert_eq!(decoded.len(), samples.len());
+        let error: u64 = decoded.iter().zip(&samples).map(|(&a, &b)| u64::from(a.abs_diff(b))).sum();
+        assert!(error < samples.len() as u64 * 20, "error={error} size={}", bytes.len());
+    }
 }
