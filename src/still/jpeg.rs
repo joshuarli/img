@@ -162,7 +162,7 @@ pub(super) fn encode_sampled(image: &StillImage, quality: super::Quality, sampli
     let limits = super::limits();
     let mut encoder = jpegli_sys::Encoder::new(width, height, match (gray, sampling) { (true, _) => jpegli_sys::Color::Gray, (false, super::JpegSampling::Yuv444) => jpegli_sys::Color::Rgb, (false, super::JpegSampling::Yuv420) => jpegli_sys::Color::Rgb420 },
         if effort == Effort::Fast { jpegli_sys::Scans::Sequential } else { jpegli_sys::Scans::Progressive }, quality,
-        if matches!(effort, Effort::Fast) { jpegli_sys::Quantization::Standard } else { jpegli_sys::Quantization::Trellis },
+        jpegli_sys::Quantization::Standard,
         limits.max_memory_bytes.unwrap_or(super::IMAGE_MEMORY_BYTES) as usize,
         limits.max_output_bytes.unwrap_or(super::MAX_INPUT_BYTES) as usize)
         .map_err(|e| super::Error::new(super::ErrorKind::Encode, e))?;

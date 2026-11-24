@@ -307,17 +307,21 @@ fn oversized_frame_headers_are_refused_as_limits_before_any_decode_allocation() 
 }
 
 #[test]
-fn balanced_trellis_reduces_textured_gray_size() {
+fn trellis_reduces_textured_gray_size() {
     let samples: Vec<u8> = (0..128 * 128).map(|i| {
         let x = i % 128;
         let y = i / 128;
         ((x * 7 + y * 11 + (x * y % 37) * 3) % 256) as u8
     }).collect();
-    let image = StillImage::from_samples(128, 128, SampleLayout::Gray8, samples.clone()).unwrap();
-    let fast = image.encode(Format::Jpeg, mode(90.0), Effort::Fast).unwrap();
-    let balanced = image.encode(Format::Jpeg, mode(90.0), Effort::Balanced).unwrap();
-    assert!(balanced.len() < fast.len(), "balanced={} fast={}", balanced.len(), fast.len());
-    for bytes in [fast, balanced] {
+    let encode = |quantization| {
+        let mut encoder = jpegli_sys::Encoder::new(128, 128, jpegli_sys::Color::Gray, jpegli_sys::Scans::Progressive, 90.0, quantization, 1 << 20, 1 << 20).unwrap();
+        encoder.rows(&samples, 128).unwrap();
+        encoder.finish().unwrap()
+    };
+    let standard = encode(jpegli_sys::Quantization::Standard);
+    let trellis = encode(jpegli_sys::Quantization::Trellis);
+    assert!(trellis.len() < standard.len(), "trellis={} standard={}", trellis.len(), standard.len());
+    for bytes in [standard, trellis] {
         let options = DecoderOptions::default().jpeg_set_out_colorspace(ColorSpace::Luma);
         let mut decoder = zune_jpeg::JpegDecoder::new_with_options(ZCursor::new(&bytes), options);
         let decoded = decoder.decode().unwrap();
