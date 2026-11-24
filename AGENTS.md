@@ -2,6 +2,8 @@
 
 img is a Rust still-image CLI and library (JPEG, PNG, WebP, AVIF) that optimizes and converts images against a measured fidelity score. Input images are untrusted. Read [docs/CODEC-BOUNDARY.md](docs/CODEC-BOUNDARY.md) before changing a codec, limit or the file-publication path, and [docs/CLI.md](docs/CLI.md) before changing a flag, exit code or JSON field. Do not run formatters or change the pinned toolchain (`rust-toolchain.toml`). Use `TMPDIR=$PWD/.work/tmp` and `CARGO_BUILD_JOBS=4`.
 
+Roadmap: [docs/roadmap.md](docs/roadmap.md) holds all current and future work; its Status is the resume point.
+
 ## Verification
 
 `make clean` removes the checkout's ordinary `./target` directory. It refuses a file or symlink at that path.

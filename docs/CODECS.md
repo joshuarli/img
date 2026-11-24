@@ -1,13 +1,13 @@
-# JPEG, PNG and AVIF codec campaign
+# JPEG, PNG and AVIF codec measurements
 
-## Status — 2026-11-20
+## Context
 
 **Goal:** a permissively licensed JPEG/PNG/AVIF stack with reproducible
 leadership in encode and decode speed, complete CLI workflows, batch
 throughput and memory, against current, competently configured competitors.
 Fidelity, compression efficiency, metadata/color, precision, exact alpha,
 limits and publication behavior are constraints, not trade goods. No copyleft
-enters production; WebP is a separate campaign ([WEBP-HILLCLIMB.md](WEBP-HILLCLIMB.md)).
+enters production; WebP is a separate campaign ([roadmap.md#campaign-webp-hillclimb](roadmap.md#campaign-webp-hillclimb)).
 
 **Baselines.** B is img at `f0ceea6` (frozen starting point). Historical Zen is
 rimage `5424df8` (zenjpeg 0.8.4, zenpng 0.1.4, zenavif 0.1.6; AGPL, benchmark
@@ -43,13 +43,13 @@ All timings are macOS ARM64 (Apple M1), gated by `perf-gate-ready`. Linux
 ARM64 and x86-64 performance is **unmeasured** (no native hardware; emulated
 runs establish compatibility only).
 
-| Objective | Next milestone | Status |
+| Objective | Measured target | Result |
 | --- | --- | --- |
 | Direct JPEG encode | ≤ 0.80× R wall, no more CPU/RSS | **Measured** (CLI `convert --quality 90`, 23 prepared inputs, 3 gated rounds, `c5de9b1`, 2026-11-20). vs MozJPEG 4.1.5 `cjpeg -quality 90`: fast 0.36× wall, 0.23× CPU; balanced 0.42× wall, 0.29× CPU — wall/CPU met, RSS 2.3× (small inputs, where img's fixed footprint dominates). vs cjpegli (libjxl v0.11.1, the same encoder library img vendors): 1.5–1.7× wall and 1.0–1.25× CPU on these 0.2–1 MP inputs, equal wall (0.27 s) on a 7.4 MP photo; its q90 scores 82.6 against img's 84.5, so byte gaps are setting differences. Peak footprint on the 7.4 MP photo is 111 MiB against cjpegli's 99 MiB, down from 602 MiB before direct quality stopped scoring and 160 MiB before opacity checks stopped expanding the image. The remainder is the 13 MB input buffer the caller owns. Adoption met (img wraps the same encoder library). Standalone google/jpegli `c7d342c` (current main, no release tag), 12 dev inputs, 3 gated rounds, matched-score interpolation on the 3–6 inputs where every tool brackets the score (directional): img balanced 0.97–1.01× its bytes at 1.10–1.42× wall and 0.92–1.06× CPU; img fast 1.04–1.08× bytes at 0.79–0.83× CPU ([run](../benchmarks/results/codecs/jpeg/standalone-jpegli-c7d342c-2026-11-20.json)). Stretch open; no tuning experiment against it has been run |
 | Direct AVIF encode | ≤ 0.80× R wall | Historical only: speed 8 0.09×, speed 6 0.26× Zen Best, single-threaded. Images of 512×512 and up now encode with four libaom row threads (0.49× wall, 1.04× CPU at matched score), and direct quality reaches all 256 qindex values |
-| Exact PNG encode | ≥ 20% less wall and CPU than R at the frozen envelope | **Measured** (CLI, 5 rounds). Large images (2–7 MP): wall 0.94/0.44/0.33× Zen at fast/balanced/best with 0.95–0.97× its bytes. Small images 0.84–1.01× Zen wall. CPU 1.0–1.4× Zen on small and 1.2–2.1× on large images — open (filter trials and libdeflate work; the efficiency cores inflate CPU of parallel chunks; see Next experiments 1). Fixed 2026-11-20: filtered data a few bytes past a 1 MiB chunk boundary (e.g. RGB8 2144×326) failed to encode at every effort |
-| JPEG decode | ≤ 0.80× R, RSS ≤ R | **Measured.** vs Zen 0.31–0.88× by class; vs R (stock libjpeg-turbo 3.2.1 or patched zune) 0.90× on jpegli progressive, 0.95× on other progressive, 1.00× on baseline — adoption met, stretch open (Next experiments 3) |
-| PNG decode | ≤ 0.80× R | **Measured** ([png-decode.md](codecs/png-decode.md), 137 exact fixtures, 9 gated rounds). png 0.18.1 is the fastest exact permissive decoder, so it is R: libpng 1.6.59 1.41×, libspng 0.7.4 2.04×, zune-png disqualified (16-bit tRNS alpha). img's decoder vs Zen 0.56× time [0.52, 0.59], worst file 0.94×, at 0.83× RSS. Adoption met; stretch needs decoder work beyond png itself (Next experiments 4) |
+| Exact PNG encode | ≥ 20% less wall and CPU than R at the frozen envelope | **Measured** (CLI, 5 rounds). Large images (2–7 MP): wall 0.94/0.44/0.33× Zen at fast/balanced/best with 0.95–0.97× its bytes. Small images 0.84–1.01× Zen wall. CPU 1.0–1.4× Zen on small and 1.2–2.1× on large images — open (filter trials and libdeflate work; the efficiency cores inflate CPU of parallel chunks). Fixed 2026-11-20: filtered data a few bytes past a 1 MiB chunk boundary (e.g. RGB8 2144×326) failed to encode at every effort |
+| JPEG decode | ≤ 0.80× R, RSS ≤ R | **Measured.** vs Zen 0.31–0.88× by class; vs R (stock libjpeg-turbo 3.2.1 or patched zune) 0.90× on jpegli progressive, 0.95× on other progressive, 1.00× on baseline — adoption met, stretch open |
+| PNG decode | ≤ 0.80× R | **Measured** ([png-decode.md](codecs/png-decode.md), 137 exact fixtures, 9 gated rounds). png 0.18.1 is the fastest exact permissive decoder, so it is R: libpng 1.6.59 1.41×, libspng 0.7.4 2.04×, zune-png disqualified (16-bit tRNS alpha). img's decoder vs Zen 0.56× time [0.52, 0.59], worst file 0.94×, at 0.83× RSS. Adoption met; stretch needs decoder work beyond png itself |
 | AVIF decode | Adoption: ≤ 1.05× upstream dav1d; stretch ≤ 0.80× | **Adoption qualified on dev** (31 fixtures, 9 gated rounds, 0 discarded, 2026-11-20, [report](../benchmarks/results/codecs/avif/decode-report-2026-11-20-dav1d.txt)). img now decodes with vendored dav1d 1.5.4 ([integration](codecs/dav1d-integration.md)); RGB is byte-identical to the former rav1d path and raw planes to upstream meson dav1d on 31/31. AVIF→RGB img / (libavif + dav1d + yuv) 0.992–0.995× time; RSS 1.09–1.10× on large images, 1.24–1.29× on small ones (img's larger binary). img vs its own rav1d build (`e7f01ac`): 0.904–0.907× time, 0.96× RSS. img/Zen 0.14–0.19×. Stretch open |
 | Scored workflow | ≤ 0.75× B, ≤ 0.80× R | **B milestone met on the change tier** (`scripts/bench run --only workflow-scored --base f0ceea6`, 1 gated round, 5 dev files, score 90, balanced, `cb8be1a`): wall 0.57× [0.43, 0.73], CPU 0.54×, peak RSS 0.76×, bytes 0.999×; by format AVIF 0.48×, PNG 0.48×, JPEG 0.83× wall. Full-resolution AVIF against `01c2300`: 7.4 MP at score 90 in 17.3 s instead of 97.9 s with 8% fewer bytes ([AVIF.md](AVIF.md)). ICC-tagged JPEG scoring is 2.5–3.9× faster after converting straight to linear sRGB. R (Zen, rebuilt `5424df8`, 1 gated round, 7 inputs × JPEG/PNG/AVIF × 80/90/95, balanced, 2026-11-20): **met** on the 21 cases Zen completes — wall 0.13× [0.07, 0.23], CPU 0.13×, peak RSS 0.71×, bytes 0.77×; Zen fails every AVIF case and 12 JPEG cases. **B milestone qualified on dev and holdout** (checkpoint `0e4d339`, scenario tier, 5 gated rounds, [bundle](../benchmarks/results/checkpoints/2026-11-20/README.md)): dev 16 shared cases wall 0.495× [0.376, 0.636], CPU 0.54×, RSS 0.62×, bytes 0.987×; holdout 55 shared cases wall 0.482× [0.419, 0.554], CPU 0.51×, RSS 0.60×, bytes 1.002× [0.997, 1.008] (inconclusive against the 1.002 byte budget; AVIF 1.012×, worst `synthetic-17.png` +10.6%, open). The candidate completes 68/150 holdout cases against B's 55 and fails none that B completes |
 | Large-image auxiliary memory | ≥ 25% below B | **Met: scored JPEG, PNG and AVIF** (directional, single runs). Peak footprint at score 90 (macOS `time -l`), B → now: JPEG 8 MP 201 → 73 B/px (0.36×), PNG 8 MP 199 → 77 (0.39×), AVIF 3 MP 197 → 86 (0.44×) with identical bytes. Levers: planar owned SSIMULACRA2 input, row-streamed distorted blurs, and returning freed large blocks to the OS (`src/allocator.rs`, jpegli, libjpeg-turbo and libaom patches; libmalloc's large-block cache held 29 B/px). Admission reservations by layout are under [Batch admission](#batch-admission-2026-11-20). Lossless PNG 36–71 B/px; WebP and auto unchanged (500–720 B/px, WebP lane) |
@@ -211,66 +211,13 @@ the other resource metrics. Adaptive trials count against the workflow.
   34.6 ms vs Zen 108.8 ms. The dav1d comparison timed output-file writing that
   the Rust timing excluded, so dav1d vs rav1d is unresolved.
 
-## Next experiments
+## Experiment results
 
-Each item lists what was tried, the result, the remaining profile and the next
-hypothesis. Failed experiments are not repeated without new evidence.
+On six 1–7 MP images, PNG fast, balanced and best used 1.30, 0.94 and 1.89 times Zen's CPU respectively in three gated rounds. Best spent CPU in libdeflate level-11 near-optimal parsing. Lower levels and single filters saved 9–20% CPU at unacceptable size cost. Greedy chunking was projected at 0.87–0.91× CPU, short of the policy target.
 
-1. **PNG CPU vs Zen** (stretch). Tried against a rebuilt `5424df8` (3 gated rounds, 6
-   images of 1–7 MP): img is 0.74/0.36/0.46× Zen wall at fast/balanced/best with
-   0.98/0.997/0.953× its bytes and about half its RSS, but 1.30/0.94/1.89× its CPU,
-   the same single-threaded. Profile: best spends the CPU in libdeflate's level-11
-   near-optimal parse (the source of the 5–7% byte lead), fast and balanced in its
-   lazy matcher. Lower levels and single filters for Fast (above) cut CPU 9–20% at
-   size costs outside the policy. Chunking the greedy levels would restore level 4's
-   parallel wall but not its CPU (0.87–0.91×), short of the 20% policy gain, so it
-   is not pursued. The evaluation trial's deflate output is already kept when the
-   main level equals the evaluation level (Fast at 5; `Evaluator` `final_round`);
-   Balanced at 8 evaluates at 5 and must recompress. Next: profile Best's level-11
-   parse for matchfinder work repeated across the filter trials.
-2. **Streamed scoring parallelism.** fast-ssim2's `rayon` feature cut per-score time to
-   0.84× but materialized full planes: workflow peak RSS 1.27× (2.55× on a 1.2 MP JPEG)
-   and CPU up to 2.3× (`8412759`). **Adopted (2026-11-20):** the three XYB channels'
-   streamed blurs and sums are independent, so above 1 MP they run on the shared rayon
-   pool with unchanged recurrences and summation order (bit-identical; identity test in
-   `tests/score_planar.rs`). Per-score 0.83× at 1.2 MP to 0.58× at 7.3 MP, RSS within 1%.
-   Scored workflow, 18 dev cases, 5 gated rounds against `77eb60a`
-   ([run](../benchmarks/results/codecs/score/parallel-channels-workflow-2026-11-20.json)):
-   wall 0.910× [0.857, 0.965], CPU 1.010×, RSS 1.001×, outputs identical; JPEG 0.82×,
-   AVIF 0.96×. The IIR vertical blur rules out row bands with halos. Next: split each
-   channel into column stripes in row blocks of bounded height, summing each block
-   serially in the existing order, to go past three-way parallelism.
-3. **JPEG decode vs stock libjpeg-turbo** (stretch 0.80× R). Adoption is met: the
-   production decoder is libjpeg-turbo 3.2.1 with a refinement patch, at 0.90× R on
-   jpegli progressive and 1.00× on baseline. Tried: single-block buffer dispatch,
-   skipping all-zero correction batches, scalar masks for narrow bands; together
-   0.974× of master over 52 progressive fixtures (5 gated rounds), dropped as too
-   small. Remaining profile of img's own progressive output: 39% AC refinement, 11%
-   AC first, 9% DC first. Encoder-side alternative: progressive level 1 for Fast
-   decodes 0.86× (above), not enough under the Fast policy. Next: profile the AC
-   refinement loop at instruction level on the large jpegli photos (worst file 1.33×
-   Zen) for a NEON refinement-bit decoder, or a scan script that merges refinement
-   passes at equal size.
-4. **PNG decode vs png 0.18.1** (stretch 0.80× R; png 0.18.1 is R). Profile: 71% in
-   fdeflate's inflate loop, 12% in Paeth. Tried with no gain: removing literal-write
-   bounds checks, another Paeth predictor, a larger literal table, deferred
-   speculative lookups. libdeflate's decompressor ran 0.82–0.95× on large IDAT and
-   1.2–1.4× on small (about 0.92× overall projected, and it gives up streaming).
-   Next: size-gated libdeflate for single-IDAT-run images above about 1 MP, measured
-   for peak memory as well as time.
-5. **AVIF decode beyond dav1d** (stretch). Adoption done. Next: profile img's AVIF→RGB
-   path above the decoder (YUV→RGB conversion, plane copies) on the large 4:4:4
-   fixtures, and record a dav1d 1.5.5 or later refresh as a separate, identity-checked
-   step between milestones.
-6. **AVIF byte regression on holdout.** The checkpoint's holdout AVIF bytes are
-   1.012× B [0.996, 1.030]; `synthetic-17.png` ends at 50537 bytes and score 90.48
-   where B found 45680 at 90.18. Hypothesis: the converged-frontier stop
-   (`23e171c`) ends before the lowest qualifying quantizer on flat synthetic
-   content. Next: log the visited quantizers on that file, then test one
-   confirming probe below the stop point on the development split only.
-7. **Batch qualification.** The checkpoint covered lossless batch at `-j 1`/`-j 4`
-   (dev 55/55 and holdout 18/18, 2.8× and 3.2× B at `-j 4`). Next: large/small job
-   mixtures, the alpha path and the allocator A/B under a fixed `IMG_MEMORY_BUDGET`.
+The fast-ssim2 rayon feature reduced per-score time to 0.84× but increased workflow RSS to 1.27× and CPU up to 2.3×. Channel parallelism instead retained the summation order: on 18 development cases, five gated rounds gave 0.910× wall [0.857, 0.965], 1.010× CPU and 1.001× RSS, with identical outputs. The vertical IIR blur rules out row bands with halos. [Results](../benchmarks/results/codecs/score/parallel-channels-workflow-2026-11-20.json).
+
+JPEG decoder dispatch, zero-correction skipping and scalar narrow-band masks together achieved 0.974× master on 52 progressive fixtures in five gated rounds and were dropped as too small. The profile attributed 39% to AC refinement, 11% to AC first and 9% to DC first. For PNG decode, the profile attributed 71% to fdeflate inflate and 12% to Paeth. The tested libdeflate decompressor ran 0.82–0.95× on large IDAT and 1.2–1.4× on small input, giving up streaming.
 
 ## Verification lanes
 
@@ -286,11 +233,6 @@ come from current runners, whose outputs are verified per case by
 `benchmarks/codecs/verify.rs`. The earlier direct-encode comparison against
 MozJPEG and libjxl cjpegli (`f8c155d`) has no retained artifact; treat it as
 directional.
-
-## Deferred (low priority)
-
-AVIF alpha, grayscale, 10/12-bit, grids, animation and HDR; AVIF 4:2:0 as an
-option; JPEG XYB; SVT-AV1 presets beyond 4 and 8.
 
 ## Archive
 
