@@ -1,7 +1,16 @@
 Prefix: RIMG
-Next: 13
+Next: 14
 
 Priorities are assumed from impact and likelihood. Evidence was reproduced against `ba5f682175a746e80f351a6908b555fa7d0ce09c`; CI failures are outside this review.
+
+### RIMG-13 · P2 · Bench evidence tests fail on CI and the bytes budget is undisposed
+
+- **Area:** tests · bench
+- **Where:** tests/test_bench.py (Evidence); BENCH_DISPOSITIONS
+- **Problem:** CI has failed on master since 2026-11-24 16:32 UTC. On run 45473216691 (master, 19:43) the Linux jobs failed `test_a_round_overlapping_a_build_is_discarded_with_its_disposition`; on PR #15 (an unrelated bootstrap/python.lock bump) macOS failed `test_batch_verifies_each_distinct_output_once` and `test_identical_outputs_are_verified_once_and_distinct_outputs_each`. The failing set changes between runs and platforms, which points at timing or ordering dependence. Both runs also print `VERDICT bytes inconclusive … 1 cases over 1.1 (1 undisposed): bad 1.2` with `UNDISPOSED bytes bad: add a reason under BENCH_DISPOSITIONS`.
+- **Recommendation:** Reproduce the Evidence tests repeatedly on Linux and macOS, remove their dependence on wall-clock or ordering, and either fix the `bad` bytes case or record its disposition with a reason.
+- **Fix with:** root-cause
+- **Effort:** M
 
 ### RIMG-11 · P3 · Make apply_srgb_profile independent of the ICC header clock
 
@@ -20,4 +29,3 @@ Priorities are assumed from impact and likelihood. Evidence was reproduced again
 - **Recommendation:** Add a decode fuzz harness at StillImage::decode/describe with a corpus seeded from tests/fixtures, then run sharded cargo mutants over the codec bodies and disposition survivors.
 - **Fix with:** test-audit
 - **Effort:** L
-
