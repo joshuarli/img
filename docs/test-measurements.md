@@ -1,5 +1,7 @@
 # Test measurements
 
-The img deslop review bounded mutation to decode, limits, publication, runtime and exit contracts. The codec bodies were outside that trial; [RIMG-12](../TODO.md) records the follow-up. The test toolchain did not report branch coverage.
+Run a focused Rust test target for an edit. `make test` runs the all-features suite and benchmark harness tests; reference checks are opt-in.
 
-The Webpkit review found that in-crate mutation was not run because cargo-mutants was unavailable. Three reviewed gaps gained tests, while independent decoding requires the existing oracle path. The optional `libwebp-sys` oracle dependency was retained for that path.
+The JPEG marker walker searches for the next `0xFF` after a stuffed zero or restart marker. Leaving that non-`0xFF` marker byte unskipped reaches the same next marker.
+
+WebP output has an independent libwebp decode check in `tests/webp_codec.rs`. The webpkit conformance test compares decoded RGBA bytes against the recorded libwebp reference.
