@@ -1,9 +1,11 @@
 FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
+COPY --from=oci.17166969.xyz/owned-tools@sha256:1a5d1306bb105f21b60c67bbf04677a92048c02a808ae9b29dfdac1a90f2f073 /opt/laputa /opt/laputa
+ENV PATH=/opt/laputa/bin:$PATH
 
 ARG TARGETARCH
 
 RUN apk add --no-cache \
-    build-base clang22 cmake dav1d-dev git linux-headers make mold nasm perl pkgconf python3 rustup
+    build-base dav1d-dev linux-headers make nasm perl pkgconf python3 rustup
 
 ENV PATH="/root/.cargo/bin:$PATH" \
     CC=clang \
