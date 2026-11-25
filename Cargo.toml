@@ -13,8 +13,14 @@ path = "./src/main.rs"
 required-features = ["build-binary"]
 
 [features]
-default = ["resize", "quantization", "metadata"]
-build-binary = ["dep:serde_json", "limits", "dep:lexopt", "dep:glob", "icc"]
+default = ["native-codecs", "resize", "quantization", "metadata"]
+native-codecs = ["dep:fdeflate", "png-optimizer", "dep:libc", "dep:libm", "dep:crc32fast", "dep:zune-jpeg", "jpegli", "libjpeg-turbo", "dep:webpkit", "dep:image-webp", "dav1d", "libavif", "dep:yuv", "dep:moxcms", "dep:fast-ssim2", "dep:bytemuck", "dep:zencodec", "dep:zenpixels", "dep:rgb", "dep:log", "dep:zune-core", "dep:zune-image", "dep:quantette", "dep:quantizr"]
+png-optimizer = ["dep:oxipng"]
+jpegli = ["dep:jpegli-sys"]
+libjpeg-turbo = ["dep:libjpeg-turbo-sys"]
+dav1d = ["dep:dav1d-sys"]
+libavif = ["dep:libavif-sys"]
+build-binary = ["native-codecs", "dep:serde_json", "limits", "dep:lexopt", "dep:glob", "icc"]
 metadata = ["zune-image/metadata"]
 resize = ["dep:fast_image_resize"]
 quantization = []
@@ -23,35 +29,35 @@ limits = ["dep:sysinfo"]
 
 [dependencies]
 png = "=0.18.1"
-fdeflate = "=0.3.7"
-oxipng = { version = "=10.2.1", default-features = false, features = ["parallel"] }
-libc = "0.2"
-libm = "=0.2.16"
-crc32fast = "1.5"
-zune-jpeg = "=0.5.15"
-jpegli-sys = { path = "codecs/jpegli-sys" }
-libjpeg-turbo-sys = { path = "codecs/libjpeg-turbo-sys" }
+fdeflate = { version = "=0.3.7", optional = true }
+oxipng = { version = "=10.2.1", default-features = false, features = ["parallel"], optional = true }
+libc = { version = "0.2", optional = true }
+libm = { version = "=0.2.16", optional = true }
+crc32fast = { version = "1.5", optional = true }
+zune-jpeg = { version = "=0.5.15", optional = true }
+jpegli-sys = { path = "codecs/jpegli-sys", optional = true }
+libjpeg-turbo-sys = { path = "codecs/libjpeg-turbo-sys", optional = true }
 # Permissive pure-Rust WebP: decode via image-webp (image-rs), encode via the
 # vendored webpkit snapshot staged for the parity campaign (MIT OR Apache-2.0).
-webpkit = { path = "codecs/webpkit", version = "0.1.0", features = ["rayon"] }
-image-webp = "=0.2.4"
-dav1d-sys = { path = "codecs/dav1d-sys" }
-libavif-sys = { path = "codecs/libavif-sys" }
-yuv = { version = "=0.8.20", default-features = false }
-moxcms = { version = "=0.8.1", features = ["extended_range"] }
-fast-ssim2 = { version = "=0.9.1", default-features = false }
-bytemuck = "1.25"
-zencodec = "=0.1.26"
-zenpixels = { version = "=0.2.16", default-features = false, features = ["std", "icc"] }
-rgb = { version = "0.8" }
-log = "0.4"
+webpkit = { path = "codecs/webpkit", version = "0.1.0", features = ["rayon"], optional = true }
+image-webp = { version = "=0.2.4", optional = true }
+dav1d-sys = { path = "codecs/dav1d-sys", optional = true }
+libavif-sys = { path = "codecs/libavif-sys", optional = true }
+yuv = { version = "=0.8.20", default-features = false, optional = true }
+moxcms = { version = "=0.8.1", features = ["extended_range"], optional = true }
+fast-ssim2 = { version = "=0.9.1", default-features = false, optional = true }
+bytemuck = { version = "1.25", optional = true }
+zencodec = { version = "=0.1.26", optional = true }
+zenpixels = { version = "=0.2.16", default-features = false, features = ["std", "icc"], optional = true }
+rgb = { version = "0.8", optional = true }
+log = { version = "0.4", optional = true }
 # zune-core 0.5.3 would cause build error.
 # REF: https://github.com/etemesi254/zune-image/issues/439
-zune-core = { version = "=0.5.1", features = ["std"] }
-zune-image = { version = "0.5.0", default-features = false, features = ["simd"] }
+zune-core = { version = "=0.5.1", features = ["std"], optional = true }
+zune-image = { version = "0.5.0", default-features = false, features = ["simd"], optional = true }
 fast_image_resize = { version = "6.1", optional = true }
-quantette = { version = "=0.6.0", default-features = false, features = ["std", "kmeans"] }
-quantizr = { version = "=1.4.3" }
+quantette = { version = "=0.6.0", default-features = false, features = ["std", "kmeans"], optional = true }
+quantizr = { version = "=1.4.3", optional = true }
 # System resource probing for dynamic image size limits
 sysinfo = { version = "0.39.6", default-features = false, features = ["disk", "system"], optional = true }
 
