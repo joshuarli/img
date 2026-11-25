@@ -98,8 +98,7 @@ mod chromium {
             writer.write_row(&(0..12).map(|value| value + row).collect::<Vec<u8>>()).unwrap();
         }
         writer.finish().unwrap();
-        let bytes = output.0.borrow().clone();
-        bytes
+        output.0.take()
     }
 
     #[test]
