@@ -1,5 +1,5 @@
 Prefix: RIMG
-Next: 26
+Next: 27
 
 Priorities are assumed from impact and likelihood. Evidence was reproduced against `ba5f682175a746e80f351a6908b555fa7d0ce09c`; CI failures are outside this review.
 
@@ -20,6 +20,15 @@ Priorities are assumed from impact and likelihood. Evidence was reproduced again
 - **Recommendation:** Add an isolated replacement test that changes the named file while preserving the opened file and asserts rejection.
 - **Fix with:** test-audit
 - **Effort:** M
+
+### RIMG-26 · P2 · test_bench overlap test fails in the Linux CI image
+
+- **Area:** Tests
+- **Where:** tests/test_bench.py:219
+- **Problem:** In the img-builder image built from the repository Dockerfile (docker build . then docker run --init -v $PWD:$PWD -w $PWD img-builder sh -c 'git config --global --add safe.directory "*" && python3 -m unittest -q tests.test_bench.Evidence.test_a_round_overlapping_a_build_is_discarded_with_its_disposition'), the test fails 3 of 3 runs on origin/master 137ad9e with: Regex didn't match: '^discarded: overlapped fakebuild \(pid \d+\)$' not found in 'kept'. make ci fails on it the same way, so Linux CI cannot pass. Observed 2026-11-25 on an x86_64 Linux host.
+- **Recommendation:** Find why the benchmark does not detect the overlapping fakebuild process inside the container (process visibility, the name match, or timing) and fix the detection or the fixture. Acceptance: the test passes 20 of 20 runs in the Linux CI image and on macOS.
+- **Fix with:** root-cause
+- **Effort:** S
 
 ### RIMG-11 · P3 · Make apply_srgb_profile independent of the ICC header clock
 
@@ -128,3 +137,4 @@ Priorities are assumed from impact and likelihood. Evidence was reproduced again
 - **Recommendation:** Identify reachable encoder failure cases and test their observable errors with appropriate controlled inputs.
 - **Fix with:** test-audit
 - **Effort:** M
+
