@@ -5,11 +5,15 @@ ENV PATH=$PATH:/opt/laputa/bin
 ARG TARGETARCH
 
 RUN apk add --no-cache \
-    build-base dav1d-dev linux-headers make nasm perl pkgconf python3 rustup
+    dav1d-dev libgcc linux-headers make musl-dev nasm perl pkgconf python3 rustup \
+    && ln -s libgcc_s.so.1 /usr/lib/libgcc_s.so \
+    && ln -s /opt/laputa/bin/clang /usr/local/bin/cc
 
 ENV PATH="/root/.cargo/bin:$PATH" \
     CC=clang \
-    CXX=g++ \
+    CXX=clang++ \
+    AR=llvm-ar \
+    CXXSTDLIB=c++ \
     RUSTFLAGS="-C link-arg=-fuse-ld=mold -C target-feature=-crt-static" \
     CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=clang \
     CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_RUNNER=/usr/bin/env \
