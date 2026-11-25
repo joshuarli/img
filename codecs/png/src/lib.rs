@@ -1,3 +1,5 @@
+pub mod chromium;
+
 use std::cell::RefCell;
 use std::io::{self, BufRead, Read, Seek, SeekFrom, Write};
 use std::rc::Rc;
