@@ -12,6 +12,8 @@ validation evidence and known validation gaps.
 */
 
 #![warn(missing_docs)]
+#[path = "../codecs/jpeg/src/lib.rs"]
+pub mod jpeg_stream;
 #[path = "../codecs/png/src/lib.rs"]
 pub mod png_stream;
 #[cfg(not(any(all(target_os="macos",target_arch="aarch64"),all(target_os="linux",any(target_arch="x86_64",target_arch="aarch64")))))]
