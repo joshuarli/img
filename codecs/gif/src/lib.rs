@@ -196,6 +196,8 @@ impl Decoder {
                     if decoder.frames.is_empty() {
                         decoder.frame_width = decoder.frame_width.max(right);
                         decoder.frame_height = decoder.frame_height.max(bottom);
+                        decoder.width = decoder.frame_width;
+                        decoder.height = decoder.frame_height;
                     }
                     let control = control.take().unwrap_or(GraphicControl {
                         disposal: Disposal::Keep,
