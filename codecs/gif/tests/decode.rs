@@ -89,6 +89,10 @@ fn loop_count_matches_animation_semantics() {
     data.splice(25..25, loop_block);
     let decoder = Decoder::new(&data).unwrap();
     assert_eq!(decoder.num_animation_loops(), 3);
+    let mut forever = gif(1, 1, &[&[0]], false, None);
+    let forever_block = [0x21, 0xff, 11, b'N', b'E', b'T', b'S', b'C', b'A', b'P', b'E', b'2', b'.', b'0', 3, 1, 0, 0, 0];
+    forever.splice(25..25, forever_block);
+    assert_eq!(Decoder::new(&forever).unwrap().num_animation_loops(), 0);
     assert!(matches!(Decoder::new(&data[..10]), Err(Status::ShortRead)));
     assert!(matches!(Decoder::new(b"BAD89a"), Err(Status::Error(_))));
 }

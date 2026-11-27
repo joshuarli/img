@@ -287,6 +287,7 @@ impl Decoder {
     /// Wuffs' number of animation loops before Skia's repetition conversion.
     pub fn num_animation_loops(&self) -> u32 {
         match self.loop_count {
+            Some(0) => 0,
             Some(value) => u32::from(value) + 1,
             None if self.frames.len() > 1 => 1,
             None => 0,
