@@ -20,3 +20,5 @@ CLAUDE.md
 
 # python bytecode from benchmark and release tests
 __pycache__/
+
+codecs/gif/target/
