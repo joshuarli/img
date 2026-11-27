@@ -146,7 +146,7 @@ fn clipped_zero_width_frame_stays_partial() {
     let decoder = Decoder::new(&data).unwrap();
     assert_eq!(decoder.frames[1].width, 0);
     let mut pixels = [0u8; 144];
-    assert_eq!(decoder.decode_frame(&data, 1, &mut pixels, 8, Blend::Src), Status::Error(img_gif::Error::NotEnoughData));
+    assert_eq!(decoder.decode_frame(&data, 1, &mut pixels, 8, Blend::Src), Status::ShortRead);
 }
 
 #[test]
