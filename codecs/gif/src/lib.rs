@@ -172,6 +172,8 @@ impl Decoder {
             loop_count: None,
         };
         let mut control: Option<GraphicControl> = None;
+        let mut seen_frame = false;
+        let mut seen_trailer = false;
         'scan: while let Some(&marker) = data.get(position) {
             position += 1;
             match marker {
@@ -205,9 +207,11 @@ impl Decoder {
                     }
                     let Some(minimum) = data.get(position).copied() else { break 'scan };
                     if minimum > 8 {
+                        if !seen_frame { return Err(Status::Error(Error::BadLiteralWidth)); }
                         break 'scan;
                     }
                     position += 1;
+                    seen_frame = true;
                     decoder.frames.push(Frame {
                         x: x.min(decoder.frame_width),
                         y: y.min(decoder.frame_height),
@@ -215,7 +219,7 @@ impl Decoder {
                         height: bottom.min(decoder.frame_height).saturating_sub(y.min(decoder.frame_height)),
                         duration_ms: control.delay as u32 * 10,
                         disposal: control.disposal,
-                        blend: if control.transparent.is_some() { Blend::SrcOver } else { Blend::Src },
+                        blend: Blend::SrcOver,
                         transparent_index: control.transparent,
                         opaque_within_bounds: control.transparent.is_none(),
                         interlace: local_flags & 0x40 != 0,
@@ -231,12 +235,14 @@ impl Decoder {
                     position += 1;
                     if label == 0xf9 {
                         if data.get(position) != Some(&4) {
+                            if !seen_frame { return Err(Status::Error(Error::BadGraphicControl)); }
                             break 'scan;
                         }
                         let Some(packed) = data.get(position + 1).copied() else { break 'scan };
                         let Some(delay) = le16(data, position + 2) else { break 'scan };
                         let Some(index) = data.get(position + 4).copied() else { break 'scan };
                         if data.get(position + 5) != Some(&0) {
+                            if !seen_frame { return Err(Status::Error(Error::BadGraphicControl)); }
                             break 'scan;
                         }
                         position += 6;
@@ -277,9 +283,15 @@ impl Decoder {
                         position = next;
                     }
                 }
-                0x3b => break,
-                _ => break,
+                0x3b => { seen_trailer = true; break },
+                _ => {
+                    if !seen_frame && !seen_trailer { return Err(Status::ShortRead); }
+                    break;
+                }
             }
+        }
+        if !seen_frame && !seen_trailer {
+            return Err(Status::ShortRead);
         }
         Ok(decoder)
     }
@@ -399,9 +411,9 @@ struct LzwOutput {
 }
 
 fn lzw(data: &[u8], minimum: u8) -> LzwOutput {
-    let mut entries: Vec<Vec<u8>> = (0..(1usize << minimum)).map(|value| vec![value as u8]).collect();
-    let clear = entries.len() as u16;
+    let clear = 1usize << minimum;
     let end = clear + 1;
+    let mut entries: Vec<Vec<u8>> = (0..clear + 2).map(|value| vec![(value & 255) as u8]).collect();
     let mut width = (minimum + 1) as u32;
     let mut bits = 0u32;
     let mut available = 0u32;
@@ -421,13 +433,13 @@ fn lzw(data: &[u8], minimum: u8) -> LzwOutput {
         let code = (bits & mask) as usize;
         bits >>= width;
         available -= width;
-        if code == clear as usize {
-            entries.truncate(clear as usize);
+        if code == clear {
+            entries.truncate(clear + 2);
             width = (minimum + 1) as u32;
             previous = None;
             continue;
         }
-        if code == end as usize {
+        if code == end {
             return LzwOutput { indices: output, truncated: false, bad_code: false };
         }
         let value = if code < entries.len() {
