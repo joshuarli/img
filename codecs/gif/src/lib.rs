@@ -418,6 +418,7 @@ fn lzw(data: &[u8], minimum: u8) -> LzwOutput {
     let mut bits = 0u32;
     let mut available = 0u32;
     let mut byte = 0usize;
+    let mut save = clear + 2;
     let mut previous: Option<Vec<u8>> = None;
     let mut output = Vec::new();
     loop {
@@ -435,6 +436,7 @@ fn lzw(data: &[u8], minimum: u8) -> LzwOutput {
         available -= width;
         if code == clear {
             entries.truncate(clear + 2);
+            save = clear + 2;
             width = (minimum + 1) as u32;
             previous = None;
             continue;
@@ -444,7 +446,7 @@ fn lzw(data: &[u8], minimum: u8) -> LzwOutput {
         }
         let value = if code < entries.len() {
             entries[code].clone()
-        } else if code == entries.len() + 1 && previous.is_some() {
+        } else if code == save && previous.is_some() {
             let first = previous.as_ref().expect("previous entry")[0];
             let mut entry = previous.clone().expect("previous entry");
             entry.push(first);
@@ -453,15 +455,23 @@ fn lzw(data: &[u8], minimum: u8) -> LzwOutput {
             return LzwOutput { indices: output, truncated: false, bad_code: true };
         };
         output.extend_from_slice(&value);
-        if let Some(prefix) = previous {
-            let mut entry = prefix;
+        if entries.len() < 4096 {
+            let mut entry = previous.clone().unwrap_or_default();
             entry.push(value[0]);
-            if entries.len() < 4096 {
+            if entries.len() < clear + 2 {
                 entries.push(entry);
-                if width < 12 && ((entries.len() + 1) >> width) & 1 != 0 {
-                    width += 1;
+            } else {
+                let index = save - 1;
+                if index < entries.len() {
+                    entries[index] = entry;
+                } else {
+                    entries.push(entry);
                 }
             }
+        }
+        save += 1;
+        if width < 12 && (save >> width) & 1 != 0 {
+            width += 1;
         }
         previous = Some(value);
     }
