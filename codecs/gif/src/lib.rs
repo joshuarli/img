@@ -326,9 +326,7 @@ impl Decoder {
         position = frame.data_start;
         let _ = position;
         let lzw = lzw(&compressed, frame.minimum_code_size);
-        if lzw.bad_code {
-            return Status::Error(Error::BadCode);
-        }
+        let bad_code = lzw.bad_code;
         let indices = lzw.indices;
         let mut x = frame.x;
         let mut y = frame.y;
@@ -378,7 +376,9 @@ impl Decoder {
             }
         }
         let complete = right == frame.x || bottom <= frame.y || consumed >= required_pixels(frame, interlace);
-        if truncated || lzw.truncated {
+        if bad_code {
+            Status::Error(Error::BadCode)
+        } else if truncated || lzw.truncated {
             Status::ShortRead
         } else if complete {
             Status::Complete
