@@ -418,7 +418,7 @@ fn lzw(data: &[u8], minimum: u8) -> LzwOutput {
     let mut bits = 0u32;
     let mut available = 0u32;
     let mut byte = 0usize;
-    let mut save = clear + 2;
+    let mut save = clear + 1;
     let mut previous: Option<Vec<u8>> = None;
     let mut output = Vec::new();
     loop {
@@ -436,7 +436,7 @@ fn lzw(data: &[u8], minimum: u8) -> LzwOutput {
         available -= width;
         if code == clear {
             entries.truncate(clear + 2);
-            save = clear + 2;
+            save = clear + 1;
             width = (minimum + 1) as u32;
             previous = None;
             continue;
@@ -455,18 +455,13 @@ fn lzw(data: &[u8], minimum: u8) -> LzwOutput {
             return LzwOutput { indices: output, truncated: false, bad_code: true };
         };
         output.extend_from_slice(&value);
-        if entries.len() < 4096 {
+        if save < 4096 {
             let mut entry = previous.clone().unwrap_or_default();
             entry.push(value[0]);
-            if entries.len() < clear + 2 {
+            if save < entries.len() {
+                entries[save] = entry;
+            } else if entries.len() < 4096 {
                 entries.push(entry);
-            } else {
-                let index = save - 1;
-                if index < entries.len() {
-                    entries[index] = entry;
-                } else {
-                    entries.push(entry);
-                }
             }
         }
         save += 1;
