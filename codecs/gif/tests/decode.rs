@@ -96,3 +96,58 @@ fn loop_count_matches_animation_semantics() {
     assert!(matches!(Decoder::new(&data[..10]), Err(Status::ShortRead)));
     assert!(matches!(Decoder::new(b"BAD89a"), Err(Status::Error(_))));
 }
+
+fn image(x: u16, y: u16, width: u16, height: u16, minimum: u8) -> Vec<u8> {
+    let mut data = vec![0x2c];
+    data.extend_from_slice(&x.to_le_bytes());
+    data.extend_from_slice(&y.to_le_bytes());
+    data.extend_from_slice(&width.to_le_bytes());
+    data.extend_from_slice(&height.to_le_bytes());
+    data.push(0);
+    data.push(minimum);
+    data.push(0);
+    data
+}
+
+fn raw_gif(canvas_width: u16, canvas_height: u16, images: &[Vec<u8>]) -> Vec<u8> {
+    let mut data = b"GIF89a".to_vec();
+    data.extend_from_slice(&canvas_width.to_le_bytes());
+    data.extend_from_slice(&canvas_height.to_le_bytes());
+    data.extend_from_slice(&[0, 0, 0]);
+    for image in images {
+        data.extend_from_slice(image);
+    }
+    data.push(0x3b);
+    data
+}
+
+#[test]
+fn empty_canvas_without_frames_is_rejected() {
+    assert!(matches!(Decoder::new(&raw_gif(0, 0, &[])), Err(Status::Error(_))));
+}
+
+#[test]
+fn empty_canvas_expands_to_first_frame() {
+    let decoder = Decoder::new(&raw_gif(0, 0, &[image(0, 0, 3, 2, 1)])).unwrap();
+    assert_eq!((decoder.width, decoder.height), (3, 2));
+}
+
+#[test]
+fn zero_area_frame_completes_with_empty_stream() {
+    let data = raw_gif(6, 1, &[image(255, 0, 6, 0, 1)]);
+    let decoder = Decoder::new(&data).unwrap();
+    let mut pixels = [0u8; 16];
+    assert_eq!(decoder.decode_frame(&data, 0, &mut pixels, 8, Blend::Src), Status::Complete);
+}
+
+#[test]
+fn invalid_literal_width_keeps_frame_and_fails_decode() {
+    let data = raw_gif(6, 1, &[image(0, 0, 6, 1, 1), image(0, 0, 6, 1, 102)]);
+    let decoder = Decoder::new(&data).unwrap();
+    assert_eq!(decoder.frames.len(), 2);
+    let mut pixels = [0u8; 24];
+    assert_eq!(
+        decoder.decode_frame(&data, 1, &mut pixels, 24, Blend::Src),
+        Status::Error(img_gif::Error::BadLiteralWidth),
+    );
+}

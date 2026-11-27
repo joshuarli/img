@@ -65,6 +65,8 @@ pub struct Frame {
     pub interlace: bool,
     pub minimum_code_size: u8,
     pub data_start: usize,
+    stream_width: u32,
+    bad_literal_width: bool,
     palette: [[u8; 4]; 256],
 }
 
@@ -208,9 +210,9 @@ impl Decoder {
                         palette[index as usize] = [0, 0, 0, 0];
                     }
                     let Some(minimum) = data.get(position).copied() else { break 'scan };
-                    if minimum > 8 {
-                        if !seen_frame { return Err(Status::Error(Error::BadLiteralWidth)); }
-                        break 'scan;
+                    let bad_literal_width = minimum > 8;
+                    if bad_literal_width && !seen_frame {
+                        return Err(Status::Error(Error::BadLiteralWidth));
                     }
                     position += 1;
                     seen_frame = true;
@@ -225,8 +227,10 @@ impl Decoder {
                         transparent_index: control.transparent,
                         opaque_within_bounds: control.transparent.is_none(),
                         interlace: local_flags & 0x40 != 0,
-                        minimum_code_size: minimum,
+                        minimum_code_size: minimum.min(8),
                         data_start: position,
+                        stream_width: frame_width,
+                        bad_literal_width,
                         palette,
                     });
                     let Some(next) = skip_blocks(data, position) else { break 'scan };
@@ -295,6 +299,9 @@ impl Decoder {
         if !seen_frame && !seen_trailer {
             return Err(Status::ShortRead);
         }
+        if decoder.width == 0 || decoder.height == 0 {
+            return Err(Status::Error(Error::BadHeader));
+        }
         Ok(decoder)
     }
 
@@ -320,6 +327,14 @@ impl Decoder {
         let Some(frame) = self.frames.get(index) else {
             return Status::Error(Error::BadCode);
         };
+        let right = frame.right();
+        let bottom = frame.bottom();
+        if right == frame.x || bottom <= frame.y {
+            return Status::Complete;
+        }
+        if frame.bad_literal_width {
+            return Status::Error(Error::BadLiteralWidth);
+        }
         let mut compressed = Vec::new();
         let mut position = frame.data_start;
         let truncated = read_blocks(data, position, &mut compressed).is_none();
@@ -331,8 +346,7 @@ impl Decoder {
         let mut x = frame.x;
         let mut y = frame.y;
         let mut interlace = if frame.interlace { 4usize } else { 0usize };
-        let right = frame.right();
-        let bottom = frame.bottom();
+        let wrap_right = frame.x.saturating_add(frame.stream_width);
         let mut consumed = 0usize;
         for &index_value in &indices {
             consumed += 1;
@@ -349,7 +363,7 @@ impl Decoder {
                 }
             }
             x = x.wrapping_add(1);
-            if right <= x {
+            if wrap_right <= x {
                 x = frame.x;
                 if interlace == 0 {
                     y = y.wrapping_add(1);
