@@ -444,7 +444,7 @@ fn lzw(data: &[u8], minimum: u8) -> LzwOutput {
         }
         let value = if code < entries.len() {
             entries[code].clone()
-        } else if code == entries.len() && previous.is_some() {
+        } else if code == entries.len() + 1 && previous.is_some() {
             let first = previous.as_ref().expect("previous entry")[0];
             let mut entry = previous.clone().expect("previous entry");
             entry.push(first);
@@ -458,7 +458,7 @@ fn lzw(data: &[u8], minimum: u8) -> LzwOutput {
             entry.push(value[0]);
             if entries.len() < 4096 {
                 entries.push(entry);
-                if entries.len() == (1usize << width) && width < 12 {
+                if width < 12 && ((entries.len() + 1) >> width) & 1 != 0 {
                     width += 1;
                 }
             }
