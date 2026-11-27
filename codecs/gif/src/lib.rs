@@ -66,6 +66,7 @@ pub struct Frame {
     pub minimum_code_size: u8,
     pub data_start: usize,
     stream_width: u32,
+    stream_height: u32,
     bad_literal_width: bool,
     palette: [[u8; 4]; 256],
 }
@@ -230,6 +231,7 @@ impl Decoder {
                         minimum_code_size: minimum.min(8),
                         data_start: position,
                         stream_width: frame_width,
+                        stream_height: frame_height,
                         bad_literal_width,
                         palette,
                     });
@@ -329,7 +331,7 @@ impl Decoder {
         };
         let right = frame.right();
         let bottom = frame.bottom();
-        if right == frame.x || bottom <= frame.y {
+        if frame.stream_width == 0 || frame.stream_height == 0 || bottom <= frame.y {
             return Status::Complete;
         }
         if frame.bad_literal_width {
@@ -351,7 +353,10 @@ impl Decoder {
         for &index_value in &indices {
             consumed += 1;
             if y >= bottom {
-                return Status::Complete;
+                if consumed >= required_pixels(frame, interlace) {
+                    return Status::Complete;
+                }
+                break;
             }
             let row = y as usize * row_bytes;
             let start = row + (x as usize * 4);
@@ -389,7 +394,7 @@ impl Decoder {
                 }
             }
         }
-        let complete = right == frame.x || bottom <= frame.y || consumed >= required_pixels(frame, interlace);
+        let complete = bottom <= frame.y || consumed >= required_pixels(frame, interlace);
         if bad_code {
             Status::Error(Error::BadCode)
         } else if truncated || lzw.truncated {
@@ -403,21 +408,22 @@ impl Decoder {
 }
 
 fn required_pixels(frame: &Frame, interlace: usize) -> usize {
-    if frame.width == 0 || frame.height == 0 {
+    if frame.stream_width == 0 || frame.stream_height == 0 {
         return 0;
     }
+    let bottom = frame.y.wrapping_add(frame.stream_height);
     if interlace == 0 && !frame.interlace {
-        return frame.width as usize * frame.height as usize;
+        return frame.stream_width as usize * frame.stream_height as usize;
     }
     let mut rows = 0usize;
     for start in [0u32, 4, 2, 1] {
         let mut y = frame.y.wrapping_add(start);
-        while y < frame.bottom() {
+        while y < bottom {
             rows += 1;
             y = y.wrapping_add(if start == 0 || start == 4 { 8 } else if start == 2 { 4 } else { 2 });
         }
     }
-    rows * frame.width as usize
+    rows * frame.stream_width as usize
 }
 
 struct LzwOutput {

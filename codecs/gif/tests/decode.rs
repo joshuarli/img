@@ -141,6 +141,15 @@ fn zero_area_frame_completes_with_empty_stream() {
 }
 
 #[test]
+fn clipped_zero_width_frame_stays_partial() {
+    let data = raw_gif(2, 18, &[image(0, 1, 2, 18, 1), image(2, 3, 2, 16, 1)]);
+    let decoder = Decoder::new(&data).unwrap();
+    assert_eq!(decoder.frames[1].width, 0);
+    let mut pixels = [0u8; 144];
+    assert_eq!(decoder.decode_frame(&data, 1, &mut pixels, 8, Blend::Src), Status::Error(img_gif::Error::NotEnoughData));
+}
+
+#[test]
 fn invalid_literal_width_keeps_frame_and_fails_decode() {
     let data = raw_gif(6, 1, &[image(0, 0, 6, 1, 1), image(0, 0, 6, 1, 102)]);
     let decoder = Decoder::new(&data).unwrap();
