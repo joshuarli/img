@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/Users/josh/d/img/benchmarks/codecs/batch.py", line 50, in <module>
+    kept, dispositions = evidence.run_rounds(rounds, run_round)
+                         ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/Users/josh/d/img/benchmarks/codecs/evidence.py", line 73, in run_rounds
+    samples = run_round(len(kept))
+  File "/Users/josh/d/img/benchmarks/codecs/batch.py", line 38, in run_round
+    doc = json.loads(stdout)
+  File "/Users/josh/.local/share/python-build/release-6f7c0d46e2eda7f66c705022f1950034045f74d0/python/lib/python3.15/json/__init__.py", line 371, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/Users/josh/.local/share/python-build/release-6f7c0d46e2eda7f66c705022f1950034045f74d0/python/lib/python3.15/json/decoder.py", line 358, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/josh/.local/share/python-build/release-6f7c0d46e2eda7f66c705022f1950034045f74d0/python/lib/python3.15/json/decoder.py", line 376, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)

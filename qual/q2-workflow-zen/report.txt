@@ -1,0 +1,65 @@
+11 cases both completed, identical outputs 1, gated True, discarded rounds 0
+  new: attempted 36, succeeded 18 (exit 0 and verified)
+  zen: attempted 36, succeeded 11 (exit 0 and verified)
+  failed new grayscale-16.png avif 90 exit [3]
+  failed new grayscale-original-00.jpg avif 90 exit [3]
+  failed new grayscale-original-00.jpg png 90 exit [3]
+  failed new photo-00.jpg png 90 exit [3]
+  failed new photo-04.jpg avif 90 exit [3]
+  failed new photo-04.jpg png 90 exit [3]
+  failed new photo-16.jpg avif 90 exit [3]
+  failed new photo-16.jpg png 90 exit [3]
+  failed new synthetic-00.png avif 90 exit [3]
+  failed new synthetic-00.png jpeg 90 exit [3]
+  failed new synthetic-01.png avif 90 exit [3]
+  failed new synthetic-01.png jpeg 90 exit [3]
+  failed new synthetic-01.png png 90 exit [3]
+  failed new synthetic-04.png avif 90 exit [3]
+  failed new synthetic-04.png jpeg 90 exit [3]
+  failed new texture-original-00.jpg png 90 exit [3]
+  failed new ui-text-07.png jpeg 90 exit [3]
+  failed new ui-text-original-01.jpg png 90 exit [3]
+  failed zen grayscale-16.png avif 90 exit [3]
+  failed zen grayscale-original-00.jpg avif 90 exit [3]
+  failed zen grayscale-original-00.jpg png 90 exit [3]
+  failed zen photo-00.jpg avif 90 exit [-6]
+  failed zen photo-00.jpg png 90 exit [3]
+  failed zen photo-04.jpg avif 90 exit [3]
+  failed zen photo-04.jpg jpeg 90 exit [3]
+  failed zen photo-04.jpg png 90 exit [3]
+  failed zen photo-16.jpg avif 90 exit [-6]
+  failed zen photo-16.jpg png 90 exit [3]
+  failed zen synthetic-00.png avif 90 exit [3]
+  failed zen synthetic-00.png jpeg 90 exit [3]
+  failed zen synthetic-01.png avif 90 exit [3]
+  failed zen synthetic-01.png jpeg 90 exit [3]
+  failed zen synthetic-01.png png 90 exit [3]
+  failed zen synthetic-04.png avif 90 exit [3]
+  failed zen synthetic-04.png jpeg 90 exit [3]
+  failed zen texture-15.png avif 90 exit [-6]
+  failed zen texture-15.png jpeg 90 exit [3]
+  failed zen texture-original-00.jpg avif 90 exit [3]
+  failed zen texture-original-00.jpg png 90 exit [3]
+  failed zen ui-text-07.png avif 90 exit [-6]
+  failed zen ui-text-07.png jpeg 90 exit [3]
+  failed zen ui-text-original-01.jpg avif 90 exit [-6]
+  failed zen ui-text-original-01.jpg png 90 exit [3]
+jpeg
+  wall            n=  6 geomean 0.319 [0.221, 0.479] p95 0.718 worst 0.718 ('photo-00.jpg', 'jpeg', '90')
+  cpu             n=  6 geomean 0.401 [0.247, 0.642] p95 0.913 worst 0.913 ('photo-00.jpg', 'jpeg', '90')
+  peak_rss_bytes  n=  6 geomean 0.545 [0.459, 0.646] p95 0.684 worst 0.684 ('grayscale-original-00.jpg', 'jpeg', '90')
+  bytes           n=  6 geomean 0.712 [0.509, 0.929] p95 1.000 worst 1.000 ('photo-16.jpg', 'jpeg', '90')
+png
+  wall            n=  5 geomean 0.106 [0.026, 0.427] p95 0.710 worst 0.710 ('grayscale-16.png', 'png', '90')
+  cpu             n=  5 geomean 0.111 [0.027, 0.452] p95 0.724 worst 0.724 ('grayscale-16.png', 'png', '90')
+  peak_rss_bytes  n=  5 geomean 0.805 [0.713, 0.906] p95 0.976 worst 0.976 ('synthetic-00.png', 'png', '90')
+  bytes           n=  5 geomean 0.706 [0.560, 0.884] p95 1.000 worst 1.000 ('grayscale-16.png', 'png', '90')
+all
+  wall            n= 11 geomean 0.193 [0.090, 0.387] p95 0.718 worst 0.718 ('photo-00.jpg', 'jpeg', '90')
+  cpu             n= 11 geomean 0.224 [0.100, 0.469] p95 0.913 worst 0.913 ('photo-00.jpg', 'jpeg', '90')
+  peak_rss_bytes  n= 11 geomean 0.651 [0.553, 0.758] p95 0.976 worst 0.976 ('synthetic-00.png', 'png', '90')
+  bytes           n= 11 geomean 0.710 [0.569, 0.857] p95 1.000 worst 1.000 ('grayscale-16.png', 'png', '90')
+VERDICT wall            within       geomean 0.193 [0.090, 0.387] budget 1.05
+VERDICT cpu             within       geomean 0.224 [0.100, 0.469] budget 1.05
+VERDICT peak_rss_bytes  within       geomean 0.651 [0.553, 0.758] budget 1.05
+VERDICT bytes           within       geomean 0.710 [0.569, 0.857] budget 1.002

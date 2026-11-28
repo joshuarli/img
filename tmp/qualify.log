@@ -1,0 +1,13 @@
+== q1-workflow-base 23:08:19
+q1-workflow-base exit 0 23:33:28
+== q2-workflow-zen 23:33:28
+q2-workflow-zen exit 0 00:09:04
+== q3-scheduler 00:09:04
+q3-scheduler exit 0 00:47:50
+== q4-mix-base 00:47:50
+q4-mix-base exit 1 01:06:19
+== q5-allocator 01:06:19
+q5-allocator exit 0 19:21:20
+== q6-mix-zen 19:21:20
+q6-mix-zen exit 1 19:24:54
+done 19:24:54

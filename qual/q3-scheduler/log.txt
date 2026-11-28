@@ -1,0 +1,16 @@
+round 1
+round 2
+round 3
+verified 16/16 distinct outputs covering 576/576 timed outputs
+jpeg90 -j 1 new: attempted 0.24 img/s, successful 0.24 img/s, coverage 16/16, cpu 88.3 s, peak RSS 1296 MiB, bytes 61459543
+jpeg90 -j 1 new-nocompact: attempted 0.24 img/s, successful 0.24 img/s, coverage 16/16, cpu 88.3 s, peak RSS 1296 MiB, bytes 61459543
+jpeg90 -j 1 pre: attempted 0.18 img/s, successful 0.18 img/s, coverage 16/16, cpu 86.8 s, peak RSS 1295 MiB, bytes 61459543
+jpeg90 -j 1 pre-nocompact: attempted 0.18 img/s, successful 0.18 img/s, coverage 16/16, cpu 87.2 s, peak RSS 1295 MiB, bytes 61459543
+jpeg90 -j 2 new: attempted 0.41 img/s, successful 0.41 img/s, coverage 16/16, cpu 108.1 s, peak RSS 1753 MiB, bytes 61459543
+jpeg90 -j 2 new-nocompact: attempted 0.27 img/s, successful 0.27 img/s, coverage 16/16, cpu 90.7 s, peak RSS 1831 MiB, bytes 61459543
+jpeg90 -j 2 pre: attempted 0.30 img/s, successful 0.30 img/s, coverage 16/16, cpu 98.9 s, peak RSS 1674 MiB, bytes 61459543
+jpeg90 -j 2 pre-nocompact: attempted 0.21 img/s, successful 0.21 img/s, coverage 16/16, cpu 88.1 s, peak RSS 1786 MiB, bytes 61459543
+jpeg90 -j 4 new: attempted 0.42 img/s, successful 0.42 img/s, coverage 16/16, cpu 120.1 s, peak RSS 1872 MiB, bytes 61459543
+jpeg90 -j 4 new-nocompact: attempted 0.26 img/s, successful 0.26 img/s, coverage 16/16, cpu 91.6 s, peak RSS 1841 MiB, bytes 61459543
+jpeg90 -j 4 pre: attempted 0.32 img/s, successful 0.32 img/s, coverage 16/16, cpu 107.7 s, peak RSS 1735 MiB, bytes 61459543
+jpeg90 -j 4 pre-nocompact: attempted 0.21 img/s, successful 0.21 img/s, coverage 16/16, cpu 88.1 s, peak RSS 1790 MiB, bytes 61459543

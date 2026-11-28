@@ -1,0 +1,20 @@
+round 1
+round 2
+round 3
+verified 37/37 distinct outputs covering 450/450 timed outputs
+keep90 -j 1 new: attempted 0.67 img/s, successful 0.67 img/s, coverage 27/27, cpu 60.3 s, peak RSS 1038 MiB, bytes 20425904
+keep90 -j 1 base: attempted 0.29 img/s, successful 0.25 img/s, coverage 23/27, cpu 99.0 s, peak RSS 2134 MiB, bytes 9850184
+keep90 -j 2 new: attempted 1.12 img/s, successful 1.12 img/s, coverage 27/27, cpu 67.6 s, peak RSS 1691 MiB, bytes 20425904
+keep90 -j 2 base: attempted 0.29 img/s, successful 0.25 img/s, coverage 23/27, cpu 99.0 s, peak RSS 2134 MiB, bytes 9850184
+keep90 -j 4 new: attempted 1.40 img/s, successful 1.40 img/s, coverage 27/27, cpu 84.6 s, peak RSS 1531 MiB, bytes 20425904
+keep90 -j 4 base: attempted 0.29 img/s, successful 0.25 img/s, coverage 23/27, cpu 99.0 s, peak RSS 2134 MiB, bytes 9850184
+equivalent-work check failed: successful inputs differ across tools, job counts or rounds 
+  base -j 1 round 0 lacks /Users/josh/d/img/.work/sets/mix/photo-04.jpg /Users/josh/d/img/.work/sets/mix/photo-10.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-02.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-05.jpg 
+  base -j 1 round 1 lacks /Users/josh/d/img/.work/sets/mix/photo-04.jpg /Users/josh/d/img/.work/sets/mix/photo-10.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-02.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-05.jpg 
+  base -j 1 round 2 lacks /Users/josh/d/img/.work/sets/mix/photo-04.jpg /Users/josh/d/img/.work/sets/mix/photo-10.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-02.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-05.jpg 
+  base -j 2 round 0 lacks /Users/josh/d/img/.work/sets/mix/photo-04.jpg /Users/josh/d/img/.work/sets/mix/photo-10.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-02.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-05.jpg 
+  base -j 2 round 1 lacks /Users/josh/d/img/.work/sets/mix/photo-04.jpg /Users/josh/d/img/.work/sets/mix/photo-10.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-02.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-05.jpg 
+  base -j 2 round 2 lacks /Users/josh/d/img/.work/sets/mix/photo-04.jpg /Users/josh/d/img/.work/sets/mix/photo-10.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-02.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-05.jpg 
+  base -j 4 round 0 lacks /Users/josh/d/img/.work/sets/mix/photo-04.jpg /Users/josh/d/img/.work/sets/mix/photo-10.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-02.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-05.jpg 
+  base -j 4 round 1 lacks /Users/josh/d/img/.work/sets/mix/photo-04.jpg /Users/josh/d/img/.work/sets/mix/photo-10.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-02.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-05.jpg 
+  base -j 4 round 2 lacks /Users/josh/d/img/.work/sets/mix/photo-04.jpg /Users/josh/d/img/.work/sets/mix/photo-10.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-02.jpg /Users/josh/d/img/.work/sets/mix/ui-text-original-05.jpg

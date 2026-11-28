@@ -1,0 +1,30 @@
+[
+ {
+  "metric": "seconds_per_image",
+  "n": 2,
+  "geomean": 1.045,
+  "ci": [
+   1.0422,
+   1.0478
+  ],
+  "budget": 1.05,
+  "status": "within",
+  "cases_over": [],
+  "dispositions": {},
+  "undisposed": []
+ },
+ {
+  "metric": "peak_rss_bytes",
+  "n": 2,
+  "geomean": 0.573,
+  "ci": [
+   0.5166,
+   0.6356
+  ],
+  "budget": 1.05,
+  "status": "within",
+  "cases_over": [],
+  "dispositions": {},
+  "undisposed": []
+ }
+]

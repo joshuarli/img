@@ -1,0 +1,7 @@
+round 1
+round 2
+round 3
+round 4
+round 5
+verified 25/26 distinct outputs covering 170/360 timed samples 
+  rejected /Users/josh/d/img/.work/qual/q1-workflow-base/workflow-out/retained/d91987b80450166719b79e373bde8029a6d879310393c194bd8c478f21deab23.jpeg for photo-00.jpg 90: exact False score 89.91780918241285 

@@ -1,0 +1,197 @@
++ export TMPDIR=/Users/josh/d/img/.work/tmp CARGO_BUILD_JOBS=4 HOST_CC=clang HOST_CXX=clang++
++ TMPDIR=/Users/josh/d/img/.work/tmp
++ CARGO_BUILD_JOBS=4
++ HOST_CC=clang
++ HOST_CXX=clang++
++ B=/Users/josh/d/img/.work/bench/bin
++ pgrep -f refbuilds.sh
++ sleep 10
++ pgrep -f refbuilds.sh
++ cd /Users/josh/d/img/.work/wt/sysalloc
++ git checkout -q src/main.rs
++ nocompact
++ python3 -c '
+import sys; p='\''src/runtime.rs'\''; s=open(p).read(); old='\''let obtainable=budget.free_now().saturating_add(reserved.bytes);'\''
+assert s.count(old)==1; open(p,'\''w'\'').write(s.replace(old,'\''let obtainable=budget.total;'\''))'
++ git diff --stat
+ src/runtime.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
++ cargo build --locked --profile dist --features build-binary
+   Compiling img v0.14.0 (/Users/josh/d/img/.work/wt/sysalloc)
+warning: method `free_now` is never used
+   --> src/runtime.rs:296:8
+    |
+294 | impl MemoryBudget {
+    | ----------------- method in this implementation
+295 |     fn new(total:u64)->Self {Self {total,free:Mutex::new(total),released:Condvar::new(),admission:Mutex::new(())}}
+296 |     fn free_now(&self)->u64 {*self.free.lock().unwrap_or_else(|e|e.into_inner())}
+    |        ^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `img` (bin "img") generated 1 warning
+    Finished `dist` profile [optimized] target(s) in 15.77s
++ cp target/dist/img /Users/josh/d/img/.work/bench/bin/img-candidate-nocompact
++ echo nocompact-exit 0
+nocompact-exit 0
++ cd /Users/josh/d/img
++ git worktree add -q --detach .work/wt/preparallel 77eb60a
++ cd .work/wt/preparallel
++ cargo build --locked --profile dist --features build-binary
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.14
+   Compiling libm v0.2.16
+   Compiling cc v1.5.1
+   Compiling autocfg v1.5.1
+   Compiling num-traits v0.2.19
+   Compiling crossbeam-utils v0.8.23
+   Compiling crossbeam-epoch v0.9.21
+   Compiling syn v3.0.6
+   Compiling crossbeam-deque v0.8.8
+   Compiling cmake v0.1.58
+   Compiling bytemuck_derive v1.12.1
+   Compiling rayon-core v1.13.0
+   Compiling bytemuck v1.25.2
+   Compiling rustversion v1.0.23
+   Compiling simd-adler32 v0.3.10
+   Compiling archmage-macros v0.9.31
+   Compiling libdeflate-sys v1.26.1 (/Users/josh/d/img/.work/wt/preparallel/vendor/libdeflate-sys)
+   Compiling either v1.18.0
+   Compiling radium v0.7.0
+   Compiling crc32fast v1.5.2
+   Compiling cfg-if v1.0.5
+   Compiling bitflags v2.13.2
+   Compiling thiserror v2.0.21
+   Compiling safe_unaligned_simd v0.2.5
+   Compiling libc v0.2.189
+   Compiling adler2 v2.0.1
+   Compiling archmage v0.9.31
+   Compiling rayon v1.12.0
+   Compiling thiserror-impl v2.0.21
+   Compiling syn v2.0.119
+   Compiling zmij v1.0.23
+   Compiling ref-cast v1.0.27
+   Compiling rand_core v0.10.1
+   Compiling serde_core v1.0.229
+   Compiling enough v0.4.5
+   Compiling tap v1.0.1
+   Compiling by_address v1.2.1
+   Compiling whereat v0.1.5
+   Compiling palette_derive v0.7.7
+   Compiling zenpixels v0.2.16
+   Compiling wyz v0.5.1
+   Compiling magetypes v0.9.31
+   Compiling miniz_oxide v0.9.1
+   Compiling objc2-core-foundation v0.3.2
+   Compiling libjpeg-turbo-sys v0.1.0 (/Users/josh/d/img/.work/wt/preparallel/codecs/libjpeg-turbo-sys)
+   Compiling libavif-sys v0.1.0 (/Users/josh/d/img/.work/wt/preparallel/codecs/libavif-sys)
+   Compiling ref-cast-impl v1.0.27
+   Compiling palette_math v0.7.7
+   Compiling dav1d-sys v0.1.0 (/Users/josh/d/img/.work/wt/preparallel/codecs/dav1d-sys)
+   Compiling jpegli-sys v0.1.0 (/Users/josh/d/img/.work/wt/preparallel/codecs/jpegli-sys)
+   Compiling zune-core v0.5.1
+   Compiling equivalent v1.0.2
+   Compiling funty v2.0.0
+   Compiling mutate_once v0.1.2
+   Compiling serde_json v1.0.154
+   Compiling fast-ssim2 v0.9.1 (/Users/josh/d/img/.work/wt/preparallel/vendor/fast-ssim2)
+   Compiling memchr v2.8.3
+   Compiling hashbrown v0.17.1
+   Compiling litrs v1.0.0
+   Compiling libdeflater v1.26.1 (/Users/josh/d/img/.work/wt/preparallel/vendor/libdeflater)
+   Compiling document-features v0.2.12
+   Compiling indexmap v2.14.2
+   Compiling kamadak-exif v0.6.1
+   Compiling bitvec v1.1.1
+   Compiling palette v0.7.7
+   Compiling objc2-io-kit v0.3.2
+   Compiling flate2 v1.1.11
+   Compiling linear-srgb v0.6.12
+   Compiling almost-enough v0.4.5
+   Compiling rand_xoshiro v0.8.1
+   Compiling rand v0.10.3
+   Compiling miniz_oxide v0.8.9
+   Compiling fdeflate v0.3.7
+   Compiling wide v1.7.1
+   Compiling rgb v0.8.53
+   Compiling ordered-float v5.5.1
+   Compiling log v0.4.34
+   Compiling itoa v1.0.19
+   Compiling byteorder-lite v0.1.0
+   Compiling rustc-hash v2.1.3
+   Compiling pxfm v0.1.30
+   Compiling quick-error v2.0.1
+   Compiling image-webp v0.2.4
+   Compiling oxipng v10.2.1 (/Users/josh/d/img/.work/wt/preparallel/vendor/oxipng)
+   Compiling moxcms v0.8.1
+   Compiling quantette v0.6.0
+   Compiling png v0.18.1
+   Compiling zencodec v0.1.26
+   Compiling sysinfo v0.39.6
+   Compiling zune-image v0.5.0
+   Compiling fast_image_resize v6.1.0
+   Compiling zune-jpeg v0.5.15
+   Compiling webpkit v0.1.0 (/Users/josh/d/img/.work/wt/preparallel/codecs/webpkit)
+   Compiling yuv v0.8.20
+   Compiling quantizr v1.4.3
+   Compiling lexopt v0.3.2
+   Compiling glob v0.3.4
+   Compiling img v0.14.0 (/Users/josh/d/img/.work/wt/preparallel)
+warning: missing documentation for a method
+   --> src/still.rs:287:5
+    |
+287 |     pub fn encode_cancellable(&self, format: Format, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> src/lib.rs:14:9
+    |
+ 14 | #![warn(missing_docs)]
+    |         ^^^^^^^^^^^^
+
+warning: `img` (lib) generated 1 warning
+    Finished `dist` profile [optimized] target(s) in 1m 01s
++ cp target/dist/img /Users/josh/d/img/.work/bench/bin/img-77eb60a
++ echo preparallel-exit 0
+preparallel-exit 0
++ nocompact
++ python3 -c '
+import sys; p='\''src/runtime.rs'\''; s=open(p).read(); old='\''let obtainable=budget.free_now().saturating_add(reserved.bytes);'\''
+assert s.count(old)==1; open(p,'\''w'\'').write(s.replace(old,'\''let obtainable=budget.total;'\''))'
++ git diff --stat
+ src/runtime.rs | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
++ cargo build --locked --profile dist --features build-binary
+warning: missing documentation for a method
+   --> src/still.rs:287:5
+    |
+287 |     pub fn encode_cancellable(&self, format: Format, mode: EncodingMode, effort: Effort, stop: &crate::cancellation::Cancellation) -> Result<Vec<u8>, Error> {
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+note: the lint level is defined here
+   --> src/lib.rs:14:9
+    |
+ 14 | #![warn(missing_docs)]
+    |         ^^^^^^^^^^^^
+
+warning: `img` (lib) generated 1 warning
+   Compiling img v0.14.0 (/Users/josh/d/img/.work/wt/preparallel)
+warning: method `free_now` is never used
+   --> src/runtime.rs:296:8
+    |
+294 | impl MemoryBudget {
+    | ----------------- method in this implementation
+295 |     fn new(total:u64)->Self {Self {total,free:Mutex::new(total),released:Condvar::new(),admission:Mutex::new(())}}
+296 |     fn free_now(&self)->u64 {*self.free.lock().unwrap_or_else(|e|e.into_inner())}
+    |        ^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `img` (bin "img") generated 1 warning
+    Finished `dist` profile [optimized] target(s) in 15.49s
++ cp target/dist/img /Users/josh/d/img/.work/bench/bin/img-77eb60a-nocompact
++ echo preparallel-nocompact-exit 0
+preparallel-nocompact-exit 0

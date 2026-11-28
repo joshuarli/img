@@ -1,0 +1,58 @@
+[
+ {
+  "metric": "wall",
+  "n": 11,
+  "geomean": 0.1933,
+  "ci": [
+   0.0898,
+   0.3868
+  ],
+  "budget": 1.05,
+  "status": "within",
+  "cases_over": [],
+  "dispositions": {},
+  "undisposed": []
+ },
+ {
+  "metric": "cpu",
+  "n": 11,
+  "geomean": 0.2237,
+  "ci": [
+   0.1,
+   0.4688
+  ],
+  "budget": 1.05,
+  "status": "within",
+  "cases_over": [],
+  "dispositions": {},
+  "undisposed": []
+ },
+ {
+  "metric": "peak_rss_bytes",
+  "n": 11,
+  "geomean": 0.651,
+  "ci": [
+   0.5535,
+   0.7584
+  ],
+  "budget": 1.05,
+  "status": "within",
+  "cases_over": [],
+  "dispositions": {},
+  "undisposed": []
+ },
+ {
+  "metric": "bytes",
+  "n": 11,
+  "geomean": 0.7097,
+  "ci": [
+   0.5694,
+   0.8574
+  ],
+  "budget": 1.002,
+  "status": "within",
+  "cases_over": [],
+  "dispositions": {},
+  "undisposed": []
+ }
+]
