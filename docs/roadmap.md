@@ -4,10 +4,17 @@ This is the single plan for this repository: all current and future work, and th
 
 ## Status
 
-- Active: WebP hillclimb and JPEG, PNG and AVIF codec performance. No slice is recorded as in progress.
-- Last accepted repository revision: `b89205c`; integration green at that revision is not recorded.
-- WebP's last recorded green integration was `1057014`: 923 library tests, 373 lossless tests at 4096 cases, musl checks and independent pixel-exact decoding.
-- Parked `origin/experiment/webp-match-chunks`: unfinished and predates the NEON match kernel; retry only if profiling still identifies match comparison as a wall-time hotspot. Remote branches `origin/experiment/permissive-codecs`, `origin/webp-hillclimb-1` and `origin/fix/avif-container-parser` were recorded parked without retry conditions.
+- Vacation 2026-11-27: `.work/` deleted. Resume with "resume the roadmap"; no slice is in progress.
+- Last accepted: `6df34a9` (master, clean, pushed). No green check is recorded at that revision; run `make lint` and `make test` before claiming one. WebP's last recorded green integration was `1057014`: 923 library tests, 373 lossless tests at 4096 cases, musl checks and independent pixel-exact decoding.
+- Rebuild before the first gate, in order:
+  1. `mkdir -p .work/tmp && TMPDIR=$PWD/.work/tmp CARGO_BUILD_JOBS=4 scripts/bench build --base f0ceea6` — builds `target/dist/img`, `.work/wt/bench-base-f0ceea6aae09` and `.work/bench/bin/img-f0ceea6aae093ba50d747dca51737458257a2caf`.
+  2. `python3 -I scripts/qualification-corpus .work/qcorpus` — needs network access to the manifest's source URLs.
+  3. `python3 -I benchmarks/codecs/batch-sets.py .work/qcorpus target/dist/img .work/sets > .work/sets.sha`, then rebuild `.work/sets/mix3` with the loop in `archive/img-scratch:tmp/qualify.sh`.
+  4. `IMG_BASE=$PWD/.work/wt/bench-base-f0ceea6aae09 LOOPS_SCRATCH=$PWD/.work/tmp/loops TMPDIR=$PWD/.work/tmp sh benchmarks/codecs/loops-build.sh`.
+  5. Reference and variant binaries: `archive/img-scratch:tmp/refbuilds.sh` and `tmp/variants.sh` from pins `5424df8`, `b89205c`, `77eb60a`; `img-avifprobe` from the committed `benchmarks/results/codecs/avif/search-probe-2026-11-22.patch`. `img-sysalloc` had no committed source change and is gone; redo that A/B only by reintroducing the change.
+  6. First gate: `perf-gate-ready` before and after any timing, then `scripts/bench run --tier scenario --base f0ceea6` as in `benchmarks/results/checkpoints/2026-11-20/README.md`.
+- Recoverable: none; every deleted path is rebuildable from the pins and recipes above. Scratch recipes and q1-q6 run records are on the pushed orphan `archive/img-scratch`; no credentials were stored there.
+- Parked `experiment/webp-match-chunks`: unfinished and predates the NEON match kernel; retry only if profiling still identifies match comparison as a wall-time hotspot. Parked `perf/dav1d-decode`: the asm build differs from upstream meson on 26 of 31 fixtures by up to 7 levels; retry when the asm build is bit-identical. Remote-only experiment branches hold no local work.
 - Next WebP slice: profile current production code. Codec campaign next experiments are listed in Sequence.
 
 ## Sequence
